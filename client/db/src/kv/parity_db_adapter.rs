@@ -16,9 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use sp_database::{error::DatabaseError, Change, ColumnId, Transaction};
-
-use super::Database;
+// Substrate
+use sp_database::{error::DatabaseError, Change, ColumnId, Database, Transaction};
 
 fn handle_err<T>(result: parity_db::Result<T>) -> T {
 	match result {

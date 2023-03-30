@@ -514,10 +514,9 @@ async fn index_genesis_block<Block, Client, Backend>(
 #[cfg(test)]
 mod test {
 	use super::*;
-	use fc_rpc::{SchemaV3Override, StorageOverride};
+	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
 	use fp_storage::{
-		EthereumStorageSchema, OverrideHandle, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM,
-		PALLET_ETHEREUM_SCHEMA,
+		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
 	};
 	use futures::executor;
 	use sc_block_builder::BlockBuilderProvider;
@@ -583,8 +582,7 @@ mod test {
 		let mut overrides_map = BTreeMap::new();
 		overrides_map.insert(
 			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 		);
 		let overrides = Arc::new(OverrideHandle {
 			schemas: overrides_map,
@@ -776,8 +774,7 @@ mod test {
 		let mut overrides_map = BTreeMap::new();
 		overrides_map.insert(
 			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 		);
 		let overrides = Arc::new(OverrideHandle {
 			schemas: overrides_map,
@@ -970,8 +967,7 @@ mod test {
 		let mut overrides_map = BTreeMap::new();
 		overrides_map.insert(
 			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 		);
 		let overrides = Arc::new(OverrideHandle {
 			schemas: overrides_map,
@@ -1123,8 +1119,7 @@ mod test {
 		let mut overrides_map = BTreeMap::new();
 		overrides_map.insert(
 			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 		);
 		let overrides = Arc::new(OverrideHandle {
 			schemas: overrides_map,

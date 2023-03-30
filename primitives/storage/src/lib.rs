@@ -19,12 +19,6 @@
 
 use scale_codec::{Decode, Encode};
 
-use ethereum_types::{H160, H256, U256};
-use sp_api::BlockId;
-use sp_runtime::{traits::Block as BlockT, Permill};
-
-use sp_std::{boxed::Box, collections::btree_map::BTreeMap, vec::Vec};
-
 /// Current version of pallet Ethereum's storage schema is stored under this key.
 pub const PALLET_ETHEREUM_SCHEMA: &[u8] = b":ethereum_schema";
 /// Cached version of pallet Ethereum's storage schema is stored under this key in the AuxStore.
@@ -60,34 +54,4 @@ impl Default for EthereumStorageSchema {
 	fn default() -> Self {
 		Self::Undefined
 	}
-}
-
-pub struct OverrideHandle<Block: BlockT> {
-	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block> + Send + Sync>>,
-	pub fallback: Box<dyn StorageOverride<Block> + Send + Sync>,
-}
-
-/// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
-/// and indeed oe implementation of it uses the runtime API.
-/// Having this trait is useful because it allows optimized implementations that fetch data from a
-/// State Backend with some assumptions about pallet-ethereum's storage schema. Using such an
-/// optimized implementation avoids spawning a runtime and the overhead associated with it.
-pub trait StorageOverride<Block: BlockT> {
-	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block: &BlockId<Block>, address: H160) -> Option<Vec<u8>>;
-	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block: &BlockId<Block>, address: H160, index: U256) -> Option<H256>;
-	/// Return the current block.
-	fn current_block(&self, block: &BlockId<Block>) -> Option<ethereum::BlockV2>;
-	/// Return the current receipt.
-	fn current_receipts(&self, block: &BlockId<Block>) -> Option<Vec<ethereum::ReceiptV3>>;
-	/// Return the current transaction status.
-	fn current_transaction_statuses(
-		&self,
-		block: &BlockId<Block>,
-	) -> Option<Vec<fp_rpc::TransactionStatus>>;
-	/// Return the base fee at the given height.
-	fn elasticity(&self, block: &BlockId<Block>) -> Option<Permill>;
-	/// Return `true` if the request BlockId is post-eip1559.
-	fn is_eip1559(&self, block: &BlockId<Block>) -> bool;
 }

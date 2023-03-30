@@ -56,7 +56,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 			BoxBlockImport<FullClient<RuntimeApi, Executor>>,
 			GrandpaLinkHalf<FullClient<RuntimeApi, Executor>>,
 			FrontierBackend,
-			Arc<fp_storage::OverrideHandle<Block>>,
+			Arc<fc_rpc::OverrideHandle<Block>>,
 		),
 	>,
 	ServiceError,
@@ -118,7 +118,7 @@ where
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
 	let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
 		client.clone(),
-		&(client.clone() as Arc<_>),
+		&client,
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;

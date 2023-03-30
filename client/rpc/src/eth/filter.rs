@@ -22,13 +22,13 @@ use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
+	traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::{types::*, EthFilterApiServer};
@@ -69,8 +69,8 @@ impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 
 impl<B, C, BE> EthFilter<B, C, BE>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT<Hash = H256>,
+	C: HeaderBackend<B>,
 {
 	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
 		let block_number =
@@ -111,12 +111,11 @@ where
 #[async_trait]
 impl<B, C, BE> EthFilterApiServer for EthFilter<B, C, BE>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT<Hash = H256>,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn new_filter(&self, filter: Filter) -> Result<U256> {
 		self.create_filter(FilterType::Log(filter))
@@ -248,10 +247,8 @@ where
 						internal_err(format!("Expect block number from id: {}", id))
 					})?;
 
-					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-						client.as_ref(),
-						id,
-					);
+					let schema =
+						fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 					let block = block_data_cache.current_block(schema, substrate_hash).await;
 					if let Some(block) = block {
@@ -396,7 +393,7 @@ where
 
 		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash {
-			let id = match frontier_backend_client::load_hash::<B, C>(
+			let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				hash,
@@ -407,12 +404,7 @@ where
 				Some(hash) => hash,
 				_ => return Ok(Vec::new()),
 			};
-			let substrate_hash = client
-				.expect_block_hash_from_id(&id)
-				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
-
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
 			let statuses = block_data_cache
@@ -468,8 +460,8 @@ where
 	}
 }
 
-async fn filter_range_logs_indexed<B: BlockT, C, BE>(
-	client: &C,
+async fn filter_range_logs_indexed<B, C, BE>(
+	_client: &C,
 	backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 	block_data_cache: &EthBlockDataCacheTask<B>,
 	ret: &mut Vec<Log>,
@@ -479,12 +471,11 @@ async fn filter_range_logs_indexed<B: BlockT, C, BE>(
 	to: NumberFor<B>,
 ) -> Result<()>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT<Hash = H256>,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	use std::time::Instant;
 	let timer_start = Instant::now();
@@ -535,10 +526,7 @@ where
 		let mut statuses_cache: BTreeMap<H256, Option<Vec<TransactionStatus>>> = BTreeMap::new();
 
 		for log in logs.iter() {
-			let id = BlockId::Hash(log.substrate_block_hash);
-			let substrate_hash = client
-				.expect_block_hash_from_id(&id)
-				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			let substrate_hash = log.substrate_block_hash;
 
 			let schema = log.ethereum_storage_schema;
 			let ethereum_block_hash = log.ethereum_block_hash;
@@ -628,12 +616,11 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 	to: NumberFor<B>,
 ) -> Result<()>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	// Max request duration of 10 seconds.
 	let max_duration = time::Duration::from_secs(10);
@@ -657,7 +644,7 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(client, id);
+		let schema = fc_storage::onchain_storage_schema(client, substrate_hash);
 
 		let block = block_data_cache.current_block(schema, substrate_hash).await;
 

@@ -38,21 +38,21 @@ sc-service = { workspace = true }
 sc-telemetry = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
-sp-api = { workspace = true, features = ["std"] }
+sp-api = { workspace = true, features = ["default"] }
 sp-block-builder = { workspace = true }
 sp-blockchain = { workspace = true }
-sp-consensus-aura = { workspace = true, features = ["std"] }
-sp-core = { workspace = true, features = ["std"] }
-sp-finality-grandpa = { workspace = true, features = ["std"] }
-sp-inherents = { workspace = true, features = ["std"] }
+sp-consensus-aura = { workspace = true, features = ["default"] }
+sp-core = { workspace = true, features = ["default"] }
+sp-finality-grandpa = { workspace = true, features = ["default"] }
+sp-inherents = { workspace = true, features = ["default"] }
 sp-keyring = { workspace = true }
-sp-offchain = { workspace = true, features = ["std"] }
-sp-runtime = { workspace = true, features = ["std"] }
-sp-session = { workspace = true, features = ["std"] }
-sp-state-machine = { workspace = true, features = ["std"] }
-sp-timestamp = { workspace = true, features = ["std"] }
-sp-transaction-pool = { workspace = true, features = ["std"] }
-sp-trie = { workspace = true, features = ["std"] }
+sp-offchain = { workspace = true, features = ["default"] }
+sp-runtime = { workspace = true, features = ["default"] }
+sp-session = { workspace = true, features = ["default"] }
+sp-state-machine = { workspace = true, features = ["default"] }
+sp-timestamp = { workspace = true, features = ["default"] }
+sp-transaction-pool = { workspace = true, features = ["default"] }
+sp-trie = { workspace = true, features = ["default"] }
 # These dependencies are used for RPC
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
@@ -71,11 +71,11 @@ fc-db = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
-fp-dynamic-fee = { workspace = true, features = ["std"] }
-fp-evm = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
-fp-storage = { workspace = true, features = ["std"] }
-frontier-template-runtime = { workspace = true, features = ["std"] }
+fc-storage = { workspace = true }
+fp-dynamic-fee = { workspace = true, features = ["default"] }
+fp-evm = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
+frontier-template-runtime = { workspace = true, features = ["default"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }

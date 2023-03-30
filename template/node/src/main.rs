@@ -1,7 +1,11 @@
 //! Substrate Node Template CLI library.
 
 #![warn(missing_docs)]
-#![allow(clippy::type_complexity, clippy::too_many_arguments)]
+#![allow(
+	clippy::type_complexity,
+	clippy::too_many_arguments,
+	clippy::large_enum_variant
+)]
 
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;

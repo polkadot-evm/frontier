@@ -16,10 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum_types::{H160, H256, U256, U64};
+use ethereum_types::{H160, U256, U64};
 use jsonrpsee::core::RpcResult as Result;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
@@ -27,22 +27,21 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
+	traits::{Block as BlockT, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{eth::Eth, internal_err};
 
 impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B>,
 {
 	pub fn protocol_version(&self) -> Result<u64> {
 		Ok(1)
@@ -69,18 +68,15 @@ where
 	}
 
 	pub fn author(&self) -> Result<H160> {
-		let block = BlockId::Hash(self.client.info().best_hash);
-		let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-			self.client.as_ref(),
-			block,
-		);
+		let hash = self.client.info().best_hash;
+		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
 
 		Ok(self
 			.overrides
 			.schemas
 			.get(&schema)
 			.unwrap_or(&self.overrides.fallback)
-			.current_block(&block)
+			.current_block(hash)
 			.ok_or_else(|| internal_err("fetching author through override failed"))?
 			.header
 			.beneficiary)

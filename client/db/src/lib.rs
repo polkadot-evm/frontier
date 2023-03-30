@@ -17,6 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use scale_codec::{Decode, Encode};
+// Substrate
+pub use sc_client_db::DatabaseSource;
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
@@ -30,7 +32,7 @@ pub enum Backend<Block: BlockT> {
 	Sql(sql::Backend<Block>),
 }
 
-#[derive(Clone, Encode, Debug, Decode, PartialEq, Eq)]
+#[derive(Clone, Encode, Debug, Decode, Eq, PartialEq)]
 pub struct TransactionMetadata<Block: BlockT> {
 	pub block_hash: Block::Hash,
 	pub ethereum_block_hash: H256,

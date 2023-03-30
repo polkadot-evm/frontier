@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use fc_storage::OverrideHandle;
 use fp_consensus::FindLogError;
 use fp_rpc::EthereumRuntimeRPCApi;
-use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
+use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use futures::TryStreamExt;
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use scale_codec::{Decode, Encode};
@@ -532,14 +533,15 @@ where
 		let mut logs: Vec<Log> = vec![];
 		let mut transaction_count: usize = 0;
 		let mut log_count: usize = 0;
-		let id = BlockId::Hash(substrate_block_hash);
 		let schema = Self::onchain_storage_schema(client.as_ref(), substrate_block_hash);
 		let handler = overrides
 			.schemas
 			.get(&schema)
 			.unwrap_or(&overrides.fallback);
 
-		let receipts = handler.current_receipts(&id).unwrap_or_default();
+		let receipts = handler
+			.current_receipts(substrate_block_hash)
+			.unwrap_or_default();
 
 		transaction_count += receipts.len();
 		for (transaction_index, receipt) in receipts.iter().enumerate() {
@@ -1058,8 +1060,8 @@ mod test {
 	use super::FilteredLog;
 
 	use crate::BackendReader;
-	use fc_rpc::{SchemaV3Override, StorageOverride};
-	use fp_storage::{EthereumStorageSchema, OverrideHandle, PALLET_ETHEREUM_SCHEMA};
+	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use maplit::hashset;
 	use scale_codec::Encode;
 	use sp_core::{H160, H256};
@@ -1152,8 +1154,7 @@ mod test {
 		let mut overrides_map = BTreeMap::new();
 		overrides_map.insert(
 			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone()))
-				as Box<dyn StorageOverride<_> + Send + Sync>,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
 		);
 		let overrides = Arc::new(OverrideHandle {
 			schemas: overrides_map,

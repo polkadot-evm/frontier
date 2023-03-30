@@ -23,9 +23,9 @@ mod worker;
 pub use worker::{MappingSyncWorker, SyncStrategy};
 
 // Substrate
-use sc_client_api::BlockOf;
+use sc_client_api::backend::Backend;
 use sp_api::{ApiExt, ProvideRuntimeApi};
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT, Zero},
@@ -66,21 +66,29 @@ pub fn sync_genesis_block<Block: BlockT, C>(
 	header: &Block::Header,
 ) -> Result<(), String>
 where
-	C: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block> + BlockOf,
+	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	let id = BlockId::Hash(header.hash());
 
-	let has_api = client
+	if let Some(api_version) = client
 		.runtime_api()
-		.has_api::<dyn EthereumRuntimeRPCApi<Block>>(&id)
-		.map_err(|e| format!("{:?}", e))?;
-
-	if has_api {
-		let block = client
-			.runtime_api()
-			.current_block(&id)
-			.map_err(|e| format!("{:?}", e))?;
+		.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&id)
+		.map_err(|e| format!("{:?}", e))?
+	{
+		let block = if api_version > 1 {
+			client
+				.runtime_api()
+				.current_block(&id)
+				.map_err(|e| format!("{:?}", e))?
+		} else {
+			#[allow(deprecated)]
+			let legacy_block = client
+				.runtime_api()
+				.current_block_before_version_2(&id)
+				.map_err(|e| format!("{:?}", e))?;
+			legacy_block.map(|block| block.into())
+		};
 		let block_hash = block
 			.ok_or_else(|| "Ethereum genesis block not found".to_string())?
 			.header
@@ -93,27 +101,31 @@ where
 		backend.mapping().write_hashes(mapping_commitment)?;
 	} else {
 		backend.mapping().write_none(header.hash())?;
-	}
+	};
 
 	Ok(())
 }
 
-pub fn sync_one_block<Block: BlockT, C, B>(
+pub fn sync_one_block<Block: BlockT, C, BE>(
 	client: &C,
-	substrate_backend: &B,
+	substrate_backend: &BE,
 	frontier_backend: &fc_db::kv::Backend<Block>,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
 where
-	C: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block> + BlockOf,
+	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+	C: HeaderBackend<Block>,
+	BE: Backend<Block>,
 {
 	let mut current_syncing_tips = frontier_backend.meta().current_syncing_tips()?;
 
 	if current_syncing_tips.is_empty() {
-		let mut leaves = substrate_backend.leaves().map_err(|e| format!("{:?}", e))?;
+		let mut leaves = substrate_backend
+			.blockchain()
+			.leaves()
+			.map_err(|e| format!("{:?}", e))?;
 		if leaves.is_empty() {
 			return Ok(false);
 		}
@@ -122,9 +134,12 @@ where
 
 	let mut operating_header = None;
 	while let Some(checking_tip) = current_syncing_tips.pop() {
-		if let Some(checking_header) =
-			fetch_header(substrate_backend, frontier_backend, checking_tip, sync_from)?
-		{
+		if let Some(checking_header) = fetch_header(
+			substrate_backend.blockchain(),
+			frontier_backend,
+			checking_tip,
+			sync_from,
+		)? {
 			operating_header = Some(checking_header);
 			break;
 		}
@@ -162,18 +177,19 @@ where
 	}
 }
 
-pub fn sync_blocks<Block: BlockT, C, B>(
+pub fn sync_blocks<Block: BlockT, C, BE>(
 	client: &C,
-	substrate_backend: &B,
+	substrate_backend: &BE,
 	frontier_backend: &fc_db::kv::Backend<Block>,
 	limit: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 ) -> Result<bool, String>
 where
-	C: ProvideRuntimeApi<Block> + Send + Sync + HeaderBackend<Block> + BlockOf,
+	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
-	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+	C: HeaderBackend<Block>,
+	BE: Backend<Block>,
 {
 	let mut synced_any = false;
 
@@ -191,14 +207,14 @@ where
 	Ok(synced_any)
 }
 
-pub fn fetch_header<Block: BlockT, B>(
-	substrate_backend: &B,
+pub fn fetch_header<Block: BlockT, BE>(
+	substrate_backend: &BE,
 	frontier_backend: &fc_db::kv::Backend<Block>,
 	checking_tip: Block::Hash,
 	sync_from: <Block::Header as HeaderT>::Number,
 ) -> Result<Option<Block::Header>, String>
 where
-	B: sp_blockchain::HeaderBackend<Block> + sp_blockchain::Backend<Block>,
+	BE: HeaderBackend<Block>,
 {
 	if frontier_backend.mapping().is_synced(&checking_tip)? {
 		return Ok(None);

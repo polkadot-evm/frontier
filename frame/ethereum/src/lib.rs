@@ -91,8 +91,8 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
 	}
 
 	#[cfg(feature = "runtime-benchmarks")]
-	fn successful_origin() -> O {
-		O::from(RawOrigin::EthereumTransaction(Default::default()))
+	fn try_successful_origin() -> Result<O, ()> {
+		Ok(O::from(RawOrigin::EthereumTransaction(Default::default())))
 	}
 }
 

@@ -21,6 +21,8 @@ use std::sync::Arc;
 use ethereum_types::H256;
 use serde::Deserialize;
 // Substrate
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
 use sp_runtime::{generic::BlockId, traits::Block as BlockT};
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -46,9 +48,9 @@ pub struct MappingDb<'a, C, B: BlockT> {
 
 impl<'a, C, B: BlockT> MappingDb<'a, C, B>
 where
-	C: sp_api::ProvideRuntimeApi<B>,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	C: sp_blockchain::HeaderBackend<B>,
+	C: HeaderBackend<B>,
 {
 	pub fn new(
 		cmd: &'a FrontierDbCmd,

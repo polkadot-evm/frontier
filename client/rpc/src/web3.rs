@@ -48,9 +48,10 @@ impl<B, C> Web3<B, C> {
 
 impl<B, C> Web3ApiServer for Web3<B, C>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: HeaderBackend<B> + ProvideRuntimeApi<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + 'static,
 {
 	fn client_version(&self) -> Result<String> {
 		let hash = self.client.info().best_hash;

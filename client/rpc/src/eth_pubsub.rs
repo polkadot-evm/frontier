@@ -24,7 +24,7 @@ use futures::{FutureExt as _, StreamExt as _};
 use jsonrpsee::{types::SubscriptionResult, SubscriptionSink};
 // Substrate
 use sc_client_api::{
-	backend::{Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_network::{NetworkService, NetworkStatusProvider};
@@ -35,7 +35,7 @@ use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_core::hashing::keccak_256;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{
 	types::{
@@ -44,9 +44,8 @@ use fc_rpc_core::{
 	},
 	EthPubSubApiServer,
 };
+use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
-
-use crate::{frontier_backend_client, overrides::OverrideHandle};
 
 #[derive(Debug)]
 pub struct EthereumSubIdProvider;
@@ -70,7 +69,7 @@ pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
 
 impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSub<B, P, C, BE, H>
 where
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	C: HeaderBackend<B>,
 {
 	pub fn new(
 		pool: Arc<P>,
@@ -196,13 +195,13 @@ impl EthSubscriptionResult {
 
 impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiServer for EthPubSub<B, P, C, BE, H>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + BlockchainEvents<B>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	P: TransactionPool<Block = B> + 'static,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: BlockchainEvents<B> + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	fn subscribe(
 		&self,
@@ -229,20 +228,19 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
+								let substrate_hash = notification.hash;
 
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), id);
+								let schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									substrate_hash,
+								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
 									.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
-								let receipts = handler.current_receipts(&id);
+								let block = handler.current_block(substrate_hash);
+								let receipts = handler.current_receipts(substrate_hash);
 
 								match (receipts, block) {
 									(Some(receipts), Some(block)) => {
@@ -269,19 +267,16 @@ where
 						.import_notification_stream()
 						.filter_map(move |notification| {
 							if notification.is_new_best {
-								let id = BlockId::Hash(notification.hash);
-
-								let schema = frontier_backend_client::onchain_storage_schema::<
-									B,
-									C,
-									BE,
-								>(client.as_ref(), id);
+								let schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									notification.hash,
+								);
 								let handler = overrides
 									.schemas
 									.get(&schema)
 									.unwrap_or(&overrides.fallback);
 
-								let block = handler.current_block(&id);
+								let block = handler.current_block(notification.hash);
 								futures::future::ready(block)
 							} else {
 								futures::future::ready(None)

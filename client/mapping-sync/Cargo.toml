@@ -26,8 +26,8 @@ sp-runtime = { workspace = true }
 
 # Frontier
 fc-db = { workspace = true }
-fp-consensus = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
+fp-consensus = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
 ethereum = { workspace = true }
@@ -42,7 +42,6 @@ fc-rpc = { workspace = true }
 frontier-template-runtime = { workspace = true }
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true }
-sp-beefy = { git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { workspace = true }
 sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }

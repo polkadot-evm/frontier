@@ -24,10 +24,11 @@ use std::{
 };
 
 use scale_codec::{Decode, Encode};
+// Substrate
+use sc_client_db::DatabaseSource;
+use sp_blockchain::HeaderBackend;
 use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
-
-use crate::kv::DatabaseSource;
 
 /// Version file name.
 const VERSION_FILE_NAME: &str = "db_version";
@@ -90,14 +91,11 @@ impl fmt::Display for UpgradeError {
 }
 
 /// Upgrade database to current version.
-pub(crate) fn upgrade_db<Block: BlockT, C>(
+pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
 	source: &DatabaseSource,
-) -> UpgradeResult<()>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> UpgradeResult<()> {
 	let db_version = current_version(db_path)?;
 	match db_version {
 		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
@@ -167,13 +165,10 @@ fn version_file_path(path: &Path) -> PathBuf {
 /// Migration from version1 to version2:
 /// - The format of the Ethereum<>Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec<SubstrateHash>) relationship.
-pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C>(
+pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
-) -> UpgradeResult<UpgradeVersion1To2Summary>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> UpgradeResult<UpgradeVersion1To2Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
@@ -251,13 +246,10 @@ where
 	Ok(res)
 }
 
-pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C>(
+pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
-) -> UpgradeResult<UpgradeVersion1To2Summary>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> UpgradeResult<UpgradeVersion1To2Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
@@ -342,26 +334,22 @@ mod tests {
 	};
 
 	use scale_codec::Encode;
+	use sp_blockchain::HeaderBackend;
 	use sp_core::H256;
 	use sp_runtime::{
 		generic::{Block, BlockId, Header},
-		traits::BlakeTwo256,
+		traits::{BlakeTwo256, Block as BlockT},
 	};
 	use tempfile::tempdir;
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	pub fn open_frontier_backend<C>(
+	pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		setting: &crate::kv::DatabaseSettings,
-	) -> Result<Arc<crate::kv::Backend<OpaqueBlock>>, String>
-	where
-		C: sp_blockchain::HeaderBackend<OpaqueBlock>,
-	{
-		Ok(Arc::new(crate::kv::Backend::<OpaqueBlock>::new(
-			client, setting,
-		)?))
+	) -> Result<Arc<crate::kv::Backend<Block>>, String> {
+		Ok(Arc::new(crate::kv::Backend::<Block>::new(client, setting)?))
 	}
 
 	#[test]
@@ -406,7 +394,7 @@ mod tests {
 			let mut transaction_hashes = vec![];
 			{
 				// Create a temporary frontier secondary DB.
-				let backend = open_frontier_backend(client.clone(), &setting)
+				let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), &setting)
 					.expect("a temporary db was created");
 
 				// Fill the tmp db with some data
@@ -487,8 +475,8 @@ mod tests {
 			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
 
 			// Check data after migration
-			let backend =
-				open_frontier_backend(client, &setting).expect("a temporary db was created");
+			let backend = open_frontier_backend::<OpaqueBlock, _>(client, &setting)
+				.expect("a temporary db was created");
 			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
 				let canon_substrate_block_hash = substrate_hashes.get(i).expect("Block hash");
 				let mapped_block = backend

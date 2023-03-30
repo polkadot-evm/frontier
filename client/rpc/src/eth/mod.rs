@@ -34,7 +34,7 @@ use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult as Result};
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network::NetworkService;
 use sc_network_common::ExHashT;
 use sc_transaction_pool::{ChainApi, Pool};
@@ -45,13 +45,16 @@ use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto},
+	traits::{Block as BlockT, UniqueSaturatedInto},
 };
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
-use fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
+use fc_storage::OverrideHandle;
+use fp_rpc::{
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus,
+};
 
-use crate::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
+use crate::{internal_err, public_key, signer::EthSigner};
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},
@@ -157,14 +160,13 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 #[async_trait]
 impl<B, C, P, CT, BE, H: ExHashT, A, EGA> EthApiServer for Eth<B, C, P, CT, BE, H, A, EGA>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
-	CT: fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	P: TransactionPool<Block = B> + 'static,
+	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
 	EGA: EstimateGasAdapter + Send + Sync + 'static,
 {
@@ -512,12 +514,11 @@ fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
 	graph: &'a Pool<A>,
 ) -> Result<sp_api::ApiRef<'a, C::Api>>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B>,
 	A: ChainApi<Block = B> + 'static,
 {
 	// In case of Pending, we need an overlayed state to query over.

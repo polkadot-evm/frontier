@@ -29,6 +29,8 @@ use ethereum_types::H256;
 use serde::Deserialize;
 // Substrate
 use sc_cli::{PruningParams, SharedParams};
+use sp_api::ProvideRuntimeApi;
+use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 
 use self::{
@@ -102,9 +104,9 @@ impl FrontierDbCmd {
 		backend: Arc<fc_db::kv::Backend<B>>,
 	) -> sc_cli::Result<()>
 	where
-		C: sp_api::ProvideRuntimeApi<B>,
+		C: ProvideRuntimeApi<B>,
 		C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
-		C: sp_blockchain::HeaderBackend<B>,
+		C: HeaderBackend<B>,
 	{
 		match self.column {
 			Column::Meta => {

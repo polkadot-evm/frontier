@@ -42,13 +42,13 @@ sp-consensus = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-storage = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 fc-rpc-core = { workspace = true }
-fp-ethereum = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
-fp-storage = { workspace = true, features = ["std"] }
+fc-storage = { workspace = true }
+fp-ethereum = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
+fp-storage = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
 tempfile = "3.3.0"

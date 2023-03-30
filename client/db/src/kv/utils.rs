@@ -18,17 +18,15 @@
 
 use std::{path::Path, sync::Arc};
 
+use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 
 use super::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
-pub fn open_database<Block: BlockT, C>(
+pub fn open_database<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	config: &DatabaseSettings,
-) -> Result<Arc<dyn Database<DbHash>>, String>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
 		DatabaseSource::ParityDb { path } => {
 			open_parity_db::<Block, C>(client, path, &config.source)?
@@ -53,15 +51,12 @@ where
 }
 
 #[cfg(feature = "kvdb-rocksdb")]
-fn open_kvdb_rocksdb<Block: BlockT, C>(
+fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: &Path,
 	create: bool,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
 	match super::upgrade::upgrade_db::<Block, C>(client, path, _source) {
@@ -80,27 +75,21 @@ where
 }
 
 #[cfg(not(feature = "kvdb-rocksdb"))]
-fn open_kvdb_rocksdb<Block: BlockT, C>(
+fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	_client: Arc<C>,
 	_path: &Path,
 	_create: bool,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	Err("Missing feature flags `kvdb-rocksdb`".to_string())
 }
 
 #[cfg(feature = "parity-db")]
-fn open_parity_db<Block: BlockT, C>(
+fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: &Path,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
 	match super::upgrade::upgrade_db::<Block, C>(client, path, _source) {
@@ -118,13 +107,10 @@ where
 }
 
 #[cfg(not(feature = "parity-db"))]
-fn open_parity_db<Block: BlockT, C>(
+fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	_client: Arc<C>,
 	_path: &Path,
 	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String>
-where
-	C: sp_blockchain::HeaderBackend<Block> + Send + Sync,
-{
+) -> Result<Arc<dyn Database<DbHash>>, String> {
 	Err("Missing feature flags `parity-db`".to_string())
 }

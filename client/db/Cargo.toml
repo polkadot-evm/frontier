@@ -36,9 +36,10 @@ sp-runtime = { workspace = true }
 sp-storage = { workspace = true }
 
 # Frontier
-fp-consensus = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
-fp-storage = { workspace = true, features = ["std"] }
+fc-storage = { workspace = true }
+fp-consensus = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
+fp-storage = { workspace = true, features = ["default"] }
 
 [features]
 default = ["kvdb-rocksdb", "parity-db"]

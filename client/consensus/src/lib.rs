@@ -19,11 +19,10 @@
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
 // Substrate
-use sc_client_api::{backend::AuxStore, BlockOf};
 use sc_consensus::{BlockCheckParams, BlockImport, BlockImportParams, ImportResult};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::{well_known_cache_keys::Id as CacheKeyId, HeaderBackend};
+use sp_blockchain::well_known_cache_keys::Id as CacheKeyId;
 use sp_consensus::Error as ConsensusError;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
@@ -80,11 +79,10 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 impl<B, I, C> FrontierBlockImport<B, I, C>
 where
 	B: BlockT,
-	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
+	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>>,
 	I::Error: Into<ConsensusError>,
-	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + BlockOf,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C::Api: BlockBuilderApi<B>,
+	C: ProvideRuntimeApi<B>,
+	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
 {
 	pub fn new(inner: I, client: Arc<C>) -> Self {
 		Self {
@@ -101,9 +99,8 @@ where
 	B: BlockT,
 	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
 	I::Error: Into<ConsensusError>,
-	C: ProvideRuntimeApi<B> + Send + Sync + HeaderBackend<B> + AuxStore + BlockOf,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C::Api: BlockBuilderApi<B>,
+	C: ProvideRuntimeApi<B> + Send + Sync,
+	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
 {
 	type Error = ConsensusError;
 	type Transaction = sp_api::TransactionFor<C, B>;
