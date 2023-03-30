@@ -18,5 +18,5 @@ serde = { workspace = true, optional = true }
 default = ["std"]
 std = [
 	"scale-codec/std",
-	"serde"
+	"serde",
 ]
