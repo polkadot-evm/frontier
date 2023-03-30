@@ -337,7 +337,7 @@ mod tests {
 	use sp_blockchain::HeaderBackend;
 	use sp_core::H256;
 	use sp_runtime::{
-		generic::{Block, BlockId, Header},
+		generic::{Block, Header},
 		traits::{BlakeTwo256, Block as BlockT},
 	};
 	use tempfile::tempdir;
@@ -406,11 +406,7 @@ mod tests {
 					// Keep track of the canon hash to later verify the migration replaced it.
 					// A1
 					let mut builder = client
-						.new_block_at(
-							&BlockId::Hash(previous_canon_block_hash),
-							Default::default(),
-							false,
-						)
+						.new_block_at(previous_canon_block_hash, Default::default(), false)
 						.unwrap();
 					builder.push_storage_change(vec![1], None).unwrap();
 					let block = builder.build().unwrap().block;
@@ -418,11 +414,7 @@ mod tests {
 					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 					// A2
 					let mut builder = client
-						.new_block_at(
-							&BlockId::Hash(previous_canon_block_hash),
-							Default::default(),
-							false,
-						)
+						.new_block_at(previous_canon_block_hash, Default::default(), false)
 						.unwrap();
 					builder.push_storage_change(vec![2], None).unwrap();
 					let block = builder.build().unwrap().block;

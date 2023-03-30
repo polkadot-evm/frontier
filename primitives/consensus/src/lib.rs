@@ -17,6 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::large_enum_variant)]
+#![deny(unused_crate_dependencies)]
 
 use scale_codec::{Decode, Encode};
 use sp_core::H256;
@@ -34,16 +35,6 @@ pub enum Log {
 	Post(PostLog),
 }
 
-impl Log {
-	pub fn into_hashes(self) -> Hashes {
-		match self {
-			Log::Post(PostLog::Hashes(post_hashes)) => post_hashes,
-			Log::Post(PostLog::Block(block)) => Hashes::from_block(block),
-			Log::Pre(PreLog::Block(block)) => Hashes::from_block(block),
-		}
-	}
-}
-
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PreLog {
 	#[codec(index = 3)]
@@ -52,10 +43,15 @@ pub enum PreLog {
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PostLog {
+	/// Ethereum block hash and txn hashes.
 	#[codec(index = 1)]
 	Hashes(Hashes),
+	/// Ethereum block.
 	#[codec(index = 2)]
 	Block(ethereum::BlockV2),
+	/// Ethereum block hash.
+	#[codec(index = 3)]
+	BlockHash(H256),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -68,17 +64,13 @@ pub struct Hashes {
 
 impl Hashes {
 	pub fn from_block(block: ethereum::BlockV2) -> Self {
-		let mut transaction_hashes = Vec::new();
-
-		for t in &block.transactions {
-			transaction_hashes.push(t.hash());
-		}
-
-		let block_hash = block.header.hash();
-
 		Hashes {
-			transaction_hashes,
-			block_hash,
+			block_hash: block.header.hash(),
+			transaction_hashes: block
+				.transactions
+				.into_iter()
+				.map(|txn| txn.hash())
+				.collect(),
 		}
 	}
 }

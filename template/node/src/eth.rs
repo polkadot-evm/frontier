@@ -159,12 +159,13 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 		fc_db::Backend::KeyValue(b) => {
 			task_manager.spawn_essential_handle().spawn(
 				"frontier-mapping-sync-worker",
-				None,
+				Some("frontier"),
 				fc_mapping_sync::kv::MappingSyncWorker::new(
 					client.import_notification_stream(),
 					Duration::new(6, 0),
 					client.clone(),
 					backend,
+					overrides.clone(),
 					Arc::new(b),
 					3,
 					0,
@@ -176,7 +177,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 		fc_db::Backend::Sql(b) => {
 			task_manager.spawn_essential_handle().spawn_blocking(
 				"frontier-mapping-sync-worker",
-				None,
+				Some("frontier"),
 				fc_mapping_sync::sql::SyncWorker::run(
 					client.clone(),
 					backend,

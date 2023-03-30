@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
-rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 
@@ -31,16 +30,18 @@ fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
-fp-self-contained = { workspace = true }
 fp-storage = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
+rlp = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default"] }
-sp-core = { workspace = true }
+sp-core = { workspace = true, features = ["default"] }
+# Frontier
+fp-self-contained = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]

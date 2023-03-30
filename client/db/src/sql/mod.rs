@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use fc_storage::OverrideHandle;
-use fp_consensus::FindLogError;
+use fp_consensus::{FindLogError, Hashes, Log as ConsensusLog, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use futures::TryStreamExt;
@@ -223,7 +223,10 @@ where
 		{
 			let has_api = client
 				.runtime_api()
-				.has_api_with::<dyn EthereumRuntimeRPCApi<Block>, _>(&id, |version| version >= 1)
+				.has_api_with::<dyn EthereumRuntimeRPCApi<Block>, _>(
+					substrate_genesis_hash,
+					|version| version >= 1,
+				)
 				.expect("runtime api reachable");
 
 			log::debug!(
@@ -238,7 +241,7 @@ where
 				// Read from the runtime and store the block metadata.
 				let ethereum_block = client
 					.runtime_api()
-					.current_block(&id)
+					.current_block(substrate_genesis_hash)
 					.expect("runtime api reachable")
 					.expect("ethereum genesis block");
 
@@ -276,6 +279,7 @@ where
 	fn insert_block_metadata_inner<Client, BE>(
 		client: Arc<Client>,
 		hash: H256,
+		overrides: Arc<OverrideHandle<Block>>,
 	) -> Result<BlockMetadata, Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + Send + Sync + 'static,
@@ -290,6 +294,39 @@ where
 		if let Ok(Some(header)) = client.header(hash) {
 			match fp_consensus::find_log(header.digest()) {
 				Ok(log) => {
+					let schema = Self::onchain_storage_schema(client.as_ref(), hash);
+					let log_hashes = match log {
+						ConsensusLog::Post(PostLog::Hashes(post_hashes)) => post_hashes,
+						ConsensusLog::Post(PostLog::Block(block)) => Hashes::from_block(block),
+						ConsensusLog::Post(PostLog::BlockHash(expect_eth_block_hash)) => {
+							let ethereum_block = overrides
+								.schemas
+								.get(&schema)
+								.unwrap_or(&overrides.fallback)
+								.current_block(hash);
+							match ethereum_block {
+								Some(block) => {
+									let got_eth_block_hash = block.header.hash();
+									if got_eth_block_hash != expect_eth_block_hash {
+										return Err(Error::Protocol(format!(
+											"Ethereum block hash mismatch: \
+											frontier consensus digest ({expect_eth_block_hash:?}), \
+											db state ({got_eth_block_hash:?})"
+										)));
+									} else {
+										Hashes::from_block(block)
+									}
+								}
+								None => {
+									return Err(Error::Protocol(format!(
+									"Missing ethereum block for hash mismatch {expect_eth_block_hash:?}"
+								)))
+								}
+							}
+						}
+						ConsensusLog::Pre(PreLog::Block(block)) => Hashes::from_block(block),
+					};
+
 					let header_number = *header.number();
 					let block_number =
 						UniqueSaturatedInto::<u32>::unique_saturated_into(header_number) as i32;
@@ -313,7 +350,6 @@ where
 							}
 						};
 
-					let schema = Self::onchain_storage_schema(client.as_ref(), hash);
 					log::trace!(
 						target: "frontier-sql",
 						"[Metadata] Prepared block metadata for #{} ({:?}) canon={}",
@@ -324,7 +360,7 @@ where
 					return Ok(BlockMetadata {
 						substrate_block_hash: hash,
 						block_number,
-						post_hashes: log.into_hashes(),
+						post_hashes: log_hashes,
 						schema,
 						is_canon,
 					});
@@ -362,8 +398,9 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		// Spawn a blocking task to get block metadata from substrate backend.
+		let overrides = self.overrides.clone();
 		let metadata = tokio::task::spawn_blocking(move || {
-			Self::insert_block_metadata_inner(client.clone(), hash)
+			Self::insert_block_metadata_inner(client.clone(), hash, overrides)
 		})
 		.await
 		.map_err(|_| Error::Protocol("tokio blocking metadata task failed".to_string()))??;

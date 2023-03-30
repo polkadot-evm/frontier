@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 futures = "0.3.25"
 futures-timer = "3.0.2"
 log = "0.4.17"
-sqlx = { features = ["runtime-tokio-native-tls", "sqlite", "offline"], git = "https://github.com/PureStake/sqlx", branch = "v0.6.2-timeout" }
 tokio = { version = "1.19", features = ["macros", "sync"] }
 
 # Substrate
@@ -26,12 +25,14 @@ sp-runtime = { workspace = true }
 
 # Frontier
 fc-db = { workspace = true }
+fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
 ethereum = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
+sqlx = { features = ["runtime-tokio-native-tls", "sqlite", "offline"], git = "https://github.com/PureStake/sqlx", branch = "v0.6.2-timeout" }
 tempfile = "3.3.0"
 # Frontier
 fp-consensus = { workspace = true, features = ["std"] }
@@ -41,7 +42,6 @@ ethereum-types = { workspace = true }
 fc-rpc = { workspace = true }
 frontier-template-runtime = { workspace = true }
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true }
 sp-consensus = { workspace = true }
 sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }

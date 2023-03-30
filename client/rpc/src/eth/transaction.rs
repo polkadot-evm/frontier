@@ -29,7 +29,7 @@ use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -66,10 +66,10 @@ where
 			Some((hash, index)) => (hash, index as usize),
 			None => {
 				let api = client.runtime_api();
-				let best_block: BlockId<B> = BlockId::Hash(client.info().best_hash);
+				let best_block = client.info().best_hash;
 
 				let api_version = if let Ok(Some(api_version)) =
-					api.api_version::<dyn EthereumRuntimeRPCApi<B>>(&best_block)
+					api.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_block)
 				{
 					api_version
 				} else {
@@ -98,12 +98,12 @@ where
 				);
 
 				let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
-					api.extrinsic_filter(&best_block, xts).map_err(|err| {
+					api.extrinsic_filter(best_block, xts).map_err(|err| {
 						internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
 					})?
 				} else {
 					#[allow(deprecated)]
-					let legacy = api.extrinsic_filter_before_version_2(&best_block, xts)
+					let legacy = api.extrinsic_filter_before_version_2(best_block, xts)
 						.map_err(|err| {
 							internal_err(format!(
 								"fetch runtime extrinsic filter failed: {:?}",
@@ -145,7 +145,7 @@ where
 
 		let base_fee = client
 			.runtime_api()
-			.gas_price(&BlockId::Hash(substrate_hash))
+			.gas_price(substrate_hash)
 			.unwrap_or_default();
 
 		match (block, statuses) {
@@ -191,7 +191,7 @@ where
 
 		let base_fee = client
 			.runtime_api()
-			.gas_price(&BlockId::Hash(substrate_hash))
+			.gas_price(substrate_hash)
 			.unwrap_or_default();
 
 		match (block, statuses) {
@@ -244,7 +244,10 @@ where
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
+		let base_fee = client
+			.runtime_api()
+			.gas_price(substrate_hash)
+			.unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -383,7 +386,7 @@ where
 					EthereumTransaction::EIP2930(t) => t.gas_price,
 					EthereumTransaction::EIP1559(t) => client
 						.runtime_api()
-						.gas_price(&BlockId::Hash(substrate_hash))
+						.gas_price(substrate_hash)
 						.unwrap_or_default()
 						.checked_add(t.max_priority_fee_per_gas)
 						.unwrap_or_else(U256::max_value)

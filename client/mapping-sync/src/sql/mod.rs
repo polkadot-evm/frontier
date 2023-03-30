@@ -525,7 +525,7 @@ mod test {
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_io::hashing::twox_128;
-	use sp_runtime::generic::{BlockId, Digest};
+	use sp_runtime::generic::Digest;
 	use sqlx::Row;
 	use std::{collections::BTreeMap, path::Path, sync::Arc};
 	use substrate_test_runtime_client::{
@@ -1022,7 +1022,7 @@ mod test {
 		for block_number in 1..11 {
 			// New block including pallet ethereum block digest
 			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
+				.new_block_at(parent_hash, ethereum_digest(), false)
 				.unwrap();
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
@@ -1056,7 +1056,7 @@ mod test {
 		for _ in 1..11 {
 			// New block including pallet ethereum block digest
 			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
+				.new_block_at(parent_hash, ethereum_digest(), false)
 				.unwrap();
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
@@ -1155,7 +1155,7 @@ mod test {
 		let mut block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=5 {
 			let builder = client
-				.new_block_at(&BlockId::Hash(parent_hash), ethereum_digest(), false)
+				.new_block_at(parent_hash, ethereum_digest(), false)
 				.unwrap();
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();

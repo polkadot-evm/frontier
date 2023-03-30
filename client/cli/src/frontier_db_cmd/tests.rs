@@ -30,7 +30,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
 use sp_io::hashing::twox_128;
 use sp_runtime::{
-	generic::{Block, BlockId, Header},
+	generic::{Block, Header},
 	traits::{BlakeTwo256, Block as BlockT},
 };
 use substrate_test_runtime_client::{
@@ -626,11 +626,7 @@ fn commitment_update() {
 
 	// Build a block A1 and fill the pallet-ethereum status.
 	let mut builder = client
-		.new_block_at(
-			&BlockId::Hash(client.genesis_hash()),
-			Default::default(),
-			false,
-		)
+		.new_block_at(client.genesis_hash(), Default::default(), false)
 		.unwrap();
 	builder
 		.push_storage_change(key.clone(), Some(statuses_a1.encode()))
@@ -680,11 +676,7 @@ fn commitment_update() {
 	let tmp = tempdir().expect("create a temporary directory");
 
 	let mut builder = client
-		.new_block_at(
-			&BlockId::Hash(client.genesis_hash()),
-			Default::default(),
-			false,
-		)
+		.new_block_at(client.genesis_hash(), Default::default(), false)
 		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses_a2.encode()))
