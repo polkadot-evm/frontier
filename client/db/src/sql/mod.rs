@@ -357,13 +357,13 @@ where
 						hash,
 						is_canon,
 					);
-					return Ok(BlockMetadata {
+					Ok(BlockMetadata {
 						substrate_block_hash: hash,
 						block_number,
 						post_hashes: log_hashes,
 						schema,
 						is_canon,
-					});
+					})
 				}
 				Err(FindLogError::NotFound) => {
 					return Err(Error::Protocol(format!(
