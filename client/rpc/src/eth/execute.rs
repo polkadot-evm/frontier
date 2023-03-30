@@ -763,9 +763,9 @@ where
 						state_override.nonce,
 					);
 				} else if state_override.balance.is_some() || state_override.nonce.is_some() {
-					return Err(internal_err(format!(
-						"state override unsupported for balance and nonce"
-					)));
+					return Err(internal_err(
+						"state override unsupported for balance and nonce",
+					));
 				}
 
 				if let Some(code) = &state_override.code {
