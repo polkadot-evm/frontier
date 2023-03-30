@@ -655,7 +655,7 @@ where
 					let is_canon: i32 = row.get(0);
 					BlockIndexedStatus {
 						indexed: true,
-						canon: if is_canon == 0 { false } else { true },
+						canon: is_canon != 0,
 					}
 				})
 				.unwrap_or_default()
