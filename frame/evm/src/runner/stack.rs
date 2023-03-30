@@ -27,7 +27,7 @@ use evm::{
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -136,13 +136,8 @@ where
 		//
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
-		//
-		// We extend the principle of this EIP to also prevent `tx.sender` to be the address
-		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
-		// projects using Frontier can have stateful precompiles that can manage funds or
-		// which calls other contracts that expects this precompile address to be trustworthy.
 		if is_transactional
-			&& (!<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source))
+			&& !<AccountCodes<T>>::get(source).is_empty()
 		{
 			return Err(RunnerError {
 				error: Error::<T>::TransactionMustComeFromEOA,
