@@ -16,7 +16,6 @@ const FORCE_GAS_CONTRACT_BYTECODE = ForceGasLimit.bytecode;
 const FORCE_GAS_CONTRACT_ABI = ForceGasLimit.abi as AbiItem[];
 
 describeWithFrontier("Frontier RPC (estimate gas historically)", (context) => {
-
 	const TEST_CONTRACT_BYTECODE = Storage.bytecode;
 	const TEST_CONTRACT_ABI = Storage.abi as AbiItem[];
 
@@ -52,12 +51,16 @@ describeWithFrontier("Frontier RPC (estimate gas historically)", (context) => {
 			)
 			.encodeABI();
 
-		const ESTIMATE_AT_1 = context.web3.utils.hexToNumber((await customRequest(context.web3, "eth_estimateGas", [
-				{
-					to: contractAddress,
-					data: SSTORE_SET_DATA
-				},
-			])).result);
+		const ESTIMATE_AT_1 = context.web3.utils.hexToNumber(
+			(
+				await customRequest(context.web3, "eth_estimateGas", [
+					{
+						to: contractAddress,
+						data: SSTORE_SET_DATA,
+					},
+				])
+			).result
+		);
 
 		// Set the storage and create a block
 		const tx1 = await context.web3.eth.accounts.signTransaction(
@@ -75,24 +78,32 @@ describeWithFrontier("Frontier RPC (estimate gas historically)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 
 		// Estimate what a sstore reset costs at block number 2
-		const ESTIMATE_AT_2 = context.web3.utils.hexToNumber((await customRequest(context.web3, "eth_estimateGas", [
-			{
-				to: contractAddress,
-				data: SSTORE_SET_DATA
-			},
-		])).result);
+		const ESTIMATE_AT_2 = context.web3.utils.hexToNumber(
+			(
+				await customRequest(context.web3, "eth_estimateGas", [
+					{
+						to: contractAddress,
+						data: SSTORE_SET_DATA,
+					},
+				])
+			).result
+		);
 
 		// SSTORE over an existing storage is cheaper
 		expect(ESTIMATE_AT_2).to.be.lt(ESTIMATE_AT_1);
 
 		// Estimate what a sstore reset costed at block number 1, queried historically
-		const ESTIMATE_AT_1_QUERY = context.web3.utils.hexToNumber((await customRequest(context.web3, "eth_estimateGas", [
-			{
-				to: contractAddress,
-				data: SSTORE_SET_DATA
-			},
-			1
-		])).result);
+		const ESTIMATE_AT_1_QUERY = context.web3.utils.hexToNumber(
+			(
+				await customRequest(context.web3, "eth_estimateGas", [
+					{
+						to: contractAddress,
+						data: SSTORE_SET_DATA,
+					},
+					1,
+				])
+			).result
+		);
 
 		// Expect to get the original estimated gas at block 1
 		expect(ESTIMATE_AT_1_QUERY).to.be.eq(ESTIMATE_AT_1);
