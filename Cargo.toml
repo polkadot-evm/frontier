@@ -34,7 +34,7 @@ resolver = "2"
 [workspace.package]
 authors = ["Parity Technologies <admin@parity.io>"]
 edition = "2021"
-repository = "https://github.com/purestake/frontier/"
+repository = "https://github.com/paritytech/frontier/"
 
 [workspace.dependencies]
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
