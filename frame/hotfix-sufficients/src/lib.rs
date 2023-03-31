@@ -24,17 +24,17 @@ pub mod benchmarking;
 mod mock;
 #[cfg(test)]
 mod tests;
-
 pub mod weights;
-pub use weights::WeightInfo;
 
+// Substrate
 use frame_support::dispatch::PostDispatchInfo;
-pub use pallet_evm::AddressMapping;
 use sp_core::H160;
 use sp_runtime::traits::Zero;
 use sp_std::vec::Vec;
+// Frontier
+pub use pallet_evm::AddressMapping;
 
-pub use self::pallet::*;
+pub use self::{pallet::*, weights::WeightInfo};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -43,8 +43,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
