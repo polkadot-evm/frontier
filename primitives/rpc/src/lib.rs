@@ -70,11 +70,10 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 		_balance: Option<U256>,
 		_nonce: Option<U256>,
 	) {
-		unimplemented!();
 	}
 
 	fn into_account_id_bytes(_address: H160) -> Vec<u8> {
-		unimplemented!();
+		vec![]
 	}
 }
 

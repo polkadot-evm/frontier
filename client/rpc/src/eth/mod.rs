@@ -129,7 +129,7 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>>
 	Eth<B, C, P, CT, BE, H, A, EC>
 {
-	pub fn with_eth_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, H, A, EC2> {
+	pub fn replace_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, H, A, EC2> {
 		let Self {
 			client,
 			pool,

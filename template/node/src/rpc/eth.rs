@@ -142,7 +142,7 @@ where
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 		)
-		.with_eth_config::<EC>()
+		.replace_config::<EC>()
 		.into_rpc(),
 	)?;
 
