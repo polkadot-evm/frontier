@@ -537,7 +537,7 @@ impl CodeMetadata {
 		use sha3::Digest;
 
 		let size = code.len() as u64;
-		let hash = H256::from_slice(sha3::Keccak256::digest(&code).as_slice());
+		let hash = H256::from_slice(sha3::Keccak256::digest(code).as_slice());
 
 		Self { size, hash }
 	}
@@ -763,11 +763,11 @@ impl<T: Config> Pallet<T> {
 	/// Get the account metadata (hash and size) from storage if it exists,
 	/// or compute it from code and store it if it doesn't exist.
 	pub fn account_code_metadata(address: H160) -> CodeMetadata {
-		if let Some(meta) = <AccountCodesMetadata<T>>::get(&address) {
+		if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 			return meta;
 		}
 
-		let code = <AccountCodes<T>>::get(&address);
+		let code = <AccountCodes<T>>::get(address);
 
 		// If code is empty we return precomputed hash for empty code.
 		// We don't store it as this address could get code deployed in the future.
