@@ -526,7 +526,7 @@ pub type BalanceOf<T> =
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
-#[derive(Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
 pub struct CodeMetadata {
 	pub size: u64,
 	pub hash: H256,
@@ -753,11 +753,11 @@ impl<T: Config> Pallet<T> {
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
 
-		<AccountCodes<T>>::insert(address, code);
-
 		// Update metadata.
 		let meta = CodeMetadata::from_code(&code);
 		<AccountCodesMetadata<T>>::insert(address, meta);
+
+		<AccountCodes<T>>::insert(address, code);
 	}
 
 	/// Get the account metadata (hash and size) from storage if it exists,
@@ -768,6 +768,19 @@ impl<T: Config> Pallet<T> {
 		}
 
 		let code = <AccountCodes<T>>::get(&address);
+
+		// If code is empty we return precomputed hash for empty code.
+		// We don't store it as this address could get code deployed in the future.
+		if code.is_empty() {
+			return CodeMetadata {
+				size: 0,
+				hash: hex_literal::hex!(
+					"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+				)
+				.into(),
+			};
+		}
+
 		let meta = CodeMetadata::from_code(&code);
 
 		<AccountCodesMetadata<T>>::insert(address, meta);
