@@ -73,7 +73,7 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 	}
 
 	fn into_account_id_bytes(_address: H160) -> Vec<u8> {
-		vec![]
+		Vec::default()
 	}
 }
 
