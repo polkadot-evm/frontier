@@ -508,7 +508,6 @@ pub mod pallet {
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_codes_metadata)]
 	pub type AccountCodesMetadata<T: Config> =
 		StorageMap<_, Blake2_128Concat, H160, CodeMetadata, OptionQuery>;
 
