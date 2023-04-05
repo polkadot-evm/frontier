@@ -185,7 +185,7 @@ where
 		}
 		retracted_hashes.push_unseparated(")");
 		let query = builder.build();
-		query.execute(&mut tx).await?;
+		query.execute(&mut *tx).await?;
 
 		// Enacted
 		let mut builder: QueryBuilder<Sqlite> =
@@ -197,7 +197,7 @@ where
 		}
 		enacted_hashes.push_unseparated(")");
 		let query = builder.build();
-		query.execute(&mut tx).await?;
+		query.execute(&mut *tx).await?;
 
 		tx.commit().await
 	}
@@ -252,7 +252,7 @@ where
 				let block_number = 0i32;
 				let is_canon = 1i32;
 
-				let _ = sqlx::query!(
+				let _ = sqlx::query(
 					"INSERT OR IGNORE INTO blocks(
 						ethereum_block_hash,
 						substrate_block_hash,
@@ -260,12 +260,12 @@ where
 						ethereum_storage_schema,
 						is_canon)
 					VALUES (?, ?, ?, ?, ?)",
-					ethereum_block_hash,
-					substrate_block_hash,
-					block_number,
-					schema,
-					is_canon,
 				)
+				.bind(ethereum_block_hash)
+				.bind(substrate_block_hash)
+				.bind(block_number)
+				.bind(schema)
+				.bind(is_canon)
 				.execute(self.pool())
 				.await?;
 			}
@@ -418,7 +418,7 @@ where
 		let block_number = metadata.block_number;
 		let is_canon = metadata.is_canon;
 
-		let _ = sqlx::query!(
+		let _ = sqlx::query(
 			"INSERT OR IGNORE INTO blocks(
 					ethereum_block_hash,
 					substrate_block_hash,
@@ -426,13 +426,13 @@ where
 					ethereum_storage_schema,
 					is_canon)
 				VALUES (?, ?, ?, ?, ?)",
-			ethereum_block_hash,
-			substrate_block_hash,
-			block_number,
-			schema,
-			is_canon,
 		)
-		.execute(&mut tx)
+		.bind(ethereum_block_hash)
+		.bind(substrate_block_hash)
+		.bind(block_number)
+		.bind(schema)
+		.bind(is_canon)
+		.execute(&mut *tx)
 		.await?;
 		for (i, &transaction_hash) in post_hashes.transaction_hashes.iter().enumerate() {
 			let ethereum_transaction_hash = transaction_hash.as_bytes();
@@ -444,25 +444,25 @@ where
 				transaction_hash,
 				ethereum_transaction_index,
 			);
-			let _ = sqlx::query!(
+			let _ = sqlx::query(
 				"INSERT OR IGNORE INTO transactions(
 						ethereum_transaction_hash,
 						substrate_block_hash,
 						ethereum_block_hash,
 						ethereum_transaction_index)
 					VALUES (?, ?, ?, ?)",
-				ethereum_transaction_hash,
-				substrate_block_hash,
-				ethereum_block_hash,
-				ethereum_transaction_index,
 			)
-			.execute(&mut tx)
+			.bind(ethereum_transaction_hash)
+			.bind(substrate_block_hash)
+			.bind(ethereum_block_hash)
+			.bind(ethereum_transaction_index)
+			.execute(&mut *tx)
 			.await?;
 		}
 
 		sqlx::query("INSERT INTO sync_status(substrate_block_hash) VALUES (?)")
 			.bind(hash.as_bytes())
-			.execute(&mut tx)
+			.execute(&mut *tx)
 			.await?;
 
 		log::debug!(
@@ -501,7 +501,7 @@ where
 				WHERE status = 0 AND substrate_block_hash = ?) RETURNING substrate_block_hash",
 			)
 			.bind(block_hash.as_bytes())
-			.fetch_one(&mut tx)
+			.fetch_one(&mut *tx)
 			.await
 			{
 				Ok(_) => {
@@ -533,7 +533,7 @@ where
 						.bind(log.log_index)
 						.bind(log.transaction_index)
 						.bind(log.substrate_block_hash)
-						.execute(&mut tx)
+						.execute(&mut *tx)
 						.await?;
 					}
 					Ok(tx.commit().await?)
@@ -943,15 +943,17 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			.await
 			.map_err(|err| format!("failed acquiring sqlite connection: {}", err))?;
 		let log_key2 = log_key.clone();
-		conn.set_progress_handler(self.num_ops_timeout, move || {
-			log::debug!(
-				target: "frontier-sql",
-				"Sqlite progress_handler triggered for {}",
-				log_key2,
-			);
-			false
-		})
-		.await;
+		conn.lock_handle()
+			.await
+			.map_err(|err| format!("{:?}", err))?
+			.set_progress_handler(self.num_ops_timeout, move || {
+				log::debug!(
+					target: "frontier-sql",
+					"Sqlite progress_handler triggered for {}",
+					log_key2,
+				);
+				false
+			});
 		log::debug!(
 			target: "frontier-sql",
 			"Query: {:?} - {}",
@@ -960,7 +962,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 		);
 
 		let mut out: Vec<FilteredLog> = vec![];
-		let mut rows = query.fetch(&mut conn);
+		let mut rows = query.fetch(&mut *conn);
 		let maybe_err = loop {
 			match rows.try_next().await {
 				Ok(Some(row)) => {
@@ -996,7 +998,10 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			};
 		};
 		drop(rows);
-		conn.remove_progress_handler().await;
+		conn.lock_handle()
+			.await
+			.map_err(|err| format!("{:?}", err))?
+			.remove_progress_handler();
 
 		if let Some(err) = maybe_err {
 			log::error!(

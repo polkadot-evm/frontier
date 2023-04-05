@@ -32,7 +32,7 @@ fp-rpc = { workspace = true, features = ["default"] }
 [dev-dependencies]
 ethereum = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-sqlx = { features = ["runtime-tokio-native-tls", "sqlite", "offline"], git = "https://github.com/PureStake/sqlx", branch = "v0.6.2-timeout" }
+sqlx = { features = ["runtime-tokio-native-tls", "sqlite"], git = "https://github.com/launchbadge/sqlx", branch = "main" }
 tempfile = "3.3.0"
 # Frontier
 fp-consensus = { workspace = true, features = ["std"] }
