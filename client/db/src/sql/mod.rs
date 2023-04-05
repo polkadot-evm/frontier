@@ -118,11 +118,7 @@ where
 	) -> Result<Self, Error> {
 		let any_pool = SqlitePoolOptions::new()
 			.max_connections(pool_size)
-			.connect_lazy_with(
-				Self::connect_options(&config)?
-					.disable_statement_logging()
-					.clone(),
-			);
+			.connect_lazy_with(Self::connect_options(&config)?.disable_statement_logging());
 		let _ = Self::create_database_if_not_exists(&any_pool).await?;
 		let _ = Self::create_indexes_if_not_exist(&any_pool).await?;
 		Ok(Self {
