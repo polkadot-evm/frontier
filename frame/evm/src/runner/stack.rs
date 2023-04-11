@@ -20,12 +20,12 @@
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
 	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError,
+	Pallet, RunnerError, GasWeightMapping,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
-	ExitError, ExitReason, Transfer,
+	ExitError, ExitReason, Transfer, Opcode, gasometer::GasCost,
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
@@ -200,7 +200,14 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata);
+		let weight_info = T::GasWeightMapping::gas_to_weight(gas_limit, true);
+		let weight_info = WeightInfo {
+			ref_time_limit: weight_info.ref_time(),
+			proof_size_limit: weight_info.proof_size(),
+			ref_time_usage: 0u64,
+			proof_size_usage: 0u64
+		};
+		let state = SubstrateStackState::new(&vicinity, metadata, weight_info);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);
@@ -583,17 +590,25 @@ impl<'config> SubstrateStackSubstate<'config> {
 	}
 }
 
+pub struct WeightInfo {
+	ref_time_limit: u64,
+	proof_size_limit: u64,
+	ref_time_usage: u64,
+	proof_size_usage: u64,
+}
+
 /// Substrate backend for EVM.
 pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
+	weight_info: WeightInfo,
 	_marker: PhantomData<T>,
 }
 
 impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	/// Create a new backend with given vicinity.
-	pub fn new(vicinity: &'vicinity Vicinity, metadata: StackSubstateMetadata<'config>) -> Self {
+	pub fn new(vicinity: &'vicinity Vicinity, metadata: StackSubstateMetadata<'config>, weight_info: WeightInfo) -> Self {
 		Self {
 			vicinity,
 			substate: SubstrateStackSubstate {
@@ -604,6 +619,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			},
 			_marker: PhantomData,
 			original_storage: BTreeMap::new(),
+			weight_info,
 		}
 	}
 }
@@ -826,6 +842,87 @@ where
 	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
 		self.substate
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
+	}
+
+	// TODO this impl behind a feature flag, otherwise no-op
+	fn record_external_cost(&mut self, opcode: Opcode, gas_cost: GasCost) -> Result<(), ExitError> {
+		// Record ref_time first
+		// TODO benchmark opcodes
+
+		// Record proof_size
+		let maybe_record = match gas_cost {
+			GasCost::ExtCodeSize { target_is_cold } |
+			GasCost::Balance { target_is_cold } |
+			GasCost::ExtCodeHash { target_is_cold } |
+			GasCost::CallCode { target_is_cold, .. } |
+			GasCost::StaticCall { target_is_cold, .. } |
+			GasCost::ExtCodeCopy { target_is_cold, .. } |
+			GasCost::SLoad { target_is_cold, .. } |
+			GasCost::DelegateCall { target_is_cold, .. } |
+			GasCost::SStore { target_is_cold, .. } |
+			GasCost::Call { target_is_cold, .. } => target_is_cold,
+
+			GasCost::Create => true,
+
+			GasCost::Suicide { target_is_cold, already_removed, .. } => target_is_cold && !already_removed,
+
+			_ => false,
+		};
+
+		if !maybe_record {
+			return Ok(());
+		}
+
+		// Proof size is fixed length for writes (a 32-byte hash in a merkle trie), and
+		// the full value for reads. For read and writes over the same storage, the full value
+		// is included.
+		// For cold reads involving code (call, callcode, staticcall and delegatecall), we account for
+		// the maximum allowed code byte size on the runtime config (`create_contract_limit`, around 25kb).
+		let opcode_proof_size = match opcode {
+			// Basic account fixed length
+			Opcode::BALANCE => U256::from(64),
+			// create_contract_limit
+			Opcode::EXTCODESIZE |
+			Opcode::EXTCODECOPY |
+			Opcode::EXTCODEHASH |
+			Opcode::CALLCODE |
+			Opcode::CALL |
+			Opcode::DELEGATECALL |
+			Opcode::STATICCALL => U256::from(
+				self.metadata()
+					.gasometer()
+					.config()
+					.create_contract_limit
+					.unwrap_or_default()
+			),
+			// (H160, H256) double map blake2 128 concat key size (68) + value 32
+			Opcode::SLOAD => U256::from(100),
+			// Fixed trie 32 byte hash
+			Opcode::SSTORE |
+			Opcode::CREATE |
+			Opcode::CREATE2 |
+			Opcode::SUICIDE => U256::from(32),
+			// This is unreachable, free of (proof) cost opcodes cannot be recorded. 
+			// TODO decide how do we want to gracefully handle.
+			_ => return Err(ExitError::OutOfGas),
+		};
+		
+		if opcode_proof_size > U256::from(u64::MAX) {
+			self.weight_info.proof_size_usage = self.weight_info.proof_size_limit;
+			return Err(ExitError::OutOfGas);
+		}
+
+		// Record usage
+		self.weight_info.proof_size_usage = self.weight_info
+			.proof_size_usage
+			.checked_add(opcode_proof_size.low_u64())
+			.ok_or(ExitError::OutOfGas)?;
+
+		if self.weight_info.proof_size_usage > self.weight_info.proof_size_limit {
+			return Err(ExitError::OutOfGas);
+		}
+
+		Ok(())
 	}
 }
 
