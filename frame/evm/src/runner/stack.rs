@@ -27,7 +27,7 @@ use evm::{
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer, Opcode, gasometer::GasCost,
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity, WeightInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -201,6 +201,7 @@ where
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
 		let weight_info = T::GasWeightMapping::gas_to_weight(gas_limit, true);
+		// Used to record the external costs in the evm through the StackState implementation
 		let weight_info = WeightInfo {
 			ref_time_limit: weight_info.ref_time(),
 			proof_size_limit: weight_info.proof_size(),
@@ -259,7 +260,7 @@ where
 
 		let state = executor.into_state();
 
-		for address in state.substate.deletes {
+		for address in &state.substate.deletes {
 			log::debug!(
 				target: "evm",
 				"Deleting account at {:?}",
@@ -291,6 +292,7 @@ where
 			value: retv,
 			exit_reason: reason,
 			used_gas,
+			weight_info: state.weight_info(),
 			logs: state.substate.logs,
 		})
 	}
@@ -590,13 +592,6 @@ impl<'config> SubstrateStackSubstate<'config> {
 	}
 }
 
-pub struct WeightInfo {
-	ref_time_limit: u64,
-	proof_size_limit: u64,
-	ref_time_usage: u64,
-	proof_size_usage: u64,
-}
-
 /// Substrate backend for EVM.
 pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
@@ -621,6 +616,10 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			original_storage: BTreeMap::new(),
 			weight_info,
 		}
+	}
+
+	pub fn weight_info(&self) -> WeightInfo {
+		self.weight_info
 	}
 }
 
@@ -845,9 +844,9 @@ where
 	}
 
 	// TODO this impl behind a feature flag, otherwise no-op
-	fn record_external_cost(&mut self, opcode: Opcode, gas_cost: GasCost) -> Result<(), ExitError> {
+	fn record_external_opcode_cost(&mut self, opcode: Opcode, gas_cost: GasCost, target: evm::gasometer::StorageTarget) -> Result<(), ExitError> {
 		// Record ref_time first
-		// TODO benchmark opcodes
+		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
 
 		// Record proof_size
 		let maybe_record = match gas_cost {
@@ -872,29 +871,52 @@ where
 		if !maybe_record {
 			return Ok(());
 		}
-
 		// Proof size is fixed length for writes (a 32-byte hash in a merkle trie), and
-		// the full value for reads. For read and writes over the same storage, the full value
+		// the full key/value for reads. For read and writes over the same storage, the full value
 		// is included.
-		// For cold reads involving code (call, callcode, staticcall and delegatecall), we account for
-		// the maximum allowed code byte size on the runtime config (`create_contract_limit`, around 25kb).
+		// For cold reads involving code (call, callcode, staticcall and delegatecall):
+		//	- We depend on https://github.com/paritytech/frontier/pull/893
+		//	- Try to get the cached size or compute it on the fly
+		//	- We record the actual size after caching, refunding the difference between it and the initially deducted
+		//	contract size limit.
 		let opcode_proof_size = match opcode {
 			// Basic account fixed length
 			Opcode::BALANCE => U256::from(64),
-			// create_contract_limit
+			// TODO requires https://github.com/paritytech/frontier/pull/893
 			Opcode::EXTCODESIZE |
 			Opcode::EXTCODECOPY |
 			Opcode::EXTCODEHASH |
 			Opcode::CALLCODE |
 			Opcode::CALL |
 			Opcode::DELEGATECALL |
-			Opcode::STATICCALL => U256::from(
-				self.metadata()
-					.gasometer()
-					.config()
-					.create_contract_limit
-					.unwrap_or_default()
-			),
+			Opcode::STATICCALL => {
+				let address = match target {
+					StorageTarget::Address(address) | StorageTarget::Slot(address, _) => address,
+					// This must be unreachable, a valid Target must be set for this opcode(s)
+					// TODO decide how do we want to gracefully handle.
+					_ => return Err(ExitError::OutOfGas),
+				}
+				// First try to record fixed sized `AccountCodesMetadata` read
+				// Temptatively 20 + 8 + 32  
+				self.weight_info.try_record_proof_size_or_fail(60)?;
+				let size = if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+					meta.size
+				} else {
+					// If it does not exist, try to record `create_contract_limit` first.
+					let size_limit: u64 = self.metadata()
+						.gasometer()
+						.config()
+						.create_contract_limit
+						.unwrap_or_default() as u64;
+					self.weight_info.try_record_proof_size_or_fail(size_limit)?;
+					let meta = Pallet::<T>::account_code_metadata(address);
+					let actual_size = meta.size;
+					// Refund if applies
+					self.weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+					actual_size
+				};
+				U256::from(size)
+			},
 			// (H160, H256) double map blake2 128 concat key size (68) + value 32
 			Opcode::SLOAD => U256::from(100),
 			// Fixed trie 32 byte hash
@@ -902,7 +924,7 @@ where
 			Opcode::CREATE |
 			Opcode::CREATE2 |
 			Opcode::SUICIDE => U256::from(32),
-			// This is unreachable, free of (proof) cost opcodes cannot be recorded. 
+			// This must be unreachable, free of (proof) cost opcodes cannot be recorded. 
 			// TODO decide how do we want to gracefully handle.
 			_ => return Err(ExitError::OutOfGas),
 		};
@@ -912,17 +934,13 @@ where
 			return Err(ExitError::OutOfGas);
 		}
 
-		// Record usage
-		self.weight_info.proof_size_usage = self.weight_info
-			.proof_size_usage
-			.checked_add(opcode_proof_size.low_u64())
-			.ok_or(ExitError::OutOfGas)?;
+		self.record_external_cost(0u64, opcode_proof_size.low_u64())
+	}
 
-		if self.weight_info.proof_size_usage > self.weight_info.proof_size_limit {
-			return Err(ExitError::OutOfGas);
-		}
-
-		Ok(())
+	fn record_external_cost(&mut self, _ref_time: u64, proof_size: u64) -> Result<(), ExitError> {
+		// Record ref_time first
+		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
+		self.weight_info.try_record_proof_size_or_fail(proof_size)
 	}
 }
 

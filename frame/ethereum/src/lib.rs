@@ -545,7 +545,7 @@ impl<T: Config> Pallet<T> {
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
 
-		let (reason, status, used_gas, dest) = match info {
+		let (reason, status, weight_info, used_gas, dest) = match info {
 			CallOrCreateInfo::Call(info) => (
 				info.exit_reason,
 				TransactionStatus {
@@ -561,6 +561,7 @@ impl<T: Config> Pallet<T> {
 						bloom
 					},
 				},
+				info.weight_info,
 				info.used_gas,
 				to,
 			),
@@ -579,6 +580,7 @@ impl<T: Config> Pallet<T> {
 						bloom
 					},
 				},
+				info.weight_info,
 				info.used_gas,
 				Some(info.value),
 			),
@@ -632,10 +634,16 @@ impl<T: Config> Pallet<T> {
 		});
 
 		Ok(PostDispatchInfo {
-			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-				used_gas.unique_saturated_into(),
-				true,
-			)),
+			actual_weight: {
+				// Until opcodes are properly benchmarked, we still use gas to weight conversion
+				// and replace proof_size.
+				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+					used_gas.unique_saturated_into(),
+					true,
+				);
+				*gas_to_weight.proof_size_mut() = weight_info.proof_size_usage;
+				Some(gas_to_weight)
+			},
 			pays_fee: Pays::No,
 		})
 	}

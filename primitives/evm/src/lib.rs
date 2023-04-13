@@ -56,12 +56,51 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
+#[derive(Clone, Copy, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct WeightInfo {
+	pub ref_time_limit: u64,
+	pub proof_size_limit: u64,
+	pub ref_time_usage: u64,
+	pub proof_size_usage: u64,
+}
+
+impl WeightInfo {
+	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
+		let usage = usage
+			.checked_add(cost)
+			.ok_or(ExitError::OutOfGas)?;
+		if usage > limit {
+			return Err(ExitError::OutOfGas);
+		}
+		Ok(usage)
+	}
+	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError>  {
+		self.ref_time_usage = self.try_consume(cost, self.ref_time_limit, self.ref_time_usage)?;
+		if self.ref_time_usage > self.ref_time_limit {
+			return Err(ExitError::OutOfGas);
+		}
+		Ok(())
+	}
+	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
+		self.proof_size_usage = self.try_consume(cost, self.proof_size_limit, self.proof_size_usage)?;
+		if self.proof_size_usage > self.proof_size_limit {
+			return Err(ExitError::OutOfGas);
+		}
+		Ok(())
+	}
+	pub fn refund_proof_size(&mut self, amount: u64) {
+		self.proof_size_usage = self.proof_size_usage.saturating_sub(amount);
+	}
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct ExecutionInfo<T> {
 	pub exit_reason: ExitReason,
 	pub value: T,
 	pub used_gas: U256,
+	pub weight_info: WeightInfo,
 	pub logs: Vec<Log>,
 }
 

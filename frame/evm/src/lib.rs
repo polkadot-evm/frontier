@@ -244,10 +244,14 @@ pub mod pallet {
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.unique_saturated_into(),
+						true,
+					);
+					*gas_to_weight.proof_size_mut() = info.weight_info.proof_size_usage;
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -321,10 +325,14 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.unique_saturated_into(),
+						true,
+					);
+					*gas_to_weight.proof_size_mut() = info.weight_info.proof_size_usage;
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -399,10 +407,14 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.unique_saturated_into(),
+						true,
+					);
+					*gas_to_weight.proof_size_mut() = info.weight_info.proof_size_usage;
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}

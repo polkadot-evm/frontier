@@ -167,6 +167,9 @@ pub(crate) struct MockHandle {
 }
 
 impl PrecompileHandle for MockHandle {
+
+	type ExternalCost = ();
+
 	fn call(
 		&mut self,
 		_: H160,
@@ -180,6 +183,10 @@ impl PrecompileHandle for MockHandle {
 	}
 
 	fn record_cost(&mut self, _: u64) -> Result<(), ExitError> {
+		Ok(())
+	}
+
+	fn record_external_cost(&mut self, _: Self::ExternalCost) -> Result<(), ExitError> {
 		Ok(())
 	}
 

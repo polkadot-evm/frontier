@@ -88,8 +88,11 @@ where
 				let cost = T::GasWeightMapping::weight_to_gas(
 					post_info.actual_weight.unwrap_or(info.weight),
 				);
-
 				handle.record_cost(cost)?;
+				handle.record_external_cost(
+					info.weight.ref_time(),
+					info.weight.proof_size(),
+				)?;
 
 				Ok(PrecompileOutput {
 					exit_status: ExitSucceed::Stopped,
