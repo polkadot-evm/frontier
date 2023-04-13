@@ -35,11 +35,11 @@ use fc_rpc_core::types::*;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 use crate::{
-	eth::{format, Eth},
+	eth::{format, Eth, EthConfig},
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
