@@ -55,7 +55,7 @@ use sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
-	DispatchErrorWithPostInfo, RuntimeDebug,
+	DispatchErrorWithPostInfo, RuntimeDebug, SaturatedConversion,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 
@@ -196,7 +196,7 @@ pub mod pallet {
 		type StateRoot: Get<H256>;
 		/// What's included in the PostLog.
 		type PostLogContent: Get<PostLogContent>;
-		/// The Max length of the extra data length of the Executed event.
+		/// The Max length of the extra data in the Executed event.
 		type ExtraDataLength: Get<usize>;
 	}
 
@@ -568,7 +568,6 @@ impl<T: Config> Pallet<T> {
 				to,
 				match info.exit_reason {
 					ExitReason::Revert(_) => {
-						use sp_runtime::SaturatedConversion;
 						const LEN_START: usize = 36;
 						const MESSAGE_START: usize = 68;
 
