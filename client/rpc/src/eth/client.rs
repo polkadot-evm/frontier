@@ -29,9 +29,12 @@ use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	internal_err,
+};
 
-impl<B, C, P, CT, BE, A: ChainApi, EGA> Eth<B, C, P, CT, BE, A, EGA>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,

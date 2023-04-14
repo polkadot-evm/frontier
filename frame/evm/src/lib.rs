@@ -622,6 +622,7 @@ where
 	}
 }
 
+/// Trait to be implemented for evm address mapping.
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
 }
