@@ -196,6 +196,8 @@ pub mod pallet {
 		type StateRoot: Get<H256>;
 		/// What's included in the PostLog.
 		type PostLogContent: Get<PostLogContent>;
+		/// The Max length of the extra data length of the Executed event.
+		type ExtraDataLength: Get<usize>;
 	}
 
 	#[pallet::hooks]
@@ -302,6 +304,7 @@ pub mod pallet {
 			to: H160,
 			transaction_hash: H256,
 			exit_reason: ExitReason,
+			extra_data: Vec<u8>,
 		},
 	}
 
@@ -545,9 +548,9 @@ impl<T: Config> Pallet<T> {
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
 
-		let (reason, status, used_gas, dest) = match info {
+		let (reason, status, used_gas, dest, extra_data) = match info {
 			CallOrCreateInfo::Call(info) => (
-				info.exit_reason,
+				info.exit_reason.clone(),
 				TransactionStatus {
 					transaction_hash,
 					transaction_index,
@@ -563,6 +566,30 @@ impl<T: Config> Pallet<T> {
 				},
 				info.used_gas,
 				to,
+				match info.exit_reason {
+					ExitReason::Revert(_) => {
+						use sp_runtime::SaturatedConversion;
+						const LEN_START: usize = 36;
+						const MESSAGE_START: usize = 68;
+
+						let data = info.value;
+						if data.len() > MESSAGE_START {
+							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
+								.saturated_into::<usize>();
+							let message_end = MESSAGE_START
+								.saturating_add(message_len.min(T::ExtraDataLength::get()));
+
+							if data.len() >= message_end {
+								data[MESSAGE_START..message_end].to_vec()
+							} else {
+								data
+							}
+						} else {
+							data
+						}
+					}
+					_ => vec![],
+				},
 			),
 			CallOrCreateInfo::Create(info) => (
 				info.exit_reason,
@@ -581,6 +608,7 @@ impl<T: Config> Pallet<T> {
 				},
 				info.used_gas,
 				Some(info.value),
+				Vec::new(),
 			),
 		};
 
@@ -629,6 +657,7 @@ impl<T: Config> Pallet<T> {
 			to: dest.unwrap_or_default(),
 			transaction_hash,
 			exit_reason: reason,
+			extra_data,
 		});
 
 		Ok(PostDispatchInfo {
