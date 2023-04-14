@@ -197,7 +197,7 @@ pub mod pallet {
 		/// What's included in the PostLog.
 		type PostLogContent: Get<PostLogContent>;
 		/// The maximum length of the extra data in the Executed event.
-		type ExtraDataLength: Get<usize>;
+		type ExtraDataLength: Get<u32>;
 	}
 
 	#[pallet::hooks]
@@ -575,8 +575,9 @@ impl<T: Config> Pallet<T> {
 						if data.len() > MESSAGE_START {
 							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
 								.saturated_into::<usize>();
-							let message_end = MESSAGE_START
-								.saturating_add(message_len.min(T::ExtraDataLength::get()));
+							let message_end = MESSAGE_START.saturating_add(
+								message_len.min(T::ExtraDataLength::get() as usize),
+							);
 
 							if data.len() >= message_end {
 								data[MESSAGE_START..message_end].to_vec()
