@@ -18,12 +18,13 @@
 
 //! `TransactionRequest` type
 
-use crate::types::Bytes;
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 use ethereum_types::{H160, U256};
 use serde::{Deserialize, Serialize};
+
+use crate::types::Bytes;
 
 pub enum TransactionMessage {
 	Legacy(LegacyTransactionMessage),

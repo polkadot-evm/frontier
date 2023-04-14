@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H160, U256, U64};
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
@@ -42,11 +42,11 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
 {
-	pub fn protocol_version(&self) -> Result<u64> {
+	pub fn protocol_version(&self) -> RpcResult<u64> {
 		Ok(1)
 	}
 
-	pub fn syncing(&self) -> Result<SyncStatus> {
+	pub fn syncing(&self) -> RpcResult<SyncStatus> {
 		if self.sync.is_major_syncing() {
 			let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 				self.client.info().best_number,
@@ -66,7 +66,7 @@ where
 		}
 	}
 
-	pub fn author(&self) -> Result<H160> {
+	pub fn author(&self) -> RpcResult<H160> {
 		let hash = self.client.info().best_hash;
 		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
 
@@ -81,7 +81,7 @@ where
 			.beneficiary)
 	}
 
-	pub fn accounts(&self) -> Result<Vec<H160>> {
+	pub fn accounts(&self) -> RpcResult<Vec<H160>> {
 		let mut accounts = Vec::new();
 		for signer in &*self.signers {
 			accounts.append(&mut signer.accounts());
@@ -89,13 +89,13 @@ where
 		Ok(accounts)
 	}
 
-	pub fn block_number(&self) -> Result<U256> {
+	pub fn block_number(&self) -> RpcResult<U256> {
 		Ok(U256::from(
 			UniqueSaturatedInto::<u128>::unique_saturated_into(self.client.info().best_number),
 		))
 	}
 
-	pub fn chain_id(&self) -> Result<Option<U64>> {
+	pub fn chain_id(&self) -> RpcResult<Option<U64>> {
 		let hash = self.client.info().best_hash;
 		Ok(Some(
 			self.client

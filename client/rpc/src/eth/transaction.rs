@@ -20,7 +20,7 @@ use std::sync::Arc;
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H256, U256, U64};
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
@@ -47,7 +47,7 @@ where
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub async fn transaction_by_hash(&self, hash: H256) -> Result<Option<Transaction>> {
+	pub async fn transaction_by_hash(&self, hash: H256) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -160,7 +160,7 @@ where
 		&self,
 		hash: H256,
 		index: Index,
-	) -> Result<Option<Transaction>> {
+	) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -213,7 +213,7 @@ where
 		&self,
 		number: BlockNumber,
 		index: Index,
-	) -> Result<Option<Transaction>> {
+	) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -262,7 +262,7 @@ where
 		}
 	}
 
-	pub async fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
+	pub async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
@@ -325,7 +325,7 @@ where
 										hash
 									))),
 								})
-								.sum::<Result<u32>>()?;
+								.sum::<RpcResult<u32>>()?;
 							(
 								d.logs.clone(),
 								d.logs_bloom,

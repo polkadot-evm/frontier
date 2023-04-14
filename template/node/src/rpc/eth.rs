@@ -90,13 +90,10 @@ pub fn create_eth<C, BE, P, A, CT, B, EC: EthConfig<B, C>>(
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	B: BlockT,
-	C: ProvideRuntimeApi<B>,
+	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B> + ConvertTransactionRuntimeApi<B>,
 	C: BlockchainEvents<B> + 'static,
-	C: HeaderBackend<B>
-		+ CallApiAt<B>
-		+ HeaderMetadata<B, Error = BlockChainError>
-		+ StorageProvider<B, BE>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,
