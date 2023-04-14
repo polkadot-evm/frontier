@@ -933,14 +933,29 @@ where
 			self.weight_info.proof_size_usage = self.weight_info.proof_size_limit;
 			return Err(ExitError::OutOfGas);
 		}
-
-		self.record_external_cost(0u64, opcode_proof_size.low_u64())
+		// TODO
+		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))
 	}
 
-	fn record_external_cost(&mut self, _ref_time: u64, proof_size: u64) -> Result<(), ExitError> {
+	fn record_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) -> Result<(), ExitError> {
 		// Record ref_time first
 		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
-		self.weight_info.try_record_proof_size_or_fail(proof_size)
+		if let Some(amount) = ref_time {
+			self.weight_info.try_record_ref_time_or_fail(amount)?;
+		}
+		if let Some(amount) = proof_size {
+			self.weight_info.try_record_proof_size_or_fail(amount)?;
+		}
+		Ok(())
+	}
+
+	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
+		if let Some(amount) = ref_time {
+			self.weight_info.refund_ref_time(amount);
+		}
+		if let Some(amount) = proof_size {
+			self.weight_info.refund_proof_size(amount);
+		}
 	}
 }
 

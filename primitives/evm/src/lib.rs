@@ -92,6 +92,9 @@ impl WeightInfo {
 	pub fn refund_proof_size(&mut self, amount: u64) {
 		self.proof_size_usage = self.proof_size_usage.saturating_sub(amount);
 	}
+	pub fn refund_ref_time(&mut self, amount: u64) {
+		self.ref_time_usage = self.ref_time_usage.saturating_sub(amount);
+	}
 }
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]

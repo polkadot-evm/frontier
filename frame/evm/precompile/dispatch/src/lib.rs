@@ -83,15 +83,18 @@ where
 
 		let origin = T::AddressMapping::into_account_id(context.caller);
 
+		handle.record_external_cost(
+			Some(info.weight.ref_time()),
+			Some(info.weight.proof_size()),
+		)?;
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
-				let cost = T::GasWeightMapping::weight_to_gas(
-					post_info.actual_weight.unwrap_or(info.weight),
-				);
+				let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
+				let cost = T::GasWeightMapping::weight_to_gas(actual_weight);
 				handle.record_cost(cost)?;
-				handle.record_external_cost(
-					info.weight.ref_time(),
-					info.weight.proof_size(),
+				handle.refund_external_cost(
+					Some(info.weight.ref_time().saturating_sub(actual_weight.ref_time())),
+					Some(info.weight.proof_size().saturating_sub(actual_weight.proof_size())),
 				)?;
 
 				Ok(PrecompileOutput {
