@@ -196,7 +196,7 @@ pub mod pallet {
 		type StateRoot: Get<H256>;
 		/// What's included in the PostLog.
 		type PostLogContent: Get<PostLogContent>;
-		/// The Max length of the extra data in the Executed event.
+		/// The maximum length of the extra data in the Executed event.
 		type ExtraDataLength: Get<usize>;
 	}
 
