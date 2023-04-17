@@ -572,14 +572,15 @@ impl<T: Config> Pallet<T> {
 						const MESSAGE_START: usize = 68;
 
 						let data = info.value;
-						if data.len() > MESSAGE_START {
+						let data_len = data.len();
+						if data_len > MESSAGE_START {
 							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
 								.saturated_into::<usize>();
 							let message_end = MESSAGE_START.saturating_add(
 								message_len.min(T::ExtraDataLength::get() as usize),
 							);
 
-							if data.len() >= message_end {
+							if data_len >= message_end {
 								data[MESSAGE_START..message_end].to_vec()
 							} else {
 								data
