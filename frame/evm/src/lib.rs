@@ -75,7 +75,8 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
-use sp_core::{Hasher, H160, H256, U256};
+use scale_info::TypeInfo;
+use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
@@ -91,7 +92,7 @@ use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
 	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	PrecompileResult, PrecompileSet, Vicinity, IsPrecompileResult,
 };
 
 pub use self::{
@@ -220,6 +221,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -249,7 +251,11 @@ pub mod pallet {
 						info.used_gas.unique_saturated_into(),
 						true,
 					);
-					*gas_to_weight.proof_size_mut() = info.weight_info.proof_size_usage;
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
 					Some(gas_to_weight)
 				},
 				pays_fee: Pays::No,
@@ -289,6 +295,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -330,7 +337,11 @@ pub mod pallet {
 						info.used_gas.unique_saturated_into(),
 						true,
 					);
-					*gas_to_weight.proof_size_mut() = info.weight_info.proof_size_usage;
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
 					Some(gas_to_weight)
 				},
 				pays_fee: Pays::No,
@@ -371,6 +382,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -412,7 +424,11 @@ pub mod pallet {
 						info.used_gas.unique_saturated_into(),
 						true,
 					);
-					*gas_to_weight.proof_size_mut() = info.weight_info.proof_size_usage;
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
 					Some(gas_to_weight)
 				},
 				pays_fee: Pays::No,
@@ -519,6 +535,10 @@ pub mod pallet {
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
+	pub type AccountCodesMetadata<T: Config> =
+		StorageMap<_, Blake2_128Concat, H160, CodeMetadata, OptionQuery>;
+
+	#[pallet::storage]
 	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
@@ -531,6 +551,23 @@ pub type BalanceOf<T> =
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+
+#[derive(Debug, Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
+pub struct CodeMetadata {
+	pub size: u64,
+	pub hash: H256,
+}
+
+impl CodeMetadata {
+	fn from_code(code: &[u8]) -> Self {
+		use sha3::Digest;
+
+		let size = code.len() as u64;
+		let hash = H256::from_slice(sha3::Keccak256::digest(code).as_slice());
+
+		Self { size, hash }
+	}
+}
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -726,6 +763,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
+		<AccountCodesMetadata<T>>::remove(address);
 		#[allow(deprecated)]
 		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
@@ -741,7 +779,38 @@ impl<T: Config> Pallet<T> {
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
 
+		// Update metadata.
+		let meta = CodeMetadata::from_code(&code);
+		<AccountCodesMetadata<T>>::insert(address, meta);
+
 		<AccountCodes<T>>::insert(address, code);
+	}
+
+	/// Get the account metadata (hash and size) from storage if it exists,
+	/// or compute it from code and store it if it doesn't exist.
+	pub fn account_code_metadata(address: H160) -> CodeMetadata {
+		if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+			return meta;
+		}
+
+		let code = <AccountCodes<T>>::get(address);
+
+		// If code is empty we return precomputed hash for empty code.
+		// We don't store it as this address could get code deployed in the future.
+		if code.is_empty() {
+			return CodeMetadata {
+				size: 0,
+				hash: hex_literal::hex!(
+					"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+				)
+				.into(),
+			};
+		}
+
+		let meta = CodeMetadata::from_code(&code);
+
+		<AccountCodesMetadata<T>>::insert(address, meta);
+		meta
 	}
 
 	/// Get the account basic in EVM format.

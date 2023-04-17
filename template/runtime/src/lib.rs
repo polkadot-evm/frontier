@@ -686,6 +686,8 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				is_transactional,
 				validate,
+				// TODO we probably want to support external cost recording in non-transactional calls
+				None,
 				evm_config,
 			).map_err(|err| err.error.into())
 		}
@@ -723,6 +725,8 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				is_transactional,
 				validate,
+				// TODO we probably want to support external cost recording in non-transactional calls
+				None,
 				evm_config,
 			).map_err(|err| err.error.into())
 		}

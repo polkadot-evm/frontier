@@ -33,7 +33,7 @@ use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate::{
 	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
-	PrecompileResult, PrecompileSet,
+	PrecompileResult, PrecompileSet, IsPrecompileResult,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -173,7 +173,10 @@ impl PrecompileSet for MockPrecompileSet {
 	/// Check if the given address is a precompile. Should only be called to
 	/// perform the check while not executing the precompile afterward, since
 	/// `execute` already performs a check internally.
-	fn is_precompile(&self, address: H160) -> bool {
-		address == H160::from_low_u64_be(1)
+	fn is_precompile(&self, address: H160, _remaining_gas: u64) -> IsPrecompileResult {
+		IsPrecompileResult::Answer {
+			is_precompile: address == H160::from_low_u64_be(1),
+			extra_cost: 0,
+		}
 	}
 }

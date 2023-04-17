@@ -240,7 +240,7 @@ pub mod pallet {
 					Self::validate_transaction_in_block(source, &transaction).expect(
 						"pre-block transaction verification failed; the block cannot be built",
 					);
-					let r = Self::apply_validated_transaction(source, transaction)
+					let r = Self::apply_validated_transaction(source, transaction, None)
 						.expect("pre-block apply transaction failed; the block cannot be built");
 
 					weight = weight.saturating_add(r.actual_weight.unwrap_or_default());
@@ -289,7 +289,33 @@ pub mod pallet {
 				"pre log already exists; block is invalid",
 			);
 
-			Self::apply_validated_transaction(source, transaction)
+			Self::apply_validated_transaction(source, transaction, None)
+		}
+		
+		/// Transact an Ethereum transaction with native WeightV2+ limit.
+		#[pallet::call_index(1)]
+		#[pallet::weight({
+			let without_base_extrinsic_weight = true;
+			let mut from_gas = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
+				let transaction_data: TransactionData = transaction.into();
+				transaction_data.gas_limit.unique_saturated_into()
+			}, without_base_extrinsic_weight);
+			*from_gas.proof_size_mut() = weight_limit.proof_size();
+			from_gas
+		})]
+		pub fn transact_with_weight_limit(
+			origin: OriginFor<T>,
+			transaction: Transaction,
+			weight_limit: Weight,
+		) -> DispatchResultWithPostInfo {
+			let source = ensure_ethereum_transaction(origin)?;
+			// Disable transact functionality if PreLog exist.
+			assert!(
+				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
+				"pre log already exists; block is invalid",
+			);
+
+			Self::apply_validated_transaction(source, transaction, Some(weight_limit))
 		}
 	}
 
@@ -538,8 +564,9 @@ impl<T: Config> Pallet<T> {
 	fn apply_validated_transaction(
 		source: H160,
 		transaction: Transaction,
+		weight_limit: Option<Weight>,
 	) -> DispatchResultWithPostInfo {
-		let (to, _, info) = Self::execute(source, &transaction, None)?;
+		let (to, _, info) = Self::execute(source, &transaction, None, weight_limit)?;
 
 		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
@@ -641,7 +668,11 @@ impl<T: Config> Pallet<T> {
 					used_gas.unique_saturated_into(),
 					true,
 				);
-				*gas_to_weight.proof_size_mut() = weight_info.proof_size_usage;
+				if let Some(weight_info) = weight_info {
+					if let Some(proof_size_usage) = weight_info.proof_size_usage {
+						*gas_to_weight.proof_size_mut() = proof_size_usage;
+					}
+				}
 				Some(gas_to_weight)
 			},
 			pays_fee: Pays::No,
@@ -658,6 +689,7 @@ impl<T: Config> Pallet<T> {
 		from: H160,
 		transaction: &Transaction,
 		config: Option<evm::Config>,
+		weight_limit: Option<Weight>,
 	) -> Result<
 		(Option<H160>, Option<H160>, CallOrCreateInfo),
 		DispatchErrorWithPostInfo<PostDispatchInfo>,
@@ -738,6 +770,7 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
+					weight_limit,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -766,6 +799,7 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
+					weight_limit,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -884,8 +918,8 @@ impl<T: Config> Pallet<T> {
 
 pub struct ValidatedTransaction<T>(PhantomData<T>);
 impl<T: Config> ValidatedTransactionT for ValidatedTransaction<T> {
-	fn apply(source: H160, transaction: Transaction) -> DispatchResultWithPostInfo {
-		Pallet::<T>::apply_validated_transaction(source, transaction)
+	fn apply(source: H160, transaction: Transaction, weight_limit: Option<Weight>) -> DispatchResultWithPostInfo {
+		Pallet::<T>::apply_validated_transaction(source, transaction, weight_limit)
 	}
 }
 

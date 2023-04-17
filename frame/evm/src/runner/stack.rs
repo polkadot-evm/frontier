@@ -20,12 +20,12 @@
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
 	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError, GasWeightMapping,
+	Pallet, RunnerError, AccountCodesMetadata, IsPrecompileResult, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
-	ExitError, ExitReason, Transfer, Opcode, gasometer::GasCost,
+	ExitError, ExitReason, Transfer, Opcode, gasometer::{GasCost, StorageTarget},
 };
 use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity, WeightInfo};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
@@ -62,6 +62,7 @@ where
 		config: &'config evm::Config,
 		precompiles: &'precompiles T::PrecompilesType,
 		is_transactional: bool,
+		weight_limit: Option<Weight>,
 		f: F,
 	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
 	where
@@ -96,6 +97,7 @@ where
 			f,
 			base_fee,
 			weight,
+			weight_limit,
 		);
 
 		// Set IN_EVM to false
@@ -118,7 +120,8 @@ where
 		is_transactional: bool,
 		f: F,
 		base_fee: U256,
-		weight: crate::Weight,
+		weight: Weight,
+		weight_limit: Option<Weight>,
 	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -141,13 +144,28 @@ where
 		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
 		// projects using Frontier can have stateful precompiles that can manage funds or
 		// which calls other contracts that expects this precompile address to be trustworthy.
-		if is_transactional
-			&& (!<AccountCodes<T>>::get(source).is_empty() || precompiles.is_precompile(source))
-		{
-			return Err(RunnerError {
-				error: Error::<T>::TransactionMustComeFromEOA,
-				weight,
-			});
+		if is_transactional {
+			let is_precompile = match precompiles.is_precompile(source, gas_limit)
+			{
+				IsPrecompileResult::Answer {
+					is_precompile,
+					..
+				} => {
+					is_precompile
+				}
+				IsPrecompileResult::OutOfGas => return Err(RunnerError {
+					error: Error::<T>::GasLimitTooLow,
+					weight,
+				}),
+			};
+			if !<AccountCodes<T>>::get(source).is_empty() || is_precompile
+			{
+				return Err(RunnerError {
+					error: Error::<T>::TransactionMustComeFromEOA,
+					weight,
+				});
+			}
+
 		}
 
 		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
@@ -200,15 +218,10 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let weight_info = T::GasWeightMapping::gas_to_weight(gas_limit, true);
 		// Used to record the external costs in the evm through the StackState implementation
-		let weight_info = WeightInfo {
-			ref_time_limit: weight_info.ref_time(),
-			proof_size_limit: weight_info.proof_size(),
-			ref_time_usage: 0u64,
-			proof_size_usage: 0u64
-		};
-		let state = SubstrateStackState::new(&vicinity, metadata, weight_info);
+		let maybe_weight_info = WeightInfo::new_from_weight_limit(weight_limit)
+			.map_err(|_| RunnerError { error: Error::<T>::Undefined, weight })?;
+		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);
@@ -361,6 +374,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
+		weight_limit: Option<Weight>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -388,6 +402,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
+			weight_limit,
 			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
@@ -403,6 +418,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
+		weight_limit: Option<Weight>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -430,6 +446,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
+			weight_limit,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
@@ -452,6 +469,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
+		weight_limit: Option<Weight>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -480,6 +498,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
+			weight_limit,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
@@ -597,13 +616,13 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
-	weight_info: WeightInfo,
+	weight_info: Option<WeightInfo>,
 	_marker: PhantomData<T>,
 }
 
 impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	/// Create a new backend with given vicinity.
-	pub fn new(vicinity: &'vicinity Vicinity, metadata: StackSubstateMetadata<'config>, weight_info: WeightInfo) -> Self {
+	pub fn new(vicinity: &'vicinity Vicinity, metadata: StackSubstateMetadata<'config>, weight_info: Option<WeightInfo>) -> Self {
 		Self {
 			vicinity,
 			substate: SubstrateStackSubstate {
@@ -618,7 +637,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		}
 	}
 
-	pub fn weight_info(&self) -> WeightInfo {
+	pub fn weight_info(&self) -> Option<WeightInfo> {
 		self.weight_info
 	}
 }
@@ -845,10 +864,24 @@ where
 
 	// TODO this impl behind a feature flag, otherwise no-op
 	fn record_external_opcode_cost(&mut self, opcode: Opcode, gas_cost: GasCost, target: evm::gasometer::StorageTarget) -> Result<(), ExitError> {
+		// Return if external costs are disabled
+		let mut weight_info = if let Some(weight_info) = self.weight_info {
+			weight_info
+		} else {
+			return Ok(());
+		};
+
 		// Record ref_time first
 		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
 
 		// Record proof_size
+		// Return if proof size recording is disabled
+		let proof_size_limit = if let Some(proof_size_limit) = weight_info.proof_size_limit {
+			proof_size_limit
+		} else {
+			return Ok(());
+		};
+
 		let maybe_record = match gas_cost {
 			GasCost::ExtCodeSize { target_is_cold } |
 			GasCost::Balance { target_is_cold } |
@@ -895,10 +928,10 @@ where
 					// This must be unreachable, a valid Target must be set for this opcode(s)
 					// TODO decide how do we want to gracefully handle.
 					_ => return Err(ExitError::OutOfGas),
-				}
+				};
 				// First try to record fixed sized `AccountCodesMetadata` read
 				// Temptatively 20 + 8 + 32  
-				self.weight_info.try_record_proof_size_or_fail(60)?;
+				weight_info.try_record_proof_size_or_fail(60)?;
 				let size = if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 					meta.size
 				} else {
@@ -908,11 +941,11 @@ where
 						.config()
 						.create_contract_limit
 						.unwrap_or_default() as u64;
-					self.weight_info.try_record_proof_size_or_fail(size_limit)?;
+					weight_info.try_record_proof_size_or_fail(size_limit)?;
 					let meta = Pallet::<T>::account_code_metadata(address);
 					let actual_size = meta.size;
 					// Refund if applies
-					self.weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
 					actual_size
 				};
 				U256::from(size)
@@ -930,7 +963,7 @@ where
 		};
 		
 		if opcode_proof_size > U256::from(u64::MAX) {
-			self.weight_info.proof_size_usage = self.weight_info.proof_size_limit;
+			weight_info.try_record_proof_size_or_fail(proof_size_limit)?;
 			return Err(ExitError::OutOfGas);
 		}
 		// TODO
@@ -938,23 +971,30 @@ where
 	}
 
 	fn record_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) -> Result<(), ExitError> {
+		let mut weight_info = if let Some(weight_info) = self.weight_info {
+			weight_info
+		} else {
+			return Ok(());
+		};
 		// Record ref_time first
 		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
 		if let Some(amount) = ref_time {
-			self.weight_info.try_record_ref_time_or_fail(amount)?;
+			weight_info.try_record_ref_time_or_fail(amount)?;
 		}
 		if let Some(amount) = proof_size {
-			self.weight_info.try_record_proof_size_or_fail(amount)?;
+			weight_info.try_record_proof_size_or_fail(amount)?;
 		}
 		Ok(())
 	}
 
 	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
-		if let Some(amount) = ref_time {
-			self.weight_info.refund_ref_time(amount);
-		}
-		if let Some(amount) = proof_size {
-			self.weight_info.refund_proof_size(amount);
+		if let Some(mut weight_info) = self.weight_info {
+			if let Some(amount) = ref_time {
+				weight_info.refund_ref_time(amount);
+			}
+			if let Some(amount) = proof_size {
+				weight_info.refund_proof_size(amount);
+			}
 		}
 	}
 }

@@ -22,6 +22,7 @@ pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
+use frame_support::weights::Weight;
 use ethereum_types::{H160, H256, U256};
 use fp_evm::CheckEvmTransactionInput;
 use scale_codec::{Decode, Encode};
@@ -44,6 +45,7 @@ pub trait ValidatedTransaction {
 	fn apply(
 		source: H160,
 		transaction: Transaction,
+		weight_limit: Option<Weight>,
 	) -> frame_support::dispatch::DispatchResultWithPostInfo;
 }
 

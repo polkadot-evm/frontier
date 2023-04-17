@@ -95,7 +95,7 @@ where
 				handle.refund_external_cost(
 					Some(info.weight.ref_time().saturating_sub(actual_weight.ref_time())),
 					Some(info.weight.proof_size().saturating_sub(actual_weight.proof_size())),
-				)?;
+				);
 
 				Ok(PrecompileOutput {
 					exit_status: ExitSucceed::Stopped,
