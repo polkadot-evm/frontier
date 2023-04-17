@@ -34,7 +34,7 @@ use fp_evm::{
 };
 use frame_support::{
 	codec::{Decode, DecodeLimit as _},
-	dispatch::{DispatchClass, Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
+	dispatch::{Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
 	traits::{ConstU32, Get},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
@@ -70,7 +70,7 @@ where
 				info.weight.ref_time() <= T::GasWeightMapping::gas_to_weight(gas, false).ref_time();
 			if !valid_weight {
 				return Err(PrecompileFailure::Error {
-					exit_status: ExitError::Other("decode failed".into()),
+					exit_status: ExitError::OutOfGas,
 				});
 			}
 		}
