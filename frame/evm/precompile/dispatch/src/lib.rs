@@ -42,15 +42,16 @@ use pallet_evm::{AddressMapping, GasWeightMapping};
 // `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
 // can be used to overflow the stack.
 // Default value is 8, which is the same as in XCM call decoding.
-pub struct Dispatch<T, DecodeLimit = ConstU32<8>> {
-	_marker: PhantomData<(T, DecodeLimit)>,
+pub struct Dispatch<T, DispatchFilter = (), DecodeLimit = ConstU32<8>> {
+	_marker: PhantomData<(T, DispatchFilter, DecodeLimit)>,
 }
 
-impl<T, DecodeLimit> Precompile for Dispatch<T, DecodeLimit>
+impl<T, DispatchFilter, DecodeLimit> Precompile for Dispatch<T, DispatchFilter, DecodeLimit>
 where
 	T: pallet_evm::Config,
 	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
+	DispatchFilter: DispatchFilterT<T>,
 	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -64,32 +65,33 @@ where
 			})?;
 		let info = call.get_dispatch_info();
 
-		let valid_call = info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal;
-		if !valid_call {
-			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("invalid call".into()),
-			});
-		}
-
 		if let Some(gas) = target_gas {
 			let valid_weight =
 				info.weight.ref_time() <= T::GasWeightMapping::gas_to_weight(gas, false).ref_time();
 			if !valid_weight {
 				return Err(PrecompileFailure::Error {
-					exit_status: ExitError::OutOfGas,
+					exit_status: ExitError::Other("decode failed".into()),
 				});
 			}
 		}
 
 		let origin = T::AddressMapping::into_account_id(context.caller);
 
+		if !DispatchFilter::allow(&origin, &call) {
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("call not allowed".into()),
+			});
+		}
+
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
-				let cost = T::GasWeightMapping::weight_to_gas(
-					post_info.actual_weight.unwrap_or(info.weight),
-				);
+				if post_info.pays_fee(&info) == Pays::Yes {
+					let cost = T::GasWeightMapping::weight_to_gas(
+						post_info.actual_weight.unwrap_or(info.weight),
+					);
 
-				handle.record_cost(cost)?;
+					handle.record_cost(cost)?;
+				}
 
 				Ok(PrecompileOutput {
 					exit_status: ExitSucceed::Stopped,
@@ -102,5 +104,17 @@ where
 				),
 			}),
 		}
+	}
+}
+
+/// Dispatch filter trait.
+pub trait DispatchFilterT<T: pallet_evm::Config> {
+	fn allow(origin: &T::AccountId, call: &T::RuntimeCall) -> bool;
+}
+
+/// The default implementation of `DispatchFilterT`.
+impl<T: pallet_evm::Config> DispatchFilterT<T> for () {
+	fn allow(_origin: &T::AccountId, _call: &T::RuntimeCall) -> bool {
+		true
 	}
 }
