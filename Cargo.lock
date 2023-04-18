@@ -2495,6 +2495,7 @@ dependencies = [
  "futures",
  "jsonrpsee",
  "log",
+ "pallet-ethereum",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "pallet-transaction-payment-rpc-runtime-api",

@@ -1044,8 +1044,14 @@ impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	}
 }
 
-#[derive(TypeInfo, PartialEq, Eq, Clone, Debug, Encode, Decode)]
+#[derive(TypeInfo, PartialEq, Eq, Clone, Debug, Encode, Decode, Default)]
 pub struct FakeTransactionFinalizer<T>(PhantomData<T>);
+
+impl<T> FakeTransactionFinalizer<T> {
+	pub fn new() -> Self {
+		Self(Default::default())
+	}
+}
 
 impl<T: Config + TypeInfo + core::fmt::Debug + Send + Sync> sp_runtime::traits::SignedExtension
 	for FakeTransactionFinalizer<T>
