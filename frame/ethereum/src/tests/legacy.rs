@@ -18,6 +18,7 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::ValidatedTransaction;
 use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo},
@@ -267,17 +268,6 @@ fn transaction_should_generate_correct_gas_used() {
 
 #[test]
 fn call_should_handle_errors() {
-	// 	pragma solidity ^0.6.6;
-	// 	contract Test {
-	// 		function foo() external pure returns (bool) {
-	// 			return true;
-	// 		}
-	// 		function bar() external pure {
-	// 			require(false, "error_msg");
-	// 		}
-	// 	}
-	let contract: &str = "608060405234801561001057600080fd5b50610113806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c8063c2985578146037578063febb0f7e146057575b600080fd5b603d605f565b604051808215151515815260200191505060405180910390f35b605d6068565b005b60006001905090565b600060db576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260098152602001807f6572726f725f6d7367000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b56fea2646970667358221220fde68a3968e0e99b16fabf9b2997a78218b32214031f8e07e2c502daf603a69e64736f6c63430006060033";
-
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
@@ -288,7 +278,7 @@ fn call_should_handle_errors() {
 			gas_limit: U256::from(0x100000),
 			action: ethereum::TransactionAction::Create,
 			value: U256::zero(),
-			input: hex::decode(contract).unwrap(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
@@ -332,6 +322,77 @@ fn call_should_handle_errors() {
 
 		// calling should always succeed even if the inner EVM execution fails.
 		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
+	});
+}
+
+#[test]
+fn event_extra_data_should_be_handle_properly() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		System::set_block_number(1);
+
+		let t = LegacyUnsignedTransaction {
+			nonce: U256::zero(),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Create,
+			value: U256::zero(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
+		}
+		.sign(&alice.private_key);
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+
+		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let foo = hex::decode("c2985578").unwrap();
+		let bar = hex::decode("febb0f7e").unwrap();
+
+		let t2 = LegacyUnsignedTransaction {
+			nonce: U256::from(1),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(H160::from_slice(&contract_address)),
+			value: U256::zero(),
+			input: foo,
+		}
+		.sign(&alice.private_key);
+
+		// calling foo
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2));
+		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
+			from: alice.address,
+			to: H160::from_slice(&contract_address),
+			transaction_hash: H256::from_str(
+				"0xc256587e4b2718d2798e9e895821a72e6aa751b8fcc03ce754246cc0d8a541c0",
+			)
+			.unwrap(),
+			exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
+			extra_data: vec![],
+		}));
+
+		let t3 = LegacyUnsignedTransaction {
+			nonce: U256::from(2),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(H160::from_slice(&contract_address)),
+			value: U256::zero(),
+			input: bar,
+		}
+		.sign(&alice.private_key);
+
+		// calling bar revert
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3));
+		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
+			from: alice.address,
+			to: H160::from_slice(&contract_address),
+			transaction_hash: H256::from_str(
+				"0x27a75747783eb8959f1fe7b23e8b1152a9ec945d9b90354582cb7c3ea1481287",
+			)
+			.unwrap(),
+			exit_reason: ExitReason::Revert(ExitRevert::Reverted),
+			extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
+		}));
 	});
 }
 
