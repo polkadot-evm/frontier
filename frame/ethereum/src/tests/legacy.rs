@@ -268,17 +268,6 @@ fn transaction_should_generate_correct_gas_used() {
 
 #[test]
 fn call_should_handle_errors() {
-	// 	pragma solidity ^0.6.6;
-	// 	contract Test {
-	// 		function foo() external pure returns (bool) {
-	// 			return true;
-	// 		}
-	// 		function bar() external pure {
-	// 			require(false, "error_msg");
-	// 		}
-	// 	}
-	let contract: &str = "608060405234801561001057600080fd5b50610113806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c8063c2985578146037578063febb0f7e146057575b600080fd5b603d605f565b604051808215151515815260200191505060405180910390f35b605d6068565b005b60006001905090565b600060db576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260098152602001807f6572726f725f6d7367000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b56fea2646970667358221220fde68a3968e0e99b16fabf9b2997a78218b32214031f8e07e2c502daf603a69e64736f6c63430006060033";
-
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
@@ -289,7 +278,7 @@ fn call_should_handle_errors() {
 			gas_limit: U256::from(0x100000),
 			action: ethereum::TransactionAction::Create,
 			value: U256::zero(),
-			input: hex::decode(contract).unwrap(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
@@ -338,17 +327,6 @@ fn call_should_handle_errors() {
 
 #[test]
 fn event_extra_data_should_be_handle_properly() {
-	// 	pragma solidity ^0.6.6;
-	// 	contract Test {
-	// 		function foo() external pure returns (bool) {
-	// 			return true;
-	// 		}
-	// 		function bar() external pure {
-	// 			require(false, "error_msg");
-	// 		}
-	// 	}
-	let contract: &str = "608060405234801561001057600080fd5b50610113806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c8063c2985578146037578063febb0f7e146057575b600080fd5b603d605f565b604051808215151515815260200191505060405180910390f35b605d6068565b005b60006001905090565b600060db576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260098152602001807f6572726f725f6d7367000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b56fea2646970667358221220fde68a3968e0e99b16fabf9b2997a78218b32214031f8e07e2c502daf603a69e64736f6c63430006060033";
-
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
@@ -361,7 +339,7 @@ fn event_extra_data_should_be_handle_properly() {
 			gas_limit: U256::from(0x100000),
 			action: ethereum::TransactionAction::Create,
 			value: U256::zero(),
-			input: hex::decode(contract).unwrap(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
@@ -413,7 +391,7 @@ fn event_extra_data_should_be_handle_properly() {
 			)
 			.unwrap(),
 			exit_reason: ExitReason::Revert(ExitRevert::Reverted),
-			extra_data: b"error_msg".to_vec(),
+			extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
 		}));
 	});
 }
