@@ -17,7 +17,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #![deny(unused_crate_dependencies)]
-#![feature(async_closure)]
 
 pub mod kv;
 pub mod sql;
