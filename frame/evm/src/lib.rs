@@ -163,6 +163,13 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_: T::BlockNumber) {
+			assert_eq!(<CurrentLogs<T>>::get().len(), 0, "fake transaction finalizer is not initialized, as some logs was left after block is finished");
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
