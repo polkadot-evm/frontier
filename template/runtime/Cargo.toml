@@ -122,3 +122,7 @@ runtime-benchmarks = [
 	"pallet-evm/runtime-benchmarks",
 	"pallet-hotfix-sufficients/runtime-benchmarks",
 ]
+evm-with-weight-limit = [
+	"pallet-evm/evm-with-weight-limit",
+	"pallet-ethereum/evm-with-weight-limit"
+]

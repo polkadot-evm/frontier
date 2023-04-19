@@ -83,6 +83,7 @@ where
 
 		let origin = T::AddressMapping::into_account_id(context.caller);
 
+		#[cfg(feature = "evm-with-weight-limit")]
 		handle.record_external_cost(
 			Some(info.weight.ref_time()),
 			Some(info.weight.proof_size()),
@@ -92,6 +93,7 @@ where
 				let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
 				let cost = T::GasWeightMapping::weight_to_gas(actual_weight);
 				handle.record_cost(cost)?;
+				#[cfg(feature = "evm-with-weight-limit")]
 				handle.refund_external_cost(
 					Some(info.weight.ref_time().saturating_sub(actual_weight.ref_time())),
 					Some(info.weight.proof_size().saturating_sub(actual_weight.proof_size())),

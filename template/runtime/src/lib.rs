@@ -539,32 +539,6 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	}
 }
 
-trait EthereumWeigherT {
-	fn weight_limit(gas_limit: U256, encoded_len: usize) -> Weight;
-}
-
-// Something that holds a runtime specific formula that converts Gas limit to Weight limit,
-// and that is used for both dispatching and validating. 
-struct EthereumWeigher;
-impl EthereumWeigherT for EthereumWeigher {
-	// TODO
-	fn weight_limit(gas_limit: U256, encoded_len: usize) -> Weight {
-		let gas_to_proof_size_limit = |_gas_limit: U256| -> u64 {
-			u64::MAX
-		};
-
-		let without_base_extrinsic_weight = true;
-		let mut weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
-			gas_limit.unique_saturated_into()
-		}, without_base_extrinsic_weight);
-
-		let proof_size_limit = gas_to_proof_size_limit(gas_limit).saturating_add(encoded_len as u64);
-		*weight_limit.proof_size_mut() = proof_size_limit;
-
-		weight_limit
-	}
-}
-
 #[cfg(feature = "runtime-benchmarks")]
 #[macro_use]
 extern crate frame_benchmarking;
@@ -799,20 +773,29 @@ impl_runtime_apis! {
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
 		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
-			// TODO Weight v2 type 16 bytes? check scale compact stuff
-			let encoded_len = transaction.encode().len() + 16usize;
+			#[cfg(feature = "evm-with-weight-limit")]
+			{
+				// TODO Weight v2 type 16 bytes? check scale compact stuff
+				let encoded_len = transaction.encode().len() + 16usize;
 
-			let gas_limit = match &transaction {
-				EthereumTransaction::Legacy(t) => t.gas_limit,
-				EthereumTransaction::EIP2930(t) => t.gas_limit,
-				EthereumTransaction::EIP1559(t) => t.gas_limit,
-			};
+				let gas_limit = match &transaction {
+					EthereumTransaction::Legacy(t) => t.gas_limit,
+					EthereumTransaction::EIP2930(t) => t.gas_limit,
+					EthereumTransaction::EIP1559(t) => t.gas_limit,
+				};
+				let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+					gas_limit.unique_saturated_into(),
+					true,
+				);
+				let transact_with_weight_limit = pallet_ethereum::Call::<Runtime>::transact_with_weight_limit { transaction, weight_limit };
 
-			let weight_limit = EthereumWeigher::weight_limit(gas_limit, encoded_len);
-			let transact_with_weight_limit = pallet_ethereum::Call::<Runtime>::transact_with_weight_limit { transaction, weight_limit };
-
+				UncheckedExtrinsic::new_unsigned(
+					transact_with_weight_limit.into(),
+				)
+			}
+			#[cfg(not(feature = "evm-with-weight-limit"))]
 			UncheckedExtrinsic::new_unsigned(
-				transact_with_weight_limit.into(),
+				pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 			)
 		}
 	}

@@ -76,3 +76,4 @@ try-runtime = [
 	"pallet-timestamp/try-runtime",
 ]
 forbid-evm-reentrancy = ["dep:environmental"]
+evm-with-weight-limit = ["evm/with-substrate"]

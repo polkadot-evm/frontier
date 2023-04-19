@@ -863,6 +863,7 @@ where
 	}
 
 	// TODO this impl behind a feature flag, otherwise no-op
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_opcode_cost(&mut self, opcode: Opcode, gas_cost: GasCost, target: evm::gasometer::StorageTarget) -> Result<(), ExitError> {
 		// Return if external costs are disabled
 		let mut weight_info = if let Some(weight_info) = self.weight_info {
@@ -970,6 +971,7 @@ where
 		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) -> Result<(), ExitError> {
 		let mut weight_info = if let Some(weight_info) = self.weight_info {
 			weight_info
@@ -987,6 +989,7 @@ where
 		Ok(())
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
 		if let Some(mut weight_info) = self.weight_info {
 			if let Some(amount) = ref_time {
