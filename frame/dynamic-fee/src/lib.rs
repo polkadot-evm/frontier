@@ -98,11 +98,10 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn min_gas_price)]
-	pub(super) type MinGasPrice<T: Config> = StorageValue<_, U256, ValueQuery>;
+	pub type MinGasPrice<T: Config> = StorageValue<_, U256, ValueQuery>;
 
 	#[pallet::storage]
-	pub(super) type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
+	pub type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
 
 	#[derive(Encode, Decode, RuntimeDebug)]
 	pub enum InherentError {}

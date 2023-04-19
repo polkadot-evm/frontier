@@ -136,10 +136,10 @@ pub fn new_test_ext(base_fee: Option<U256>, elasticity: Option<Permill>) -> Test
 fn should_default() {
 	new_test_ext(None, None).execute_with(|| {
 		assert_eq!(
-			BaseFee::base_fee_per_gas(),
+			BaseFeePerGas::<Test>::get(),
 			U256::from(100_000_000_000 as u128)
 		);
-		assert_eq!(BaseFee::elasticity(), Permill::from_parts(125_000));
+		assert_eq!(Elasticity::<Test>::get(), Permill::from_parts(125_000));
 	});
 }
 
@@ -147,13 +147,13 @@ fn should_default() {
 fn should_not_overflow_u256() {
 	let base_fee = U256::max_value();
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		let init = BaseFee::base_fee_per_gas();
+		let init = BaseFeePerGas::<Test>::get();
 		System::register_extra_weight_unchecked(
 			Weight::from_ref_time(1000000000000),
 			DispatchClass::Normal,
 		);
 		BaseFee::on_finalize(System::block_number());
-		assert_eq!(BaseFee::base_fee_per_gas(), init);
+		assert_eq!(BaseFeePerGas::<Test>::get(), init);
 	});
 }
 
@@ -161,9 +161,9 @@ fn should_not_overflow_u256() {
 fn should_handle_zero() {
 	let base_fee = U256::zero();
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		let init = BaseFee::base_fee_per_gas();
+		let init = BaseFeePerGas::<Test>::get();
 		BaseFee::on_finalize(System::block_number());
-		assert_eq!(BaseFee::base_fee_per_gas(), init);
+		assert_eq!(BaseFeePerGas::<Test>::get(), init);
 	});
 }
 
@@ -176,7 +176,7 @@ fn should_handle_consecutive_empty_blocks() {
 			System::set_block_number(System::block_number() + 1);
 		}
 		assert_eq!(
-			BaseFee::base_fee_per_gas(),
+			BaseFeePerGas::<Test>::get(),
 			// 8 is the lowest number which's 12.5% is >= 1.
 			U256::from(7)
 		);
@@ -188,7 +188,7 @@ fn should_handle_consecutive_empty_blocks() {
 			System::set_block_number(System::block_number() + 1);
 		}
 		assert_eq!(
-			BaseFee::base_fee_per_gas(),
+			BaseFeePerGas::<Test>::get(),
 			// base fee won't change
 			base_fee
 		);
@@ -209,7 +209,7 @@ fn should_handle_consecutive_full_blocks() {
 			System::set_block_number(System::block_number() + 1);
 		}
 		assert_eq!(
-			BaseFee::base_fee_per_gas(),
+			BaseFeePerGas::<Test>::get(),
 			// Max value allowed in the algorithm before overflowing U256.
 			U256::from_dec_str(
 				"930583037201699994746877284806656508753618758732556029383742480470471799"
@@ -229,7 +229,7 @@ fn should_handle_consecutive_full_blocks() {
 			System::set_block_number(System::block_number() + 1);
 		}
 		assert_eq!(
-			BaseFee::base_fee_per_gas(),
+			BaseFeePerGas::<Test>::get(),
 			// base fee won't change
 			base_fee
 		);
@@ -240,7 +240,7 @@ fn should_handle_consecutive_full_blocks() {
 fn should_increase_total_base_fee() {
 	let base_fee = U256::from(1_000_000_000);
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		// Register max weight in block.
 		System::register_extra_weight_unchecked(
 			Weight::from_ref_time(1000000000000),
@@ -248,7 +248,7 @@ fn should_increase_total_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect the base fee to increase by 12.5%.
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1125000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1125000000));
 	});
 }
 
@@ -256,7 +256,7 @@ fn should_increase_total_base_fee() {
 fn should_increase_delta_of_base_fee() {
 	let base_fee = U256::from(1_000_000_000);
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		// Register 75% capacity in block weight.
 		System::register_extra_weight_unchecked(
 			Weight::from_ref_time(750000000000),
@@ -264,7 +264,7 @@ fn should_increase_delta_of_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect a 6.25% increase in base fee for a target capacity of 50% ((75/50)-1 = 0.5 * 0.125 = 0.0625).
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1062500000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1062500000));
 	});
 }
 
@@ -272,7 +272,7 @@ fn should_increase_delta_of_base_fee() {
 fn should_idle_base_fee() {
 	let base_fee = U256::from(1_000_000_000);
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		// Register half capacity in block weight.
 		System::register_extra_weight_unchecked(
 			Weight::from_ref_time(500000000000),
@@ -280,7 +280,7 @@ fn should_idle_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect the base fee to remain unchanged
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 	});
 }
 
@@ -288,12 +288,12 @@ fn should_idle_base_fee() {
 fn set_base_fee_per_gas_dispatchable() {
 	let base_fee = U256::from(1_000_000_000);
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1000000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		assert_ok!(BaseFee::set_base_fee_per_gas(
 			RuntimeOrigin::root(),
 			U256::from(1)
 		));
-		assert_eq!(BaseFee::base_fee_per_gas(), U256::from(1));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1));
 	});
 }
 
@@ -301,11 +301,11 @@ fn set_base_fee_per_gas_dispatchable() {
 fn set_elasticity_dispatchable() {
 	let base_fee = U256::from(1_000_000_000);
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		assert_eq!(BaseFee::elasticity(), Permill::from_parts(125_000));
+		assert_eq!(Elasticity::<Test>::get(), Permill::from_parts(125_000));
 		assert_ok!(BaseFee::set_elasticity(
 			RuntimeOrigin::root(),
 			Permill::from_parts(1_000)
 		));
-		assert_eq!(BaseFee::elasticity(), Permill::from_parts(1_000));
+		assert_eq!(Elasticity::<Test>::get(), Permill::from_parts(1_000));
 	});
 }
