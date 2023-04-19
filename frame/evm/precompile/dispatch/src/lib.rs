@@ -34,7 +34,7 @@ use fp_evm::{
 };
 use frame_support::{
 	codec::{Decode, DecodeLimit as _},
-	dispatch::{Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchClass, Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
 	traits::{ConstU32, Get},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
@@ -42,16 +42,16 @@ use pallet_evm::{AddressMapping, GasWeightMapping};
 // `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
 // can be used to overflow the stack.
 // Default value is 8, which is the same as in XCM call decoding.
-pub struct Dispatch<T, DispatchFilter = (), DecodeLimit = ConstU32<8>> {
-	_marker: PhantomData<(T, DispatchFilter, DecodeLimit)>,
+pub struct Dispatch<T, DispatchValidator = (), DecodeLimit = ConstU32<8>> {
+	_marker: PhantomData<(T, DispatchValidator, DecodeLimit)>,
 }
 
-impl<T, DispatchFilter, DecodeLimit> Precompile for Dispatch<T, DispatchFilter, DecodeLimit>
+impl<T, DispatchValidator, DecodeLimit> Precompile for Dispatch<T, DispatchValidator, DecodeLimit>
 where
 	T: pallet_evm::Config,
 	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
-	DispatchFilter: DispatchFilterT<T>,
+	DispatchValidator: DispatchValidateT<T>,
 	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -77,10 +77,8 @@ where
 
 		let origin = T::AddressMapping::into_account_id(context.caller);
 
-		if !DispatchFilter::allow(&origin, &call) {
-			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("call not allowed".into()),
-			});
+		if let Some(err) = DispatchValidator::validate_before_dispatch(&origin, &call) {
+			return Err(err);
 		}
 
 		match call.dispatch(Some(origin).into()) {
@@ -107,14 +105,30 @@ where
 	}
 }
 
-/// Dispatch filter trait.
-pub trait DispatchFilterT<T: pallet_evm::Config> {
-	fn allow(origin: &T::AccountId, call: &T::RuntimeCall) -> bool;
+/// Dispatch validation trait.
+pub trait DispatchValidateT<T: pallet_evm::Config> {
+	fn validate_before_dispatch(
+		origin: &T::AccountId,
+		call: &T::RuntimeCall,
+	) -> Option<PrecompileFailure>;
 }
 
-/// The default implementation of `DispatchFilterT`.
-impl<T: pallet_evm::Config> DispatchFilterT<T> for () {
-	fn allow(_origin: &T::AccountId, _call: &T::RuntimeCall) -> bool {
-		true
+/// The default implementation of `DispatchValidateT`.
+impl<T> DispatchValidateT<T> for ()
+where
+	T: pallet_evm::Config,
+	T::RuntimeCall: GetDispatchInfo,
+{
+	fn validate_before_dispatch(
+		_origin: &T::AccountId,
+		call: &T::RuntimeCall,
+	) -> Option<PrecompileFailure> {
+		let info = call.get_dispatch_info();
+		if !(info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal) {
+			return Some(PrecompileFailure::Error {
+				exit_status: ExitError::Other("invalid call".into()),
+			});
+		}
+		None
 	}
 }
