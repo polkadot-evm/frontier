@@ -90,8 +90,7 @@ impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
 		_addresses: Vec<sp_core::H160>,
 		_topics: Vec<Vec<Option<H256>>>,
 	) -> Result<Vec<crate::FilteredLog>, String> {
-		// KeyValue db does not index logs
-		unimplemented!();
+		Err("KeyValue db does not index logs".into())
 	}
 
 	fn is_indexed(&self) -> bool {
