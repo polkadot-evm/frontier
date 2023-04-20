@@ -151,6 +151,9 @@ where
 		len: usize,
 	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
+			// TODO Weight v2 type 16 bytes? check scale compact stuff
+			let encoded_len = transaction.encode().len() + 16usize;
+
 			// Validate submitted gas limit to weight conversion
 			let gas_limit = match transaction {
 				Transaction::Legacy(t) => t.gas_limit,
@@ -160,7 +163,8 @@ where
 			let without_base_extrinsic_weight = true;
 			let submitted_weight = T::GasWeightMapping::gas_to_weight(
 				gas_limit.unique_saturated_into(),
-				without_base_extrinsic_weight
+				without_base_extrinsic_weight,
+				Some(encoded_len)
 			);
 			if submitted_weight != dispatch_info.weight {
 				return Some(Err(
@@ -294,7 +298,7 @@ pub mod pallet {
 			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
 				let transaction_data: TransactionData = transaction.into();
 				transaction_data.gas_limit.unique_saturated_into()
-			}, without_base_extrinsic_weight)
+			}, without_base_extrinsic_weight, None)
 		})]
 		pub fn transact(
 			origin: OriginFor<T>,
@@ -312,15 +316,7 @@ pub mod pallet {
 		
 		/// Transact an Ethereum transaction with native WeightV2+ limit.
 		#[pallet::call_index(1)]
-		#[pallet::weight({
-			let without_base_extrinsic_weight = true;
-			let mut from_gas = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
-				let transaction_data: TransactionData = transaction.into();
-				transaction_data.gas_limit.unique_saturated_into()
-			}, without_base_extrinsic_weight);
-			*from_gas.proof_size_mut() = weight_limit.proof_size();
-			from_gas
-		})]
+		#[pallet::weight({ *weight_limit })]
 		pub fn transact_with_weight_limit(
 			origin: OriginFor<T>,
 			transaction: Transaction,
@@ -680,11 +676,10 @@ impl<T: Config> Pallet<T> {
 
 		Ok(PostDispatchInfo {
 			actual_weight: {
-				// Until opcodes are properly benchmarked, we still use gas to weight conversion
-				// and replace proof_size.
 				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
 					used_gas.unique_saturated_into(),
 					true,
+					None,
 				);
 				if let Some(weight_info) = weight_info {
 					if let Some(proof_size_usage) = weight_info.proof_size_usage {

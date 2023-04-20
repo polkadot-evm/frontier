@@ -786,6 +786,7 @@ impl_runtime_apis! {
 				let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 					gas_limit.unique_saturated_into(),
 					true,
+					Some(encoded_len),
 				);
 				let transact_with_weight_limit = pallet_ethereum::Call::<Runtime>::transact_with_weight_limit { transaction, weight_limit };
 
