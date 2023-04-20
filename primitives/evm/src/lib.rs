@@ -31,7 +31,7 @@ use sp_std::vec::Vec;
 
 pub use evm::{
 	backend::{Basic as Account, Log},
-	Config, ExitReason,
+	Config, ExitReason, Opcode,
 };
 
 pub use self::{
