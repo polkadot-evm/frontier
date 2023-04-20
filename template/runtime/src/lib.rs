@@ -775,8 +775,8 @@ impl_runtime_apis! {
 		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
 			#[cfg(feature = "evm-with-weight-limit")]
 			{
-				// TODO Weight v2 type 16 bytes? check scale compact stuff
-				let encoded_len = transaction.encode().len() + 16usize;
+				// TODO Weight v2 type + pallet and call indexes 18 bytes? check scale compact stuff
+				let encoded_len = transaction.encode().len() + 18usize;
 
 				let gas_limit = match &transaction {
 					EthereumTransaction::Legacy(t) => t.gas_limit,

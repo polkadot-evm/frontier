@@ -151,8 +151,8 @@ where
 		len: usize,
 	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
-			// TODO Weight v2 type 16 bytes? check scale compact stuff
-			let encoded_len = transaction.encode().len() + 16usize;
+			// TODO Weight v2 type + pallet and call indexes 18 bytes? check scale compact stuff
+			let encoded_len = transaction.encode().len() + 18usize;
 
 			// Validate submitted gas limit to weight conversion
 			let gas_limit = match transaction {
