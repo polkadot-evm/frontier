@@ -22,7 +22,7 @@ use serde::Serialize;
 use crate::types::Log;
 
 /// Receipt
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Receipt {
 	/// Transaction Hash
