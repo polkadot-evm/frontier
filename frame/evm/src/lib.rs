@@ -194,7 +194,7 @@ pub mod pallet {
 		#[pallet::call_index(1)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight, None)
+			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
 		})]
 		pub fn call(
 			origin: OriginFor<T>,
@@ -253,7 +253,6 @@ pub mod pallet {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
 						info.used_gas.unique_saturated_into(),
 						true,
-						None,
 					);
 					if let Some(weight_info) = info.weight_info {
 						if let Some(proof_size_usage) = weight_info.proof_size_usage {
@@ -271,7 +270,7 @@ pub mod pallet {
 		#[pallet::call_index(2)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight, None)
+			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
 		})]
 		pub fn create(
 			origin: OriginFor<T>,
@@ -340,7 +339,6 @@ pub mod pallet {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
 						info.used_gas.unique_saturated_into(),
 						true,
-						None,
 					);
 					if let Some(weight_info) = info.weight_info {
 						if let Some(proof_size_usage) = weight_info.proof_size_usage {
@@ -357,7 +355,7 @@ pub mod pallet {
 		#[pallet::call_index(3)]
 		#[pallet::weight({
 			let without_base_extrinsic_weight = true;
-			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight, None)
+			T::GasWeightMapping::gas_to_weight(*gas_limit, without_base_extrinsic_weight)
 		})]
 		pub fn create2(
 			origin: OriginFor<T>,
@@ -428,7 +426,6 @@ pub mod pallet {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
 						info.used_gas.unique_saturated_into(),
 						true,
-						None,
 					);
 					if let Some(weight_info) = info.weight_info {
 						if let Some(proof_size_usage) = weight_info.proof_size_usage {
@@ -721,13 +718,13 @@ impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 
 /// A mapping function that converts Ethereum gas to Substrate weight
 pub trait GasWeightMapping {
-	fn gas_to_weight(gas: u64, without_base_weight: bool, transaction_len: Option<usize>) -> Weight;
+	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight;
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
 pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
-	fn gas_to_weight(gas: u64, without_base_weight: bool, transaction_len: Option<usize>) -> Weight {
+	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
 		let mut weight = T::WeightPerGas::get().saturating_mul(gas);
 		if without_base_weight {
 			weight = weight.saturating_sub(
@@ -736,8 +733,15 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 					.base_extrinsic,
 			);
 		}
-		if let Some(transaction_len) = transaction_len {
-			*weight.proof_size_mut() = weight.proof_size().saturating_add(transaction_len as u64);
+
+		// Apply a gas to proof size ratio based on BlockGasLimit
+		if gas > 0 {
+			let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
+			let gas_ratio = block_gas_limit.saturating_div(gas);
+			if gas_ratio > 0 {
+				let proof_size = fp_evm::MAX_POV_SIZE.saturating_div(gas_ratio);
+				*weight.proof_size_mut() = proof_size;
+			}
 		}
 		weight
 	}

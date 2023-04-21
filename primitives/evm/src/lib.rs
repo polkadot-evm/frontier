@@ -56,6 +56,8 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
+pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
 #[derive(Clone, Copy, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct WeightInfo {

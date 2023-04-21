@@ -151,9 +151,6 @@ where
 		len: usize,
 	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
-			// TODO Weight v2 type + pallet and call indexes 18 bytes? check scale compact stuff
-			let encoded_len = transaction.encode().len() + 18usize;
-
 			// Validate submitted gas limit to weight conversion
 			let gas_limit = match transaction {
 				Transaction::Legacy(t) => t.gas_limit,
@@ -164,7 +161,6 @@ where
 			let submitted_weight = T::GasWeightMapping::gas_to_weight(
 				gas_limit.unique_saturated_into(),
 				without_base_extrinsic_weight,
-				Some(encoded_len)
 			);
 			if submitted_weight != dispatch_info.weight {
 				return Some(Err(
@@ -298,7 +294,7 @@ pub mod pallet {
 			<T as pallet_evm::Config>::GasWeightMapping::gas_to_weight({
 				let transaction_data: TransactionData = transaction.into();
 				transaction_data.gas_limit.unique_saturated_into()
-			}, without_base_extrinsic_weight, None)
+			}, without_base_extrinsic_weight)
 		})]
 		pub fn transact(
 			origin: OriginFor<T>,
@@ -328,6 +324,39 @@ pub mod pallet {
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 				"pre log already exists; block is invalid",
 			);
+
+			// Set gas limit based on weight_limit
+			let weight_to_gas = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
+			let transaction = match transaction {
+				Transaction::Legacy(mut t) => {
+					t.gas_limit = weight_to_gas;
+					Transaction::Legacy(t)
+				}
+				Transaction::EIP2930(mut t) => {
+					t.gas_limit = weight_to_gas;
+					Transaction::EIP2930(t)
+				}
+				Transaction::EIP1559(mut t) => {
+					t.gas_limit = weight_to_gas;
+					Transaction::EIP1559(t)
+				}
+			};
+			// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
+			let mut weight_limit = weight_limit;
+			let extrinsic_len = transaction.encode().len()
+				// pallet index
+				.saturating_add(1)
+				// call index
+				.saturating_add(1) as u64;
+			*weight_limit.proof_size_mut() = weight_limit.proof_size()
+				.checked_sub(extrinsic_len)
+				.ok_or(DispatchErrorWithPostInfo {
+					post_info: PostDispatchInfo {
+						actual_weight: None,
+						pays_fee: Pays::No,
+					},
+					error: sp_runtime::DispatchError::Exhausted,
+				})?;
 
 			Self::apply_validated_transaction(source, transaction, Some(weight_limit))
 		}
@@ -679,7 +708,6 @@ impl<T: Config> Pallet<T> {
 				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
 					used_gas.unique_saturated_into(),
 					true,
-					None,
 				);
 				if let Some(weight_info) = weight_info {
 					if let Some(proof_size_usage) = weight_info.proof_size_usage {
