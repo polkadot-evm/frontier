@@ -138,7 +138,7 @@ parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
-	pub const BlockGasLimit: U256 = U256::MAX;
+	pub BlockGasLimit: U256 = U256::from(150_000_000);
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 

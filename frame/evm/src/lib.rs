@@ -225,6 +225,7 @@ pub mod pallet {
 				is_transactional,
 				validate,
 				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -298,6 +299,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
 				None,
 				T::config(),
 			) {
@@ -385,6 +387,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
 				None,
 				T::config(),
 			) {
@@ -735,14 +738,12 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 		}
 
 		// Apply a gas to proof size ratio based on BlockGasLimit
-		if gas > 0 {
-			let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
-			let gas_ratio = block_gas_limit.saturating_div(gas);
-			if gas_ratio > 0 {
-				let proof_size = fp_evm::MAX_POV_SIZE.saturating_div(gas_ratio);
-				*weight.proof_size_mut() = proof_size;
-			}
-		}
+		let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
+		let gas_ratio: sp_arithmetic::Perquintill = sp_arithmetic::PerThing::from_rational(gas, block_gas_limit);
+		let tmp: Weight = Weight::from_proof_size(fp_evm::MAX_POV_SIZE);
+		let proof_size = tmp * gas_ratio;
+		*weight.proof_size_mut() = proof_size.proof_size();
+
 		weight
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {

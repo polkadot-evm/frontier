@@ -56,7 +56,17 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
+/// Maximum allowed POV size for a parachain block.
 pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
+/// Basic account fixed length.
+pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 64;
+/// `AccountCodesMetadata` read, temptatively 20 + 8 + 32.
+pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 60;
+/// (H160, H256) double map blake2 128 concat key size (68) + value 32.
+pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 100;
+/// Fixed trie 32 byte hash.
+pub const HASH_PROOF_SIZE: u64 = 32;
 
 #[derive(Clone, Copy, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
@@ -68,28 +78,32 @@ pub struct WeightInfo {
 }
 
 impl WeightInfo {
-	pub fn new_from_weight_limit(weight_limit: Option<Weight>) -> Result<Option<Self>, &'static str> {
-		Ok(match weight_limit {
-			None => None,
-			Some(weight_limit) if weight_limit.ref_time() > 0
-				&& weight_limit.proof_size() > 0 => Some(WeightInfo {
-					ref_time_limit: Some(weight_limit.ref_time()),
-					proof_size_limit: Some(weight_limit.proof_size()),
-					ref_time_usage: Some(0u64),
-					proof_size_usage: Some(0u64),
-				}),
-			Some(weight_limit) if weight_limit.ref_time() > 0 => Some(WeightInfo {
+	pub fn new_from_weight_limit(weight_limit: Option<Weight>, transaction_len: Option<u64>) -> Result<Option<Self>, &'static str> {
+		Ok(match (weight_limit, transaction_len) {
+			(None, _) => None,
+			(Some(weight_limit), Some(transaction_len)) if weight_limit.ref_time() > 0
+				&& weight_limit.proof_size() > 0 => {
+					Some(WeightInfo {
+						ref_time_limit: Some(weight_limit.ref_time()),
+						proof_size_limit: Some(weight_limit.proof_size()),
+						ref_time_usage: Some(0u64),
+						proof_size_usage: Some(transaction_len),
+					})
+				},
+			(Some(weight_limit), _) if weight_limit.ref_time() > 0 => Some(WeightInfo {
 					ref_time_limit: Some(weight_limit.ref_time()),
 					proof_size_limit: None,
 					ref_time_usage: Some(0u64),
 					proof_size_usage: None,
 				}),
-			Some(weight_limit) if weight_limit.proof_size() > 0 => Some(WeightInfo {
+			(Some(weight_limit), Some(transaction_len)) if weight_limit.proof_size() > 0 => {
+				Some(WeightInfo {
 					ref_time_limit: None,
 					proof_size_limit: Some(weight_limit.proof_size()),
 					ref_time_usage: None,
-					proof_size_usage: Some(0u64),
-				}),
+					proof_size_usage: Some(transaction_len),
+				})
+			},
 			_ => return Err("must provide Some valid weight limit or None")
 		})
 	}

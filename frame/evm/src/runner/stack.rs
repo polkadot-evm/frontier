@@ -27,7 +27,11 @@ use evm::{
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer, Opcode, gasometer::{GasCost, StorageTarget},
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity, WeightInfo};
+use fp_evm::{
+	CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity, WeightInfo,
+	ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
+	HASH_PROOF_SIZE,
+};
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -63,6 +67,7 @@ where
 		precompiles: &'precompiles T::PrecompilesType,
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		f: F,
 	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
 	where
@@ -98,6 +103,7 @@ where
 			base_fee,
 			weight,
 			weight_limit,
+			transaction_len,
 		);
 
 		// Set IN_EVM to false
@@ -122,6 +128,7 @@ where
 		base_fee: U256,
 		weight: Weight,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -219,7 +226,7 @@ where
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
 		// Used to record the external costs in the evm through the StackState implementation
-		let maybe_weight_info = WeightInfo::new_from_weight_limit(weight_limit)
+		let maybe_weight_info = WeightInfo::new_from_weight_limit(weight_limit, transaction_len)
 			.map_err(|_| RunnerError { error: Error::<T>::Undefined, weight })?;
 		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
@@ -375,6 +382,7 @@ where
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -403,6 +411,7 @@ where
 			&precompiles,
 			is_transactional,
 			weight_limit,
+			transaction_len,
 			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
@@ -419,6 +428,7 @@ where
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -447,6 +457,7 @@ where
 			&precompiles,
 			is_transactional,
 			weight_limit,
+			transaction_len,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
@@ -470,6 +481,7 @@ where
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -499,6 +511,7 @@ where
 			&precompiles,
 			is_transactional,
 			weight_limit,
+			transaction_len,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
@@ -639,6 +652,10 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 
 	pub fn weight_info(&self) -> Option<WeightInfo> {
 		self.weight_info
+	}
+
+	pub fn weight_info_mut(&mut self) -> &mut Option<WeightInfo> {
+		&mut self.weight_info
 	}
 }
 
@@ -877,7 +894,13 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_dynamic_opcode_cost(&mut self, opcode: Opcode, gas_cost: GasCost, target: evm::gasometer::StorageTarget) -> Result<(), ExitError> {
-		let mut weight_info = if let Some(weight_info) = self.weight_info {
+		let size_limit: u64 = self.metadata()
+			.gasometer()
+			.config()
+			.create_contract_limit
+			.unwrap_or_default() as u64;
+		
+		let weight_info = if let Some(weight_info) = self.weight_info_mut() {
 			weight_info
 		} else {
 			return Ok(());
@@ -926,7 +949,7 @@ where
 		//	contract size limit.
 		let opcode_proof_size = match opcode {
 			// Basic account fixed length
-			Opcode::BALANCE => U256::from(64),
+			Opcode::BALANCE => U256::from(ACCOUNT_BASIC_PROOF_SIZE),
 			// TODO requires https://github.com/paritytech/frontier/pull/893
 			Opcode::EXTCODESIZE |
 			Opcode::EXTCODECOPY |
@@ -943,16 +966,11 @@ where
 				};
 				// First try to record fixed sized `AccountCodesMetadata` read
 				// Temptatively 20 + 8 + 32  
-				weight_info.try_record_proof_size_or_fail(60)?;
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 				let size = if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 					meta.size
 				} else {
 					// If it does not exist, try to record `create_contract_limit` first.
-					let size_limit: u64 = self.metadata()
-						.gasometer()
-						.config()
-						.create_contract_limit
-						.unwrap_or_default() as u64;
 					weight_info.try_record_proof_size_or_fail(size_limit)?;
 					let meta = Pallet::<T>::account_code_metadata(address);
 					let actual_size = meta.size;
@@ -963,12 +981,12 @@ where
 				U256::from(size)
 			},
 			// (H160, H256) double map blake2 128 concat key size (68) + value 32
-			Opcode::SLOAD => U256::from(100),
+			Opcode::SLOAD => U256::from(ACCOUNT_STORAGE_PROOF_SIZE),
 			// Fixed trie 32 byte hash
 			Opcode::SSTORE |
 			Opcode::CREATE |
 			Opcode::CREATE2 |
-			Opcode::SUICIDE => U256::from(32),
+			Opcode::SUICIDE => U256::from(HASH_PROOF_SIZE),
 			// This must be unreachable, free of (proof) cost opcodes cannot be recorded. 
 			// TODO decide how do we want to gracefully handle.
 			_ => return Err(ExitError::OutOfGas),
@@ -984,7 +1002,7 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) -> Result<(), ExitError> {
-		let mut weight_info = if let Some(weight_info) = self.weight_info {
+		let weight_info = if let Some(weight_info) = self.weight_info_mut() {
 			weight_info
 		} else {
 			return Ok(());

@@ -23,7 +23,30 @@ use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo},
 	weights::Weight,
 };
-use pallet_evm::AddressMapping;
+use pallet_evm::{AddressMapping, GasWeightMapping};
+use scale_codec::Encode;
+
+fn legacy_proof_size_test_callee_create() -> LegacyUnsignedTransaction {
+	LegacyUnsignedTransaction {
+		nonce: U256::zero(),
+		gas_price: U256::from(1),
+		gas_limit: U256::from(0x100000),
+		action: ethereum::TransactionAction::Create,
+		value: U256::zero(),
+		input: hex::decode(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE.trim_end()).unwrap(),
+	}
+}
+
+fn legacy_proof_size_test_create() -> LegacyUnsignedTransaction {
+	LegacyUnsignedTransaction {
+		nonce: U256::zero(),
+		gas_price: U256::from(1),
+		gas_limit: U256::from(0x100000),
+		action: ethereum::TransactionAction::Create,
+		value: U256::zero(),
+		input: hex::decode(PROOF_SIZE_TEST_CONTRACT_BYTECODE.trim_end()).unwrap(),
+	}
+}
 
 fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 	LegacyUnsignedTransaction {
@@ -47,7 +70,7 @@ fn transaction_should_increment_nonce() {
 
 	ext.execute_with(|| {
 		let t = legacy_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		assert_eq!(EVM::account_basic(&alice.address).0.nonce, U256::from(1));
 	});
 }
@@ -114,7 +137,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
 		let t = legacy_erc20_creation_transaction(alice);
 
 		// nonce is 1
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 
 		transaction.nonce = U256::from(0);
 
@@ -198,7 +221,7 @@ fn contract_constructor_should_get_executed() {
 	ext.execute_with(|| {
 		let t = legacy_erc20_creation_transaction(alice);
 
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		assert_eq!(
 			EVM::account_storages(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
@@ -240,7 +263,7 @@ fn contract_should_be_created_at_given_address() {
 
 	ext.execute_with(|| {
 		let t = legacy_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		assert_ne!(EVM::account_codes(erc20_address).len(), 0);
 	});
 }
@@ -254,7 +277,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 	ext.execute_with(|| {
 		let t = legacy_erc20_creation_transaction(alice);
-		let (_, _, info) = Ethereum::execute(alice.address, &t, None).unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t, None, None,).unwrap();
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
@@ -291,7 +314,7 @@ fn call_should_handle_errors() {
 			input: hex::decode(contract).unwrap(),
 		}
 		.sign(&alice.private_key);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let foo = hex::decode("c2985578").unwrap();
@@ -308,7 +331,7 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key);
 
 		// calling foo will succeed
-		let (_, _, info) = Ethereum::execute(alice.address, &t2, None).unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t2, None, None,).unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {
@@ -331,7 +354,7 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key);
 
 		// calling should always succeed even if the inner EVM execution fails.
-		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
+		Ethereum::execute(alice.address, &t3, None, None,).ok().unwrap();
 	});
 }
 
@@ -401,11 +424,410 @@ fn validated_transaction_apply_zero_gas_price_works() {
 
 		assert_ok!(crate::ValidatedTransaction::<Test>::apply(
 			alice.address,
-			transaction
+			transaction,
+			None
 		));
 		// Alice didn't pay fees, transfer 100 to Bob.
 		assert_eq!(Balances::free_balance(&substrate_alice), 900);
 		// Bob received 100 from Alice.
 		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
 	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_create_accounting_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let mut callee = legacy_proof_size_test_callee_create();
+		let gas_limit: u64 = 1_000_000;
+		callee.gas_limit = U256::from(gas_limit);
+		let transaction = callee.sign(&alice.private_key);
+
+		let transaction_len = transaction.encode().len() + 1 + 1;
+
+		let weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+		let result = Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			transaction,
+			weight_limit
+		)
+		.expect("Failed to execute transaction");
+
+		let actual_weight = result.actual_weight.expect("some weight");
+		assert_eq!(transaction_len as u64, actual_weight.proof_size());
+	});
+
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_subcall_accounting_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	let callee_contract_address = contract_address(alice.address, 0);
+	let proof_size_test_contract_address = contract_address(alice.address, 1);
+
+	ext.execute_with(|| {
+		// Create callee contract A
+		let callee = legacy_proof_size_test_callee_create()
+			.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			callee,
+		)
+		.expect("Failed to execute transaction");
+
+		// Create proof size test contract B
+		let mut proof_size_test = legacy_proof_size_test_create();
+		proof_size_test.nonce = U256::from(1);
+		let proof_size_test = proof_size_test.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			proof_size_test,
+		)
+		.expect("Failed to execute transaction");
+
+		// Call B, that calls A, with weight limit
+		// selector for ProofSizeTest::test_call function..
+		let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
+		// ..encode the callee address argument
+		call_data.push_str(&format!("{:x}", callee_contract_address));
+		let mut subcall = LegacyUnsignedTransaction {
+			nonce: U256::from(2),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(proof_size_test_contract_address),
+			value: U256::zero(),
+			input: hex::decode(&call_data).unwrap(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		subcall.gas_limit = U256::from(gas_limit);
+
+		let weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		let subcall = subcall.sign(&alice.private_key);
+
+		// Expected proof size
+		let transaction_len = subcall.encode().len() + 1 + 1;
+		let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+		let reading_contract_len = EVM::account_codes(callee_contract_address).len();
+		
+		let expected_proof_size = transaction_len + read_account_metadata + reading_contract_len;
+
+		// Execute
+		let result = Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			subcall,
+			weight_limit,
+		)
+		.expect("Failed to execute transaction");
+
+		// Expect recorded proof size to be equal the expected proof size
+		let actual_weight = result.actual_weight.expect("some weight");
+		assert_eq!(expected_proof_size as u64, actual_weight.proof_size());
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_balance_accounting_works() {
+	let (pairs, mut ext) = new_test_ext(2);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	let proof_size_test_contract_address = contract_address(alice.address, 0);
+
+	ext.execute_with(|| {
+		// Create proof size test contract
+		let proof_size_test = legacy_proof_size_test_create()
+			.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			proof_size_test,
+		)
+		.expect("Failed to execute transaction");
+
+		// selector for ProofSizeTest::balance function..
+		let mut call_data: String = "35f56c3b000000000000000000000000".to_owned();
+		// ..encode bobs address
+		call_data.push_str(&format!("{:x}", bob.address));
+		let mut balance = LegacyUnsignedTransaction {
+			nonce: U256::from(1),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(proof_size_test_contract_address),
+			value: U256::zero(),
+			input: hex::decode(&call_data).unwrap(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		balance.gas_limit = U256::from(gas_limit);
+
+		let weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		let balance = balance.sign(&alice.private_key);
+
+		// Expected proof size, the transaction length + an account basic cold read.
+		let transaction_len = balance.encode().len() + 1 + 1;
+		// Contract makes two account reads - cold, then warm -, only cold reads record proof size.
+		let read_account_basic = ACCOUNT_BASIC_PROOF_SIZE as usize; // wip move this to constants, this is the value for reading a maybe cached account code.
+		
+		let expected_proof_size = transaction_len + read_account_basic;
+
+		// Execute
+		let result = Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			balance,
+			weight_limit,
+		)
+		.expect("Failed to execute transaction");
+
+		// Expect recorded proof size to be equal the expected proof size
+		let actual_weight = result.actual_weight.expect("some weight");
+		assert_eq!(expected_proof_size as u64, actual_weight.proof_size());
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_sload_accounting_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	let proof_size_test_contract_address = contract_address(alice.address, 0);
+
+	ext.execute_with(|| {
+		// Create proof size test contract
+		let proof_size_test = legacy_proof_size_test_create()
+			.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			proof_size_test,
+		)
+		.expect("Failed to execute transaction");
+
+		// selector for ProofSizeTest::test_sload function..
+		let call_data: String = "e27a0ecd".to_owned();
+		let mut balance = LegacyUnsignedTransaction {
+			nonce: U256::from(0),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(proof_size_test_contract_address),
+			value: U256::zero(),
+			input: hex::decode(&call_data).unwrap(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		balance.gas_limit = U256::from(gas_limit);
+
+		let weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		let balance = balance.sign(&alice.private_key);
+
+		// Expected proof size, the transaction length + an account basic cold read.
+		let transaction_len = balance.encode().len() + 1 + 1;
+		// Contract does two sloads - cold, then warm -, only cold reads record proof size.
+		let sload_cost = ACCOUNT_STORAGE_PROOF_SIZE as usize; // wip move this to constants, this is the value for reading a maybe cached account code.
+		
+		let expected_proof_size = transaction_len + sload_cost;
+
+		// Execute
+		let result = Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			balance,
+			weight_limit,
+		)
+		.expect("Failed to execute transaction");
+
+		// Expect recorded proof size to be equal the expected proof size
+		let actual_weight = result.actual_weight.expect("some weight");
+		assert_eq!(expected_proof_size as u64, actual_weight.proof_size());
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_sstore_accounting_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	let proof_size_test_contract_address = contract_address(alice.address, 0);
+
+	ext.execute_with(|| {
+		// Create proof size test contract
+		let proof_size_test = legacy_proof_size_test_create()
+			.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			proof_size_test,
+		)
+		.expect("Failed to execute transaction");
+
+		// selector for ProofSizeTest::test_sstore function..
+		let call_data: String = "4f3080a9".to_owned();
+		let mut balance = LegacyUnsignedTransaction {
+			nonce: U256::from(0),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(proof_size_test_contract_address),
+			value: U256::zero(),
+			input: hex::decode(&call_data).unwrap(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		balance.gas_limit = U256::from(gas_limit);
+
+		let weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		let balance = balance.sign(&alice.private_key);
+
+		// Expected proof size, the transaction length + an account basic cold read.
+		let transaction_len = balance.encode().len() + 1 + 1;
+		// Contract does two sstore - cold, then warm -, only cold writes record proof size.
+		let sstore_cost = HASH_PROOF_SIZE as usize; // wip move this to constants, this is the value for reading a maybe cached account code.
+		
+		let expected_proof_size = transaction_len + sstore_cost;
+
+		// Execute
+		let result = Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			balance,
+			weight_limit,
+		)
+		.expect("Failed to execute transaction");
+
+		// Expect recorded proof size to be equal the expected proof size
+		let actual_weight = result.actual_weight.expect("some weight");
+		assert_eq!(expected_proof_size as u64, actual_weight.proof_size());
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_oog_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	let callee_contract_address = contract_address(alice.address, 0);
+	let proof_size_test_contract_address = contract_address(alice.address, 1);
+
+	ext.execute_with(|| {
+		// Create callee contract A
+		let callee = legacy_proof_size_test_callee_create()
+			.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			callee,
+		)
+		.expect("Failed to execute transaction");
+
+		// Create proof size test contract B
+		let mut proof_size_test = legacy_proof_size_test_create();
+		proof_size_test.nonce = U256::from(1);
+		let proof_size_test = proof_size_test.sign(&alice.private_key);
+		let _ = Ethereum::transact(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			proof_size_test,
+		)
+		.expect("Failed to execute transaction");
+
+		// Call B, that calls A infinitely, with weight limit
+		// selector for ProofSizeTest::test_oog function..
+		let call_data: String = "944ddc62".to_owned();
+		let mut subcall = LegacyUnsignedTransaction {
+			nonce: U256::from(2),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(proof_size_test_contract_address),
+			value: U256::zero(),
+			input: hex::decode(&call_data).unwrap(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		subcall.gas_limit = U256::from(gas_limit);
+
+		let mut weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		// Artifically set a lower proof size limit so we OOG this instead gas.
+		*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
+
+		let subcall = subcall.sign(&alice.private_key);
+
+		let transaction_len = (subcall.encode().len() + 1 + 1) as u64;
+		// Transaction len is recorded initially and thus not available in the evm execution.
+		// Find how many random balance reads can we do with the available proof size.
+		let available_proof_size = weight_limit.proof_size() - transaction_len;
+		let number_balance_reads =  available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
+		// The actual proof size consumed by those balance reads, plus the transaction_len.
+		let expected_total_proof_size =  (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) + transaction_len;
+		
+		// Execute
+		let result = Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			subcall,
+			weight_limit,
+		)
+		.expect("Failed to execute transaction");
+
+		// Expect recorded proof size to be equal the expected proof size
+		let actual_weight = result.actual_weight.expect("some weight");
+		assert_eq!(expected_total_proof_size, actual_weight.proof_size());
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_weight_limit_validation_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	let proof_size_test_contract_address = contract_address(alice.address, 1);
+
+	ext.execute_with(|| {
+		// any selector
+		let call_data: String = "944ddc62".to_owned();
+		let mut subcall = LegacyUnsignedTransaction {
+			nonce: U256::from(2),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(proof_size_test_contract_address),
+			value: U256::zero(),
+			input: hex::decode(&call_data).unwrap(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		subcall.gas_limit = U256::from(gas_limit);
+
+		let mut weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		let subcall = subcall.sign(&alice.private_key);
+		let transaction_len = (subcall.encode().len() + 1 + 1) as u64;
+
+		// Artifically set a failing proof size limit
+		*weight_limit.proof_size_mut() = transaction_len - 1;
+		
+		// Execute
+		assert_eq!(Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			subcall,
+			weight_limit,
+		), Err(frame_support::dispatch::DispatchErrorWithPostInfo {
+			post_info: frame_support::dispatch::PostDispatchInfo {
+				actual_weight: None,
+				pays_fee: frame_support::dispatch::Pays::No,
+			},
+			error: frame_support::dispatch::DispatchError::Exhausted,
+		}));
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn uncached_account_code_proof_size_accounting_works() {
+
 }

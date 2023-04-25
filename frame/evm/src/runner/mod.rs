@@ -58,6 +58,7 @@ pub trait Runner<T: Config> {
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>>;
 
@@ -73,6 +74,7 @@ pub trait Runner<T: Config> {
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 
@@ -89,6 +91,7 @@ pub trait Runner<T: Config> {
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }

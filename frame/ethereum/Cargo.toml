@@ -81,4 +81,4 @@ try-runtime = [
 	"pallet-evm/try-runtime",
 ]
 forbid-evm-reentrancy = ["pallet-evm/forbid-evm-reentrancy"]
-evm-with-weight-limit = ["evm/with-substrate"]
+evm-with-weight-limit = ["evm/with-substrate", "pallet-evm/evm-with-weight-limit"]

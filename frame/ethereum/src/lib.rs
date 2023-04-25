@@ -342,14 +342,9 @@ pub mod pallet {
 				}
 			};
 			// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
-			let mut weight_limit = weight_limit;
-			let extrinsic_len = transaction.encode().len()
-				// pallet index
-				.saturating_add(1)
-				// call index
-				.saturating_add(1) as u64;
-			*weight_limit.proof_size_mut() = weight_limit.proof_size()
-				.checked_sub(extrinsic_len)
+			// Validate the weight limit can afford recording transaction len
+			let _ = weight_limit.proof_size()
+				.checked_sub(Self::transaction_len(&transaction))
 				.ok_or(DispatchErrorWithPostInfo {
 					post_info: PostDispatchInfo {
 						actual_weight: None,
@@ -425,6 +420,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	fn transaction_len(transaction: &Transaction) -> u64 {
+		transaction.encode().len()
+			// pallet index
+			.saturating_add(1)
+			// call index
+			.saturating_add(1) as u64
+	}
+
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -797,6 +800,11 @@ impl<T: Config> Pallet<T> {
 
 		let is_transactional = true;
 		let validate = false;
+		let transaction_len = if weight_limit.is_some() {
+			Some(Self::transaction_len(&transaction))
+		} else {
+			None
+		};
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(
@@ -812,6 +820,7 @@ impl<T: Config> Pallet<T> {
 					is_transactional,
 					validate,
 					weight_limit,
+					transaction_len,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -841,6 +850,7 @@ impl<T: Config> Pallet<T> {
 					is_transactional,
 					validate,
 					weight_limit,
+					transaction_len,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
