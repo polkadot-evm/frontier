@@ -127,7 +127,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 	}
 }
 parameter_types! {
-	pub BlockGasLimit: U256 = U256::max_value();
+	pub BlockGasLimit: U256 = U256::from(150_000_000);
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }

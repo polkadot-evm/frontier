@@ -23,7 +23,8 @@ use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo},
 	weights::Weight,
 };
-use pallet_evm::AddressMapping;
+use pallet_evm::{AddressMapping, GasWeightMapping};
+use scale_codec::Encode;
 
 fn eip2930_erc20_creation_unsigned_transaction() -> EIP2930UnsignedTransaction {
 	EIP2930UnsignedTransaction {
@@ -408,5 +409,47 @@ fn validated_transaction_apply_zero_gas_price_works() {
 		assert_eq!(Balances::free_balance(&substrate_alice), 900);
 		// Bob received 100 from Alice.
 		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
+	});
+}
+
+#[cfg(feature = "evm-with-weight-limit")]
+#[test]
+fn proof_size_weight_limit_validation_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let mut tx = EIP2930UnsignedTransaction {
+			nonce: U256::from(2),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(alice.address),
+			value: U256::from(1),
+			input: Vec::new(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		tx.gas_limit = U256::from(gas_limit);
+
+		let mut weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		let tx = tx.sign(&alice.private_key, None);
+		let transaction_len = (tx.encode().len() + 1 + 1) as u64;
+
+		// Set proof size to less than the minimum required
+		*weight_limit.proof_size_mut() = transaction_len - 1;
+		
+		// Execute
+		assert_eq!(Ethereum::transact_with_weight_limit(
+			RawOrigin::EthereumTransaction(alice.address).into(),
+			tx,
+			weight_limit,
+		), Err(frame_support::dispatch::DispatchErrorWithPostInfo {
+			post_info: frame_support::dispatch::PostDispatchInfo {
+				actual_weight: None,
+				pays_fee: frame_support::dispatch::Pays::No,
+			},
+			error: frame_support::dispatch::DispatchError::Exhausted,
+		}));
 	});
 }

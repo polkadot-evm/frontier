@@ -335,6 +335,8 @@ where
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
+		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
 		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
@@ -397,6 +399,8 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
+				weight_limit,
+				transaction_len,
 				config,
 			)?;
 		}
@@ -443,6 +447,8 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
+				weight_limit,
+				transaction_len,
 				config,
 			)?;
 		}
@@ -496,6 +502,8 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
+				weight_limit,
+				transaction_len,
 				config,
 			)?;
 		}
@@ -827,14 +835,18 @@ where
 		self.substate.set_deleted(address)
 	}
 
-	fn set_code(&mut self, address: H160, code: Vec<u8>) {
+	fn set_code(&mut self, address: H160, code: Vec<u8>) -> Result<(), ExitError> {
 		log::debug!(
 			target: "evm",
 			"Inserting code ({} bytes) at {:?}",
 			code.len(),
 			address
 		);
+		if let Some(weight_info) = self.weight_info_mut() {
+			weight_info.try_record_proof_size_or_fail(HASH_PROOF_SIZE)?;
+		}
 		Pallet::<T>::create_account(address, code);
+		Ok(())
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
@@ -877,6 +889,37 @@ where
 	fn is_storage_cold(&self, address: H160, key: H256) -> bool {
 		self.substate
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
+	}
+
+	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
+		let size_limit: u64 = self.metadata()
+			.gasometer()
+			.config()
+			.create_contract_limit
+			.unwrap_or_default() as u64;
+		if let Some(weight_info) = self.weight_info_mut() {
+			// First try to record fixed sized `AccountCodesMetadata` read
+			// Temptatively 20 + 8 + 32
+			// TODO we need a way to check whether AccountCodesMetadata for an address is already
+			// recorded in this transaction, otherwise we are over accounting..
+			weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+
+			if <AccountCodesMetadata<T>>::get(address).is_none() {
+				// If it does not exist, try to record `create_contract_limit` first.
+				weight_info.try_record_proof_size_or_fail(size_limit)?;
+				let meta = Pallet::<T>::account_code_metadata(address);
+				let actual_size = meta.size;
+				// Refund if applies
+				weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+				return Ok(U256::from(actual_size));
+			};
+		}
+		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
+	}
+
+	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
+		// TODO
+		Ok(<Pallet<T>>::account_code_metadata(address).hash)
 	}
 
 	#[cfg(feature = "evm-with-weight-limit")]

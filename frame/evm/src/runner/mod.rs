@@ -42,6 +42,8 @@ pub trait Runner<T: Config> {
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
+		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>>;
 
