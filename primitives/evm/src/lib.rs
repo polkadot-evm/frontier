@@ -36,9 +36,9 @@ pub use evm::{
 
 pub use self::{
 	precompile::{
-		Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile, IsPrecompileResult,
-		PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
-		Transfer,
+		Context, ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, LinearCostPrecompile,
+		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
+		PrecompileSet, Transfer,
 	},
 	validation::{
 		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
@@ -78,24 +78,28 @@ pub struct WeightInfo {
 }
 
 impl WeightInfo {
-	pub fn new_from_weight_limit(weight_limit: Option<Weight>, transaction_len: Option<u64>) -> Result<Option<Self>, &'static str> {
+	pub fn new_from_weight_limit(
+		weight_limit: Option<Weight>,
+		transaction_len: Option<u64>,
+	) -> Result<Option<Self>, &'static str> {
 		Ok(match (weight_limit, transaction_len) {
 			(None, _) => None,
-			(Some(weight_limit), Some(transaction_len)) if weight_limit.ref_time() > 0
-				&& weight_limit.proof_size() > 0 => {
-					Some(WeightInfo {
-						ref_time_limit: Some(weight_limit.ref_time()),
-						proof_size_limit: Some(weight_limit.proof_size()),
-						ref_time_usage: Some(0u64),
-						proof_size_usage: Some(transaction_len),
-					})
-				},
-			(Some(weight_limit), _) if weight_limit.ref_time() > 0 => Some(WeightInfo {
+			(Some(weight_limit), Some(transaction_len))
+				if weight_limit.ref_time() > 0 && weight_limit.proof_size() > 0 =>
+			{
+				Some(WeightInfo {
 					ref_time_limit: Some(weight_limit.ref_time()),
-					proof_size_limit: None,
+					proof_size_limit: Some(weight_limit.proof_size()),
 					ref_time_usage: Some(0u64),
-					proof_size_usage: None,
-				}),
+					proof_size_usage: Some(transaction_len),
+				})
+			}
+			(Some(weight_limit), _) if weight_limit.ref_time() > 0 => Some(WeightInfo {
+				ref_time_limit: Some(weight_limit.ref_time()),
+				proof_size_limit: None,
+				ref_time_usage: Some(0u64),
+				proof_size_usage: None,
+			}),
 			(Some(weight_limit), Some(transaction_len)) if weight_limit.proof_size() > 0 => {
 				Some(WeightInfo {
 					ref_time_limit: None,
@@ -103,21 +107,21 @@ impl WeightInfo {
 					ref_time_usage: None,
 					proof_size_usage: Some(transaction_len),
 				})
-			},
-			_ => return Err("must provide Some valid weight limit or None")
+			}
+			_ => return Err("must provide Some valid weight limit or None"),
 		})
 	}
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
-		let usage = usage
-			.checked_add(cost)
-			.ok_or(ExitError::OutOfGas)?;
+		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
 		if usage > limit {
 			return Err(ExitError::OutOfGas);
 		}
 		Ok(usage)
 	}
-	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError>  {
-		if let (Some(ref_time_usage), Some(ref_time_limit)) = (self.ref_time_usage, self.ref_time_limit) {
+	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
+		if let (Some(ref_time_usage), Some(ref_time_limit)) =
+			(self.ref_time_usage, self.ref_time_limit)
+		{
 			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
 			if ref_time_usage > ref_time_limit {
 				return Err(ExitError::OutOfGas);
@@ -127,7 +131,9 @@ impl WeightInfo {
 		Ok(())
 	}
 	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let (Some(proof_size_usage), Some(proof_size_limit)) = (self.proof_size_usage, self.proof_size_limit) {
+		if let (Some(proof_size_usage), Some(proof_size_limit)) =
+			(self.proof_size_usage, self.proof_size_limit)
+		{
 			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
 			if proof_size_usage > proof_size_limit {
 				return Err(ExitError::OutOfGas);

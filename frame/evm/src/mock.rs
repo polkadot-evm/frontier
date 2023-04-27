@@ -32,8 +32,8 @@ use sp_runtime::{
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
-	PrecompileResult, PrecompileSet, IsPrecompileResult,
+	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
+	IsPrecompileResult, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;

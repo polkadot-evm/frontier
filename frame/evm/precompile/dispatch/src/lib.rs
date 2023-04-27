@@ -84,10 +84,8 @@ where
 		let origin = T::AddressMapping::into_account_id(context.caller);
 
 		#[cfg(feature = "evm-with-weight-limit")]
-		handle.record_external_cost(
-			Some(info.weight.ref_time()),
-			Some(info.weight.proof_size()),
-		)?;
+		handle
+			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
 				let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
@@ -95,8 +93,16 @@ where
 				handle.record_cost(cost)?;
 				#[cfg(feature = "evm-with-weight-limit")]
 				handle.refund_external_cost(
-					Some(info.weight.ref_time().saturating_sub(actual_weight.ref_time())),
-					Some(info.weight.proof_size().saturating_sub(actual_weight.proof_size())),
+					Some(
+						info.weight
+							.ref_time()
+							.saturating_sub(actual_weight.ref_time()),
+					),
+					Some(
+						info.weight
+							.proof_size()
+							.saturating_sub(actual_weight.proof_size()),
+					),
 				);
 
 				Ok(PrecompileOutput {

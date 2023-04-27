@@ -163,9 +163,9 @@ where
 				without_base_extrinsic_weight,
 			);
 			if submitted_weight != dispatch_info.weight {
-				return Some(Err(
-					TransactionValidityError::Invalid(InvalidTransaction::Custom(255))
-				));
+				return Some(Err(TransactionValidityError::Invalid(
+					InvalidTransaction::Custom(255),
+				)));
 			}
 
 			// CheckWeight
@@ -309,7 +309,7 @@ pub mod pallet {
 
 			Self::apply_validated_transaction(source, transaction, None)
 		}
-		
+
 		/// Transact an Ethereum transaction with native WeightV2+ limit.
 		#[pallet::call_index(1)]
 		#[pallet::weight({ *weight_limit })]
@@ -343,7 +343,8 @@ pub mod pallet {
 			};
 			// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
 			// Validate the weight limit can afford recording transaction len
-			let _ = weight_limit.proof_size()
+			let _ = weight_limit
+				.proof_size()
 				.checked_sub(Self::transaction_len(&transaction))
 				.ok_or(DispatchErrorWithPostInfo {
 					post_info: PostDispatchInfo {
@@ -421,7 +422,9 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	fn transaction_len(transaction: &Transaction) -> u64 {
-		transaction.encode().len()
+		transaction
+			.encode()
+			.len()
 			// pallet index
 			.saturating_add(1)
 			// call index
@@ -708,10 +711,8 @@ impl<T: Config> Pallet<T> {
 
 		Ok(PostDispatchInfo {
 			actual_weight: {
-				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-					used_gas.unique_saturated_into(),
-					true,
-				);
+				let mut gas_to_weight =
+					T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into(), true);
 				if let Some(weight_info) = weight_info {
 					if let Some(proof_size_usage) = weight_info.proof_size_usage {
 						*gas_to_weight.proof_size_mut() = proof_size_usage;
@@ -969,7 +970,11 @@ impl<T: Config> Pallet<T> {
 
 pub struct ValidatedTransaction<T>(PhantomData<T>);
 impl<T: Config> ValidatedTransactionT for ValidatedTransaction<T> {
-	fn apply(source: H160, transaction: Transaction, weight_limit: Option<Weight>) -> DispatchResultWithPostInfo {
+	fn apply(
+		source: H160,
+		transaction: Transaction,
+		weight_limit: Option<Weight>,
+	) -> DispatchResultWithPostInfo {
 		Pallet::<T>::apply_validated_transaction(source, transaction, weight_limit)
 	}
 }

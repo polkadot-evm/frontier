@@ -47,11 +47,11 @@ use fp_account::EthereumSignature;
 use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
+#[cfg(feature = "evm-with-weight-limit")]
+use pallet_evm::GasWeightMapping;
 use pallet_evm::{
 	Account as EVMAccount, EnsureAccountId20, FeeCalculator, IdentityAddressMapping, Runner,
 };
-#[cfg(feature = "evm-with-weight-limit")]
-use pallet_evm::GasWeightMapping;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_system::Call as SystemCall;

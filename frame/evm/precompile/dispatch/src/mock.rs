@@ -184,7 +184,11 @@ impl PrecompileHandle for MockHandle {
 	}
 
 	#[cfg(feature = "evm-with-weight-limit")]
-	fn record_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) -> Result<(), ExitError> {
+	fn record_external_cost(
+		&mut self,
+		_ref_time: Option<u64>,
+		_proof_size: Option<u64>,
+	) -> Result<(), ExitError> {
 		Ok(())
 	}
 

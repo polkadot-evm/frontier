@@ -254,7 +254,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 	ext.execute_with(|| {
 		let t = eip2930_erc20_creation_transaction(alice);
-		let (_, _, info) = Ethereum::execute(alice.address, &t, None, None,).unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t, None, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
@@ -308,7 +308,7 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key, None);
 
 		// calling foo will succeed
-		let (_, _, info) = Ethereum::execute(alice.address, &t2, None, None,).unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t2, None, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {
@@ -331,7 +331,9 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key, None);
 
 		// calling should always succeed even if the inner EVM execution fails.
-		Ethereum::execute(alice.address, &t3, None, None,).ok().unwrap();
+		Ethereum::execute(alice.address, &t3, None, None)
+			.ok()
+			.unwrap();
 	});
 }
 
@@ -414,8 +416,8 @@ fn validated_transaction_apply_zero_gas_price_works() {
 #[cfg(feature = "evm-with-weight-limit")]
 #[test]
 fn proof_size_weight_limit_validation_works() {
-	use scale_codec::Encode;
 	use pallet_evm::GasWeightMapping;
+	use scale_codec::Encode;
 
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
@@ -433,25 +435,29 @@ fn proof_size_weight_limit_validation_works() {
 		let gas_limit: u64 = 1_000_000;
 		tx.gas_limit = U256::from(gas_limit);
 
-		let mut weight_limit = <Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+		let mut weight_limit =
+			<Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
 
 		let tx = tx.sign(&alice.private_key, None);
 		let transaction_len = (tx.encode().len() + 1 + 1) as u64;
 
 		// Set proof size to less than the minimum required
 		*weight_limit.proof_size_mut() = transaction_len - 1;
-		
+
 		// Execute
-		assert_eq!(Ethereum::transact_with_weight_limit(
-			RawOrigin::EthereumTransaction(alice.address).into(),
-			tx,
-			weight_limit,
-		), Err(frame_support::dispatch::DispatchErrorWithPostInfo {
-			post_info: frame_support::dispatch::PostDispatchInfo {
-				actual_weight: None,
-				pays_fee: frame_support::dispatch::Pays::No,
-			},
-			error: frame_support::dispatch::DispatchError::Exhausted,
-		}));
+		assert_eq!(
+			Ethereum::transact_with_weight_limit(
+				RawOrigin::EthereumTransaction(alice.address).into(),
+				tx,
+				weight_limit,
+			),
+			Err(frame_support::dispatch::DispatchErrorWithPostInfo {
+				post_info: frame_support::dispatch::PostDispatchInfo {
+					actual_weight: None,
+					pays_fee: frame_support::dispatch::Pays::No,
+				},
+				error: frame_support::dispatch::DispatchError::Exhausted,
+			})
+		);
 	});
 }

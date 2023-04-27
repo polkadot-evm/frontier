@@ -29,7 +29,10 @@ use std::{collections::BTreeMap, str::FromStr};
 #[cfg(feature = "evm-with-weight-limit")]
 mod proof_size_test {
 	use super::*;
-	use fp_evm::{CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE, HASH_PROOF_SIZE,};
+	use fp_evm::{
+		CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+		ACCOUNT_STORAGE_PROOF_SIZE, HASH_PROOF_SIZE,
+	};
 	// pragma solidity ^0.8.2;
 	// contract Callee {
 	//     // ac4c25b2
@@ -37,16 +40,17 @@ mod proof_size_test {
 	//         uint256 foo = 1;
 	//     }
 	// }
-	pub const PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_callee_contract_bytecode.txt");
+	pub const PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE: &str =
+		include_str!("./res/proof_size_test_callee_contract_bytecode.txt");
 	// pragma solidity ^0.8.2;
 	// contract ProofSizeTest {
-	
+
 	//     uint256 foo;
-	
+
 	//     constructor() {
 	//         foo = 6;
 	//     }
-	
+
 	//     // 35f56c3b
 	//     function test_balance(address who) public {
 	//         // cold
@@ -83,9 +87,13 @@ mod proof_size_test {
 	//         }
 	//     }
 	// }
-	pub const PROOF_SIZE_TEST_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
-	
-	fn create_proof_size_test_callee_contract(gas_limit: u64, weight_limit: Option<Weight>) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+	pub const PROOF_SIZE_TEST_CONTRACT_BYTECODE: &str =
+		include_str!("./res/proof_size_test_contract_bytecode.txt");
+
+	fn create_proof_size_test_callee_contract(
+		gas_limit: u64,
+		weight_limit: Option<Weight>,
+	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE.trim_end()).unwrap(),
@@ -96,14 +104,17 @@ mod proof_size_test {
 			None,
 			Vec::new(),
 			true, // non-transactional
-			true,  // must be validated
+			true, // must be validated
 			weight_limit,
 			Some(0),
 			&<Test as Config>::config().clone(),
 		)
 	}
-	
-	fn create_proof_size_test_contract(gas_limit: u64, weight_limit: Option<Weight>) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+
+	fn create_proof_size_test_contract(
+		gas_limit: u64,
+		weight_limit: Option<Weight>,
+	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_SIZE_TEST_CONTRACT_BYTECODE.trim_end()).unwrap(),
@@ -114,7 +125,7 @@ mod proof_size_test {
 			None,
 			Vec::new(),
 			true, // non-transactional
-			true,  // must be validated
+			true, // must be validated
 			weight_limit,
 			Some(0),
 			&<Test as Config>::config().clone(),
@@ -124,7 +135,6 @@ mod proof_size_test {
 	#[test]
 	fn proof_size_create_accounting_works() {
 		new_test_ext().execute_with(|| {
-
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
@@ -145,7 +155,6 @@ mod proof_size_test {
 
 			assert_eq!(expected_proof_size, actual_proof_size);
 		});
-
 	}
 
 	#[test]
@@ -154,14 +163,13 @@ mod proof_size_test {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let result = create_proof_size_test_callee_contract(gas_limit, None)
-				.expect("create succeeds");
-			
+			let result =
+				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
+
 			let subcall_contract_address = result.value;
 
 			// Create proof size test contract B
-			let result = create_proof_size_test_contract(gas_limit, None)
-				.expect("create succeeds");
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -182,7 +190,7 @@ mod proof_size_test {
 				None,
 				Vec::new(),
 				true, // non-transactional
-				true,  // must be validated
+				true, // must be validated
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -193,7 +201,7 @@ mod proof_size_test {
 			// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
 			// But because we don't have a way of tracking warming for this storage we over-account, that is
 			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
-			// This can be solved by tracking those accesses on memory, which is left TODO. 
+			// This can be solved by tracking those accesses on memory, which is left TODO.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
 			let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
 			let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
@@ -215,8 +223,7 @@ mod proof_size_test {
 			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None)
-			.expect("create succeeds");
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -224,7 +231,7 @@ mod proof_size_test {
 			let mut call_data: String = "35f56c3b000000000000000000000000".to_owned();
 			// ..encode bobs address
 			call_data.push_str(&format!("{:x}", H160::random()));
-			
+
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
 				call_contract_address,
@@ -236,7 +243,7 @@ mod proof_size_test {
 				None,
 				Vec::new(),
 				true, // non-transactional
-				true,  // must be validated
+				true, // must be validated
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -245,7 +252,7 @@ mod proof_size_test {
 
 			// Contract makes two account reads - cold, then warm -, only cold reads record proof size.
 			let expected_proof_size = ACCOUNT_BASIC_PROOF_SIZE;
-			
+
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
@@ -263,8 +270,7 @@ mod proof_size_test {
 			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None)
-			.expect("create succeeds");
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -281,7 +287,7 @@ mod proof_size_test {
 				None,
 				Vec::new(),
 				true, // non-transactional
-				true,  // must be validated
+				true, // must be validated
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -290,7 +296,7 @@ mod proof_size_test {
 
 			// Contract does two sloads - cold, then warm -, only cold reads record proof size.
 			let expected_proof_size = ACCOUNT_STORAGE_PROOF_SIZE;
-			
+
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
@@ -308,8 +314,7 @@ mod proof_size_test {
 			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None)
-			.expect("create succeeds");
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -326,7 +331,7 @@ mod proof_size_test {
 				None,
 				Vec::new(),
 				true, // non-transactional
-				true,  // must be validated
+				true, // must be validated
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -335,7 +340,7 @@ mod proof_size_test {
 
 			// Contract does two sstore - cold, then warm -, only cold writes record proof size.
 			let expected_proof_size = HASH_PROOF_SIZE;
-			
+
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
@@ -350,14 +355,14 @@ mod proof_size_test {
 	fn proof_size_oog_works() {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
-			let mut weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let mut weight_limit =
+				crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Artifically set a lower proof size limit so we OOG this instead gas.
 			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None)
-			.expect("create succeeds");
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -374,7 +379,7 @@ mod proof_size_test {
 				None,
 				Vec::new(),
 				true, // non-transactional
-				true,  // must be validated
+				true, // must be validated
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -383,10 +388,11 @@ mod proof_size_test {
 
 			// Find how many random balance reads can we do with the available proof size.
 			let available_proof_size = weight_limit.proof_size();
-			let number_balance_reads =  available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
+			let number_balance_reads =
+				available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
 			// The actual proof size consumed by those balance reads.
-			let expected_proof_size =  (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) as u64;
-			
+			let expected_proof_size = (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) as u64;
+
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
@@ -400,25 +406,24 @@ mod proof_size_test {
 	#[test]
 	fn uncached_account_code_proof_size_accounting_works() {
 		new_test_ext().execute_with(|| {
-			
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let result = create_proof_size_test_callee_contract(gas_limit, None)
-				.expect("create succeeds");
-			
+			let result =
+				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
+
 			let subcall_contract_address = result.value;
 
 			// Assert callee contract code hash and size are cached
-			let crate::CodeMetadata { size, .. } = <crate::AccountCodesMetadata<Test>>::get(subcall_contract_address)
-				.expect("contract code hash and size are cached");
+			let crate::CodeMetadata { size, .. } =
+				<crate::AccountCodesMetadata<Test>>::get(subcall_contract_address)
+					.expect("contract code hash and size are cached");
 
 			// Remove callee cache
 			<crate::AccountCodesMetadata<Test>>::remove(subcall_contract_address);
 
 			// Create proof size test contract B
-			let result = create_proof_size_test_contract(gas_limit, None)
-				.expect("create succeeds");
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -438,7 +443,7 @@ mod proof_size_test {
 				None,
 				Vec::new(),
 				true, // non-transactional
-				true,  // must be validated
+				true, // must be validated
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -453,8 +458,9 @@ mod proof_size_test {
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
 			let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
 			// In addition, callee code size is unchached and thus included in the pov
-			let expected_proof_size = (read_account_metadata + reading_contract_len + size as usize) as u64;
-			
+			let expected_proof_size =
+				(read_account_metadata + reading_contract_len + size as usize) as u64;
+
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
@@ -464,7 +470,6 @@ mod proof_size_test {
 			assert_eq!(expected_proof_size, actual_proof_size);
 		});
 	}
-
 }
 
 type Balances = pallet_balances::Pallet<Test>;

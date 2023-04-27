@@ -91,8 +91,8 @@ use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity, IsPrecompileResult,
+	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
+	PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 pub use self::{
@@ -736,7 +736,8 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 
 		// Apply a gas to proof size ratio based on BlockGasLimit
 		let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
-		let gas_ratio: sp_arithmetic::Perquintill = sp_arithmetic::PerThing::from_rational(gas, block_gas_limit);
+		let gas_ratio: sp_arithmetic::Perquintill =
+			sp_arithmetic::PerThing::from_rational(gas, block_gas_limit);
 		let tmp: Weight = Weight::from_proof_size(fp_evm::MAX_POV_SIZE);
 		let proof_size = tmp * gas_ratio;
 		*weight.proof_size_mut() = proof_size.proof_size();
