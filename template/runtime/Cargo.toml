@@ -124,5 +124,5 @@ runtime-benchmarks = [
 ]
 evm-with-weight-limit = [
 	"pallet-evm/evm-with-weight-limit",
-	"pallet-ethereum/evm-with-weight-limit"
+	"pallet-ethereum/evm-with-weight-limit",
 ]
