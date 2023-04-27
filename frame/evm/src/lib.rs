@@ -56,9 +56,6 @@
 #![cfg_attr(feature = "runtime-benchmarks", deny(unused_crate_dependencies))]
 #![allow(clippy::too_many_arguments)]
 
-#[cfg(feature = "evm-with-weight-limit")]
-mod weights;
-
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
