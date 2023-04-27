@@ -203,7 +203,7 @@ mod proof_size_test {
 			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
 			// This can be solved by tracking those accesses on memory, which is left TODO.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
-			let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
+			let reading_contract_len = crate::AccountCodes::<Test>::get(subcall_contract_address).len();
 			let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
 
 			let actual_proof_size = result
@@ -456,7 +456,7 @@ mod proof_size_test {
 			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
 			// This can be solved by tracking those accesses on memory, which is left TODO.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
-			let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
+			let reading_contract_len = crate::AccountCodes::<Test>::get(subcall_contract_address).len();
 			// In addition, callee code size is unchached and thus included in the pov
 			let expected_proof_size =
 				(read_account_metadata + reading_contract_len + size as usize) as u64;
