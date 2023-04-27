@@ -24,7 +24,7 @@ use jsonrpsee::core::RpcResult as Result;
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
-use sp_api::{HeaderT, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
@@ -80,25 +80,15 @@ where
 					base_fee,
 				);
 
-				// Populate parent hash as the indexers heavily rely on it.
-				let number = rich_block.inner.header.number.unwrap_or_default();
-				if rich_block.inner.header.parent_hash == H256::default() && number > U256::zero() {
-					if let Ok(Some(header)) = client.header(substrate_hash) {
-						let parent_hash = *header.parent_hash();
-
-						let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
-							client.as_ref(),
-							parent_hash,
-						);
-						if let Some(block) =
-							block_data_cache.current_block(schema, parent_hash).await
-						{
-							rich_block.inner.header.parent_hash = H256::from_slice(
-								keccak_256(&rlp::encode(&block.header)).as_slice(),
-							);
-						}
-					}
+				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+				if let Some(parent_hash) = self
+					.forced_parent_hashes
+					.as_ref()
+					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+				{
+					rich_block.inner.header.parent_hash = parent_hash
 				}
+
 				Ok(Some(rich_block))
 			}
 			_ => Ok(None),
@@ -147,25 +137,15 @@ where
 					base_fee,
 				);
 
-				// Populate parent hash as the indexers heavily rely on it.
-				let number = rich_block.inner.header.number.unwrap_or_default();
-				if rich_block.inner.header.parent_hash == H256::default() && number > U256::zero() {
-					if let Ok(Some(header)) = client.header(substrate_hash) {
-						let parent_hash = *header.parent_hash();
-
-						let schema = fc_storage::onchain_storage_schema::<B, C, BE>(
-							client.as_ref(),
-							parent_hash,
-						);
-						if let Some(block) =
-							block_data_cache.current_block(schema, parent_hash).await
-						{
-							rich_block.inner.header.parent_hash = H256::from_slice(
-								keccak_256(&rlp::encode(&block.header)).as_slice(),
-							);
-						}
-					}
+				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+				if let Some(parent_hash) = self
+					.forced_parent_hashes
+					.as_ref()
+					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+				{
+					rich_block.inner.header.parent_hash = parent_hash
 				}
+
 				Ok(Some(rich_block))
 			}
 			_ => Ok(None),
