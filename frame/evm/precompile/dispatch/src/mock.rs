@@ -167,9 +167,6 @@ pub(crate) struct MockHandle {
 }
 
 impl PrecompileHandle for MockHandle {
-
-	type ExternalCost = ();
-
 	fn call(
 		&mut self,
 		_: H160,
@@ -186,9 +183,13 @@ impl PrecompileHandle for MockHandle {
 		Ok(())
 	}
 
-	fn record_external_cost(&mut self, _: Self::ExternalCost) -> Result<(), ExitError> {
+	#[cfg(feature = "evm-with-weight-limit")]
+	fn record_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) -> Result<(), ExitError> {
 		Ok(())
 	}
+
+	#[cfg(feature = "evm-with-weight-limit")]
+	fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
 
 	fn remaining_gas(&self) -> u64 {
 		unimplemented!()

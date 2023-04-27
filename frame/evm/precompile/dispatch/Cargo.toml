@@ -36,3 +36,4 @@ std = [
 	"fp-evm/std",
 	"pallet-evm/std",
 ]
+evm-with-weight-limit = ["pallet-evm/evm-with-weight-limit"]
