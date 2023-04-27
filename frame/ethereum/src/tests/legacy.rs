@@ -369,7 +369,11 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key);
 
 		// calling foo
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2, None,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t2,
+			None,
+		));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
@@ -392,7 +396,11 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key);
 
 		// calling bar revert
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3, None,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t3,
+			None,
+		));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),

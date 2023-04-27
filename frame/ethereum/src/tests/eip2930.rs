@@ -352,7 +352,11 @@ fn event_extra_data_should_be_handle_properly() {
 			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key, None);
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t, None,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t,
+			None,
+		));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let foo = hex::decode("c2985578").unwrap();
@@ -369,7 +373,11 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key, None);
 
 		// calling foo
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2, None,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t2,
+			None,
+		));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
@@ -392,7 +400,11 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key, None);
 
 		// calling bar revert
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3, None,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t3,
+			None,
+		));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
