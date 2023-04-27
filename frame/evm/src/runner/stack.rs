@@ -923,19 +923,6 @@ where
 	}
 
 	#[cfg(feature = "evm-with-weight-limit")]
-	fn record_external_static_opcode_cost(&mut self, opcode: Opcode) -> Result<(), ExitError> {
-		let mut weight_info = if let Some(weight_info) = self.weight_info {
-			weight_info
-		} else {
-			return Ok(());
-		};
-		if let Some(cost) = crate::weights::static_opcode_ref_time_cost(opcode) {
-			weight_info.try_record_ref_time_or_fail(cost)?;
-		}
-		Ok(())
-	}
-
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_dynamic_opcode_cost(&mut self, opcode: Opcode, gas_cost: GasCost, target: evm::gasometer::StorageTarget) -> Result<(), ExitError> {
 		let size_limit: u64 = self.metadata()
 			.gasometer()
