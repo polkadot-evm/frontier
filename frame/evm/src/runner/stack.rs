@@ -294,7 +294,7 @@ where
 				"Deleting account at {:?}",
 				address
 			);
-			Pallet::<T>::remove_account(&address)
+			Pallet::<T>::remove_account(address)
 		}
 
 		for log in &state.substate.logs {

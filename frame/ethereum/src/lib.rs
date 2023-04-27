@@ -802,7 +802,7 @@ impl<T: Config> Pallet<T> {
 		let is_transactional = true;
 		let validate = false;
 		let transaction_len = if weight_limit.is_some() {
-			Some(Self::transaction_len(&transaction))
+			Some(Self::transaction_len(transaction))
 		} else {
 			None
 		};
