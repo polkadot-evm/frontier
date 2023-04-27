@@ -960,8 +960,36 @@ where
 		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
-		// TODO
+		let size_limit: u64 = self
+			.metadata()
+			.gasometer()
+			.config()
+			.create_contract_limit
+			.unwrap_or_default() as u64;
+		if let Some(weight_info) = self.weight_info_mut() {
+			// First try to record fixed sized `AccountCodesMetadata` read
+			// Temptatively 20 + 8 + 32
+			// TODO we need a way to check whether AccountCodesMetadata for an address is already
+			// recorded in this transaction, otherwise we are over accounting..
+			weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+
+			if <AccountCodesMetadata<T>>::get(address).is_none() {
+				// If it does not exist, try to record `create_contract_limit` first.
+				weight_info.try_record_proof_size_or_fail(size_limit)?;
+				let meta = Pallet::<T>::account_code_metadata(address);
+				let actual_size = meta.size;
+				// Refund if applies
+				weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+				return Ok(meta.hash);
+			};
+		}
+		Ok(<Pallet<T>>::account_code_metadata(address).hash)
+	}
+
+	#[cfg(not(feature = "evm-with-weight-limit"))]
+	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
 		Ok(<Pallet<T>>::account_code_metadata(address).hash)
 	}
 
@@ -1078,7 +1106,6 @@ where
 			weight_info.try_record_proof_size_or_fail(proof_size_limit)?;
 			return Err(ExitError::OutOfGas);
 		}
-		// TODO
 		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))
 	}
 
