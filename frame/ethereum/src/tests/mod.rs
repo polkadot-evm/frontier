@@ -28,8 +28,6 @@ use crate::{
 	mock::*, CallOrCreateInfo, RawOrigin, Transaction, TransactionAction, H160, H256, U256,
 };
 use fp_self_contained::CheckedExtrinsic;
-use fp_evm::{ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
-HASH_PROOF_SIZE,};
 
 mod eip1559;
 mod eip2930;

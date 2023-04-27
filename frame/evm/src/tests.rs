@@ -20,104 +20,451 @@
 use super::*;
 use crate::mock::*;
 
-
-use fp_evm::{CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE, HASH_PROOF_SIZE,};
-
 use frame_support::{
 	assert_ok,
 	traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons},
 };
 use std::{collections::BTreeMap, str::FromStr};
 
-// pragma solidity ^0.8.2;
-// contract Callee {
-//     // ac4c25b2
-//     function void() public {
-//         uint256 foo = 1;
-//     }
-// }
-pub const PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_callee_contract_bytecode.txt");
-// pragma solidity ^0.8.2;
-// contract ProofSizeTest {
+#[cfg(feature = "evm-with-weight-limit")]
+mod proof_size_test {
+	use super::*;
+	use fp_evm::{CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE, HASH_PROOF_SIZE,};
+	// pragma solidity ^0.8.2;
+	// contract Callee {
+	//     // ac4c25b2
+	//     function void() public {
+	//         uint256 foo = 1;
+	//     }
+	// }
+	pub const PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_callee_contract_bytecode.txt");
+	// pragma solidity ^0.8.2;
+	// contract ProofSizeTest {
+	
+	//     uint256 foo;
+	
+	//     constructor() {
+	//         foo = 6;
+	//     }
+	
+	//     // 35f56c3b
+	//     function test_balance(address who) public {
+	//         // cold
+	//         uint256 a = address(who).balance;
+	//         // warm
+	//         uint256 b = address(who).balance;
+	//     }
+	//     // e27a0ecd
+	//     function test_sload() public returns (uint256) {
+	//         // cold
+	//         uint256 a = foo;
+	//         // warm
+	//         uint256 b = foo;
+	//         return b;
+	//     }
+	//     // 4f3080a9
+	//     function test_sstore() public {
+	//         // cold
+	//         foo = 4;
+	//         // warm
+	//         foo = 5;
+	//     }
+	//     // c6d6f606
+	//     function test_call(Callee _callee) public {
+	//         _callee.void();
+	//     }
+	//     // 944ddc62
+	//     function test_oog() public {
+	//         uint256 i = 1;
+	//         while(true) {
+	//             address who = address(uint160(uint256(keccak256(abi.encodePacked(bytes32(i))))));
+	//             uint256 a = address(who).balance;
+	//             i = i + 1;
+	//         }
+	//     }
+	// }
+	pub const PROOF_SIZE_TEST_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
+	
+	fn create_proof_size_test_callee_contract(gas_limit: u64, weight_limit: Option<Weight>) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // non-transactional
+			true,  // must be validated
+			weight_limit,
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+	}
+	
+	fn create_proof_size_test_contract(gas_limit: u64, weight_limit: Option<Weight>) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(PROOF_SIZE_TEST_CONTRACT_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // non-transactional
+			true,  // must be validated
+			weight_limit,
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+	}
 
-//     uint256 foo;
+	#[test]
+	fn proof_size_create_accounting_works() {
+		new_test_ext().execute_with(|| {
 
-//     constructor() {
-//         foo = 6;
-//     }
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
-//     // 35f56c3b
-//     function test_balance(address who) public {
-//         // cold
-//         uint256 a = address(who).balance;
-//         // warm
-//         uint256 b = address(who).balance;
-//     }
-//     // e27a0ecd
-//     function test_sload() public returns (uint256) {
-//         // cold
-//         uint256 a = foo;
-//         // warm
-//         uint256 b = foo;
-//         return b;
-//     }
-//     // 4f3080a9
-//     function test_sstore() public {
-//         // cold
-//         foo = 4;
-//         // warm
-//         foo = 5;
-//     }
-//     // c6d6f606
-//     function test_call(Callee _callee) public {
-//         _callee.void();
-//     }
-//     // 944ddc62
-//     function test_oog() public {
-//         uint256 i = 1;
-//         while(true) {
-//             address who = address(uint160(uint256(keccak256(abi.encodePacked(bytes32(i))))));
-//             uint256 a = address(who).balance;
-//             i = i + 1;
-//         }
-//     }
-// }
-pub const PROOF_SIZE_TEST_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
+			let result = create_proof_size_test_callee_contract(gas_limit, Some(weight_limit))
+				.expect("create succeeds");
 
-fn create_proof_size_test_callee_contract(gas_limit: u64, weight_limit: Option<Weight>) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
-	<Test as Config>::Runner::create(
-		H160::default(),
-		hex::decode(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE.trim_end()).unwrap(),
-		U256::zero(),
-		gas_limit,
-		Some(FixedGasPrice::min_gas_price().0),
-		None,
-		None,
-		Vec::new(),
-		true, // non-transactional
-		true,  // must be validated
-		weight_limit,
-		Some(0),
-		&<Test as Config>::config().clone(),
-	)
-}
+			// Creating a new contract does not involve reading the code from storage.
+			// We just account for a fixed hash proof size write and a storage read from AccountCodesMetadata.
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let write_cost = HASH_PROOF_SIZE as usize;
+			let expected_proof_size = (read_account_metadata + write_cost) as u64;
 
-fn create_proof_size_test_contract(gas_limit: u64, weight_limit: Option<Weight>) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
-	<Test as Config>::Runner::create(
-		H160::default(),
-		hex::decode(PROOF_SIZE_TEST_CONTRACT_BYTECODE.trim_end()).unwrap(),
-		U256::zero(),
-		gas_limit,
-		Some(FixedGasPrice::min_gas_price().0),
-		None,
-		None,
-		Vec::new(),
-		true, // non-transactional
-		true,  // must be validated
-		weight_limit,
-		Some(0),
-		&<Test as Config>::config().clone(),
-	)
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+
+	}
+
+	#[test]
+	fn proof_size_subcall_accounting_works() {
+		new_test_ext().execute_with(|| {
+			// Create callee contract A
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let result = create_proof_size_test_callee_contract(gas_limit, None)
+				.expect("create succeeds");
+			
+			let subcall_contract_address = result.value;
+
+			// Create proof size test contract B
+			let result = create_proof_size_test_contract(gas_limit, None)
+				.expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// Call B, that calls A, with weight limit
+			// selector for ProofSizeTest::test_call function..
+			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
+			// ..encode the callee address argument
+			call_data.push_str(&format!("{:x}", subcall_contract_address));
+
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true,  // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Expected proof size
+			// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
+			// But because we don't have a way of tracking warming for this storage we over-account, that is
+			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
+			// This can be solved by tracking those accesses on memory, which is left TODO. 
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
+			let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
+			let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
+
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn proof_size_balance_accounting_works() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			// Create proof size test contract
+			let result = create_proof_size_test_contract(gas_limit, None)
+			.expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// selector for ProofSizeTest::balance function..
+			let mut call_data: String = "35f56c3b000000000000000000000000".to_owned();
+			// ..encode bobs address
+			call_data.push_str(&format!("{:x}", H160::random()));
+			
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true,  // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Contract makes two account reads - cold, then warm -, only cold reads record proof size.
+			let expected_proof_size = ACCOUNT_BASIC_PROOF_SIZE;
+			
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn proof_size_sload_accounting_works() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			// Create proof size test contract
+			let result = create_proof_size_test_contract(gas_limit, None)
+			.expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// selector for ProofSizeTest::test_sload function..
+			let call_data: String = "e27a0ecd".to_owned();
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true,  // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Contract does two sloads - cold, then warm -, only cold reads record proof size.
+			let expected_proof_size = ACCOUNT_STORAGE_PROOF_SIZE;
+			
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn proof_size_sstore_accounting_works() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			// Create proof size test contract
+			let result = create_proof_size_test_contract(gas_limit, None)
+			.expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// selector for ProofSizeTest::test_sstore function..
+			let call_data: String = "4f3080a9".to_owned();
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true,  // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Contract does two sstore - cold, then warm -, only cold writes record proof size.
+			let expected_proof_size = HASH_PROOF_SIZE;
+			
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn proof_size_oog_works() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 1_000_000;
+			let mut weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			// Artifically set a lower proof size limit so we OOG this instead gas.
+			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
+
+			// Create proof size test contract
+			let result = create_proof_size_test_contract(gas_limit, None)
+			.expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// selector for ProofSizeTest::test_oog function..
+			let call_data: String = "944ddc62".to_owned();
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true,  // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Find how many random balance reads can we do with the available proof size.
+			let available_proof_size = weight_limit.proof_size();
+			let number_balance_reads =  available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
+			// The actual proof size consumed by those balance reads.
+			let expected_proof_size =  (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) as u64;
+			
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn uncached_account_code_proof_size_accounting_works() {
+		new_test_ext().execute_with(|| {
+			
+			// Create callee contract A
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let result = create_proof_size_test_callee_contract(gas_limit, None)
+				.expect("create succeeds");
+			
+			let subcall_contract_address = result.value;
+
+			// Assert callee contract code hash and size are cached
+			let crate::CodeMetadata { size, .. } = <crate::AccountCodesMetadata<Test>>::get(subcall_contract_address)
+				.expect("contract code hash and size are cached");
+
+			// Remove callee cache
+			<crate::AccountCodesMetadata<Test>>::remove(subcall_contract_address);
+
+			// Create proof size test contract B
+			let result = create_proof_size_test_contract(gas_limit, None)
+				.expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// Call B, that calls A, with weight limit
+			// selector for ProofSizeTest::test_call function..
+			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
+			// ..encode the callee address argument
+			call_data.push_str(&format!("{:x}", subcall_contract_address));
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true,  // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Expected proof size
+			// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
+			// But because we don't have a way of tracking warming for this storage we over-account, that is
+			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
+			// This can be solved by tracking those accesses on memory, which is left TODO.
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
+			let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
+			// In addition, callee code size is unchached and thus included in the pov
+			let expected_proof_size = (read_account_metadata + reading_contract_len + size as usize) as u64;
+			
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
 }
 
 type Balances = pallet_balances::Pallet<Test>;
@@ -761,356 +1108,5 @@ fn eip3607_transaction_from_precompile() {
 			&<Test as Config>::config().clone(),
 		)
 		.is_ok());
-	});
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn proof_size_create_accounting_works() {
-	new_test_ext().execute_with(|| {
-
-		let gas_limit: u64 = 1_000_000;
-		let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		let result = create_proof_size_test_callee_contract(gas_limit, Some(weight_limit))
-			.expect("create succeeds");
-
-		// Creating a new contract does not involve reading the code from storage.
-		// We just account for a fixed hash proof size write and a storage read from AccountCodesMetadata.
-		let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
-		let write_cost = HASH_PROOF_SIZE as usize;
-		let expected_proof_size = (read_account_metadata + write_cost) as u64;
-
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
-	});
-
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn proof_size_subcall_accounting_works() {
-	new_test_ext().execute_with(|| {
-		// Create callee contract A
-		let gas_limit: u64 = 1_000_000;
-		let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-		let result = create_proof_size_test_callee_contract(gas_limit, None)
-			.expect("create succeeds");
-		
-		let subcall_contract_address = result.value;
-
-		// Create proof size test contract B
-		let result = create_proof_size_test_contract(gas_limit, None)
-			.expect("create succeeds");
-
-		let call_contract_address = result.value;
-
-		// Call B, that calls A, with weight limit
-		// selector for ProofSizeTest::test_call function..
-		let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
-		// ..encode the callee address argument
-		call_data.push_str(&format!("{:x}", subcall_contract_address));
-
-		let result = <Test as Config>::Runner::call(
-			H160::default(),
-			call_contract_address,
-			hex::decode(&call_data).unwrap(),
-			U256::zero(),
-			gas_limit,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // non-transactional
-			true,  // must be validated
-			Some(weight_limit),
-			Some(0),
-			&<Test as Config>::config().clone(),
-		)
-		.expect("call succeeds");
-
-		// Expected proof size
-		// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
-		// But because we don't have a way of tracking warming for this storage we over-account, that is
-		// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
-		// This can be solved by tracking those accesses on memory, which is left TODO. 
-		let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
-		let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
-		let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
-
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
-	});
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn proof_size_balance_accounting_works() {
-	new_test_ext().execute_with(|| {
-		let gas_limit: u64 = 1_000_000;
-		let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		// Create proof size test contract
-		let result = create_proof_size_test_contract(gas_limit, None)
-		.expect("create succeeds");
-
-		let call_contract_address = result.value;
-
-		// selector for ProofSizeTest::balance function..
-		let mut call_data: String = "35f56c3b000000000000000000000000".to_owned();
-		// ..encode bobs address
-		call_data.push_str(&format!("{:x}", H160::random()));
-		
-		let result = <Test as Config>::Runner::call(
-			H160::default(),
-			call_contract_address,
-			hex::decode(&call_data).unwrap(),
-			U256::zero(),
-			gas_limit,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // non-transactional
-			true,  // must be validated
-			Some(weight_limit),
-			Some(0),
-			&<Test as Config>::config().clone(),
-		)
-		.expect("call succeeds");
-
-		// Contract makes two account reads - cold, then warm -, only cold reads record proof size.
-		let expected_proof_size = ACCOUNT_BASIC_PROOF_SIZE;
-		
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
-	});
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn proof_size_sload_accounting_works() {
-	new_test_ext().execute_with(|| {
-		let gas_limit: u64 = 1_000_000;
-		let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		// Create proof size test contract
-		let result = create_proof_size_test_contract(gas_limit, None)
-		.expect("create succeeds");
-
-		let call_contract_address = result.value;
-
-		// selector for ProofSizeTest::test_sload function..
-		let call_data: String = "e27a0ecd".to_owned();
-		let result = <Test as Config>::Runner::call(
-			H160::default(),
-			call_contract_address,
-			hex::decode(&call_data).unwrap(),
-			U256::zero(),
-			gas_limit,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // non-transactional
-			true,  // must be validated
-			Some(weight_limit),
-			Some(0),
-			&<Test as Config>::config().clone(),
-		)
-		.expect("call succeeds");
-
-		// Contract does two sloads - cold, then warm -, only cold reads record proof size.
-		let expected_proof_size = ACCOUNT_STORAGE_PROOF_SIZE;
-		
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
-	});
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn proof_size_sstore_accounting_works() {
-	new_test_ext().execute_with(|| {
-		let gas_limit: u64 = 1_000_000;
-		let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		// Create proof size test contract
-		let result = create_proof_size_test_contract(gas_limit, None)
-		.expect("create succeeds");
-
-		let call_contract_address = result.value;
-
-		// selector for ProofSizeTest::test_sstore function..
-		let call_data: String = "4f3080a9".to_owned();
-		let result = <Test as Config>::Runner::call(
-			H160::default(),
-			call_contract_address,
-			hex::decode(&call_data).unwrap(),
-			U256::zero(),
-			gas_limit,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // non-transactional
-			true,  // must be validated
-			Some(weight_limit),
-			Some(0),
-			&<Test as Config>::config().clone(),
-		)
-		.expect("call succeeds");
-
-		// Contract does two sstore - cold, then warm -, only cold writes record proof size.
-		let expected_proof_size = HASH_PROOF_SIZE;
-		
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
-	});
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn proof_size_oog_works() {
-	new_test_ext().execute_with(|| {
-		let gas_limit: u64 = 1_000_000;
-		let mut weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-		// Artifically set a lower proof size limit so we OOG this instead gas.
-		*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
-
-		// Create proof size test contract
-		let result = create_proof_size_test_contract(gas_limit, None)
-		.expect("create succeeds");
-
-		let call_contract_address = result.value;
-
-		// selector for ProofSizeTest::test_oog function..
-		let call_data: String = "944ddc62".to_owned();
-		let result = <Test as Config>::Runner::call(
-			H160::default(),
-			call_contract_address,
-			hex::decode(&call_data).unwrap(),
-			U256::zero(),
-			gas_limit,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // non-transactional
-			true,  // must be validated
-			Some(weight_limit),
-			Some(0),
-			&<Test as Config>::config().clone(),
-		)
-		.expect("call succeeds");
-
-		// Find how many random balance reads can we do with the available proof size.
-		let available_proof_size = weight_limit.proof_size();
-		let number_balance_reads =  available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
-		// The actual proof size consumed by those balance reads.
-		let expected_proof_size =  (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) as u64;
-		
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
-	});
-}
-
-#[cfg(feature = "evm-with-weight-limit")]
-#[test]
-fn uncached_account_code_proof_size_accounting_works() {
-	new_test_ext().execute_with(|| {
-		
-		// Create callee contract A
-		let gas_limit: u64 = 1_000_000;
-		let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-		let result = create_proof_size_test_callee_contract(gas_limit, None)
-			.expect("create succeeds");
-		
-		let subcall_contract_address = result.value;
-
-		// Assert callee contract code hash and size are cached
-		let crate::CodeMetadata { size, .. } = <crate::AccountCodesMetadata<Test>>::get(subcall_contract_address)
-			.expect("contract code hash and size are cached");
-
-		// Remove callee cache
-		<crate::AccountCodesMetadata<Test>>::remove(subcall_contract_address);
-
-		// Create proof size test contract B
-		let result = create_proof_size_test_contract(gas_limit, None)
-			.expect("create succeeds");
-
-		let call_contract_address = result.value;
-
-		// Call B, that calls A, with weight limit
-		// selector for ProofSizeTest::test_call function..
-		let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
-		// ..encode the callee address argument
-		call_data.push_str(&format!("{:x}", subcall_contract_address));
-		let result = <Test as Config>::Runner::call(
-			H160::default(),
-			call_contract_address,
-			hex::decode(&call_data).unwrap(),
-			U256::zero(),
-			gas_limit,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // non-transactional
-			true,  // must be validated
-			Some(weight_limit),
-			Some(0),
-			&<Test as Config>::config().clone(),
-		)
-		.expect("call succeeds");
-
-		// Expected proof size
-		// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
-		// But because we don't have a way of tracking warming for this storage we over-account, that is
-		// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
-		// This can be solved by tracking those accesses on memory, which is left TODO.
-		let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
-		let reading_contract_len = EVM::account_codes(subcall_contract_address).len();
-		// In addition, callee code size is unchached and thus included in the pov
-		let expected_proof_size = (read_account_metadata + reading_contract_len + size as usize) as u64;
-		
-		let actual_proof_size = result
-			.weight_info
-			.expect("weight info")
-			.proof_size_usage
-			.expect("proof size usage");
-
-		assert_eq!(expected_proof_size, actual_proof_size);
 	});
 }

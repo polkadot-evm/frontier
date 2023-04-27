@@ -20,18 +20,28 @@
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
 	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError, AccountCodesMetadata, IsPrecompileResult, Weight,
+	Pallet, RunnerError, IsPrecompileResult, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
-	ExitError, ExitReason, Transfer, Opcode, gasometer::{GasCost, StorageTarget},
+	ExitError, ExitReason, Transfer,
 };
 use fp_evm::{
 	CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity, WeightInfo,
+};
+
+#[cfg(feature = "evm-with-weight-limit")]
+use crate::AccountCodesMetadata;
+
+#[cfg(feature = "evm-with-weight-limit")]
+pub use fp_evm::{
 	ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
 	HASH_PROOF_SIZE,
 };
+#[cfg(feature = "evm-with-weight-limit")]
+pub use evm::{Opcode, gasometer::{GasCost, StorageTarget}};
+
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
@@ -339,6 +349,14 @@ where
 		transaction_len: Option<u64>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
+		// Try to subtract the transaction_len from the Weight proof_size limit or fail
+		// Validate the weight limit can afford recording transaction len
+		if let (Some(weight_limit), Some(transaction_len)) = (weight_limit, transaction_len) {
+			let _ = weight_limit.proof_size()
+				.checked_sub(transaction_len)
+				.ok_or(RunnerError { error: Error::<T>::GasLimitTooLow, weight: Weight::zero() })?;
+		}
+
 		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
 		let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
 		weight = weight.saturating_add(inner_weight);
@@ -835,6 +853,7 @@ where
 		self.substate.set_deleted(address)
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn set_code(&mut self, address: H160, code: Vec<u8>) -> Result<(), ExitError> {
 		log::debug!(
 			target: "evm",
@@ -845,6 +864,17 @@ where
 		if let Some(weight_info) = self.weight_info_mut() {
 			weight_info.try_record_proof_size_or_fail(HASH_PROOF_SIZE)?;
 		}
+		Pallet::<T>::create_account(address, code);
+		Ok(())
+	}
+	#[cfg(not(feature = "evm-with-weight-limit"))]
+	fn set_code(&mut self, address: H160, code: Vec<u8>) -> Result<(), ExitError> {
+		log::debug!(
+			target: "evm",
+			"Inserting code ({} bytes) at {:?}",
+			code.len(),
+			address
+		);
 		Pallet::<T>::create_account(address, code);
 		Ok(())
 	}
@@ -891,6 +921,7 @@ where
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
 		let size_limit: u64 = self.metadata()
 			.gasometer()
@@ -914,6 +945,11 @@ where
 				return Ok(U256::from(actual_size));
 			};
 		}
+		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
+	}
+
+	#[cfg(not(feature = "evm-with-weight-limit"))]
+	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
 		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
 	}
 

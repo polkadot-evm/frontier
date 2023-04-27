@@ -23,8 +23,7 @@ use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo},
 	weights::Weight,
 };
-use pallet_evm::{AddressMapping, GasWeightMapping};
-use scale_codec::Encode;
+use pallet_evm::AddressMapping;
 
 fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 	LegacyUnsignedTransaction {
@@ -415,6 +414,9 @@ fn validated_transaction_apply_zero_gas_price_works() {
 #[cfg(feature = "evm-with-weight-limit")]
 #[test]
 fn proof_size_weight_limit_validation_works() {
+	use scale_codec::Encode;
+	use pallet_evm::GasWeightMapping;
+
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 

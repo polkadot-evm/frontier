@@ -21,7 +21,6 @@ use super::*;
 use fp_ethereum::ValidatedTransaction;
 use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
 use pallet_evm::{AddressMapping, GasWeightMapping};
-use scale_codec::Encode;
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 	EIP1559UnsignedTransaction {
@@ -492,6 +491,8 @@ fn validated_transaction_apply_zero_gas_price_works() {
 #[cfg(feature = "evm-with-weight-limit")]
 #[test]
 fn proof_size_weight_limit_validation_works() {
+	use scale_codec::Encode;
+
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
