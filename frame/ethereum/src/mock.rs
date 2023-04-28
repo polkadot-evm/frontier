@@ -230,7 +230,8 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		info: Self::SignedInfo,
 	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
 		match self {
-			call @ RuntimeCall::Ethereum(crate::Call::transact { .. }) => {
+			call @ RuntimeCall::Ethereum(crate::Call::transact { .. })
+			| call @ RuntimeCall::Ethereum(crate::Call::transact_with_weight_limit { .. }) => {
 				Some(call.dispatch(RuntimeOrigin::from(RawOrigin::EthereumTransaction(info))))
 			}
 			_ => None,

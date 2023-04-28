@@ -105,11 +105,16 @@ where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	pub fn is_self_contained(&self) -> bool {
-		matches!(self, Call::transact { .. })
+		matches!(
+			self,
+			Call::transact { .. } | Call::transact_with_weight_limit { .. }
+		)
 	}
 
 	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
-		if let Call::transact { transaction } = self {
+		if let Call::transact { transaction }
+		| Call::transact_with_weight_limit { transaction, .. } = self
+		{
 			let check = || {
 				let origin = Pallet::<T>::recover_signer(transaction).ok_or(
 					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
@@ -130,7 +135,9 @@ where
 		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
-		if let Call::transact { transaction } = self {
+		if let Call::transact { transaction }
+		| Call::transact_with_weight_limit { transaction, .. } = self
+		{
 			if let Err(e) = CheckWeight::<T>::do_pre_dispatch(dispatch_info, len) {
 				return Some(Err(e));
 			}
@@ -150,7 +157,9 @@ where
 		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<TransactionValidity> {
-		if let Call::transact { transaction } = self {
+		if let Call::transact { transaction }
+		| Call::transact_with_weight_limit { transaction, .. } = self
+		{
 			// Validate submitted gas limit to weight conversion
 			let gas_limit = match transaction {
 				Transaction::Legacy(t) => t.gas_limit,

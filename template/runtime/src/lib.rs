@@ -47,8 +47,6 @@ use fp_account::EthereumSignature;
 use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
-#[cfg(feature = "evm-with-weight-limit")]
-use pallet_evm::GasWeightMapping;
 use pallet_evm::{
 	Account as EVMAccount, EnsureAccountId20, FeeCalculator, IdentityAddressMapping, Runner,
 };
@@ -532,11 +530,12 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		info: Self::SignedInfo,
 	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
 		match self {
-			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) => {
-				Some(call.dispatch(RuntimeOrigin::from(
-					pallet_ethereum::RawOrigin::EthereumTransaction(info),
-				)))
-			}
+			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. })
+			| call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact_with_weight_limit {
+				..
+			}) => Some(call.dispatch(RuntimeOrigin::from(
+				pallet_ethereum::RawOrigin::EthereumTransaction(info),
+			))),
 			_ => None,
 		}
 	}
@@ -780,6 +779,7 @@ impl_runtime_apis! {
 		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
 			#[cfg(feature = "evm-with-weight-limit")]
 			{
+				use pallet_evm::GasWeightMapping;
 				let gas_limit = match &transaction {
 					EthereumTransaction::Legacy(t) => t.gas_limit,
 					EthereumTransaction::EIP2930(t) => t.gas_limit,
