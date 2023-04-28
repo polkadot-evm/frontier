@@ -335,20 +335,23 @@ pub mod pallet {
 				"pre log already exists; block is invalid",
 			);
 
-			// Set gas limit based on weight_limit
-			let weight_to_gas = U256::from(T::GasWeightMapping::weight_to_gas(weight_limit));
-			let transaction = match transaction {
-				Transaction::Legacy(mut t) => {
-					t.gas_limit = weight_to_gas;
-					Transaction::Legacy(t)
+			// Verify the transaction was signed with the same gas ratio as the native metrics in `weight_limit`
+			let weight_to_gas = U256::from(T::GasWeightMapping::weight_to_gas(
+				weight_limit.saturating_add(
+					T::BlockWeights::get()
+						.get(frame_support::dispatch::DispatchClass::Normal)
+						.base_extrinsic,
+				),
+			));
+			match transaction {
+				Transaction::Legacy(ref t) => {
+					assert_eq!(t.gas_limit, weight_to_gas);
 				}
-				Transaction::EIP2930(mut t) => {
-					t.gas_limit = weight_to_gas;
-					Transaction::EIP2930(t)
+				Transaction::EIP2930(ref t) => {
+					assert_eq!(t.gas_limit, weight_to_gas);
 				}
-				Transaction::EIP1559(mut t) => {
-					t.gas_limit = weight_to_gas;
-					Transaction::EIP1559(t)
+				Transaction::EIP1559(ref t) => {
+					assert_eq!(t.gas_limit, weight_to_gas);
 				}
 			};
 			// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
