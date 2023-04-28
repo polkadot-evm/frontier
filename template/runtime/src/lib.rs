@@ -530,12 +530,11 @@ impl fp_self_contained::SelfContainedCall for RuntimeCall {
 		info: Self::SignedInfo,
 	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
 		match self {
-			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. })
-			| call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact_with_weight_limit {
-				..
-			}) => Some(call.dispatch(RuntimeOrigin::from(
-				pallet_ethereum::RawOrigin::EthereumTransaction(info),
-			))),
+			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) => {
+				Some(call.dispatch(RuntimeOrigin::from(
+					pallet_ethereum::RawOrigin::EthereumTransaction(info),
+				)))
+			}
 			_ => None,
 		}
 	}
@@ -763,7 +762,7 @@ impl_runtime_apis! {
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> Vec<EthereumTransaction> {
 			xts.into_iter().filter_map(|xt| match xt.0.function {
-				RuntimeCall::Ethereum(transact { transaction }) | RuntimeCall::Ethereum(pallet_ethereum::Call::transact_with_weight_limit { transaction, .. }) => Some(transaction),
+				RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
 				_ => None
 			}).collect::<Vec<EthereumTransaction>>()
 		}
@@ -777,25 +776,6 @@ impl_runtime_apis! {
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
 		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
-			#[cfg(feature = "evm-with-weight-limit")]
-			{
-				use pallet_evm::GasWeightMapping;
-				let gas_limit = match &transaction {
-					EthereumTransaction::Legacy(t) => t.gas_limit,
-					EthereumTransaction::EIP2930(t) => t.gas_limit,
-					EthereumTransaction::EIP1559(t) => t.gas_limit,
-				};
-				let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-					gas_limit.unique_saturated_into(),
-					true,
-				);
-				let transact_with_weight_limit = pallet_ethereum::Call::<Runtime>::transact_with_weight_limit { transaction, weight_limit };
-
-				UncheckedExtrinsic::new_unsigned(
-					transact_with_weight_limit.into(),
-				)
-			}
-			#[cfg(not(feature = "evm-with-weight-limit"))]
 			UncheckedExtrinsic::new_unsigned(
 				pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 			)

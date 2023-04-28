@@ -572,8 +572,6 @@ fn validated_transaction_apply_zero_gas_price_works() {
 #[cfg(feature = "evm-with-weight-limit")]
 #[test]
 fn proof_size_weight_limit_validation_works() {
-	use scale_codec::Encode;
-
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
@@ -591,22 +589,16 @@ fn proof_size_weight_limit_validation_works() {
 		let gas_limit: u64 = 1_000_000;
 		tx.gas_limit = U256::from(gas_limit);
 
-		let mut weight_limit =
+		let weight_limit =
 			<Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
 
+		// Gas limit cannot afford the extra byte and thus is expected to exhaust.
+		tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
 		let tx = tx.sign(&alice.private_key, None);
-		let transaction_len = (tx.encode().len() + 1 + 1) as u64;
-
-		// Set proof size to less than the minimum required
-		*weight_limit.proof_size_mut() = transaction_len - 1;
 
 		// Execute
 		assert_eq!(
-			Ethereum::transact_with_weight_limit(
-				RawOrigin::EthereumTransaction(alice.address).into(),
-				tx,
-				weight_limit,
-			),
+			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,),
 			Err(frame_support::dispatch::DispatchErrorWithPostInfo {
 				post_info: frame_support::dispatch::PostDispatchInfo {
 					actual_weight: None,

@@ -731,14 +731,19 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 					.base_extrinsic,
 			);
 		}
-
-		// Apply a gas to proof size ratio based on BlockGasLimit
-		let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
-		let gas_ratio: sp_arithmetic::Perquintill =
-			sp_arithmetic::PerThing::from_rational(gas, block_gas_limit);
-		let tmp: Weight = Weight::from_proof_size(fp_evm::MAX_POV_SIZE);
-		let proof_size = tmp * gas_ratio;
-		*weight.proof_size_mut() = proof_size.proof_size();
+		#[cfg(not(feature = "evm-with-weight-limit"))]
+		{
+			*weight.proof_size_mut() = 0;
+		}
+		#[cfg(feature = "evm-with-weight-limit")]
+		{
+			// Apply a gas to proof size ratio based on BlockGasLimit
+			let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
+			let gas_ratio: sp_arithmetic::Perquintill =
+				sp_arithmetic::PerThing::from_rational(gas, block_gas_limit);
+			let proof_size = gas_ratio * fp_evm::MAX_POV_SIZE;
+			*weight.proof_size_mut() = proof_size;
+		}
 
 		weight
 	}

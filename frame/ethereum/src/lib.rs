@@ -105,16 +105,11 @@ where
 	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
 {
 	pub fn is_self_contained(&self) -> bool {
-		matches!(
-			self,
-			Call::transact { .. } | Call::transact_with_weight_limit { .. }
-		)
+		matches!(self, Call::transact { .. })
 	}
 
 	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
-		if let Call::transact { transaction }
-		| Call::transact_with_weight_limit { transaction, .. } = self
-		{
+		if let Call::transact { transaction } = self {
 			let check = || {
 				let origin = Pallet::<T>::recover_signer(transaction).ok_or(
 					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
@@ -135,9 +130,7 @@ where
 		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
-		if let Call::transact { transaction }
-		| Call::transact_with_weight_limit { transaction, .. } = self
-		{
+		if let Call::transact { transaction } = self {
 			if let Err(e) = CheckWeight::<T>::do_pre_dispatch(dispatch_info, len) {
 				return Some(Err(e));
 			}
@@ -157,9 +150,7 @@ where
 		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
 		len: usize,
 	) -> Option<TransactionValidity> {
-		if let Call::transact { transaction }
-		| Call::transact_with_weight_limit { transaction, .. } = self
-		{
+		if let Call::transact { transaction } = self {
 			// Validate submitted gas limit to weight conversion
 			let gas_limit = match transaction {
 				Transaction::Legacy(t) => t.gas_limit,
@@ -167,11 +158,11 @@ where
 				Transaction::EIP1559(t) => t.gas_limit,
 			};
 			let without_base_extrinsic_weight = true;
-			let submitted_weight = T::GasWeightMapping::gas_to_weight(
+			let computed_weight_limit = T::GasWeightMapping::gas_to_weight(
 				gas_limit.unique_saturated_into(),
 				without_base_extrinsic_weight,
 			);
-			if submitted_weight != dispatch_info.weight {
+			if computed_weight_limit != dispatch_info.weight {
 				return Some(Err(TransactionValidityError::Invalid(
 					InvalidTransaction::Custom(255),
 				)));
@@ -317,57 +308,32 @@ pub mod pallet {
 				"pre log already exists; block is invalid",
 			);
 
-			Self::apply_validated_transaction(source, transaction, None)
-		}
-
-		/// Transact an Ethereum transaction with native WeightV2+ limit.
-		#[pallet::call_index(1)]
-		#[pallet::weight({ *weight_limit })]
-		pub fn transact_with_weight_limit(
-			origin: OriginFor<T>,
-			transaction: Transaction,
-			weight_limit: Weight,
-		) -> DispatchResultWithPostInfo {
-			let source = ensure_ethereum_transaction(origin)?;
-			// Disable transact functionality if PreLog exist.
-			assert!(
-				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
-				"pre log already exists; block is invalid",
-			);
-
-			// Verify the transaction was signed with the same gas ratio as the native metrics in `weight_limit`
-			let weight_to_gas = U256::from(T::GasWeightMapping::weight_to_gas(
-				weight_limit.saturating_add(
-					T::BlockWeights::get()
-						.get(frame_support::dispatch::DispatchClass::Normal)
-						.base_extrinsic,
-				),
-			));
-			match transaction {
-				Transaction::Legacy(ref t) => {
-					assert_eq!(t.gas_limit, weight_to_gas);
-				}
-				Transaction::EIP2930(ref t) => {
-					assert_eq!(t.gas_limit, weight_to_gas);
-				}
-				Transaction::EIP1559(ref t) => {
-					assert_eq!(t.gas_limit, weight_to_gas);
-				}
+			let gas_limit: u64 = match transaction {
+				Transaction::Legacy(ref t) => t.gas_limit.unique_saturated_into(),
+				Transaction::EIP2930(ref t) => t.gas_limit.unique_saturated_into(),
+				Transaction::EIP1559(ref t) => t.gas_limit.unique_saturated_into(),
 			};
-			// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
-			// Validate the weight limit can afford recording transaction len
-			let _ = weight_limit
-				.proof_size()
-				.checked_sub(Self::transaction_len(&transaction))
-				.ok_or(DispatchErrorWithPostInfo {
-					post_info: PostDispatchInfo {
-						actual_weight: None,
-						pays_fee: Pays::No,
-					},
-					error: sp_runtime::DispatchError::Exhausted,
-				})?;
 
-			Self::apply_validated_transaction(source, transaction, Some(weight_limit))
+			let weight_limit =
+				match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true) {
+					weight_limit if weight_limit.proof_size() > 0 => {
+						// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
+						// Validate the weight limit can afford recording transaction len
+						let _ = weight_limit
+							.proof_size()
+							.checked_sub(Self::transaction_len(&transaction))
+							.ok_or(DispatchErrorWithPostInfo {
+								post_info: PostDispatchInfo {
+									actual_weight: None,
+									pays_fee: Pays::No,
+								},
+								error: sp_runtime::DispatchError::Exhausted,
+							})?;
+						Some(weight_limit)
+					}
+					_ => None,
+				};
+			Self::apply_validated_transaction(source, transaction, weight_limit)
 		}
 	}
 
