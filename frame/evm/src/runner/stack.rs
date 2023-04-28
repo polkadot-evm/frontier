@@ -19,15 +19,15 @@
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, IsPrecompileResult,
-	OnChargeEVMTransaction, OnCreate, Pallet, RunnerError, Weight,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
+	Pallet, RunnerError, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity, WeightInfo};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity, WeightInfo};
 
 #[cfg(feature = "evm-with-weight-limit")]
 use crate::AccountCodesMetadata;
@@ -157,27 +157,11 @@ where
 		//
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
-		//
-		// We extend the principle of this EIP to also prevent `tx.sender` to be the address
-		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
-		// projects using Frontier can have stateful precompiles that can manage funds or
-		// which calls other contracts that expects this precompile address to be trustworthy.
-		if is_transactional {
-			let is_precompile = match precompiles.is_precompile(source, gas_limit) {
-				IsPrecompileResult::Answer { is_precompile, .. } => is_precompile,
-				IsPrecompileResult::OutOfGas => {
-					return Err(RunnerError {
-						error: Error::<T>::GasLimitTooLow,
-						weight,
-					})
-				}
-			};
-			if !<AccountCodes<T>>::get(source).is_empty() || is_precompile {
-				return Err(RunnerError {
-					error: Error::<T>::TransactionMustComeFromEOA,
-					weight,
-				});
-			}
+		if is_transactional && !<AccountCodes<T>>::get(source).is_empty() {
+			return Err(RunnerError {
+				error: Error::<T>::TransactionMustComeFromEOA,
+				weight,
+			});
 		}
 
 		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
