@@ -40,7 +40,7 @@ pub use evm::{
 #[cfg(feature = "evm-with-weight-limit")]
 pub use fp_evm::{
 	ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
-	HASH_PROOF_SIZE,
+	WRITE_PROOF_SIZE,
 };
 
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
@@ -852,7 +852,7 @@ where
 			address
 		);
 		if let Some(weight_info) = self.weight_info_mut() {
-			weight_info.try_record_proof_size_or_fail(HASH_PROOF_SIZE)?;
+			weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
 		}
 		Pallet::<T>::create_account(address, code);
 		Ok(())
@@ -1079,7 +1079,7 @@ where
 			Opcode::SLOAD => U256::from(ACCOUNT_STORAGE_PROOF_SIZE),
 			// Fixed trie 32 byte hash
 			Opcode::SSTORE | Opcode::CREATE | Opcode::CREATE2 | Opcode::SUICIDE => {
-				U256::from(HASH_PROOF_SIZE)
+				U256::from(WRITE_PROOF_SIZE)
 			}
 			// This must be unreachable, free of (proof) cost opcodes cannot be recorded.
 			// TODO decide how do we want to gracefully handle.

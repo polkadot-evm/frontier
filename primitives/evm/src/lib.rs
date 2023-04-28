@@ -59,14 +59,14 @@ pub struct Vicinity {
 /// Maximum allowed POV size for a parachain block.
 pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
-/// Basic account fixed length.
-pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 64;
-/// `AccountCodesMetadata` read, temptatively 20 + 8 + 32.
-pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 60;
-/// (H160, H256) double map blake2 128 concat key size (68) + value 32.
-pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 100;
+/// `System::Account` 16(hash) + 20 (key) + 80 (AccountInfo::max_encoded_len)
+pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 116;
+/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
+pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
+/// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
+pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 /// Fixed trie 32 byte hash.
-pub const HASH_PROOF_SIZE: u64 = 32;
+pub const WRITE_PROOF_SIZE: u64 = 32;
 
 #[derive(Clone, Copy, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]

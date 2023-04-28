@@ -31,7 +31,7 @@ mod proof_size_test {
 	use super::*;
 	use fp_evm::{
 		CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
-		ACCOUNT_STORAGE_PROOF_SIZE, HASH_PROOF_SIZE,
+		ACCOUNT_STORAGE_PROOF_SIZE, WRITE_PROOF_SIZE,
 	};
 	// pragma solidity ^0.8.2;
 	// contract Callee {
@@ -144,7 +144,7 @@ mod proof_size_test {
 			// Creating a new contract does not involve reading the code from storage.
 			// We just account for a fixed hash proof size write and a storage read from AccountCodesMetadata.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
-			let write_cost = HASH_PROOF_SIZE as usize;
+			let write_cost = WRITE_PROOF_SIZE as usize;
 			let expected_proof_size = (read_account_metadata + write_cost) as u64;
 
 			let actual_proof_size = result
@@ -340,7 +340,7 @@ mod proof_size_test {
 			.expect("call succeeds");
 
 			// Contract does two sstore - cold, then warm -, only cold writes record proof size.
-			let expected_proof_size = HASH_PROOF_SIZE;
+			let expected_proof_size = WRITE_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
