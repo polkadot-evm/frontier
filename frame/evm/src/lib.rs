@@ -106,7 +106,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
@@ -514,11 +513,9 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_codes)]
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
 }
@@ -634,6 +631,7 @@ where
 	}
 }
 
+/// Trait to be implemented for evm address mapping.
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
 }

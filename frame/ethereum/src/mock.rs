@@ -180,6 +180,7 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type StateRoot = IntermediateStateRoot<Self>;
 	type PostLogContent = PostBlockAndTxnHashes;
+	type ExtraDataLength = ConstU32<30>;
 }
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
