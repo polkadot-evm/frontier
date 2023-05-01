@@ -12,6 +12,7 @@ use sp_state_machine::BasicExternalities;
 use frontier_template_runtime::{
 	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
+use hex_literal::hex;
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
@@ -84,14 +85,14 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 			DevGenesisExt {
 				genesis_config: testnet_genesis(
 					wasm_binary,
-					// Sudo account
-					get_account_id_from_seed::<ecdsa::Public>("Alice"),
-					// Pre-funded accounts
+					// Sudo account (Alith)
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
+					// Pre-funded accounts: Alith, Baltathar, Charleth and Dorothy
 					vec![
-						get_account_id_from_seed::<ecdsa::Public>("Alice"),
-						get_account_id_from_seed::<ecdsa::Public>("Bob"),
-						get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
-						get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
+						AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
+						AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")),
+						AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")),
+						AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")),
 					],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
