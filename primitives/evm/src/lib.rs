@@ -56,9 +56,6 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
-/// Maximum allowed POV size for a parachain block.
-pub const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
-
 /// `System::Account` 16(hash) + 20 (key) + 80 (AccountInfo::max_encoded_len)
 pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 116;
 /// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).

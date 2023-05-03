@@ -157,6 +157,9 @@ pub mod pallet {
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
 
+		/// Maximum Pov size allowed.
+		type MaxPovSize: Get<u64>;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&LONDON_CONFIG
@@ -741,7 +744,7 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 			let block_gas_limit: u64 = T::BlockGasLimit::get().unique_saturated_into();
 			let gas_ratio: sp_arithmetic::Perquintill =
 				sp_arithmetic::PerThing::from_rational(gas, block_gas_limit);
-			let proof_size = gas_ratio * fp_evm::MAX_POV_SIZE;
+			let proof_size = gas_ratio * T::MaxPovSize::get();
 			*weight.proof_size_mut() = proof_size;
 		}
 

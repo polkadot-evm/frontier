@@ -139,6 +139,7 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub BlockGasLimit: U256 = U256::from(150_000_000);
+	pub MaxPovSize: u64 = 5 * 1024 * 1024;
 	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 
@@ -169,6 +170,7 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type MaxPovSize = MaxPovSize;
 }
 
 parameter_types! {
