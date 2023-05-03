@@ -66,7 +66,7 @@ pub mod runner;
 mod tests;
 
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchResultWithPostInfo, MaxEncodedLen, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
 		OnUnbalanced, SignedImbalance, WithdrawReasons,
@@ -555,7 +555,17 @@ pub type BalanceOf<T> =
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(
+	Debug,
+	Clone,
+	Copy,
+	Eq,
+	PartialEq,
+	Encode,
+	Decode,
+	TypeInfo,
+	MaxEncodedLen
+)]
 pub struct CodeMetadata {
 	pub size: u64,
 	pub hash: H256,

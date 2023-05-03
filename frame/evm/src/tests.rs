@@ -33,6 +33,7 @@ mod proof_size_test {
 		CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
 		ACCOUNT_STORAGE_PROOF_SIZE, WRITE_PROOF_SIZE,
 	};
+	use frame_support::traits::StorageInfoTrait;
 	// pragma solidity ^0.8.2;
 	// contract Callee {
 	//     // ac4c25b2
@@ -133,10 +134,46 @@ mod proof_size_test {
 	}
 
 	#[test]
+	fn account_basic_proof_size_constant_matches() {
+		assert_eq!(
+			ACCOUNT_BASIC_PROOF_SIZE,
+			frame_system::Account::<Test>::storage_info()
+				.get(0)
+				.expect("item")
+				.max_size
+				.expect("size") as u64
+		);
+	}
+
+	#[test]
+	fn account_storage_proof_size_constant_matches() {
+		assert_eq!(
+			ACCOUNT_STORAGE_PROOF_SIZE,
+			AccountStorages::<Test>::storage_info()
+				.get(0)
+				.expect("item")
+				.max_size
+				.expect("size") as u64
+		);
+	}
+
+	#[test]
+	fn account_codes_metadata_proof_size_constant_matches() {
+		assert_eq!(
+			ACCOUNT_CODES_METADATA_PROOF_SIZE,
+			AccountCodesMetadata::<Test>::storage_info()
+				.get(0)
+				.expect("item")
+				.max_size
+				.expect("size") as u64
+		);
+	}
+
+	#[test]
 	fn proof_size_create_accounting_works() {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
-			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			let result = create_proof_size_test_callee_contract(gas_limit, Some(weight_limit))
 				.expect("create succeeds");
@@ -162,7 +199,7 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
-			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 			let result =
 				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
 
@@ -203,8 +240,7 @@ mod proof_size_test {
 			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
 			// This can be solved by tracking those accesses on memory, which is left TODO.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
-			let reading_contract_len =
-				crate::AccountCodes::<Test>::get(subcall_contract_address).len();
+			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
 
 			let actual_proof_size = result
@@ -221,7 +257,7 @@ mod proof_size_test {
 	fn proof_size_balance_accounting_works() {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
-			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Create proof size test contract
 			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
@@ -268,7 +304,7 @@ mod proof_size_test {
 	fn proof_size_sload_accounting_works() {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
-			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Create proof size test contract
 			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
@@ -312,7 +348,7 @@ mod proof_size_test {
 	fn proof_size_sstore_accounting_works() {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
-			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Create proof size test contract
 			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
@@ -356,8 +392,7 @@ mod proof_size_test {
 	fn proof_size_oog_works() {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
-			let mut weight_limit =
-				crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let mut weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Artifically set a lower proof size limit so we OOG this instead gas.
 			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
@@ -409,19 +444,19 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
-			let weight_limit = crate::FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 			let result =
 				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
 
 			let subcall_contract_address = result.value;
 
 			// Assert callee contract code hash and size are cached
-			let crate::CodeMetadata { size, .. } =
-				<crate::AccountCodesMetadata<Test>>::get(subcall_contract_address)
+			let CodeMetadata { size, .. } =
+				<AccountCodesMetadata<Test>>::get(subcall_contract_address)
 					.expect("contract code hash and size are cached");
 
 			// Remove callee cache
-			<crate::AccountCodesMetadata<Test>>::remove(subcall_contract_address);
+			<AccountCodesMetadata<Test>>::remove(subcall_contract_address);
 
 			// Create proof size test contract B
 			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
@@ -457,8 +492,7 @@ mod proof_size_test {
 			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
 			// This can be solved by tracking those accesses on memory, which is left TODO.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
-			let reading_contract_len =
-				crate::AccountCodes::<Test>::get(subcall_contract_address).len();
+			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			// In addition, callee code size is unchached and thus included in the pov
 			let expected_proof_size =
 				(read_account_metadata + reading_contract_len + size as usize) as u64;
