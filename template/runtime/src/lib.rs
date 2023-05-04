@@ -768,21 +768,13 @@ impl_runtime_apis! {
 		fn gas_limit_multiplier_support() {}
 
 		fn pending_block(
-			parent_header: &<Block as BlockT>::Header,
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> (Option<pallet_ethereum::Block>, Option<Vec<TransactionStatus>>) {
-			let block_number = parent_header.number + 1;
-			System::initialize(
-				&block_number,
-				&parent_header.hash(),
-				&parent_header.digest,
-			);
-
 			for ext in xts.into_iter() {
 				let _ = Executive::apply_extrinsic(ext);
 			}
 
-			Ethereum::on_finalize(block_number);
+			Ethereum::on_finalize(System::block_number() + 1);
 
 			(
 				pallet_ethereum::CurrentBlock::<Runtime>::get(),

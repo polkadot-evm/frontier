@@ -139,11 +139,6 @@ where
 				let api = client.runtime_api();
 				let best_hash = client.info().best_hash;
 
-				let parent_header = client
-					.header(best_hash)
-					.map_err(|_| internal_err(format!("Runtime access error at {}", best_hash)))?
-					.ok_or_else(|| internal_err(format!("Block not found at {}", best_hash)))?;
-
 				// Get current in-pool transactions
 				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
 				// ready validated pool
@@ -166,7 +161,7 @@ where
 				);
 
 				let (block, statuses) = api
-					.pending_block(best_hash, &parent_header, xts)
+					.pending_block(best_hash, xts)
 					.map_err(|_| internal_err(format!("Runtime access error at {}", best_hash)))?;
 
 				let base_fee = api.gas_price(best_hash).unwrap_or_default();
