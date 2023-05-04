@@ -151,24 +151,6 @@ where
 		len: usize,
 	) -> Option<TransactionValidity> {
 		if let Call::transact { transaction } = self {
-			// Validate submitted gas limit to weight conversion
-			let gas_limit = match transaction {
-				Transaction::Legacy(t) => t.gas_limit,
-				Transaction::EIP2930(t) => t.gas_limit,
-				Transaction::EIP1559(t) => t.gas_limit,
-			};
-			let without_base_extrinsic_weight = true;
-			let computed_weight_limit = T::GasWeightMapping::gas_to_weight(
-				gas_limit.unique_saturated_into(),
-				without_base_extrinsic_weight,
-			);
-			if computed_weight_limit != dispatch_info.weight {
-				return Some(Err(TransactionValidityError::Invalid(
-					InvalidTransaction::Custom(255),
-				)));
-			}
-
-			// CheckWeight
 			if let Err(e) = CheckWeight::<T>::do_validate(dispatch_info, len) {
 				return Some(Err(e));
 			}
