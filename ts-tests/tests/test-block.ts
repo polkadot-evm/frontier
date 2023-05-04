@@ -176,9 +176,7 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		// do not seal, get pendign block
 		let pending_transactions = [];
 		{
-			const pending = (
-				await customRequest(context.web3, "eth_getBlockByNumber", ["pending", false])
-			).result;
+			const pending = (await customRequest(context.web3, "eth_getBlockByNumber", ["pending", false])).result;
 			pending_transactions = pending.transactions;
 			expect(pending_transactions.length).to.be.eq(expectedXtsNumber);
 		}
