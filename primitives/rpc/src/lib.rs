@@ -207,6 +207,11 @@ sp_api::decl_runtime_apis! {
 		/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
 		/// is supported.
 		fn gas_limit_multiplier_support();
+		/// Return the pending block.
+		fn pending_block(
+			parent_header: &<Block as BlockT>::Header,
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> (Option<ethereum::BlockV2>, Option<Vec<TransactionStatus>>);
 	}
 
 	#[api_version(2)]
