@@ -25,7 +25,7 @@ use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, U256};
+use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
 use sp_std::vec::Vec;
 
@@ -64,6 +64,11 @@ pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
 pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 /// Fixed trie 32 byte hash.
 pub const WRITE_PROOF_SIZE: u64 = 32;
+
+pub enum AccessedStorage {
+	AccountCodes(H160),
+	AccountStorages((H160, H256)),
+}
 
 #[derive(Clone, Copy, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]

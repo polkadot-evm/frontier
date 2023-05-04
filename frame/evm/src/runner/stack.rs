@@ -18,16 +18,16 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError, Weight,
+	runner::Runner as RunnerT, AccountCodes, AccountCodesAccessed, AccountStorages,
+	AccountStoragesAccessed, AddressMapping, BalanceOf, BlockHashMapping, Config, Error, Event,
+	FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity, WeightInfo};
+use fp_evm::{AccessedStorage, CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity, WeightInfo};
 
 #[cfg(feature = "evm-with-weight-limit")]
 use crate::AccountCodesMetadata;
@@ -913,28 +913,33 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
-		let size_limit: u64 = self
-			.metadata()
-			.gasometer()
-			.config()
-			.create_contract_limit
-			.unwrap_or_default() as u64;
-		if let Some(weight_info) = self.weight_info_mut() {
-			// First try to record fixed sized `AccountCodesMetadata` read
-			// Temptatively 20 + 8 + 32
-			// TODO we need a way to check whether AccountCodesMetadata for an address is already
-			// recorded in this transaction, otherwise we are over accounting..
-			weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
+		// Skip if the address has been already recorded this block
+		if maybe_record {
+			let size_limit: u64 = self
+				.metadata()
+				.gasometer()
+				.config()
+				.create_contract_limit
+				.unwrap_or_default() as u64;
+			if let Some(weight_info) = self.weight_info_mut() {
+				// First try to record fixed sized `AccountCodesMetadata` read
+				// Temptatively 20 + 8 + 32
+				// TODO we need a way to check whether AccountCodesMetadata for an address is already
+				// recorded in this transaction, otherwise we are over accounting..
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 
-			if <AccountCodesMetadata<T>>::get(address).is_none() {
-				// If it does not exist, try to record `create_contract_limit` first.
-				weight_info.try_record_proof_size_or_fail(size_limit)?;
-				let meta = Pallet::<T>::account_code_metadata(address);
-				let actual_size = meta.size;
-				// Refund if applies
-				weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-				return Ok(U256::from(actual_size));
-			};
+				if <AccountCodesMetadata<T>>::get(address).is_none() {
+					// If it does not exist, try to record `create_contract_limit` first.
+					weight_info.try_record_proof_size_or_fail(size_limit)?;
+					let meta = Pallet::<T>::account_code_metadata(address);
+					let actual_size = meta.size;
+					// Refund if applies
+					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+					return Ok(U256::from(actual_size));
+				};
+				<AccountCodesAccessed<T>>::insert(address, true);
+			}
 		}
 		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
 	}
@@ -946,28 +951,33 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
-		let size_limit: u64 = self
-			.metadata()
-			.gasometer()
-			.config()
-			.create_contract_limit
-			.unwrap_or_default() as u64;
-		if let Some(weight_info) = self.weight_info_mut() {
-			// First try to record fixed sized `AccountCodesMetadata` read
-			// Temptatively 20 + 8 + 32
-			// TODO we need a way to check whether AccountCodesMetadata for an address is already
-			// recorded in this transaction, otherwise we are over accounting..
-			weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
+		// Skip if the address has been already recorded this block
+		if maybe_record {
+			let size_limit: u64 = self
+				.metadata()
+				.gasometer()
+				.config()
+				.create_contract_limit
+				.unwrap_or_default() as u64;
+			if let Some(weight_info) = self.weight_info_mut() {
+				// First try to record fixed sized `AccountCodesMetadata` read
+				// Temptatively 20 + 8 + 32
+				// TODO we need a way to check whether AccountCodesMetadata for an address is already
+				// recorded in this transaction, otherwise we are over accounting..
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 
-			if <AccountCodesMetadata<T>>::get(address).is_none() {
-				// If it does not exist, try to record `create_contract_limit` first.
-				weight_info.try_record_proof_size_or_fail(size_limit)?;
-				let meta = Pallet::<T>::account_code_metadata(address);
-				let actual_size = meta.size;
-				// Refund if applies
-				weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-				return Ok(meta.hash);
-			};
+				if <AccountCodesMetadata<T>>::get(address).is_none() {
+					// If it does not exist, try to record `create_contract_limit` first.
+					weight_info.try_record_proof_size_or_fail(size_limit)?;
+					let meta = Pallet::<T>::account_code_metadata(address);
+					let actual_size = meta.size;
+					// Refund if applies
+					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+					return Ok(meta.hash);
+				};
+				<AccountCodesAccessed<T>>::insert(address, true);
+			}
 		}
 		Ok(<Pallet<T>>::account_code_metadata(address).hash)
 	}
@@ -981,7 +991,7 @@ where
 	fn record_external_dynamic_opcode_cost(
 		&mut self,
 		opcode: Opcode,
-		gas_cost: GasCost,
+		_gas_cost: GasCost,
 		target: evm::gasometer::StorageTarget,
 	) -> Result<(), ExitError> {
 		let size_limit: u64 = self
@@ -1008,32 +1018,24 @@ where
 			return Ok(());
 		};
 
-		let maybe_record = match gas_cost {
-			GasCost::ExtCodeSize { target_is_cold }
-			| GasCost::Balance { target_is_cold }
-			| GasCost::ExtCodeHash { target_is_cold }
-			| GasCost::CallCode { target_is_cold, .. }
-			| GasCost::StaticCall { target_is_cold, .. }
-			| GasCost::ExtCodeCopy { target_is_cold, .. }
-			| GasCost::SLoad { target_is_cold, .. }
-			| GasCost::DelegateCall { target_is_cold, .. }
-			| GasCost::SStore { target_is_cold, .. }
-			| GasCost::Call { target_is_cold, .. } => target_is_cold,
-
-			GasCost::Create => true,
-
-			GasCost::Suicide {
-				target_is_cold,
-				already_removed,
-				..
-			} => target_is_cold && !already_removed,
-
-			_ => false,
+		// If account code or storage slot is in the overlay it is already accounted for and early exit
+		let accessed_storage: Option<AccessedStorage> = match target {
+			StorageTarget::Address(address) => {
+				if <AccountCodesAccessed<T>>::get(address) {
+					return Ok(());
+				} else {
+					Some(AccessedStorage::AccountCodes(address))
+				}
+			}
+			StorageTarget::Slot(address, index) => {
+				if <AccountStoragesAccessed<T>>::get(address, index) {
+					return Ok(());
+				} else {
+					Some(AccessedStorage::AccountStorages((address, index)))
+				}
+			}
+			_ => None,
 		};
-
-		if !maybe_record {
-			return Ok(());
-		}
 		// Proof size is fixed length for writes (a 32-byte hash in a merkle trie), and
 		// the full key/value for reads. For read and writes over the same storage, the full value
 		// is included.
@@ -1053,11 +1055,14 @@ where
 			| Opcode::CALL
 			| Opcode::DELEGATECALL
 			| Opcode::STATICCALL => {
-				let address = match target {
-					StorageTarget::Address(address) | StorageTarget::Slot(address, _) => address,
-					// This must be unreachable, a valid Target must be set for this opcode(s)
+				let address = if let Some(AccessedStorage::AccountCodes(address))
+				| Some(AccessedStorage::AccountStorages((address, _))) = accessed_storage
+				{
+					address
+				} else {
+					// This must be unreachable, a valid target must be set.
 					// TODO decide how do we want to gracefully handle.
-					_ => return Err(ExitError::OutOfGas),
+					return Err(ExitError::OutOfGas);
 				};
 				// First try to record fixed sized `AccountCodesMetadata` read
 				// Temptatively 20 + 8 + 32
@@ -1083,14 +1088,27 @@ where
 			}
 			// This must be unreachable, free of (proof) cost opcodes cannot be recorded.
 			// TODO decide how do we want to gracefully handle.
-			_ => return Err(ExitError::OutOfGas),
+			_ => return Ok(()),
 		};
 
 		if opcode_proof_size > U256::from(u64::MAX) {
 			weight_info.try_record_proof_size_or_fail(proof_size_limit)?;
 			return Err(ExitError::OutOfGas);
 		}
-		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))
+
+		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))?;
+
+		// Once cost is recorded, cache the storage access
+		match accessed_storage {
+			Some(AccessedStorage::AccountStorages((address, index))) => {
+				<AccountStoragesAccessed<T>>::insert(address, index, true)
+			}
+			Some(AccessedStorage::AccountCodes(address)) => {
+				<AccountCodesAccessed<T>>::insert(address, true)
+			}
+			_ => {}
+		}
+		Ok(())
 	}
 
 	#[cfg(feature = "evm-with-weight-limit")]

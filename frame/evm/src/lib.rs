@@ -72,6 +72,7 @@ use frame_support::{
 		OnUnbalanced, SignedImbalance, WithdrawReasons,
 	},
 	weights::Weight,
+	StoragePrefixedMap,
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
@@ -163,6 +164,15 @@ pub mod pallet {
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&LONDON_CONFIG
+		}
+	}
+
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_: T::BlockNumber) {
+			let _ =
+				sp_io::storage::clear_prefix(&AccountStoragesAccessed::<T>::final_prefix(), None);
+			let _ = sp_io::storage::clear_prefix(&AccountCodesAccessed::<T>::final_prefix(), None);
 		}
 	}
 
@@ -539,12 +549,20 @@ pub mod pallet {
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
+	pub type AccountCodesAccessed<T: Config> =
+		StorageMap<_, Blake2_128Concat, H160, bool, ValueQuery>;
+
+	#[pallet::storage]
 	pub type AccountCodesMetadata<T: Config> =
 		StorageMap<_, Blake2_128Concat, H160, CodeMetadata, OptionQuery>;
 
 	#[pallet::storage]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
+
+	#[pallet::storage]
+	pub type AccountStoragesAccessed<T: Config> =
+		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, bool, ValueQuery>;
 }
 
 /// Type alias for currency balance.

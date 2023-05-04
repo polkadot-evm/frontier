@@ -22,7 +22,7 @@ use crate::mock::*;
 
 use frame_support::{
 	assert_ok,
-	traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons},
+	traits::{GenesisBuild, LockIdentifier, LockableCurrency, OnFinalize, WithdrawReasons},
 };
 use std::{collections::BTreeMap, str::FromStr};
 
@@ -226,7 +226,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
-				true, // non-transactional
+				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
@@ -235,11 +235,7 @@ mod proof_size_test {
 			.expect("call succeeds");
 
 			// Expected proof size
-			// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
-			// But because we don't have a way of tracking warming for this storage we over-account, that is
-			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
-			// This can be solved by tracking those accesses on memory, which is left TODO.
-			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
 
@@ -279,7 +275,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
-				true, // non-transactional
+				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
@@ -323,7 +319,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
-				true, // non-transactional
+				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
@@ -367,7 +363,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
-				true, // non-transactional
+				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
@@ -414,7 +410,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
-				true, // non-transactional
+				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
@@ -478,7 +474,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
-				true, // non-transactional
+				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
@@ -487,11 +483,7 @@ mod proof_size_test {
 			.expect("call succeeds");
 
 			// Expected proof size
-			// TODO reading AccountCodeMetadata should only be accounted once: the cold read.
-			// But because we don't have a way of tracking warming for this storage we over-account, that is
-			// one read when the evm calls code_size, and one read when the evm steps into the CALL opcode.
-			// This can be solved by tracking those accesses on memory, which is left TODO.
-			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize * 2;
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			// In addition, callee code size is unchached and thus included in the pov
 			let expected_proof_size =
@@ -504,6 +496,138 @@ mod proof_size_test {
 				.expect("proof size usage");
 
 			assert_eq!(expected_proof_size, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn account_codes_accessed_works() {
+		new_test_ext().execute_with(|| {
+			// Create callee contract A
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let result =
+				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
+
+			let subcall_contract_address = result.value;
+
+			// Create proof size test contract B
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// Call B, that calls A, with weight limit
+			// selector for ProofSizeTest::test_call function..
+			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
+			// ..encode the callee address argument
+			call_data.push_str(&format!("{:x}", subcall_contract_address));
+
+			// First call, already test to record expected external costs..
+			let _ = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // non-transactional
+				true, // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Second call, already accessed, expect to skip recording and account for Zero
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // transactional
+				true, // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(0, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn account_storages_accessed_works() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 1_000_000;
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			// Create proof size test contract
+			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+
+			let call_contract_address = result.value;
+
+			// selector for ProofSizeTest::test_sload function..
+			let call_data: String = "e27a0ecd".to_owned();
+
+			// First call, already test to record expected external costs..
+			let _ = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // transactional
+				true, // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			// Second call, already accessed, expect to skip recording and account for Zero
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				call_contract_address,
+				hex::decode(&call_data).unwrap(),
+				U256::zero(),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // transactional
+				true, // must be validated
+				Some(weight_limit),
+				Some(0),
+				&<Test as Config>::config().clone(),
+			)
+			.expect("call succeeds");
+
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(0, actual_proof_size);
 		});
 	}
 }
@@ -560,6 +684,23 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.expect("Pallet balances storage can be assimilated");
 	GenesisBuild::<Test>::assimilate_storage(&crate::GenesisConfig { accounts }, &mut t).unwrap();
 	t.into()
+}
+
+#[test]
+fn should_cleanup_accessed_storage_on_finalize() {
+	new_test_ext().execute_with(|| {
+		let address = H160::random();
+		let slot = H256::default();
+		AccountCodesAccessed::<Test>::insert(address, true);
+		AccountStoragesAccessed::<Test>::insert(address, slot, true);
+		assert_eq!(AccountCodesAccessed::<Test>::get(address), true);
+		assert_eq!(AccountStoragesAccessed::<Test>::get(address, slot), true);
+
+		EVM::on_finalize(System::block_number());
+
+		assert_eq!(AccountCodesAccessed::<Test>::get(address), false);
+		assert_eq!(AccountStoragesAccessed::<Test>::get(address, slot), false);
+	});
 }
 
 #[test]
