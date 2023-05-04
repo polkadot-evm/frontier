@@ -26,7 +26,6 @@ use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::ProvideRuntimeApi;
-use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
@@ -43,7 +42,7 @@ impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P,
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
-	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
 	A: ChainApi<Block = B> + 'static,
