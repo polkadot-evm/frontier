@@ -87,7 +87,7 @@ impl WeightInfo {
 		Ok(match (weight_limit, transaction_len) {
 			(None, _) => None,
 			(Some(weight_limit), Some(transaction_len))
-				if weight_limit.ref_time() > 0 && weight_limit.proof_size() > 0 =>
+				if weight_limit.proof_size() >= transaction_len =>
 			{
 				Some(WeightInfo {
 					ref_time_limit: Some(weight_limit.ref_time()),
@@ -96,20 +96,12 @@ impl WeightInfo {
 					proof_size_usage: Some(transaction_len),
 				})
 			}
-			(Some(weight_limit), _) if weight_limit.ref_time() > 0 => Some(WeightInfo {
+			(Some(weight_limit), None) => Some(WeightInfo {
 				ref_time_limit: Some(weight_limit.ref_time()),
 				proof_size_limit: None,
 				ref_time_usage: Some(0u64),
 				proof_size_usage: None,
 			}),
-			(Some(weight_limit), Some(transaction_len)) if weight_limit.proof_size() > 0 => {
-				Some(WeightInfo {
-					ref_time_limit: None,
-					proof_size_limit: Some(weight_limit.proof_size()),
-					ref_time_usage: None,
-					proof_size_usage: Some(transaction_len),
-				})
-			}
 			_ => return Err("must provide Some valid weight limit or None"),
 		})
 	}
