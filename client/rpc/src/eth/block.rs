@@ -68,19 +68,29 @@ where
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client
-			.runtime_api()
-			.gas_price(substrate_hash)
-			.unwrap_or_default();
+		let base_fee = client.runtime_api().gas_price(substrate_hash).ok();
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
-				block,
-				statuses.into_iter().map(Some).collect(),
-				Some(hash),
-				full,
-				Some(base_fee),
-			))),
+			(Some(block), Some(statuses)) => {
+				let mut rich_block = rich_block_build(
+					block,
+					statuses.into_iter().map(Option::Some).collect(),
+					Some(hash),
+					full,
+					base_fee,
+				);
+
+				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+				if let Some(parent_hash) = self
+					.forced_parent_hashes
+					.as_ref()
+					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+				{
+					rich_block.inner.header.parent_hash = parent_hash
+				}
+
+				Ok(Some(rich_block))
+			}
 			_ => Ok(None),
 		}
 	}
@@ -113,22 +123,30 @@ where
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client
-			.runtime_api()
-			.gas_price(substrate_hash)
-			.unwrap_or_default();
+		let base_fee = client.runtime_api().gas_price(substrate_hash).ok();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
 				let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 
-				Ok(Some(rich_block_build(
+				let mut rich_block = rich_block_build(
 					block,
 					statuses.into_iter().map(Option::Some).collect(),
 					Some(hash),
 					full,
-					Some(base_fee),
-				)))
+					base_fee,
+				);
+
+				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+				if let Some(parent_hash) = self
+					.forced_parent_hashes
+					.as_ref()
+					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+				{
+					rich_block.inner.header.parent_hash = parent_hash
+				}
+
+				Ok(Some(rich_block))
 			}
 			_ => Ok(None),
 		}
