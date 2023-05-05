@@ -24,6 +24,7 @@
 	clippy::len_zero,
 	clippy::new_without_default
 )]
+#![deny(unused_crate_dependencies)]
 
 mod eth;
 mod eth_pubsub;
@@ -32,7 +33,7 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -50,10 +51,13 @@ pub use fc_storage::{
 pub mod frontier_backend_client {
 	use super::internal_err;
 
-	use ethereum_types::H256;
+	use ethereum_types::{H160, H256, U256};
 	use jsonrpsee::core::RpcResult;
+	use scale_codec::Encode;
 	// Substrate
+	use sc_client_api::{StorageKey, StorageProvider};
 	use sp_blockchain::HeaderBackend;
+	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
 		traits::{Block as BlockT, UniqueSaturatedInto, Zero},
@@ -61,6 +65,116 @@ pub mod frontier_backend_client {
 	// Frontier
 	use fc_rpc_core::types::BlockNumber;
 	use fp_storage::EthereumStorageSchema;
+
+	/// Implements a default runtime storage override.
+	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
+	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
+	/// Uses IdentityAddressMapping for the address.
+	pub struct SystemAccountId20StorageOverride<B, C, BE>(pub std::marker::PhantomData<(B, C, BE)>);
+	impl<B, C, BE> fp_rpc::RuntimeStorageOverride<B, C> for SystemAccountId20StorageOverride<B, C, BE>
+	where
+		B: BlockT,
+		C: StorageProvider<B, BE> + Send + Sync,
+		BE: sc_client_api::Backend<B> + Send + Sync,
+	{
+		fn is_enabled() -> bool {
+			true
+		}
+
+		fn set_overlayed_changes(
+			client: &C,
+			overlayed_changes: &mut sp_state_machine::OverlayedChanges,
+			block: B::Hash,
+			_version: u32,
+			address: H160,
+			balance: Option<U256>,
+			nonce: Option<U256>,
+		) {
+			let mut key = [twox_128(b"System"), twox_128(b"Account")]
+				.concat()
+				.to_vec();
+			let account_id = Self::into_account_id_bytes(address);
+			key.extend(blake2_128(&account_id));
+			key.extend(&account_id);
+
+			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
+				let mut new_item = item.0;
+
+				if let Some(nonce) = nonce {
+					new_item.splice(0..4, nonce.low_u32().encode());
+				}
+
+				if let Some(balance) = balance {
+					new_item.splice(16..32, balance.low_u128().encode());
+				}
+
+				overlayed_changes.set_storage(key, Some(new_item));
+			}
+		}
+
+		fn into_account_id_bytes(address: H160) -> Vec<u8> {
+			use pallet_evm::AddressMapping;
+			let address: H160 = pallet_evm::IdentityAddressMapping::into_account_id(address);
+			address.as_ref().to_owned()
+		}
+	}
+
+	/// Implements a runtime storage override.
+	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
+	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
+	/// USes HashedAddressMapping for the address.
+	pub struct SystemAccountId32StorageOverride<B, C, BE>(pub std::marker::PhantomData<(B, C, BE)>);
+	impl<B, C, BE> fp_rpc::RuntimeStorageOverride<B, C> for SystemAccountId32StorageOverride<B, C, BE>
+	where
+		B: BlockT,
+		C: StorageProvider<B, BE> + Send + Sync,
+		BE: sc_client_api::Backend<B> + Send + Sync,
+	{
+		fn is_enabled() -> bool {
+			true
+		}
+
+		fn set_overlayed_changes(
+			client: &C,
+			overlayed_changes: &mut sp_state_machine::OverlayedChanges,
+			block: B::Hash,
+			_version: u32,
+			address: H160,
+			balance: Option<U256>,
+			nonce: Option<U256>,
+		) {
+			let mut key = [twox_128(b"System"), twox_128(b"Account")]
+				.concat()
+				.to_vec();
+			let account_id = Self::into_account_id_bytes(address);
+			key.extend(blake2_128(&account_id));
+			key.extend(&account_id);
+
+			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
+				let mut new_item = item.0;
+
+				if let Some(nonce) = nonce {
+					new_item.splice(0..4, nonce.low_u32().encode());
+				}
+
+				if let Some(balance) = balance {
+					new_item.splice(16..32, balance.low_u128().encode());
+				}
+
+				overlayed_changes.set_storage(key, Some(new_item));
+			}
+		}
+
+		fn into_account_id_bytes(address: H160) -> Vec<u8> {
+			use pallet_evm::AddressMapping;
+			use sp_core::crypto::ByteArray;
+			use sp_runtime::traits::BlakeTwo256;
+
+			pallet_evm::HashedAddressMapping::<BlakeTwo256>::into_account_id(address)
+				.as_slice()
+				.to_owned()
+		}
+	}
 
 	pub fn native_block_id<B: BlockT, C>(
 		client: &C,
@@ -248,7 +362,7 @@ mod tests {
 	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
-		generic::{Block, BlockId, Header},
+		generic::{Block, Header},
 		traits::{BlakeTwo256, Block as BlockT},
 	};
 	use substrate_test_runtime_client::{
@@ -300,7 +414,7 @@ mod tests {
 
 		// A1 -> B1
 		let mut builder = client
-			.new_block_at(&BlockId::Hash(a1_hash), Default::default(), false)
+			.new_block_at(a1_hash, Default::default(), false)
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let b1 = builder.build().unwrap().block;
@@ -329,7 +443,7 @@ mod tests {
 
 		// A1 -> B2
 		let mut builder = client
-			.new_block_at(&BlockId::Hash(a1_hash), Default::default(), false)
+			.new_block_at(a1_hash, Default::default(), false)
 			.unwrap();
 		builder.push_storage_change(vec![2], None).unwrap();
 		let b2 = builder.build().unwrap().block;
@@ -358,7 +472,7 @@ mod tests {
 
 		// B2 -> C1. B2 branch is now canon.
 		let mut builder = client
-			.new_block_at(&BlockId::Hash(b2_hash), Default::default(), false)
+			.new_block_at(b2_hash, Default::default(), false)
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let c1 = builder.build().unwrap().block;

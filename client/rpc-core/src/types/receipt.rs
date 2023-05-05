@@ -21,7 +21,7 @@ use ethereum_types::{Bloom as H2048, H160, H256, U256, U64};
 use serde::Serialize;
 
 /// Receipt
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Receipt {
 	/// Transaction Hash

@@ -24,17 +24,17 @@ use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, UniqueSaturatedInto},
-};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	frontier_backend_client, internal_err,
+};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -43,11 +43,11 @@ where
 	BE: Backend<B> + 'static,
 {
 	pub fn gas_price(&self) -> Result<U256> {
-		let block = BlockId::Hash(self.client.info().best_hash);
+		let block_hash = self.client.info().best_hash;
 
 		self.client
 			.runtime_api()
-			.gas_price(&block)
+			.gas_price(block_hash)
 			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
 	}
 

@@ -39,19 +39,17 @@ use sc_network::NetworkService;
 use sc_network_common::ExHashT;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
-use sp_api::{Core, HeaderT, ProvideRuntimeApi};
+use sp_api::{CallApiAt, Core, HeaderT, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{Block as BlockT, UniqueSaturatedInto},
-};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
 use fc_storage::OverrideHandle;
 use fp_rpc::{
-	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus,
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
+	RuntimeStorageOverride, TransactionStatus,
 };
 
 use crate::{internal_err, public_key, signer::EthSigner};
@@ -62,8 +60,19 @@ pub use self::{
 	filter::EthFilter,
 };
 
+// Configuration trait for RPC configuration.
+pub trait EthConfig<B: BlockT, C>: Send + Sync + 'static {
+	type EstimateGasAdapter: EstimateGasAdapter + Send + Sync;
+	type RuntimeStorageOverride: RuntimeStorageOverride<B, C>;
+}
+
+impl<B: BlockT, C> EthConfig<B, C> for () {
+	type EstimateGasAdapter = ();
+	type RuntimeStorageOverride = ();
+}
+
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
+pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -79,7 +88,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()> {
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
-	_marker: PhantomData<(B, BE, EGA)>,
+	_marker: PhantomData<(B, BE, EC)>,
 }
 
 impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A, ()> {
@@ -117,10 +126,10 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A
 	}
 }
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA> {
-	pub fn with_estimate_gas_adapter<EGA2: EstimateGasAdapter>(
-		self,
-	) -> Eth<B, C, P, CT, BE, H, A, EGA2> {
+impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>>
+	Eth<B, C, P, CT, BE, H, A, EC>
+{
+	pub fn replace_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, H, A, EC2> {
 		let Self {
 			client,
 			pool,
@@ -158,17 +167,17 @@ impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE,
 }
 
 #[async_trait]
-impl<B, C, P, CT, BE, H: ExHashT, A, EGA> EthApiServer for Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A, EC> EthApiServer for Eth<B, C, P, CT, BE, H, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	C: HeaderBackend<B> + CallApiAt<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
-	EGA: EstimateGasAdapter + Send + Sync + 'static,
+	EC: EthConfig<B, C> + Send + Sync + 'static,
 {
 	// ########################################################################
 	// Client
@@ -291,8 +300,13 @@ where
 	// Execute
 	// ########################################################################
 
-	fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
-		self.call(request, number)
+	fn call(
+		&self,
+		request: CallRequest,
+		number: Option<BlockNumber>,
+		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
+	) -> Result<Bytes> {
+		self.call(request, number, state_overrides)
 	}
 
 	async fn estimate_gas(
@@ -518,7 +532,6 @@ where
 	// In case of Pending, we need an overlayed state to query over.
 	let api = client.runtime_api();
 	let best_hash = client.info().best_hash;
-	let best = BlockId::Hash(best_hash);
 	// Get all transactions in the ready queue.
 	let xts: Vec<<B as BlockT>::Extrinsic> = graph
 		.validated_pool()
@@ -527,18 +540,18 @@ where
 		.collect::<Vec<<B as BlockT>::Extrinsic>>();
 	// Manually initialize the overlay.
 	if let Ok(Some(header)) = client.header(best_hash) {
-		let parent_hash = BlockId::Hash(*header.parent_hash());
-		api.initialize_block(&parent_hash, &header)
+		let parent_hash = *header.parent_hash();
+		api.initialize_block(parent_hash, &header)
 			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
 		// Apply the ready queue to the best block's state.
 		for xt in xts {
-			let _ = api.apply_extrinsic(&best, xt);
+			let _ = api.apply_extrinsic(best_hash, xt);
 		}
 		Ok(api)
 	} else {
 		Err(internal_err(format!(
 			"Cannot get header for block {:?}",
-			best
+			best_hash
 		)))
 	}
 }

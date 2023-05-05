@@ -27,17 +27,17 @@ use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
-use sp_runtime::{generic::BlockId, traits::Block as BlockT};
+use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{rich_block_build, Eth},
+	eth::{rich_block_build, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -70,13 +70,13 @@ where
 
 		let base_fee = client
 			.runtime_api()
-			.gas_price(&BlockId::Hash(substrate_hash))
+			.gas_price(substrate_hash)
 			.unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
 				block,
-				statuses.into_iter().map(Option::Some).collect(),
+				statuses.into_iter().map(Some).collect(),
 				Some(hash),
 				full,
 				Some(base_fee),
@@ -113,7 +113,10 @@ where
 			.current_transaction_statuses(schema, substrate_hash)
 			.await;
 
-		let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
+		let base_fee = client
+			.runtime_api()
+			.gas_price(substrate_hash)
+			.unwrap_or_default();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {

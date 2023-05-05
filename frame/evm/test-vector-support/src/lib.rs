@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#![deny(unused_crate_dependencies)]
+
 use std::fs;
 
 use evm::{Context, ExitError, ExitReason, ExitSucceed, Transfer};

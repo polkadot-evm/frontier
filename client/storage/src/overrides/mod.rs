@@ -21,7 +21,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H160, H256, U256};
 // Substrate
-use sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
+use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{traits::Block as BlockT, Permill};
 // Frontier
@@ -103,7 +103,7 @@ where
 	fn account_code_at(&self, block_hash: Block::Hash, address: H160) -> Option<Vec<u8>> {
 		self.client
 			.runtime_api()
-			.account_code_at(&BlockId::Hash(block_hash), address)
+			.account_code_at(block_hash, address)
 			.ok()
 	}
 
@@ -111,7 +111,7 @@ where
 	fn storage_at(&self, block_hash: Block::Hash, address: H160, index: U256) -> Option<H256> {
 		self.client
 			.runtime_api()
-			.storage_at(&BlockId::Hash(block_hash), address, index)
+			.storage_at(block_hash, address, index)
 			.ok()
 	}
 
@@ -120,7 +120,7 @@ where
 		let api = self.client.runtime_api();
 
 		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&BlockId::Hash(block_hash))
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block_hash)
 		{
 			api_version
 		} else {
@@ -128,12 +128,10 @@ where
 		};
 		if api_version == 1 {
 			#[allow(deprecated)]
-			let old_block = api
-				.current_block_before_version_2(&BlockId::Hash(block_hash))
-				.ok()?;
+			let old_block = api.current_block_before_version_2(block_hash).ok()?;
 			old_block.map(|block| block.into())
 		} else {
-			api.current_block(&BlockId::Hash(block_hash)).ok()?
+			api.current_block(block_hash).ok()?
 		}
 	}
 
@@ -142,7 +140,7 @@ where
 		let api = self.client.runtime_api();
 
 		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&BlockId::Hash(block_hash))
+			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block_hash)
 		{
 			api_version
 		} else {
@@ -150,9 +148,7 @@ where
 		};
 		if api_version < 4 {
 			#[allow(deprecated)]
-			let old_receipts = api
-				.current_receipts_before_version_4(&BlockId::Hash(block_hash))
-				.ok()?;
+			let old_receipts = api.current_receipts_before_version_4(block_hash).ok()?;
 			old_receipts.map(|receipts| {
 				receipts
 					.into_iter()
@@ -169,7 +165,7 @@ where
 		} else {
 			self.client
 				.runtime_api()
-				.current_receipts(&BlockId::Hash(block_hash))
+				.current_receipts(block_hash)
 				.ok()?
 		}
 	}
@@ -181,17 +177,14 @@ where
 	) -> Option<Vec<TransactionStatus>> {
 		self.client
 			.runtime_api()
-			.current_transaction_statuses(&BlockId::Hash(block_hash))
+			.current_transaction_statuses(block_hash)
 			.ok()?
 	}
 
 	/// Return the elasticity multiplier at the give post-eip1559 height.
 	fn elasticity(&self, block_hash: Block::Hash) -> Option<Permill> {
 		if self.is_eip1559(block_hash) {
-			self.client
-				.runtime_api()
-				.elasticity(&BlockId::Hash(block_hash))
-				.ok()?
+			self.client.runtime_api().elasticity(block_hash).ok()?
 		} else {
 			None
 		}
@@ -201,7 +194,7 @@ where
 		if let Ok(Some(api_version)) = self
 			.client
 			.runtime_api()
-			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(&BlockId::Hash(block_hash))
+			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block_hash)
 		{
 			return api_version >= 2;
 		}
