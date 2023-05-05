@@ -18,19 +18,19 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountCodesAccessed, AccountStorages,
-	AccountStoragesAccessed, AddressMapping, BalanceOf, BlockHashMapping, Config, Error, Event,
-	FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError, Weight,
+	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
+	Pallet, RunnerError, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{AccessedStorage, CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity, WeightInfo};
+use fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, Vicinity, WeightInfo};
 
 #[cfg(feature = "evm-with-weight-limit")]
-use crate::AccountCodesMetadata;
+use crate::{AccountCodesAccessed, AccountCodesMetadata, AccountStoragesAccessed};
 
 #[cfg(feature = "evm-with-weight-limit")]
 pub use evm::{
@@ -39,8 +39,8 @@ pub use evm::{
 };
 #[cfg(feature = "evm-with-weight-limit")]
 pub use fp_evm::{
-	ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
-	WRITE_PROOF_SIZE,
+	AccessedStorage, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+	ACCOUNT_STORAGE_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
 
 use frame_support::traits::{Currency, ExistenceRequirement, Get};
