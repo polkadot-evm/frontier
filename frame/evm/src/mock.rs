@@ -126,9 +126,12 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
 	}
 }
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
 parameter_types! {
-	pub BlockGasLimit: U256 = U256::from(150_000_000);
-	pub MaxPovSize: u64 = 5 * 1024 * 1024;
+	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
@@ -153,7 +156,7 @@ impl crate::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
-	type MaxPovSize = MaxPovSize;
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 }
 
 /// Exemple PrecompileSet with only Identity precompile.

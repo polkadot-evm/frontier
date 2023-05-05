@@ -136,7 +136,6 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 }
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
-	pub MaxPovSize: u64 = 5 * 1024 * 1024;
 	pub WeightPerGas: Weight = Weight::from_ref_time(20_000);
 }
 impl pallet_evm::Config for Test {
@@ -160,7 +159,7 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
-	type MaxPovSize = MaxPovSize;
+	type GasLimitPovSizeRatio = ();
 }
 
 pub(crate) struct MockHandle {

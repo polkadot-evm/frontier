@@ -4911,7 +4911,6 @@ dependencies = [
  "rlp",
  "scale-info",
  "sha3",
- "sp-arithmetic",
  "sp-core",
  "sp-io",
  "sp-runtime",
