@@ -161,8 +161,6 @@ where
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 
-				println!("FUTURE LEN ----------> {:?}", xts.len());
-
 				let (block, statuses) = api
 					.pending_block(best_hash, xts)
 					.map_err(|_| internal_err(format!("Runtime access error at {}", best_hash)))?;
