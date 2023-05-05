@@ -1054,9 +1054,9 @@ where
 			| Opcode::CALLCODE
 			| Opcode::CALL
 			| Opcode::DELEGATECALL
-			| Opcode::STATICCALL
-			| Opcode::SUICIDE if T::Version::get().state_version() == sp_runtime::StateVersion::V0 => {
-				let address = if let Some(AccessedStorage::AccountCodes(address)) = accessed_storage {
+			| Opcode::STATICCALL => {
+				let address = if let Some(AccessedStorage::AccountCodes(address)) = accessed_storage
+				{
 					address
 				} else {
 					// This must be unreachable, a valid target must be set.
@@ -1082,9 +1082,10 @@ where
 			// (H160, H256) double map blake2 128 concat key size (68) + value 32
 			Opcode::SLOAD => U256::from(ACCOUNT_STORAGE_PROOF_SIZE),
 			// Fixed trie 32 byte hash
-			Opcode::SSTORE | Opcode::CREATE | Opcode::CREATE2 | Opcode::SUICIDE => {
-				U256::from(WRITE_PROOF_SIZE)
-			}
+			Opcode::SSTORE | Opcode::CREATE | Opcode::CREATE2 => U256::from(WRITE_PROOF_SIZE),
+			// Calling SUICIDE means we already read the code and accounted for its size.
+			// For clarity the match pattern is left included.
+			Opcode::SUICIDE => return Ok(()),
 			// This must be unreachable, free of (proof) cost opcodes cannot be recorded.
 			// TODO decide how do we want to gracefully handle.
 			_ => return Ok(()),
