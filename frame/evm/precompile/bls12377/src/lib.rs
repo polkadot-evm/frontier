@@ -94,8 +94,8 @@ fn decode_fr(input: &[u8], offset: usize) -> Fr {
 /// returns Fq in base field.
 fn decode_fq(bytes: [u8; 64]) -> Option<Fq> {
 	// check top bytes
-	for i in 0..16 {
-		if bytes[i] != 0 {
+	for b in bytes.iter().take(16) {
+		if b.ne(&0u8) {
 			return None;
 		}
 	}
