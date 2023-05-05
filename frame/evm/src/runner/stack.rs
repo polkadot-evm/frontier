@@ -1054,10 +1054,9 @@ where
 			| Opcode::CALLCODE
 			| Opcode::CALL
 			| Opcode::DELEGATECALL
-			| Opcode::STATICCALL => {
-				let address = if let Some(AccessedStorage::AccountCodes(address))
-				| Some(AccessedStorage::AccountStorages((address, _))) = accessed_storage
-				{
+			| Opcode::STATICCALL
+			| Opcode::SUICIDE if T::Version::get().state_version() == sp_runtime::StateVersion::V0 => {
+				let address = if let Some(AccessedStorage::AccountCodes(address)) = accessed_storage {
 					address
 				} else {
 					// This must be unreachable, a valid target must be set.
