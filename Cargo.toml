@@ -153,7 +153,7 @@ pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficient
 frontier-template-runtime = { path = "template/runtime", default-features = false }
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
-ark-bw6-761   = { version = "0.4.0", default-features = false }
-ark-std       = { version = "0.4.0", default-features = false }
-ark-ec        = { version = "0.4.0", default-features = false }
-ark-ff        = { version = "0.4.0", default-features = false }
+ark-bw6-761 = { version = "0.4.0", default-features = false }
+ark-ec = { version = "0.4.0", default-features = false }
+ark-ff = { version = "0.4.0", default-features = false }
+ark-std = { version = "0.4.0", default-features = false }
