@@ -381,7 +381,17 @@ fn rich_block_build(
 	hash: Option<H256>,
 	full_transactions: bool,
 	base_fee: Option<U256>,
+	is_pending: bool,
 ) -> RichBlock {
+	let (miner, nonce, total_difficulty) = if !is_pending {
+		(
+			Some(block.header.beneficiary),
+			Some(block.header.nonce),
+			Some(U256::zero()),
+		)
+	} else {
+		(None, None, None)
+	};
 	Rich {
 		inner: Block {
 			header: Header {
@@ -391,7 +401,7 @@ fn rich_block_build(
 				parent_hash: block.header.parent_hash,
 				uncles_hash: block.header.ommers_hash,
 				author: block.header.beneficiary,
-				miner: block.header.beneficiary,
+				miner,
 				state_root: block.header.state_root,
 				transactions_root: block.header.transactions_root,
 				receipts_root: block.header.receipts_root,
@@ -402,10 +412,10 @@ fn rich_block_build(
 				logs_bloom: block.header.logs_bloom,
 				timestamp: U256::from(block.header.timestamp / 1000),
 				difficulty: block.header.difficulty,
-				nonce: Some(block.header.nonce),
+				nonce,
 				size: Some(U256::from(rlp::encode(&block.header).len() as u32)),
 			},
-			total_difficulty: U256::zero(),
+			total_difficulty,
 			uncles: vec![],
 			transactions: {
 				if full_transactions {
