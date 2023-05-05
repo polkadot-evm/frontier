@@ -1,0 +1,33 @@
+[package]
+name       = "pallet-evm-precompile-bls12377"
+version    = "1.0.0-dev"
+authors    = { workspace = true }
+edition    = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+# Arkworks
+ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
+ark-ec        = { version = "0.4.2", default-features = false }
+ark-ff        = { version = "0.4.2", default-features = false }
+ark-std       = { version = "0.4.0", default-features = false }
+
+# Frontier
+fp-evm = { workspace = true }
+
+[dev-dependencies]
+# Frontier
+pallet-evm-test-vector-support = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	# Arkworks
+	"ark-bls12-377/std",
+	"ark-ec/std",
+	"ark-ff/std",
+	"ark-std/std",
+
+	# Frontier
+	"fp-evm/std"
+]
