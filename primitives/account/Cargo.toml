@@ -9,12 +9,14 @@ repository = { workspace = true }
 
 [dependencies]
 hex = { version = "0.4.3", default-features = false }
-impl-serde = { workspace = true }
-libsecp256k1 = { workspace = true, default-features = false }
+impl-serde = { workspace = true, optional = true }
+libsecp256k1 = { workspace = true }
 log = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-serde = { workspace = true }
+serde = { workspace = true, optional = true }
+
+# Substrate
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -25,14 +27,16 @@ sp-std = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"impl-serde/std",
 	"hex/std",
+	"impl-serde/std",
 	"libsecp256k1/std",
 	"log/std",
-	"serde/std",
+	"scale-codec/std",
+	"scale-info/std",
+	"serde",
 	# Substrate
-	"sp-io/std",
 	"sp-core/std",
+	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
 ]

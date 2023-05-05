@@ -16,25 +16,28 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
-use ethereum_types::U256;
+use ethereum_types::{H160, H256, U256};
 use evm::{ExitError, ExitReason};
 use jsonrpsee::core::RpcResult as Result;
+use scale_codec::Encode;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
-use sp_api::{ApiExt, ProvideRuntimeApi};
+use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
+use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::EthereumRuntimeRPCApi;
+use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
+use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
 use crate::{
-	eth::{pending_runtime_api, Eth},
+	eth::{pending_runtime_api, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
@@ -59,17 +62,21 @@ impl EstimateGasAdapter for () {
 	}
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	C: HeaderBackend<B> + CallApiAt<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
-	EGA: EstimateGasAdapter,
 {
-	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub fn call(
+		&self,
+		request: CallRequest,
+		number: Option<BlockNumber>,
+		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
+	) -> Result<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -201,26 +208,57 @@ where
 					Ok(Bytes(info.value))
 				} else if api_version == 4 {
 					// Post-london + access list support
-					let access_list = access_list.unwrap_or_default();
-					let info = api
-						.call(
-							substrate_hash,
-							from.unwrap_or_default(),
-							to,
-							data,
-							value.unwrap_or_default(),
-							gas_limit,
-							max_fee_per_gas,
-							max_priority_fee_per_gas,
-							nonce,
-							false,
-							Some(
-								access_list
-									.into_iter()
-									.map(|item| (item.address, item.storage_keys))
-									.collect(),
-							),
-						)
+					let encoded_params = sp_api::Encode::encode(&(
+						&from.unwrap_or_default(),
+						&to,
+						&data,
+						&value.unwrap_or_default(),
+						&gas_limit,
+						&max_fee_per_gas,
+						&max_priority_fee_per_gas,
+						&nonce,
+						&false,
+						&Some(
+							access_list
+								.unwrap_or_default()
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect::<Vec<(sp_core::H160, Vec<H256>)>>(),
+						),
+					));
+
+					let overlayed_changes = self.create_overrides_overlay(
+						substrate_hash,
+						api_version,
+						state_overrides,
+					)?;
+					let storage_transaction_cache = std::cell::RefCell::<
+						sp_api::StorageTransactionCache<B, C::StateBackend>,
+					>::default();
+					let params = sp_api::CallApiAtParams {
+						at: substrate_hash,
+						function: "EthereumRuntimeRPCApi_call",
+						arguments: encoded_params,
+						overlayed_changes: &std::cell::RefCell::new(overlayed_changes),
+						storage_transaction_cache: &storage_transaction_cache,
+						context: sp_api::ExecutionContext::OffchainCall(None),
+						recorder: &None,
+					};
+					let info = self
+						.client
+						.call_api_at(params)
+						.and_then(|r| {
+							std::result::Result::map_err(
+									<std::result::Result<
+										fp_evm::CallInfo,
+										sp_runtime::DispatchError,
+									> as sp_api::Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_call",
+										error,
+									},
+								)
+						})
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
@@ -324,7 +362,7 @@ where
 		let substrate_hash = client.info().best_hash;
 
 		// Adapt request for gas estimation.
-		let request = EGA::adapt_request(request);
+		let request = EC::EstimateGasAdapter::adapt_request(request);
 
 		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
 		let is_simple_transfer = match &request.data {
@@ -701,6 +739,89 @@ where
 
 			Ok(highest)
 		}
+	}
+
+	/// Given an address mapped `CallStateOverride`, creates `OverlayedChanges` to be used for
+	/// `CallApiAt` eth_call.
+	fn create_overrides_overlay(
+		&self,
+		block_hash: B::Hash,
+		api_version: u32,
+		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
+	) -> Result<sp_api::OverlayedChanges> {
+		let mut overlayed_changes = sp_api::OverlayedChanges::default();
+		if let Some(state_overrides) = state_overrides {
+			for (address, state_override) in state_overrides {
+				if EC::RuntimeStorageOverride::is_enabled() {
+					EC::RuntimeStorageOverride::set_overlayed_changes(
+						self.client.as_ref(),
+						&mut overlayed_changes,
+						block_hash,
+						api_version,
+						address,
+						state_override.balance,
+						state_override.nonce,
+					);
+				} else if state_override.balance.is_some() || state_override.nonce.is_some() {
+					return Err(internal_err(
+						"state override unsupported for balance and nonce",
+					));
+				}
+
+				if let Some(code) = &state_override.code {
+					let mut key = [twox_128(PALLET_EVM), twox_128(EVM_ACCOUNT_CODES)]
+						.concat()
+						.to_vec();
+					key.extend(blake2_128(address.as_bytes()));
+					key.extend(address.as_bytes());
+					let encoded_code = code.clone().into_vec().encode();
+					overlayed_changes.set_storage(key.clone(), Some(encoded_code));
+				}
+
+				let mut account_storage_key = [
+					twox_128(PALLET_EVM),
+					twox_128(fp_storage::EVM_ACCOUNT_STORAGES),
+				]
+				.concat()
+				.to_vec();
+				account_storage_key.extend(blake2_128(address.as_bytes()));
+				account_storage_key.extend(address.as_bytes());
+
+				// Use `state` first. If `stateDiff` is also present, it resolves consistently
+				if let Some(state) = &state_override.state {
+					// clear all storage
+					if let Ok(all_keys) = self.client.storage_keys(
+						block_hash,
+						Some(&sp_storage::StorageKey(account_storage_key.clone())),
+						None,
+					) {
+						for key in all_keys {
+							overlayed_changes.set_storage(key.0, None);
+						}
+					}
+					// set provided storage
+					for (k, v) in state {
+						let mut slot_key = account_storage_key.clone();
+						slot_key.extend(blake2_128(k.as_bytes()));
+						slot_key.extend(k.as_bytes());
+
+						overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
+					}
+				}
+
+				if let Some(state_diff) = &state_override.state_diff {
+					for (k, v) in state_diff {
+						let mut slot_key = account_storage_key.clone();
+						slot_key.extend(blake2_128(k.as_bytes()));
+						slot_key.extend(k.as_bytes());
+
+						overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
+					}
+				}
+			}
+		}
+
+		Ok(overlayed_changes)
 	}
 }
 
