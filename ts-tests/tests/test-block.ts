@@ -173,10 +173,17 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 			await sendTransaction();
 		}
 
+		// test still invalid future transactions can be safely applied (they are applied, just not overlayed)
+		nonce = nonce + 100;
+		await sendTransaction();
+
 		// do not seal, get pendign block
 		let pending_transactions = [];
 		{
 			const pending = (await customRequest(context.web3, "eth_getBlockByNumber", ["pending", false])).result;
+			expect(pending.miner).to.be.null;
+			expect(pending.nonce).to.be.null;
+			expect(pending.totalDifficulty).to.be.null;
 			pending_transactions = pending.transactions;
 			expect(pending_transactions.length).to.be.eq(expectedXtsNumber);
 		}
