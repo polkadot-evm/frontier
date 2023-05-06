@@ -131,4 +131,16 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 			id: 1,
 		});
 	});
+
+	step("`input` field alias is properly deserialized", async function () {
+		const result = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT - 1).toString(16)}`,
+				input: TEST_CONTRACT_BYTECODE,
+			},
+		]);
+
+		expect(result.result).to.be.equal(TEST_CONTRACT_DEPLOYED_BYTECODE);
+	});
 });

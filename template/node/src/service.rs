@@ -367,6 +367,7 @@ where
 		fee_history_cache: fee_history_cache.clone(),
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
+		forced_parent_hashes: None,
 	};
 
 	let rpc_builder = {

@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 
 use jsonrpsee::RpcModule;
 // Substrate
@@ -14,6 +14,7 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_db::Backend as FrontierBackend;
@@ -57,6 +58,8 @@ pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
 	/// Maximum allowed gas limit will be ` block.gas_limit * execute_gas_limit_multiplier` when
 	/// using eth_call/eth_estimateGas.
 	pub execute_gas_limit_multiplier: u64,
+	/// Mandated parent hashes for a given block hash.
+	pub forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 }
 
 impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> {
@@ -78,6 +81,7 @@ impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> 
 			fee_history_cache: self.fee_history_cache.clone(),
 			fee_history_cache_limit: self.fee_history_cache_limit,
 			execute_gas_limit_multiplier: self.execute_gas_limit_multiplier,
+			forced_parent_hashes: self.forced_parent_hashes.clone(),
 		}
 	}
 }
@@ -121,6 +125,7 @@ where
 		fee_history_cache,
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier,
+		forced_parent_hashes,
 	} = deps;
 
 	let mut signers = Vec::new();
@@ -143,6 +148,7 @@ where
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 		)
 		.replace_config::<EC>()
 		.into_rpc(),

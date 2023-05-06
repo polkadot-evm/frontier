@@ -87,6 +87,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> {
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
+	forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 	_marker: PhantomData<(B, BE, EC)>,
 }
 
@@ -105,6 +106,7 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi> Eth<B, C, P, CT, BE, A, ()> {
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
+		forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 	) -> Self {
 		Self {
 			client,
@@ -120,6 +122,7 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi> Eth<B, C, P, CT, BE, A, ()> {
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 			_marker: PhantomData,
 		}
 	}
@@ -141,6 +144,7 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT,
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 			_marker: _,
 		} = self;
 
@@ -158,6 +162,7 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT,
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 			_marker: PhantomData,
 		}
 	}

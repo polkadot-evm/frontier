@@ -55,6 +55,7 @@ pub struct TransactionRequest {
 	/// Value of transaction in wei
 	pub value: Option<U256>,
 	/// Additional data sent with transaction
+	#[serde(alias = "input")]
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
