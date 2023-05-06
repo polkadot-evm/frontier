@@ -24,7 +24,6 @@ scale-info = { workspace = true }
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-timestamp = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
@@ -37,6 +36,7 @@ fp-evm = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default"] }
 pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
+pallet-timestamp = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]
@@ -53,7 +53,6 @@ std = [
 	"frame-benchmarking/std",
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-timestamp/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
@@ -66,11 +65,9 @@ runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"pallet-timestamp/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
-	"pallet-timestamp/try-runtime",
 ]
 forbid-evm-reentrancy = ["dep:environmental"]
