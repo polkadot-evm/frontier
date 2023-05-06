@@ -152,10 +152,11 @@ impl crate::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type Timestamp = Timestamp;
 	type WeightInfo = ();
 }
 
-/// Exemple PrecompileSet with only Identity precompile.
+/// Example PrecompileSet with only Identity precompile.
 pub struct MockPrecompileSet;
 
 impl PrecompileSet for MockPrecompileSet {
