@@ -36,6 +36,7 @@ use sp_consensus::SyncOracle;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
+use fc_mapping_sync::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 use fc_rpc_core::{
 	types::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
@@ -63,6 +64,7 @@ pub struct EthPubSub<B: BlockT, P, C, BE> {
 	subscriptions: SubscriptionTaskExecutor,
 	overrides: Arc<OverrideHandle<B>>,
 	starting_block: u64,
+	pubsub_notification_sinks: Arc<EthereumBlockNotificationSinks<EthereumBlockNotification<B>>>,
 	_marker: PhantomData<BE>,
 }
 
@@ -76,6 +78,9 @@ where
 		sync: Arc<SyncingService<B>>,
 		subscriptions: SubscriptionTaskExecutor,
 		overrides: Arc<OverrideHandle<B>>,
+		pubsub_notification_sinks: Arc<
+			EthereumBlockNotificationSinks<EthereumBlockNotification<B>>,
+		>,
 	) -> Self {
 		// Capture the best block as seen on initialization. Used for syncing subscriptions.
 		let starting_block =
@@ -87,6 +92,7 @@ where
 			subscriptions,
 			overrides,
 			starting_block,
+			pubsub_notification_sinks,
 			_marker: PhantomData,
 		}
 	}
@@ -216,6 +222,10 @@ where
 		};
 
 		let client = self.client.clone();
+		// Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+		let (inner_sink, block_notification_stream) =
+			sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+		self.pubsub_notification_sinks.lock().push(inner_sink);
 		let pool = self.pool.clone();
 		let sync = self.sync.clone();
 		let overrides = self.overrides.clone();
@@ -223,8 +233,7 @@ where
 		let fut = async move {
 			match kind {
 				Kind::Logs => {
-					let stream = client
-						.import_notification_stream()
+					let stream = block_notification_stream
 						.filter_map(move |notification| {
 							if notification.is_new_best {
 								let substrate_hash = notification.hash;
@@ -262,8 +271,7 @@ where
 					sink.pipe_from_stream(stream).await;
 				}
 				Kind::NewHeads => {
-					let stream = client
-						.import_notification_stream()
+					let stream = block_notification_stream
 						.filter_map(move |notification| {
 							if notification.is_new_best {
 								let schema = fc_storage::onchain_storage_schema(
