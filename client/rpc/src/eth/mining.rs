@@ -17,9 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H256, H64, U256};
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
@@ -27,26 +26,24 @@ use fc_rpc_core::types::*;
 
 use crate::eth::{Eth, EthConfig};
 
-impl<B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>>
-	Eth<B, C, P, CT, BE, H, A, EC>
-{
-	pub fn is_mining(&self) -> Result<bool> {
+impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC> {
+	pub fn is_mining(&self) -> RpcResult<bool> {
 		Ok(self.is_authority)
 	}
 
-	pub fn hashrate(&self) -> Result<U256> {
+	pub fn hashrate(&self) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}
 
-	pub fn work(&self) -> Result<Work> {
+	pub fn work(&self) -> RpcResult<Work> {
 		Ok(Work::default())
 	}
 
-	pub fn submit_hashrate(&self, _: U256, _: H256) -> Result<bool> {
+	pub fn submit_hashrate(&self, _: U256, _: H256) -> RpcResult<bool> {
 		Ok(false)
 	}
 
-	pub fn submit_work(&self, _: H64, _: H256, _: H256) -> Result<bool> {
+	pub fn submit_work(&self, _: H64, _: H256, _: H256) -> RpcResult<bool> {
 		Ok(false)
 	}
 }

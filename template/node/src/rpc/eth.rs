@@ -7,6 +7,7 @@ use sc_client_api::{
 	client::BlockchainEvents,
 };
 use sc_network::NetworkService;
+use sc_network_sync::SyncingService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
@@ -38,6 +39,8 @@ pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
 	pub enable_dev_signer: bool,
 	/// Network service
 	pub network: Arc<NetworkService<B, B::Hash>>,
+	/// Chain syncing service
+	pub sync: Arc<SyncingService<B>>,
 	/// Frontier Backend.
 	pub frontier_backend: Arc<FrontierBackend<B>>,
 	/// Ethereum data access overrides.
@@ -69,6 +72,7 @@ impl<C, P, A: ChainApi, CT: Clone, B: BlockT> Clone for EthDeps<C, P, A, CT, B> 
 			is_authority: self.is_authority,
 			enable_dev_signer: self.enable_dev_signer,
 			network: self.network.clone(),
+			sync: self.sync.clone(),
 			frontier_backend: self.frontier_backend.clone(),
 			overrides: self.overrides.clone(),
 			block_data_cache: self.block_data_cache.clone(),
@@ -95,13 +99,10 @@ pub fn create_eth<C, BE, P, A, CT, B, EC: EthConfig<B, C>>(
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	B: BlockT,
-	C: ProvideRuntimeApi<B>,
+	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B> + ConvertTransactionRuntimeApi<B>,
 	C: BlockchainEvents<B> + 'static,
-	C: HeaderBackend<B>
-		+ CallApiAt<B>
-		+ HeaderMetadata<B, Error = BlockChainError>
-		+ StorageProvider<B, BE>,
+	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,
@@ -120,6 +121,7 @@ where
 		is_authority,
 		enable_dev_signer,
 		network,
+		sync,
 		frontier_backend,
 		overrides,
 		block_data_cache,
@@ -142,7 +144,7 @@ where
 			pool.clone(),
 			graph,
 			converter,
-			network.clone(),
+			sync.clone(),
 			vec![],
 			overrides.clone(),
 			frontier_backend.clone(),
@@ -175,7 +177,7 @@ where
 		EthPubSub::new(
 			pool,
 			client.clone(),
-			network.clone(),
+			sync,
 			subscription_task_executor,
 			overrides,
 			pubsub_notification_sinks,

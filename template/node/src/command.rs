@@ -142,7 +142,7 @@ pub fn run() -> sc_cli::Result<()> {
 				let (client, backend, _, task_manager, _) =
 					service::new_chain_ops(&mut config, &cli.eth)?;
 				let aux_revert = Box::new(move |client, _, blocks| {
-					sc_finality_grandpa::revert(client, blocks)?;
+					sc_consensus_grandpa::revert(client, blocks)?;
 					Ok(())
 				});
 				Ok((cmd.run(client, backend, Some(aux_revert)), task_manager))

@@ -20,7 +20,7 @@ use std::{marker::PhantomData, sync::Arc, time};
 
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
-use jsonrpsee::core::{async_trait, RpcResult as Result};
+use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
@@ -72,7 +72,7 @@ where
 	B: BlockT,
 	C: HeaderBackend<B>,
 {
-	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
+	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let block_number =
 			UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 		let pool = self.filter_pool.clone();
@@ -117,19 +117,19 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
-	fn new_filter(&self, filter: Filter) -> Result<U256> {
+	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
 		self.create_filter(FilterType::Log(filter))
 	}
 
-	fn new_block_filter(&self) -> Result<U256> {
+	fn new_block_filter(&self) -> RpcResult<U256> {
 		self.create_filter(FilterType::Block)
 	}
 
-	fn new_pending_transaction_filter(&self) -> Result<U256> {
+	fn new_pending_transaction_filter(&self) -> RpcResult<U256> {
 		Err(internal_err("Method not available."))
 	}
 
-	async fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
+	async fn filter_changes(&self, index: Index) -> RpcResult<FilterChanges> {
 		// There are multiple branches that needs to return async blocks.
 		// Also, each branch need to (synchronously) do stuff with the pool
 		// (behind a lock), and the lock should be released before entering
@@ -278,13 +278,13 @@ where
 		}
 	}
 
-	async fn filter_logs(&self, index: Index) -> Result<Vec<Log>> {
+	async fn filter_logs(&self, index: Index) -> RpcResult<Vec<Log>> {
 		let key = U256::from(index.value());
 		let pool = self.filter_pool.clone();
 
 		// We want to get the filter, while releasing the pool lock outside
 		// of the async block.
-		let filter_result: Result<Filter> = (|| {
+		let filter_result: RpcResult<Filter> = (|| {
 			let pool = pool
 				.lock()
 				.map_err(|_| internal_err("Filter pool is not available."))?;
@@ -339,7 +339,7 @@ where
 		Ok(ret)
 	}
 
-	fn uninstall_filter(&self, index: Index) -> Result<bool> {
+	fn uninstall_filter(&self, index: Index) -> RpcResult<bool> {
 		let key = U256::from(index.value());
 		let pool = self.filter_pool.clone();
 		// Try to lock.
@@ -355,7 +355,7 @@ where
 		response
 	}
 
-	async fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
+	async fn logs(&self, filter: Filter) -> RpcResult<Vec<Log>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -423,7 +423,7 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 	filter: &Filter,
 	from: NumberFor<B>,
 	to: NumberFor<B>,
-) -> Result<()>
+) -> RpcResult<()>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,

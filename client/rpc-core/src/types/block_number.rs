@@ -16,12 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::fmt;
+
 use ethereum_types::H256;
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::fmt;
 
 /// Represents rpc api block number param.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]

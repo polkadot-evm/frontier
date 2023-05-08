@@ -27,11 +27,11 @@ scale-codec = { package = "parity-scale-codec", workspace = true }
 tokio = { version = "1.24", features = ["sync"] }
 
 # Substrate
-pallet-evm = { workspace = true }
 prometheus-endpoint = { workspace = true }
 sc-client-api = { workspace = true }
 sc-network = { workspace = true }
 sc-network-common = { workspace = true }
+sc-network-sync = { workspace = true }
 sc-rpc = { workspace = true }
 sc-service = { workspace = true }
 sc-transaction-pool = { workspace = true }
@@ -55,6 +55,7 @@ fp-ethereum = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3.3.0"

@@ -60,7 +60,7 @@ pub fn create_full<C, P, BE, A, CT>(
 	>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
-	C: ProvideRuntimeApi<Block>,
+	C: CallApiAt<Block> + ProvideRuntimeApi<Block>,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
 	C::Api: sp_block_builder::BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
@@ -68,7 +68,6 @@ where
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	C: BlockchainEvents<Block> + 'static,
 	C: HeaderBackend<Block>
-		+ CallApiAt<Block>
 		+ HeaderMetadata<Block, Error = BlockChainError>
 		+ StorageProvider<Block, BE>,
 	BE: Backend<Block> + 'static,

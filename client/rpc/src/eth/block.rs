@@ -19,10 +19,9 @@
 use std::sync::Arc;
 
 use ethereum_types::{H256, U256};
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -37,7 +36,7 @@ use crate::{
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -45,7 +44,7 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
 {
-	pub async fn block_by_hash(&self, hash: H256, full: bool) -> Result<Option<RichBlock>> {
+	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -99,7 +98,7 @@ where
 		&self,
 		number: BlockNumber,
 		full: bool,
-	) -> Result<Option<RichBlock>> {
+	) -> RpcResult<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -152,7 +151,7 @@ where
 		}
 	}
 
-	pub fn block_transaction_count_by_hash(&self, hash: H256) -> Result<Option<U256>> {
+	pub fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
 		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -177,7 +176,10 @@ where
 		}
 	}
 
-	pub fn block_transaction_count_by_number(&self, number: BlockNumber) -> Result<Option<U256>> {
+	pub fn block_transaction_count_by_number(
+		&self,
+		number: BlockNumber,
+	) -> RpcResult<Option<U256>> {
 		if let BlockNumber::Pending = number {
 			// get the pending transactions count
 			return Ok(Some(U256::from(
@@ -211,15 +213,15 @@ where
 		}
 	}
 
-	pub fn block_uncles_count_by_hash(&self, _: H256) -> Result<U256> {
+	pub fn block_uncles_count_by_hash(&self, _: H256) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}
 
-	pub fn block_uncles_count_by_number(&self, _: BlockNumber) -> Result<U256> {
+	pub fn block_uncles_count_by_number(&self, _: BlockNumber) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}
 
-	pub fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> Result<Option<RichBlock>> {
+	pub fn uncle_by_block_hash_and_index(&self, _: H256, _: Index) -> RpcResult<Option<RichBlock>> {
 		Ok(None)
 	}
 
@@ -227,7 +229,7 @@ where
 		&self,
 		_: BlockNumber,
 		_: Index,
-	) -> Result<Option<RichBlock>> {
+	) -> RpcResult<Option<RichBlock>> {
 		Ok(None)
 	}
 }

@@ -9,8 +9,7 @@ use futures::{future, prelude::*};
 // Substrate
 use sc_client_api::{BlockchainEvents, StateBackendFor};
 use sc_executor::NativeExecutionDispatch;
-use sc_network::NetworkService;
-use sc_network_common::ExHashT;
+use sc_network_sync::SyncingService;
 use sc_service::{error::Error as ServiceError, BasePath, Configuration, TaskManager};
 use sp_api::ConstructRuntimeApi;
 use sp_runtime::traits::BlakeTwo256;
@@ -106,7 +105,7 @@ where
 {
 }
 
-pub fn spawn_frontier_tasks<RuntimeApi, Executor, H: ExHashT>(
+pub fn spawn_frontier_tasks<RuntimeApi, Executor>(
 	task_manager: &TaskManager,
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	backend: Arc<FullBackend>,
@@ -115,7 +114,7 @@ pub fn spawn_frontier_tasks<RuntimeApi, Executor, H: ExHashT>(
 	overrides: Arc<OverrideHandle<Block>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
-	network: Arc<NetworkService<Block, H>>,
+	sync: Arc<SyncingService<Block>>,
 	pubsub_notification_sinks: Arc<
 		fc_mapping_sync::EthereumBlockNotificationSinks<
 			fc_mapping_sync::EthereumBlockNotification<Block>,
@@ -141,7 +140,7 @@ pub fn spawn_frontier_tasks<RuntimeApi, Executor, H: ExHashT>(
 			3,
 			0,
 			SyncStrategy::Normal,
-			network,
+			sync,
 			pubsub_notification_sinks,
 		)
 		.for_each(|()| future::ready(())),
