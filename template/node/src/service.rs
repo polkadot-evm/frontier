@@ -430,7 +430,7 @@ where
 		overrides,
 		fee_history_cache,
 		fee_history_cache_limit,
-		network.clone(),
+		sync_service.clone(),
 		pubsub_notification_sinks,
 	);
 
