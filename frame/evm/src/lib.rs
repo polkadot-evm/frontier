@@ -70,7 +70,7 @@ use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, WithdrawReasons,
+		OnUnbalanced, SignedImbalance, Time, WithdrawReasons,
 	},
 	weights::Weight,
 };
@@ -112,7 +112,7 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+	pub trait Config: frame_system::Config {
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -157,6 +157,9 @@ pub mod pallet {
 
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
+
+		/// Get the timestamp for the current block.
+		type Timestamp: Time;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
