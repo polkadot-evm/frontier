@@ -46,7 +46,7 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
-	await new Promise((resolve) => setTimeout(() => resolve(), 500));
+	await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
 }
 
 // Create a block and finalize it.
@@ -61,7 +61,7 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 export async function startFrontierNode(provider?: string): Promise<{
 	web3: Web3;
 	binary: ChildProcess;
-	ethersjs: ethers.providers.JsonRpcProvider;
+	ethersjs: ethers.JsonRpcProvider;
 }> {
 	var web3;
 	if (!provider || provider == "http") {
@@ -98,7 +98,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 	});
 
 	const binaryLogs = [];
-	await new Promise((resolve) => {
+	await new Promise<void>((resolve) => {
 		const timer = setTimeout(() => {
 			console.error(`\x1b[31m Failed to start Frontier Template Node.\x1b[0m`);
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
@@ -135,7 +135,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 		web3 = new Web3(`ws://127.0.0.1:${WS_PORT}`);
 	}
 
-	let ethersjs = new ethers.providers.StaticJsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
+	let ethersjs = new ethers.JsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
 		chainId: CHAIN_ID,
 		name: "frontier-dev",
 	});
@@ -147,7 +147,7 @@ export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }
 	describe(title, () => {
 		let context: {
 			web3: Web3;
-			ethersjs: ethers.providers.JsonRpcProvider;
+			ethersjs: ethers.JsonRpcProvider;
 		} = { web3: null, ethersjs: null };
 		let binary: ChildProcess;
 		// Making sure the Frontier node has started

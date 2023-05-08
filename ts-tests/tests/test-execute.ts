@@ -90,7 +90,7 @@ describeWithFrontier("Frontier RPC (estimate gas historically)", (context) => {
 		);
 
 		// SSTORE over an existing storage is cheaper
-		expect(ESTIMATE_AT_2).to.be.lt(ESTIMATE_AT_1);
+		expect(ESTIMATE_AT_2).to.be.lt(ESTIMATE_AT_1 as number);
 
 		// Estimate what a sstore reset costed at block number 1, queried historically
 		const ESTIMATE_AT_1_QUERY = context.web3.utils.hexToNumber(
