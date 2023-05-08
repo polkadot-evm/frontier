@@ -20,7 +20,7 @@
 use std::fs;
 
 use evm::{Context, ExitError, ExitReason, ExitSucceed, Transfer};
-use fp_evm::{Precompile, PrecompileHandle};
+use fp_evm::{Precompile, PrecompileFailure, PrecompileHandle};
 use sp_core::{H160, H256};
 
 #[derive(Debug, serde::Deserialize)]
@@ -30,6 +30,14 @@ struct EthConsensusTest {
 	expected: String,
 	name: String,
 	gas: Option<u64>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+#[serde(rename_all = "PascalCase")]
+struct EthConsensusFailureTest {
+	input: String,
+	expected_error: String,
+	name: String,
 }
 
 pub struct MockHandle {
@@ -147,6 +155,45 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(),
 			}
 			Err(err) => {
 				return Err(format!("Test '{}' returned error: {:?}", test.name, err));
+			}
+		}
+	}
+
+	Ok(())
+}
+
+pub fn test_precompile_failure_test_vectors<P: Precompile>(filepath: &str) -> Result<(), String> {
+	let data = fs::read_to_string(filepath).expect("Failed to read json file");
+
+	let tests: Vec<EthConsensusFailureTest> =
+		serde_json::from_str(&data).expect("expected json array");
+
+	for test in tests {
+		let input: Vec<u8> = hex::decode(test.input).expect("Could not hex-decode test input data");
+
+		let cost: u64 = 10000000;
+
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let mut handle = MockHandle::new(input, Some(cost), context);
+
+		match P::execute(&mut handle) {
+			Ok(..) => {
+				unreachable!("Test should be failed");
+			}
+			Err(err) => {
+				let expected_err = PrecompileFailure::Error {
+					exit_status: ExitError::Other(test.expected_error.into()),
+				};
+				assert_eq!(
+					expected_err, err,
+					"Test '{}' failed (different error)",
+					test.name
+				);
 			}
 		}
 	}
