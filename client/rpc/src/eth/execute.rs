@@ -351,15 +351,36 @@ where
 		}
 	}
 
-	pub async fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+	pub async fn estimate_gas(
+		&self,
+		request: CallRequest,
+		number: Option<BlockNumber>,
+	) -> Result<U256> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 
 		// Define the lower bound of estimate
 		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 
-		// Get best hash (TODO missing support for estimating gas historically)
-		let substrate_hash = client.info().best_hash;
+		// Get substrate hash and runtime api
+		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			number,
+		)? {
+			Some(id) => {
+				let hash = client
+					.expect_block_hash_from_id(&id)
+					.map_err(|_| crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None))?;
+				(hash, client.runtime_api())
+			}
+			None => {
+				// Not mapped in the db, assume pending.
+				let hash = client.info().best_hash;
+				let api = pending_runtime_api(client.as_ref(), self.graph.as_ref())?;
+				(hash, api)
+			}
+		};
 
 		// Adapt request for gas estimation.
 		let request = EC::EstimateGasAdapter::adapt_request(request);
@@ -371,8 +392,7 @@ where
 		};
 		if is_simple_transfer {
 			if let Some(to) = request.to {
-				let to_code = client
-					.runtime_api()
+				let to_code = api
 					.account_code_at(substrate_hash, to)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if to_code.is_empty() {
@@ -404,8 +424,6 @@ where
 		};
 
 		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
-
-		let api = client.runtime_api();
 
 		// Determine the highest possible gas limits
 		let mut highest = match request.gas {
