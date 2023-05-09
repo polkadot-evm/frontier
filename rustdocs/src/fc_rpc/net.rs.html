@@ -101,14 +101,13 @@
 
 </span><span class="kw">use </span>std::sync::Arc;
 
-<span class="kw">use </span>ethereum_types::H256;
-<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="kw">use </span>jsonrpsee::core::RpcResult;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_network::NetworkService;
-<span class="kw">use </span>sc_network_common::{service::NetworkPeers, ExHashT};
+</span><span class="kw">use </span>sc_network::{NetworkPeers, NetworkService};
+<span class="kw">use </span>sc_network_common::ExHashT;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::{types::PeerCount, NetApiServer};
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
@@ -138,21 +137,22 @@
 
 <span class="kw">impl</span>&lt;B, C, H: ExHashT&gt; NetApiServer <span class="kw">for </span>Net&lt;B, C, H&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: HeaderBackend&lt;B&gt; + ProvideRuntimeApi&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">fn </span>version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+	<span class="kw">fn </span>version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;String&gt; {
 		<span class="kw">let </span>hash = <span class="self">self</span>.client.info().best_hash;
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.client
 			.runtime_api()
-			.chain_id(<span class="kw-2">&amp;</span>BlockId::Hash(hash))
+			.chain_id(hash)
 			.map_err(|<span class="kw">_</span>| internal_err(<span class="string">&quot;fetch runtime chain id failed&quot;</span>))<span class="question-mark">?
 			</span>.to_string())
 	}
 
-	<span class="kw">fn </span>peer_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PeerCount&gt; {
+	<span class="kw">fn </span>peer_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;PeerCount&gt; {
 		<span class="kw">let </span>peer_count = <span class="self">self</span>.network.sync_num_connected();
 		<span class="prelude-val">Ok</span>(<span class="kw">match </span><span class="self">self</span>.peer_count_as_hex {
 			<span class="bool-val">true </span>=&gt; PeerCount::String(<span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, peer_count)),
@@ -160,7 +160,7 @@
 		})
 	}
 
-	<span class="kw">fn </span>is_listening(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+	<span class="kw">fn </span>is_listening(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;bool&gt; {
 		<span class="prelude-val">Ok</span>(<span class="bool-val">true</span>)
 	}
 }

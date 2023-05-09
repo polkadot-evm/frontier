@@ -235,11 +235,11 @@
 // limitations under the License.
 
 </span><span class="kw">use </span>frame_support::{
-	codec::{Decode, Encode},
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	scale_info::TypeInfo,
 	traits::ExtrinsicCall,
 };
+<span class="kw">use </span>scale_codec::{Decode, Encode};
+<span class="kw">use </span>scale_info::TypeInfo;
 <span class="kw">use </span>sp_runtime::{
 	traits::{
 		<span class="self">self</span>, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,

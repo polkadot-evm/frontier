@@ -55,7 +55,7 @@
 </span><span class="doccomment">//! Web3 rpc interface.
 
 </span><span class="kw">use </span>ethereum_types::H256;
-<span class="kw">use </span>jsonrpsee::{core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>, proc_macros::rpc};
+<span class="kw">use </span>jsonrpsee::{core::RpcResult, proc_macros::rpc};
 
 <span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
 
@@ -64,11 +64,11 @@
 </span><span class="kw">pub trait </span>Web3Api {
 	<span class="doccomment">/// Returns current client version.
 	</span><span class="attr">#[method(name = <span class="string">&quot;web3_clientVersion&quot;</span>)]
-	</span><span class="kw">fn </span>client_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt;;
+	</span><span class="kw">fn </span>client_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;String&gt;;
 
 	<span class="doccomment">/// Returns sha3 of the given data
 	</span><span class="attr">#[method(name = <span class="string">&quot;web3_sha3&quot;</span>)]
-	</span><span class="kw">fn </span>sha3(<span class="kw-2">&amp;</span><span class="self">self</span>, input: Bytes) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt;;
+	</span><span class="kw">fn </span>sha3(<span class="kw-2">&amp;</span><span class="self">self</span>, input: Bytes) -&gt; RpcResult&lt;H256&gt;;
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0-nightly (a00f8ba7f 2022-11-15)" data-search-js="search-df80cc3cb87b6482.js" data-settings-js="settings-7873449fa8c00e11.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

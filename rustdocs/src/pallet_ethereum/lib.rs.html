@@ -915,6 +915,52 @@
 <a href="#915" id="915">915</a>
 <a href="#916" id="916">916</a>
 <a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
+<a href="#942" id="942">942</a>
+<a href="#943" id="943">943</a>
+<a href="#944" id="944">944</a>
+<a href="#945" id="945">945</a>
+<a href="#946" id="946">946</a>
+<a href="#947" id="947">947</a>
+<a href="#948" id="948">948</a>
+<a href="#949" id="949">949</a>
+<a href="#950" id="950">950</a>
+<a href="#951" id="951">951</a>
+<a href="#952" id="952">952</a>
+<a href="#953" id="953">953</a>
+<a href="#954" id="954">954</a>
+<a href="#955" id="955">955</a>
+<a href="#956" id="956">956</a>
+<a href="#957" id="957">957</a>
+<a href="#958" id="958">958</a>
+<a href="#959" id="959">959</a>
+<a href="#960" id="960">960</a>
+<a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -940,6 +986,7 @@
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(all(feature = <span class="string">&quot;std&quot;</span>, test))]
 </span><span class="kw">mod </span>mock;
@@ -960,7 +1007,7 @@
 	codec::{Decode, Encode, MaxEncodedLen},
 	dispatch::{DispatchInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	scale_info::TypeInfo,
-	traits::{EnsureOrigin, Get, PalletInfoAccess},
+	traits::{EnsureOrigin, Get, PalletInfoAccess, Time},
 	weights::Weight,
 };
 <span class="kw">use </span>frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
@@ -971,7 +1018,7 @@
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
-	DispatchErrorWithPostInfo, RuntimeDebug,
+	DispatchErrorWithPostInfo, RuntimeDebug, SaturatedConversion,
 };
 <span class="kw">use </span>sp_std::{marker::PhantomData, prelude::<span class="kw-2">*</span>};
 
@@ -981,7 +1028,8 @@
 };
 <span class="kw">pub use </span>fp_rpc::TransactionStatus;
 
-<span class="attr">#[derive(Clone, Eq, PartialEq, RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+<span class="attr">#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 </span><span class="kw">pub enum </span>RawOrigin {
 	EthereumTransaction(H160),
 }
@@ -1008,8 +1056,8 @@
 	}
 
 	<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
-	</span><span class="kw">fn </span>successful_origin() -&gt; O {
-		O::from(RawOrigin::EthereumTransaction(Default::default()))
+	</span><span class="kw">fn </span>try_successful_origin() -&gt; <span class="prelude-ty">Result</span>&lt;O, ()&gt; {
+		<span class="prelude-val">Ok</span>(O::from(RawOrigin::EthereumTransaction(Default::default())))
 	}
 }
 
@@ -1080,6 +1128,13 @@
 	}
 }
 
+<span class="attr">#[derive(Copy, Clone, Eq, PartialEq, Default)]
+</span><span class="kw">pub enum </span>PostLogContent {
+	<span class="attr">#[default]
+	</span>BlockAndTxnHashes,
+	OnlyBlockHash,
+}
+
 <span class="kw">pub use </span><span class="self">self</span>::pallet::<span class="kw-2">*</span>;
 
 <span class="attr">#[frame_support::pallet]
@@ -1089,7 +1144,6 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
 	<span class="attr">#[pallet::pallet]
-	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
 	#[pallet::without_storage_info]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
@@ -1097,18 +1151,25 @@
 	</span><span class="kw">pub type </span>Origin = RawOrigin;
 
 	<span class="attr">#[pallet::config]
-	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
+	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_evm::Config {
 		<span class="doccomment">/// The overarching event type.
 		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 		<span class="doccomment">/// How Ethereum state root is calculated.
 		</span><span class="kw">type </span>StateRoot: Get&lt;H256&gt;;
+		<span class="doccomment">/// What&#39;s included in the PostLog.
+		</span><span class="kw">type </span>PostLogContent: Get&lt;PostLogContent&gt;;
+		<span class="doccomment">/// The maximum length of the extra data in the Executed event.
+		</span><span class="kw">type </span>ExtraDataLength: Get&lt;u32&gt;;
 	}
 
 	<span class="attr">#[pallet::hooks]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Hooks&lt;BlockNumberFor&lt;T&gt;&gt; <span class="kw">for </span>Pallet&lt;T&gt; {
 		<span class="kw">fn </span>on_finalize(n: T::BlockNumber) {
 			&lt;Pallet&lt;T&gt;&gt;::store_block(
-				fp_consensus::find_pre_log(<span class="kw-2">&amp;</span>frame_system::Pallet::&lt;T&gt;::digest()).is_err(),
+				<span class="kw">match </span>fp_consensus::find_pre_log(<span class="kw-2">&amp;</span>frame_system::Pallet::&lt;T&gt;::digest()) {
+					<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
+					<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Some</span>(T::PostLogContent::get()),
+				},
 				U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(
 					frame_system::Pallet::&lt;T&gt;::block_number(),
 				)),
@@ -1205,6 +1266,7 @@
 			to: H160,
 			transaction_hash: H256,
 			exit_reason: ExitReason,
+			extra_data: Vec&lt;u8&gt;,
 		},
 	}
 
@@ -1218,29 +1280,24 @@
 
 	<span class="doccomment">/// Current building block&#39;s transactions and receipts.
 	</span><span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>pending)]
 	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>Pending&lt;T: Config&gt; =
 		StorageValue&lt;<span class="kw">_</span>, Vec&lt;(Transaction, TransactionStatus, Receipt)&gt;, ValueQuery&gt;;
 
 	<span class="doccomment">/// The current Ethereum block.
 	</span><span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>current_block)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CurrentBlock&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, ethereum::BlockV2&gt;;
+	</span><span class="kw">pub type </span>CurrentBlock&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, ethereum::BlockV2&gt;;
 
 	<span class="doccomment">/// The current Ethereum receipts.
 	</span><span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>current_receipts)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CurrentReceipts&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;Receipt&gt;&gt;;
+	</span><span class="kw">pub type </span>CurrentReceipts&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;Receipt&gt;&gt;;
 
 	<span class="doccomment">/// The current transaction statuses.
 	</span><span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>current_transaction_statuses)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>CurrentTransactionStatuses&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;TransactionStatus&gt;&gt;;
+	</span><span class="kw">pub type </span>CurrentTransactionStatuses&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, Vec&lt;TransactionStatus&gt;&gt;;
 
 	<span class="comment">// Mapping for block number and hashes.
 	</span><span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>block_hash)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>BlockHash&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, U256, H256, ValueQuery&gt;;
+	</span><span class="kw">pub type </span>BlockHash&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Twox64Concat, U256, H256, ValueQuery&gt;;
 
 	<span class="attr">#[pallet::genesis_config]
 	#[derive(Default)]
@@ -1249,7 +1306,7 @@
 	<span class="attr">#[pallet::genesis_build]
 	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
 		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
-			&lt;Pallet&lt;T&gt;&gt;::store_block(<span class="bool-val">false</span>, U256::zero());
+			&lt;Pallet&lt;T&gt;&gt;::store_block(<span class="prelude-val">None</span>, U256::zero());
 			frame_support::storage::unhashed::put::&lt;EthereumStorageSchema&gt;(
 				PALLET_ETHEREUM_SCHEMA,
 				<span class="kw-2">&amp;</span>EthereumStorageSchema::V3,
@@ -1292,7 +1349,7 @@
 		<span class="prelude-val">Some</span>(H160::from(H256::from(sp_io::hashing::keccak_256(<span class="kw-2">&amp;</span>pubkey))))
 	}
 
-	<span class="kw">fn </span>store_block(post_log: bool, block_number: U256) {
+	<span class="kw">fn </span>store_block(post_log: <span class="prelude-ty">Option</span>&lt;PostLogContent&gt;, block_number: U256) {
 		<span class="kw">let </span><span class="kw-2">mut </span>transactions = Vec::new();
 		<span class="kw">let </span><span class="kw-2">mut </span>statuses = Vec::new();
 		<span class="kw">let </span><span class="kw-2">mut </span>receipts = Vec::new();
@@ -1329,9 +1386,7 @@
 			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
 			gas_used: cumulative_gas_used,
-			timestamp: UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(
-				pallet_timestamp::Pallet::&lt;T&gt;::get(),
-			),
+			timestamp: T::Timestamp::now().unique_saturated_into(),
 			extra_data: Vec::new(),
 			mix_hash: H256::default(),
 			nonce: H64::default(),
@@ -1343,12 +1398,22 @@
 		CurrentTransactionStatuses::&lt;T&gt;::put(statuses.clone());
 		BlockHash::&lt;T&gt;::insert(block_number, block.header.hash());
 
-		<span class="kw">if </span>post_log {
-			<span class="kw">let </span>digest = DigestItem::Consensus(
-				FRONTIER_ENGINE_ID,
-				PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
-			);
-			frame_system::Pallet::&lt;T&gt;::deposit_log(digest);
+		<span class="kw">match </span>post_log {
+			<span class="prelude-val">Some</span>(PostLogContent::BlockAndTxnHashes) =&gt; {
+				<span class="kw">let </span>digest = DigestItem::Consensus(
+					FRONTIER_ENGINE_ID,
+					PostLog::Hashes(fp_consensus::Hashes::from_block(block)).encode(),
+				);
+				frame_system::Pallet::&lt;T&gt;::deposit_log(digest);
+			}
+			<span class="prelude-val">Some</span>(PostLogContent::OnlyBlockHash) =&gt; {
+				<span class="kw">let </span>digest = DigestItem::Consensus(
+					FRONTIER_ENGINE_ID,
+					PostLog::BlockHash(block.header.hash()).encode(),
+				);
+				frame_system::Pallet::&lt;T&gt;::deposit_log(digest);
+			}
+			<span class="prelude-val">None </span>=&gt; { <span class="comment">/* do nothing*/ </span>}
 		}
 	}
 
@@ -1438,9 +1503,9 @@
 		<span class="kw">let </span>transaction_hash = transaction.hash();
 		<span class="kw">let </span>transaction_index = pending.len() <span class="kw">as </span>u32;
 
-		<span class="kw">let </span>(reason, status, used_gas, dest) = <span class="kw">match </span>info {
+		<span class="kw">let </span>(reason, status, used_gas, dest, extra_data) = <span class="kw">match </span>info {
 			CallOrCreateInfo::Call(info) =&gt; (
-				info.exit_reason,
+				info.exit_reason.clone(),
 				TransactionStatus {
 					transaction_hash,
 					transaction_index,
@@ -1456,6 +1521,31 @@
 				},
 				info.used_gas,
 				to,
+				<span class="kw">match </span>info.exit_reason {
+					ExitReason::Revert(<span class="kw">_</span>) =&gt; {
+						<span class="kw">const </span>LEN_START: usize = <span class="number">36</span>;
+						<span class="kw">const </span>MESSAGE_START: usize = <span class="number">68</span>;
+
+						<span class="kw">let </span>data = info.value;
+						<span class="kw">let </span>data_len = data.len();
+						<span class="kw">if </span>data_len &gt; MESSAGE_START {
+							<span class="kw">let </span>message_len = U256::from(<span class="kw-2">&amp;</span>data[LEN_START..MESSAGE_START])
+								.saturated_into::&lt;usize&gt;();
+							<span class="kw">let </span>message_end = MESSAGE_START.saturating_add(
+								message_len.min(T::ExtraDataLength::get() <span class="kw">as </span>usize),
+							);
+
+							<span class="kw">if </span>data_len &gt;= message_end {
+								data[MESSAGE_START..message_end].to_vec()
+							} <span class="kw">else </span>{
+								data
+							}
+						} <span class="kw">else </span>{
+							data
+						}
+					}
+					<span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[],
+				},
 			),
 			CallOrCreateInfo::Create(info) =&gt; (
 				info.exit_reason,
@@ -1474,6 +1564,7 @@
 				},
 				info.used_gas,
 				<span class="prelude-val">Some</span>(info.value),
+				Vec::new(),
 			),
 		};
 
@@ -1522,6 +1613,7 @@
 			to: dest.unwrap_or_default(),
 			transaction_hash,
 			exit_reason: reason,
+			extra_data,
 		});
 
 		<span class="prelude-val">Ok</span>(PostDispatchInfo {
@@ -1535,7 +1627,7 @@
 
 	<span class="doccomment">/// Get current block hash
 	</span><span class="kw">pub fn </span>current_block_hash() -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
-		<span class="self">Self</span>::current_block().map(|block| block.header.hash())
+		&lt;CurrentBlock&lt;T&gt;&gt;::get().map(|block| block.header.hash())
 	}
 
 	<span class="doccomment">/// Execute an Ethereum transaction.

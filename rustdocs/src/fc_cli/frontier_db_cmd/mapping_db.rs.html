@@ -196,7 +196,9 @@
 <span class="kw">use </span>ethereum_types::H256;
 <span class="kw">use </span>serde::Deserialize;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
+</span><span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
@@ -221,9 +223,9 @@
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, C, B: BlockT&gt; MappingDb&lt;<span class="lifetime">&#39;a</span>, C, B&gt;
 <span class="kw">where
-	</span>C: sp_api::ProvideRuntimeApi&lt;B&gt;,
+	</span>C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
-	C: sp_blockchain::HeaderBackend&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt;,
 {
 	<span class="kw">pub fn </span>new(cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd, client: Arc&lt;C&gt;, backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
@@ -252,11 +254,10 @@
 						.block_hash(ethereum_block_hash)<span class="question-mark">?
 						</span>.is_none()
 					{
-						<span class="kw">let </span>id = BlockId::Hash(<span class="kw-2">*</span>substrate_block_hash);
 						<span class="kw">let </span>existing_transaction_hashes: Vec&lt;H256&gt; = <span class="kw">if let </span><span class="prelude-val">Some</span>(statuses) = <span class="self">self
 							</span>.client
 							.runtime_api()
-							.current_transaction_statuses(<span class="kw-2">&amp;</span>id)
+							.current_transaction_statuses(<span class="kw-2">*</span>substrate_block_hash)
 							.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?
 						</span>{
 							statuses
@@ -311,11 +312,10 @@
 						.block_hash(ethereum_block_hash)<span class="question-mark">?
 						</span>.is_some()
 					{
-						<span class="kw">let </span>id = BlockId::Hash(<span class="kw-2">*</span>substrate_block_hash);
 						<span class="kw">let </span>existing_transaction_hashes: Vec&lt;H256&gt; = <span class="kw">if let </span><span class="prelude-val">Some</span>(statuses) = <span class="self">self
 							</span>.client
 							.runtime_api()
-							.current_transaction_statuses(<span class="kw-2">&amp;</span>id)
+							.current_transaction_statuses(<span class="kw-2">*</span>substrate_block_hash)
 							.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?
 						</span>{
 							statuses

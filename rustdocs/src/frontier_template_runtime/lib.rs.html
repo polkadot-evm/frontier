@@ -880,12 +880,23 @@
 <a href="#880" id="880">880</a>
 <a href="#881" id="881">881</a>
 <a href="#882" id="882">882</a>
+<a href="#883" id="883">883</a>
+<a href="#884" id="884">884</a>
+<a href="#885" id="885">885</a>
+<a href="#886" id="886">886</a>
+<a href="#887" id="887">887</a>
+<a href="#888" id="888">888</a>
+<a href="#889" id="889">889</a>
+<a href="#890" id="890">890</a>
+<a href="#891" id="891">891</a>
+<a href="#892" id="892">892</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
 </span><span class="attr">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
 #![allow(clippy::new_without_default, clippy::or_fun_call)]
+#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, deny(unused_crate_dependencies))]
 
 </span><span class="comment">// Make the WASM binary available.
 </span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
@@ -905,7 +916,7 @@
 		IdentifyAccount, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-	ApplyExtrinsicResult, ConsensusEngineId, MultiSignature, Perbill, Permill,
+	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
 };
 <span class="kw">use </span>sp_std::{marker::PhantomData, prelude::<span class="kw-2">*</span>};
 <span class="kw">use </span>sp_version::RuntimeVersion;
@@ -916,7 +927,7 @@
 </span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, KeyOwnerProofSystem, OnTimestampSet},
+	traits::{ConstU32, ConstU8, FindAuthor, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
 <span class="kw">use </span>pallet_grandpa::{
@@ -924,11 +935,12 @@
 };
 <span class="kw">use </span>pallet_transaction_payment::CurrencyAdapter;
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fp_evm::weight_per_gas;
+</span><span class="kw">use </span>fp_account::EthereumSignature;
+<span class="kw">use </span>fp_evm::weight_per_gas;
 <span class="kw">use </span>fp_rpc::TransactionStatus;
-<span class="kw">use </span>pallet_ethereum::{Call::transact, Transaction <span class="kw">as </span>EthereumTransaction};
+<span class="kw">use </span>pallet_ethereum::{Call::transact, PostLogContent, Transaction <span class="kw">as </span>EthereumTransaction};
 <span class="kw">use </span>pallet_evm::{
-	Account <span class="kw">as </span>EVMAccount, EnsureAddressTruncated, FeeCalculator, HashedAddressMapping, Runner,
+	Account <span class="kw">as </span>EVMAccount, EnsureAccountId20, FeeCalculator, IdentityAddressMapping, Runner,
 };
 
 <span class="comment">// A few exports that help ease life for downstream crates.
@@ -943,7 +955,7 @@
 </span><span class="kw">pub type </span>BlockNumber = u32;
 
 <span class="doccomment">/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
-</span><span class="kw">pub type </span>Signature = MultiSignature;
+</span><span class="kw">pub type </span>Signature = EthereumSignature;
 
 <span class="doccomment">/// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
@@ -990,8 +1002,8 @@
 }
 
 <span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;node-frontier-template&quot;</span>),
-	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;node-frontier-template&quot;</span>),
+	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frontier-template&quot;</span>),
+	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frontier-template&quot;</span>),
 	authoring_version: <span class="number">1</span>,
 	spec_version: <span class="number">1</span>,
 	impl_version: <span class="number">1</span>,
@@ -1104,20 +1116,12 @@
 <span class="kw">impl </span>pallet_grandpa::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 
-	<span class="kw">type </span>KeyOwnerProof =
-		&lt;<span class="self">Self</span>::KeyOwnerProofSystem <span class="kw">as </span>KeyOwnerProofSystem&lt;(KeyTypeId, GrandpaId)&gt;&gt;::Proof;
-
-	<span class="kw">type </span>KeyOwnerIdentification = &lt;<span class="self">Self</span>::KeyOwnerProofSystem <span class="kw">as </span>KeyOwnerProofSystem&lt;(
-		KeyTypeId,
-		GrandpaId,
-	)&gt;&gt;::IdentificationTuple;
-
-	<span class="kw">type </span>KeyOwnerProofSystem = ();
-
-	<span class="kw">type </span>HandleEquivocation = ();
-
 	<span class="kw">type </span>WeightInfo = ();
 	<span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">32</span>&gt;;
+	<span class="kw">type </span>MaxSetIdSessionEntries = ();
+
+	<span class="kw">type </span>KeyOwnerProof = sp_core::Void;
+	<span class="kw">type </span>EquivocationReportSystem = ();
 }
 
 <span class="macro">parameter_types! </span>{
@@ -1203,7 +1207,7 @@
 <span class="macro">parameter_types! </span>{
 	<span class="kw">pub </span>BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
 	<span class="kw">pub </span>PrecompilesValue: FrontierPrecompiles&lt;Runtime&gt; = FrontierPrecompiles::&lt;<span class="kw">_</span>&gt;::new();
-	<span class="kw">pub </span>WeightPerGas: Weight = Weight::from_ref_time(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK));
+	<span class="kw">pub </span>WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), <span class="number">0</span>);
 }
 
 <span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
@@ -1211,9 +1215,9 @@
 	<span class="kw">type </span>GasWeightMapping = pallet_evm::FixedGasWeightMapping&lt;<span class="self">Self</span>&gt;;
 	<span class="kw">type </span>WeightPerGas = WeightPerGas;
 	<span class="kw">type </span>BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping&lt;<span class="self">Self</span>&gt;;
-	<span class="kw">type </span>CallOrigin = EnsureAddressTruncated;
-	<span class="kw">type </span>WithdrawOrigin = EnsureAddressTruncated;
-	<span class="kw">type </span>AddressMapping = HashedAddressMapping&lt;BlakeTwo256&gt;;
+	<span class="kw">type </span>CallOrigin = EnsureAccountId20;
+	<span class="kw">type </span>WithdrawOrigin = EnsureAccountId20;
+	<span class="kw">type </span>AddressMapping = IdentityAddressMapping;
 	<span class="kw">type </span>Currency = Balances;
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>PrecompilesType = FrontierPrecompiles&lt;<span class="self">Self</span>&gt;;
@@ -1224,11 +1228,19 @@
 	<span class="kw">type </span>OnChargeTransaction = ();
 	<span class="kw">type </span>OnCreate = ();
 	<span class="kw">type </span>FindAuthor = FindAuthorTruncated&lt;Aura&gt;;
+	<span class="kw">type </span>Timestamp = Timestamp;
+	<span class="kw">type </span>WeightInfo = pallet_evm::weights::SubstrateWeight&lt;Runtime&gt;;
+}
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
 }
 
 <span class="kw">impl </span>pallet_ethereum::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>StateRoot = pallet_ethereum::IntermediateStateRoot&lt;<span class="self">Self</span>&gt;;
+	<span class="kw">type </span>PostLogContent = PostBlockAndTxnHashes;
+	<span class="kw">type </span>ExtraDataLength = ConstU32&lt;<span class="number">30</span>&gt;;
 }
 
 <span class="macro">parameter_types! </span>{
@@ -1265,7 +1277,7 @@
 }
 
 <span class="kw">impl </span>pallet_hotfix_sufficients::Config <span class="kw">for </span>Runtime {
-	<span class="kw">type </span>AddressMapping = HashedAddressMapping&lt;BlakeTwo256&gt;;
+	<span class="kw">type </span>AddressMapping = IdentityAddressMapping;
 	<span class="kw">type </span>WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight&lt;Runtime&gt;;
 }
 
@@ -1502,7 +1514,7 @@
 		}
 
 		<span class="kw">fn </span>account_basic(address: H160) -&gt; EVMAccount {
-			<span class="kw">let </span>(account, <span class="kw">_</span>) = EVM::account_basic(<span class="kw-2">&amp;</span>address);
+			<span class="kw">let </span>(account, <span class="kw">_</span>) = pallet_evm::Pallet::&lt;Runtime&gt;::account_basic(<span class="kw-2">&amp;</span>address);
 			account
 		}
 
@@ -1512,7 +1524,7 @@
 		}
 
 		<span class="kw">fn </span>account_code_at(address: H160) -&gt; Vec&lt;u8&gt; {
-			EVM::account_codes(address)
+			pallet_evm::AccountCodes::&lt;Runtime&gt;::get(address)
 		}
 
 		<span class="kw">fn </span>author() -&gt; H160 {
@@ -1522,7 +1534,7 @@
 		<span class="kw">fn </span>storage_at(address: H160, index: U256) -&gt; H256 {
 			<span class="kw">let </span><span class="kw-2">mut </span>tmp = [<span class="number">0u8</span>; <span class="number">32</span>];
 			index.to_big_endian(<span class="kw-2">&amp;mut </span>tmp);
-			EVM::account_storages(address, H256::from_slice(<span class="kw-2">&amp;</span>tmp[..]))
+			pallet_evm::AccountStorages::&lt;Runtime&gt;::get(address, H256::from_slice(<span class="kw-2">&amp;</span>tmp[..]))
 		}
 
 		<span class="kw">fn </span>call(
@@ -1602,15 +1614,15 @@
 		}
 
 		<span class="kw">fn </span>current_transaction_statuses() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt; {
-			Ethereum::current_transaction_statuses()
+			pallet_ethereum::CurrentTransactionStatuses::&lt;Runtime&gt;::get()
 		}
 
 		<span class="kw">fn </span>current_block() -&gt; <span class="prelude-ty">Option</span>&lt;pallet_ethereum::Block&gt; {
-			Ethereum::current_block()
+			pallet_ethereum::CurrentBlock::&lt;Runtime&gt;::get()
 		}
 
 		<span class="kw">fn </span>current_receipts() -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;pallet_ethereum::Receipt&gt;&gt; {
-			Ethereum::current_receipts()
+			pallet_ethereum::CurrentReceipts::&lt;Runtime&gt;::get()
 		}
 
 		<span class="kw">fn </span>current_all() -&gt; (
@@ -1619,9 +1631,9 @@
 			<span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;
 		) {
 			(
-				Ethereum::current_block(),
-				Ethereum::current_receipts(),
-				Ethereum::current_transaction_statuses()
+				pallet_ethereum::CurrentBlock::&lt;Runtime&gt;::get(),
+				pallet_ethereum::CurrentReceipts::&lt;Runtime&gt;::get(),
+				pallet_ethereum::CurrentTransactionStatuses::&lt;Runtime&gt;::get()
 			)
 		}
 
@@ -1635,7 +1647,7 @@
 		}
 
 		<span class="kw">fn </span>elasticity() -&gt; <span class="prelude-ty">Option</span>&lt;Permill&gt; {
-			<span class="prelude-val">Some</span>(BaseFee::elasticity())
+			<span class="prelude-val">Some</span>(pallet_base_fee::Elasticity::&lt;Runtime&gt;::get())
 		}
 
 		<span class="kw">fn </span>gas_limit_multiplier_support() {}
@@ -1665,6 +1677,14 @@
 			len: u32,
 		) -&gt; pallet_transaction_payment::FeeDetails&lt;Balance&gt; {
 			TransactionPayment::query_fee_details(uxt, len)
+		}
+
+		<span class="kw">fn </span>query_weight_to_fee(weight: Weight) -&gt; Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+
+		<span class="kw">fn </span>query_length_to_fee(length: u32) -&gt; Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 

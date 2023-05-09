@@ -413,6 +413,8 @@
 <a href="#413" id="413">413</a>
 <a href="#414" id="414">414</a>
 <a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -439,29 +441,28 @@
 <span class="kw">use </span>jsonrpsee::{types::SubscriptionResult, SubscriptionSink};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::{
-	backend::{Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
-<span class="kw">use </span>sc_network::{NetworkService, NetworkStatusProvider};
-<span class="kw">use </span>sc_network_common::ExHashT;
+<span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_rpc::SubscriptionTaskExecutor;
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
-<span class="kw">use </span>sp_api::{ApiExt, BlockId, ProvideRuntimeApi};
+<span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_consensus::SyncOracle;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
-<span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fc_rpc_core::{
+</span><span class="kw">use </span>fc_mapping_sync::{EthereumBlockNotification, EthereumBlockNotificationSinks};
+<span class="kw">use </span>fc_rpc_core::{
 	types::{
 		pubsub::{Kind, Params, PubSubSyncStatus, <span class="prelude-ty">Result </span><span class="kw">as </span>PubSubResult, SyncStatusMetadata},
 		Bytes, FilteredParams, Header, Log, Rich,
 	},
 	EthPubSubApiServer,
 };
+<span class="kw">use </span>fc_storage::OverrideHandle;
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
-
-<span class="kw">use crate</span>::{frontier_backend_client, overrides::OverrideHandle};
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>EthereumSubIdProvider;
@@ -473,26 +474,30 @@
 }
 
 <span class="doccomment">/// Eth pub-sub API implementation.
-</span><span class="kw">pub struct </span>EthPubSub&lt;B: BlockT, P, C, BE, H: ExHashT&gt; {
+</span><span class="kw">pub struct </span>EthPubSub&lt;B: BlockT, P, C, BE&gt; {
 	pool: Arc&lt;P&gt;,
 	client: Arc&lt;C&gt;,
-	network: Arc&lt;NetworkService&lt;B, H&gt;&gt;,
+	sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 	subscriptions: SubscriptionTaskExecutor,
 	overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
 	starting_block: u64,
+	pubsub_notification_sinks: Arc&lt;EthereumBlockNotificationSinks&lt;EthereumBlockNotification&lt;B&gt;&gt;&gt;,
 	_marker: PhantomData&lt;BE&gt;,
 }
 
-<span class="kw">impl</span>&lt;B: BlockT, P, C, BE, H: ExHashT&gt; EthPubSub&lt;B, P, C, BE, H&gt;
+<span class="kw">impl</span>&lt;B: BlockT, P, C, BE&gt; EthPubSub&lt;B, P, C, BE&gt;
 <span class="kw">where
-	</span>C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>C: HeaderBackend&lt;B&gt;,
 {
 	<span class="kw">pub fn </span>new(
 		pool: Arc&lt;P&gt;,
 		client: Arc&lt;C&gt;,
-		network: Arc&lt;NetworkService&lt;B, H&gt;&gt;,
+		sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 		subscriptions: SubscriptionTaskExecutor,
 		overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
+		pubsub_notification_sinks: Arc&lt;
+			EthereumBlockNotificationSinks&lt;EthereumBlockNotification&lt;B&gt;&gt;,
+		&gt;,
 	) -&gt; <span class="self">Self </span>{
 		<span class="comment">// Capture the best block as seen on initialization. Used for syncing subscriptions.
 		</span><span class="kw">let </span>starting_block =
@@ -500,10 +505,11 @@
 		<span class="self">Self </span>{
 			pool,
 			client,
-			network,
+			sync,
 			subscriptions,
 			overrides,
 			starting_block,
+			pubsub_notification_sinks,
 			_marker: PhantomData,
 		}
 	}
@@ -609,15 +615,15 @@
 	</span>}
 }
 
-<span class="kw">impl</span>&lt;B: BlockT, P, C, BE, H: ExHashT&gt; EthPubSubApiServer <span class="kw">for </span>EthPubSub&lt;B, P, C, BE, H&gt;
+<span class="kw">impl</span>&lt;B: BlockT, P, C, BE&gt; EthPubSubApiServer <span class="kw">for </span>EthPubSub&lt;B, P, C, BE&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	P: TransactionPool&lt;Block = B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + BlockchainEvents&lt;B&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	C: BlockchainEvents&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">fn </span>subscribe(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -633,31 +639,33 @@
 		};
 
 		<span class="kw">let </span>client = <span class="self">self</span>.client.clone();
+		<span class="comment">// Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+		</span><span class="kw">let </span>(inner_sink, block_notification_stream) =
+			sc_utils::mpsc::tracing_unbounded(<span class="string">&quot;pubsub_notification_stream&quot;</span>, <span class="number">100_000</span>);
+		<span class="self">self</span>.pubsub_notification_sinks.lock().push(inner_sink);
 		<span class="kw">let </span>pool = <span class="self">self</span>.pool.clone();
-		<span class="kw">let </span>network = <span class="self">self</span>.network.clone();
+		<span class="kw">let </span>sync = <span class="self">self</span>.sync.clone();
 		<span class="kw">let </span>overrides = <span class="self">self</span>.overrides.clone();
 		<span class="kw">let </span>starting_block = <span class="self">self</span>.starting_block;
 		<span class="kw">let </span>fut = <span class="kw">async move </span>{
 			<span class="kw">match </span>kind {
 				Kind::Logs =&gt; {
-					<span class="kw">let </span>stream = client
-						.import_notification_stream()
+					<span class="kw">let </span>stream = block_notification_stream
 						.filter_map(<span class="kw">move </span>|notification| {
 							<span class="kw">if </span>notification.is_new_best {
-								<span class="kw">let </span>id = BlockId::Hash(notification.hash);
+								<span class="kw">let </span>substrate_hash = notification.hash;
 
-								<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;
-									B,
-									C,
-									BE,
-								&gt;(client.as_ref(), id);
+								<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									substrate_hash,
+								);
 								<span class="kw">let </span>handler = overrides
 									.schemas
 									.get(<span class="kw-2">&amp;</span>schema)
 									.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-								<span class="kw">let </span>block = handler.current_block(<span class="kw-2">&amp;</span>id);
-								<span class="kw">let </span>receipts = handler.current_receipts(<span class="kw-2">&amp;</span>id);
+								<span class="kw">let </span>block = handler.current_block(substrate_hash);
+								<span class="kw">let </span>receipts = handler.current_receipts(substrate_hash);
 
 								<span class="kw">match </span>(receipts, block) {
 									(<span class="prelude-val">Some</span>(receipts), <span class="prelude-val">Some</span>(block)) =&gt; {
@@ -680,23 +688,19 @@
 					sink.pipe_from_stream(stream).<span class="kw">await</span>;
 				}
 				Kind::NewHeads =&gt; {
-					<span class="kw">let </span>stream = client
-						.import_notification_stream()
+					<span class="kw">let </span>stream = block_notification_stream
 						.filter_map(<span class="kw">move </span>|notification| {
 							<span class="kw">if </span>notification.is_new_best {
-								<span class="kw">let </span>id = BlockId::Hash(notification.hash);
-
-								<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;
-									B,
-									C,
-									BE,
-								&gt;(client.as_ref(), id);
+								<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(
+									client.as_ref(),
+									notification.hash,
+								);
 								<span class="kw">let </span>handler = overrides
 									.schemas
 									.get(<span class="kw-2">&amp;</span>schema)
 									.unwrap_or(<span class="kw-2">&amp;</span>overrides.fallback);
 
-								<span class="kw">let </span>block = handler.current_block(<span class="kw-2">&amp;</span>id);
+								<span class="kw">let </span>block = handler.current_block(notification.hash);
 								futures::future::ready(block)
 							} <span class="kw">else </span>{
 								futures::future::ready(<span class="prelude-val">None</span>)
@@ -712,12 +716,12 @@
 						.import_notification_stream()
 						.filter_map(<span class="kw">move </span>|txhash| {
 							<span class="kw">if let </span><span class="prelude-val">Some</span>(xt) = pool.ready_transaction(<span class="kw-2">&amp;</span>txhash) {
-								<span class="kw">let </span>best_block: BlockId&lt;B&gt; = BlockId::Hash(client.info().best_hash);
+								<span class="kw">let </span>best_block = client.info().best_hash;
 
 								<span class="kw">let </span>api = client.runtime_api();
 
 								<span class="kw">let </span>api_version = <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(api_version)) =
-									api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>best_block)
+									api.api_version::&lt;<span class="kw">dyn </span>EthereumRuntimeRPCApi&lt;B&gt;&gt;(best_block)
 								{
 									api_version
 								} <span class="kw">else </span>{
@@ -727,11 +731,11 @@
 								<span class="kw">let </span>xts = <span class="macro">vec!</span>[xt.data().clone()];
 
 								<span class="kw">let </span>txs: <span class="prelude-ty">Option</span>&lt;Vec&lt;EthereumTransaction&gt;&gt; = <span class="kw">if </span>api_version &gt; <span class="number">1 </span>{
-									api.extrinsic_filter(<span class="kw-2">&amp;</span>best_block, xts).ok()
+									api.extrinsic_filter(best_block, xts).ok()
 								} <span class="kw">else </span>{
 									<span class="attr">#[allow(deprecated)]
 									</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(legacy) =
-										api.extrinsic_filter_before_version_2(<span class="kw-2">&amp;</span>best_block, xts)
+										api.extrinsic_filter_before_version_2(best_block, xts)
 									{
 										<span class="prelude-val">Some</span>(legacy.into_iter().map(|tx| tx.into()).collect())
 									} <span class="kw">else </span>{
@@ -759,21 +763,21 @@
 				}
 				Kind::Syncing =&gt; {
 					<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span>client);
-					<span class="kw">let </span>network = Arc::clone(<span class="kw-2">&amp;</span>network);
+					<span class="kw">let </span>sync = Arc::clone(<span class="kw-2">&amp;</span>sync);
 					<span class="comment">// Gets the node syncing status.
 					// The response is expected to be serialized either as a plain boolean
 					// if the node is not syncing, or a structure containing syncing metadata
 					// in case it is.
-					</span><span class="kw">async fn </span>status&lt;C: HeaderBackend&lt;B&gt;, B: BlockT, H: ExHashT + Send + Sync&gt;(
+					</span><span class="kw">async fn </span>status&lt;C: HeaderBackend&lt;B&gt;, B: BlockT&gt;(
 						client: Arc&lt;C&gt;,
-						network: Arc&lt;NetworkService&lt;B, H&gt;&gt;,
+						sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 						starting_block: u64,
 					) -&gt; PubSubSyncStatus {
-						<span class="kw">if </span>network.is_major_syncing() {
+						<span class="kw">if </span>sync.is_major_syncing() {
 							<span class="comment">// Get the target block to sync.
 							// This value is only exposed through substrate async Api
 							// in the `NetworkService`.
-							</span><span class="kw">let </span>highest_block = network
+							</span><span class="kw">let </span>highest_block = sync
 								.status()
 								.<span class="kw">await
 								</span>.ok()
@@ -796,9 +800,9 @@
 					}
 					<span class="comment">// On connection subscriber expects a value.
 					// Because import notifications are only emitted when the node is synced or
-					// in case of reorg, the first event is emited right away.
+					// in case of reorg, the first event is emitted right away.
 					</span><span class="kw">let _ </span>= sink.send(<span class="kw-2">&amp;</span>PubSubResult::SyncState(
-						status(Arc::clone(<span class="kw-2">&amp;</span>client), Arc::clone(<span class="kw-2">&amp;</span>network), starting_block).<span class="kw">await</span>,
+						status(Arc::clone(<span class="kw-2">&amp;</span>client), Arc::clone(<span class="kw-2">&amp;</span>sync), starting_block).<span class="kw">await</span>,
 					));
 
 					<span class="comment">// When the node is not under a major syncing (i.e. from genesis), react
@@ -806,12 +810,12 @@
 					//
 					// Only send new notifications down the pipe when the syncing status changed.
 					</span><span class="kw">let </span><span class="kw-2">mut </span>stream = client.clone().import_notification_stream();
-					<span class="kw">let </span><span class="kw-2">mut </span>last_syncing_status = network.is_major_syncing();
+					<span class="kw">let </span><span class="kw-2">mut </span>last_syncing_status = sync.is_major_syncing();
 					<span class="kw">while </span>(stream.next().<span class="kw">await</span>).is_some() {
-						<span class="kw">let </span>syncing_status = network.is_major_syncing();
+						<span class="kw">let </span>syncing_status = sync.is_major_syncing();
 						<span class="kw">if </span>syncing_status != last_syncing_status {
 							<span class="kw">let _ </span>= sink.send(<span class="kw-2">&amp;</span>PubSubResult::SyncState(
-								status(client.clone(), network.clone(), starting_block).<span class="kw">await</span>,
+								status(client.clone(), sync.clone(), starting_block).<span class="kw">await</span>,
 							));
 						}
 						last_syncing_status = syncing_status;

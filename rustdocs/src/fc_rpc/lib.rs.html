@@ -400,6 +400,101 @@
 <a href="#400" id="400">400</a>
 <a href="#401" id="401">401</a>
 <a href="#402" id="402">402</a>
+<a href="#403" id="403">403</a>
+<a href="#404" id="404">404</a>
+<a href="#405" id="405">405</a>
+<a href="#406" id="406">406</a>
+<a href="#407" id="407">407</a>
+<a href="#408" id="408">408</a>
+<a href="#409" id="409">409</a>
+<a href="#410" id="410">410</a>
+<a href="#411" id="411">411</a>
+<a href="#412" id="412">412</a>
+<a href="#413" id="413">413</a>
+<a href="#414" id="414">414</a>
+<a href="#415" id="415">415</a>
+<a href="#416" id="416">416</a>
+<a href="#417" id="417">417</a>
+<a href="#418" id="418">418</a>
+<a href="#419" id="419">419</a>
+<a href="#420" id="420">420</a>
+<a href="#421" id="421">421</a>
+<a href="#422" id="422">422</a>
+<a href="#423" id="423">423</a>
+<a href="#424" id="424">424</a>
+<a href="#425" id="425">425</a>
+<a href="#426" id="426">426</a>
+<a href="#427" id="427">427</a>
+<a href="#428" id="428">428</a>
+<a href="#429" id="429">429</a>
+<a href="#430" id="430">430</a>
+<a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
+<a href="#434" id="434">434</a>
+<a href="#435" id="435">435</a>
+<a href="#436" id="436">436</a>
+<a href="#437" id="437">437</a>
+<a href="#438" id="438">438</a>
+<a href="#439" id="439">439</a>
+<a href="#440" id="440">440</a>
+<a href="#441" id="441">441</a>
+<a href="#442" id="442">442</a>
+<a href="#443" id="443">443</a>
+<a href="#444" id="444">444</a>
+<a href="#445" id="445">445</a>
+<a href="#446" id="446">446</a>
+<a href="#447" id="447">447</a>
+<a href="#448" id="448">448</a>
+<a href="#449" id="449">449</a>
+<a href="#450" id="450">450</a>
+<a href="#451" id="451">451</a>
+<a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
+<a href="#454" id="454">454</a>
+<a href="#455" id="455">455</a>
+<a href="#456" id="456">456</a>
+<a href="#457" id="457">457</a>
+<a href="#458" id="458">458</a>
+<a href="#459" id="459">459</a>
+<a href="#460" id="460">460</a>
+<a href="#461" id="461">461</a>
+<a href="#462" id="462">462</a>
+<a href="#463" id="463">463</a>
+<a href="#464" id="464">464</a>
+<a href="#465" id="465">465</a>
+<a href="#466" id="466">466</a>
+<a href="#467" id="467">467</a>
+<a href="#468" id="468">468</a>
+<a href="#469" id="469">469</a>
+<a href="#470" id="470">470</a>
+<a href="#471" id="471">471</a>
+<a href="#472" id="472">472</a>
+<a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -426,22 +521,18 @@
 	clippy::len_zero,
 	clippy::new_without_default
 )]
+#![deny(unused_crate_dependencies)]
 
 </span><span class="kw">mod </span>eth;
 <span class="kw">mod </span>eth_pubsub;
 <span class="kw">mod </span>net;
-<span class="kw">mod </span>overrides;
 <span class="kw">mod </span>signer;
 <span class="kw">mod </span>web3;
 
 <span class="kw">pub use </span><span class="self">self</span>::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
-	overrides::{
-		OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-		SchemaV3Override, StorageOverride,
-	},
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
@@ -449,24 +540,142 @@
 <span class="kw">pub use </span>fc_rpc_core::{
 	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
 };
+<span class="kw">pub use </span>fc_storage::{
+	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
+	SchemaV3Override, StorageOverride,
+};
 
 <span class="kw">pub mod </span>frontier_backend_client {
 	<span class="kw">use </span><span class="kw">super</span>::internal_err;
 
-	<span class="kw">use </span>ethereum_types::H256;
+	<span class="kw">use </span>ethereum_types::{H160, H256, U256};
 	<span class="kw">use </span>jsonrpsee::core::RpcResult;
-	<span class="kw">use </span>scale_codec::Decode;
+	<span class="kw">use </span>scale_codec::Encode;
 	<span class="comment">// Substrate
-	</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+	</span><span class="kw">use </span>sc_client_api::{
+		backend::{Backend, StorageProvider},
+		StorageKey,
+	};
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
+	<span class="kw">use </span>sp_io::hashing::{blake2_128, twox_128};
 	<span class="kw">use </span>sp_runtime::{
 		generic::BlockId,
-		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, UniqueSaturatedInto, Zero},
+		traits::{Block <span class="kw">as </span>BlockT, UniqueSaturatedInto, Zero},
 	};
-	<span class="kw">use </span>sp_storage::StorageKey;
+	<span class="kw">use </span>sp_state_machine::OverlayedChanges;
 	<span class="comment">// Frontier
 	</span><span class="kw">use </span>fc_rpc_core::types::BlockNumber;
-	<span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+	<span class="kw">use </span>fp_storage::EthereumStorageSchema;
+
+	<span class="doccomment">/// Implements a default runtime storage override.
+	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
+	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
+	/// Uses IdentityAddressMapping for the address.
+	</span><span class="kw">pub struct </span>SystemAccountId20StorageOverride&lt;B, C, BE&gt;(<span class="kw">pub </span>std::marker::PhantomData&lt;(B, C, BE)&gt;);
+	<span class="kw">impl</span>&lt;B, C, BE&gt; fp_rpc::RuntimeStorageOverride&lt;B, C&gt; <span class="kw">for </span>SystemAccountId20StorageOverride&lt;B, C, BE&gt;
+	<span class="kw">where
+		</span>B: BlockT,
+		C: StorageProvider&lt;B, BE&gt; + Send + Sync,
+		BE: Backend&lt;B&gt;,
+	{
+		<span class="kw">fn </span>is_enabled() -&gt; bool {
+			<span class="bool-val">true
+		</span>}
+
+		<span class="kw">fn </span>set_overlayed_changes(
+			client: <span class="kw-2">&amp;</span>C,
+			overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+			block: B::Hash,
+			_version: u32,
+			address: H160,
+			balance: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		) {
+			<span class="kw">let </span><span class="kw-2">mut </span>key = [twox_128(<span class="string">b&quot;System&quot;</span>), twox_128(<span class="string">b&quot;Account&quot;</span>)]
+				.concat()
+				.to_vec();
+			<span class="kw">let </span>account_id = <span class="self">Self</span>::into_account_id_bytes(address);
+			key.extend(blake2_128(<span class="kw-2">&amp;</span>account_id));
+			key.extend(<span class="kw-2">&amp;</span>account_id);
+
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(item)) = client.storage(block, <span class="kw-2">&amp;</span>StorageKey(key.clone())) {
+				<span class="kw">let </span><span class="kw-2">mut </span>new_item = item.<span class="number">0</span>;
+
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(nonce) = nonce {
+					new_item.splice(<span class="number">0</span>..<span class="number">4</span>, nonce.low_u32().encode());
+				}
+
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(balance) = balance {
+					new_item.splice(<span class="number">16</span>..<span class="number">32</span>, balance.low_u128().encode());
+				}
+
+				overlayed_changes.set_storage(key, <span class="prelude-val">Some</span>(new_item));
+			}
+		}
+
+		<span class="kw">fn </span>into_account_id_bytes(address: H160) -&gt; Vec&lt;u8&gt; {
+			<span class="kw">use </span>pallet_evm::AddressMapping;
+			<span class="kw">let </span>address: H160 = pallet_evm::IdentityAddressMapping::into_account_id(address);
+			address.as_ref().to_owned()
+		}
+	}
+
+	<span class="doccomment">/// Implements a runtime storage override.
+	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
+	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
+	/// USes HashedAddressMapping for the address.
+	</span><span class="kw">pub struct </span>SystemAccountId32StorageOverride&lt;B, C, BE&gt;(<span class="kw">pub </span>std::marker::PhantomData&lt;(B, C, BE)&gt;);
+	<span class="kw">impl</span>&lt;B, C, BE&gt; fp_rpc::RuntimeStorageOverride&lt;B, C&gt; <span class="kw">for </span>SystemAccountId32StorageOverride&lt;B, C, BE&gt;
+	<span class="kw">where
+		</span>B: BlockT,
+		C: StorageProvider&lt;B, BE&gt; + Send + Sync,
+		BE: Backend&lt;B&gt;,
+	{
+		<span class="kw">fn </span>is_enabled() -&gt; bool {
+			<span class="bool-val">true
+		</span>}
+
+		<span class="kw">fn </span>set_overlayed_changes(
+			client: <span class="kw-2">&amp;</span>C,
+			overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+			block: B::Hash,
+			_version: u32,
+			address: H160,
+			balance: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+			nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		) {
+			<span class="kw">let </span><span class="kw-2">mut </span>key = [twox_128(<span class="string">b&quot;System&quot;</span>), twox_128(<span class="string">b&quot;Account&quot;</span>)]
+				.concat()
+				.to_vec();
+			<span class="kw">let </span>account_id = <span class="self">Self</span>::into_account_id_bytes(address);
+			key.extend(blake2_128(<span class="kw-2">&amp;</span>account_id));
+			key.extend(<span class="kw-2">&amp;</span>account_id);
+
+			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(item)) = client.storage(block, <span class="kw-2">&amp;</span>StorageKey(key.clone())) {
+				<span class="kw">let </span><span class="kw-2">mut </span>new_item = item.<span class="number">0</span>;
+
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(nonce) = nonce {
+					new_item.splice(<span class="number">0</span>..<span class="number">4</span>, nonce.low_u32().encode());
+				}
+
+				<span class="kw">if let </span><span class="prelude-val">Some</span>(balance) = balance {
+					new_item.splice(<span class="number">16</span>..<span class="number">32</span>, balance.low_u128().encode());
+				}
+
+				overlayed_changes.set_storage(key, <span class="prelude-val">Some</span>(new_item));
+			}
+		}
+
+		<span class="kw">fn </span>into_account_id_bytes(address: H160) -&gt; Vec&lt;u8&gt; {
+			<span class="kw">use </span>pallet_evm::AddressMapping;
+			<span class="kw">use </span>sp_core::crypto::ByteArray;
+			<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
+
+			pallet_evm::HashedAddressMapping::&lt;BlakeTwo256&gt;::into_account_id(address)
+				.as_slice()
+				.to_owned()
+		}
+	}
 
 	<span class="kw">pub fn </span>native_block_id&lt;B: BlockT, C&gt;(
 		client: <span class="kw-2">&amp;</span>C,
@@ -474,12 +683,16 @@
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;BlockId&lt;B&gt;&gt;&gt;
 	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		</span>B: BlockT,
+		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
 		<span class="prelude-val">Ok</span>(<span class="kw">match </span>number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } =&gt; {
-				load_hash::&lt;B, C&gt;(client, backend, hash).unwrap_or(<span class="prelude-val">None</span>)
+				<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = load_hash::&lt;B, C&gt;(client, backend, hash) {
+					<span class="prelude-val">Some</span>(BlockId::Hash(hash))
+				} <span class="kw">else </span>{
+					<span class="prelude-val">None
+				</span>}
 			}
 			BlockNumber::Num(number) =&gt; <span class="prelude-val">Some</span>(BlockId::Number(number.unique_saturated_into())),
 			BlockNumber::Latest =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().best_hash)),
@@ -494,10 +707,10 @@
 		client: <span class="kw-2">&amp;</span>C,
 		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
 		hash: H256,
-	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;BlockId&lt;B&gt;&gt;&gt;
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;B::Hash&gt;&gt;
 	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		</span>B: BlockT,
+		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
 		<span class="kw">let </span>substrate_hashes = backend
 			.mapping()
@@ -507,7 +720,7 @@
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(substrate_hashes) = substrate_hashes {
 			<span class="kw">for </span>substrate_hash <span class="kw">in </span>substrate_hashes {
 				<span class="kw">if </span>is_canon::&lt;B, C&gt;(client, substrate_hash) {
-					<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(BlockId::Hash(substrate_hash)));
+					<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(substrate_hash));
 				}
 			}
 		}
@@ -518,8 +731,8 @@
 		backend: <span class="kw-2">&amp;</span>fc_db::Backend&lt;B&gt;,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;(EthereumStorageSchema, H256)&gt;&gt;&gt;
 	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		</span>B: BlockT,
+		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
 		<span class="kw">let </span>cache = backend
 			.meta()
@@ -533,8 +746,8 @@
 		new_cache: Vec&lt;(EthereumStorageSchema, H256)&gt;,
 	) -&gt; RpcResult&lt;()&gt;
 	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		</span>B: BlockT,
+		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
 		backend
 			.meta()
@@ -543,32 +756,10 @@
 		<span class="prelude-val">Ok</span>(())
 	}
 
-	<span class="kw">pub fn </span>onchain_storage_schema&lt;B: BlockT, C, BE&gt;(
-		client: <span class="kw-2">&amp;</span>C,
-		at: BlockId&lt;B&gt;,
-	) -&gt; EthereumStorageSchema
+	<span class="kw">pub fn </span>is_canon&lt;B: BlockT, C&gt;(client: <span class="kw-2">&amp;</span>C, target_hash: B::Hash) -&gt; bool
 	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: StorageProvider&lt;B, BE&gt; + HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-		BE::State: StateBackend&lt;BlakeTwo256&gt;,
-	{
-		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = client.block_hash_from_id(<span class="kw-2">&amp;</span>at) {
-			<span class="kw">match </span>client.storage(hash, <span class="kw-2">&amp;</span>StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
-				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(bytes)) =&gt; Decode::decode(<span class="kw-2">&amp;mut &amp;</span>bytes.<span class="number">0</span>[..])
-					.ok()
-					.unwrap_or(EthereumStorageSchema::Undefined),
-				<span class="kw">_ </span>=&gt; EthereumStorageSchema::Undefined,
-			}
-		} <span class="kw">else </span>{
-			EthereumStorageSchema::Undefined
-		}
-	}
-
-	<span class="kw">pub fn </span>is_canon&lt;B: BlockT, C&gt;(client: <span class="kw-2">&amp;</span>C, target_hash: H256) -&gt; bool
-	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		</span>B: BlockT,
+		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(number)) = client.number(target_hash) {
 			<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = client.hash(number) {
@@ -585,8 +776,8 @@
 		only_canonical: bool,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;(H256, u32)&gt;&gt;
 	<span class="kw">where
-		</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-		C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+		</span>B: BlockT,
+		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
 		<span class="kw">let </span>transaction_metadata = backend
 			.mapping()
@@ -669,10 +860,11 @@
 
 	<span class="kw">use </span>futures::executor;
 	<span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
+	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>sp_consensus::BlockOrigin;
 	<span class="kw">use </span>sp_runtime::{
-		generic::{Block, BlockId, Header},
-		traits::BlakeTwo256,
+		generic::{Block, Header},
+		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
 	};
 	<span class="kw">use </span>substrate_test_runtime_client::{
 		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder,
@@ -682,14 +874,11 @@
 	<span class="kw">type </span>OpaqueBlock =
 		Block&lt;Header&lt;u64, BlakeTwo256&gt;, substrate_test_runtime_client::runtime::Extrinsic&gt;;
 
-	<span class="kw">fn </span>open_frontier_backend&lt;C&gt;(
+	<span class="kw">fn </span>open_frontier_backend&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 		client: Arc&lt;C&gt;,
 		path: PathBuf,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::Backend&lt;OpaqueBlock&gt;&gt;, String&gt;
-	<span class="kw">where
-		</span>C: sp_blockchain::HeaderBackend&lt;OpaqueBlock&gt;,
-	{
-		<span class="prelude-val">Ok</span>(Arc::new(fc_db::Backend::&lt;OpaqueBlock&gt;::new(
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;fc_db::Backend&lt;Block&gt;&gt;, String&gt; {
+		<span class="prelude-val">Ok</span>(Arc::new(fc_db::Backend::&lt;Block&gt;::new(
 			client,
 			<span class="kw-2">&amp;</span>fc_db::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
@@ -711,7 +900,8 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(client);
 
 		<span class="comment">// Create a temporary frontier secondary DB.
-		</span><span class="kw">let </span>frontier_backend = open_frontier_backend(client.clone(), tmp.into_path()).unwrap();
+		</span><span class="kw">let </span>backend = open_frontier_backend::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), tmp.into_path())
+			.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
 		<span class="comment">// A random ethereum block hash to use
 		</span><span class="kw">let </span>ethereum_block_hash = sp_core::H256::random();
@@ -725,7 +915,7 @@
 
 		<span class="comment">// A1 -&gt; B1
 		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-			.new_block_at(<span class="kw-2">&amp;</span>BlockId::Hash(a1_hash), Default::default(), <span class="bool-val">false</span>)
+			.new_block_at(a1_hash, Default::default(), <span class="bool-val">false</span>)
 			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>b1 = builder.build().unwrap().block;
@@ -738,23 +928,23 @@
 			ethereum_block_hash,
 			ethereum_transaction_hashes: <span class="macro">vec!</span>[],
 		};
-		<span class="kw">let _ </span>= frontier_backend.mapping().write_hashes(commitment);
+		<span class="kw">let _ </span>= backend.mapping().write_hashes(commitment);
 
 		<span class="comment">// Expect B1 to be canon
 		</span><span class="macro">assert_eq!</span>(
 			<span class="kw">super</span>::frontier_backend_client::load_hash(
 				client.as_ref(),
-				frontier_backend.as_ref(),
+				backend.as_ref(),
 				ethereum_block_hash
 			)
 			.unwrap()
 			.unwrap(),
-			BlockId::Hash(b1_hash),
+			b1_hash,
 		);
 
 		<span class="comment">// A1 -&gt; B2
 		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-			.new_block_at(<span class="kw-2">&amp;</span>BlockId::Hash(a1_hash), Default::default(), <span class="bool-val">false</span>)
+			.new_block_at(a1_hash, Default::default(), <span class="bool-val">false</span>)
 			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">2</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>b2 = builder.build().unwrap().block;
@@ -767,23 +957,23 @@
 			ethereum_block_hash,
 			ethereum_transaction_hashes: <span class="macro">vec!</span>[],
 		};
-		<span class="kw">let _ </span>= frontier_backend.mapping().write_hashes(commitment);
+		<span class="kw">let _ </span>= backend.mapping().write_hashes(commitment);
 
 		<span class="comment">// Still expect B1 to be canon
 		</span><span class="macro">assert_eq!</span>(
 			<span class="kw">super</span>::frontier_backend_client::load_hash(
 				client.as_ref(),
-				frontier_backend.as_ref(),
+				backend.as_ref(),
 				ethereum_block_hash
 			)
 			.unwrap()
 			.unwrap(),
-			BlockId::Hash(b1_hash),
+			b1_hash,
 		);
 
 		<span class="comment">// B2 -&gt; C1. B2 branch is now canon.
 		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-			.new_block_at(<span class="kw-2">&amp;</span>BlockId::Hash(b2_hash), Default::default(), <span class="bool-val">false</span>)
+			.new_block_at(b2_hash, Default::default(), <span class="bool-val">false</span>)
 			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>c1 = builder.build().unwrap().block;
@@ -793,12 +983,12 @@
 		</span><span class="macro">assert_eq!</span>(
 			<span class="kw">super</span>::frontier_backend_client::load_hash(
 				client.as_ref(),
-				frontier_backend.as_ref(),
+				backend.as_ref(),
 				ethereum_block_hash
 			)
 			.unwrap()
 			.unwrap(),
-			BlockId::Hash(b2_hash),
+			b2_hash,
 		);
 	}
 }

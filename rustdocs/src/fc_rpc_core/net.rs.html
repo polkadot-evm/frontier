@@ -58,7 +58,7 @@
 
 </span><span class="doccomment">//! Net rpc interface.
 
-</span><span class="kw">use </span>jsonrpsee::{core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>, proc_macros::rpc};
+</span><span class="kw">use </span>jsonrpsee::{core::RpcResult, proc_macros::rpc};
 
 <span class="kw">use </span><span class="kw">crate</span>::types::PeerCount;
 
@@ -67,16 +67,16 @@
 </span><span class="kw">pub trait </span>NetApi {
 	<span class="doccomment">/// Returns protocol version.
 	</span><span class="attr">#[method(name = <span class="string">&quot;net_version&quot;</span>)]
-	</span><span class="kw">fn </span>version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt;;
+	</span><span class="kw">fn </span>version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;String&gt;;
 
 	<span class="doccomment">/// Returns number of peers connected to node.
 	</span><span class="attr">#[method(name = <span class="string">&quot;net_peerCount&quot;</span>)]
-	</span><span class="kw">fn </span>peer_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;PeerCount&gt;;
+	</span><span class="kw">fn </span>peer_count(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;PeerCount&gt;;
 
 	<span class="doccomment">/// Returns true if client is actively listening for network connections.
 	/// Otherwise false.
 	</span><span class="attr">#[method(name = <span class="string">&quot;net_listening&quot;</span>)]
-	</span><span class="kw">fn </span>is_listening(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt;;
+	</span><span class="kw">fn </span>is_listening(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;bool&gt;;
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0-nightly (a00f8ba7f 2022-11-15)" data-search-js="search-df80cc3cb87b6482.js" data-settings-js="settings-7873449fa8c00e11.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

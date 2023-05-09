@@ -100,7 +100,6 @@
 <a href="#100" id="100">100</a>
 <a href="#101" id="101">101</a>
 <a href="#102" id="102">102</a>
-<a href="#103" id="103">103</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -119,6 +118,7 @@
 // limitations under the License.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, deny(unused_crate_dependencies))]
 
 #[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">pub mod </span>benchmarking;
@@ -126,17 +126,17 @@
 </span><span class="kw">mod </span>mock;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
-
 <span class="kw">pub mod </span>weights;
-<span class="kw">pub use </span>weights::WeightInfo;
 
-<span class="kw">use </span>frame_support::dispatch::PostDispatchInfo;
-<span class="kw">pub use </span>pallet_evm::AddressMapping;
+<span class="comment">// Substrate
+</span><span class="kw">use </span>frame_support::dispatch::PostDispatchInfo;
 <span class="kw">use </span>sp_core::H160;
 <span class="kw">use </span>sp_runtime::traits::Zero;
 <span class="kw">use </span>sp_std::vec::Vec;
+<span class="comment">// Frontier
+</span><span class="kw">pub use </span>pallet_evm::AddressMapping;
 
-<span class="kw">pub use </span><span class="self">self</span>::pallet::<span class="kw-2">*</span>;
+<span class="kw">pub use </span><span class="self">self</span>::{pallet::<span class="kw-2">*</span>, weights::WeightInfo};
 
 <span class="attr">#[frame_support::pallet]
 </span><span class="kw">pub mod </span>pallet {
@@ -145,8 +145,6 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
 	<span class="attr">#[pallet::pallet]
-	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
-	#[pallet::without_storage_info]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
 	<span class="attr">#[pallet::config]

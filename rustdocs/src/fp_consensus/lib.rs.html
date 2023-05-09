@@ -132,14 +132,6 @@
 <a href="#132" id="132">132</a>
 <a href="#133" id="133">133</a>
 <a href="#134" id="134">134</a>
-<a href="#135" id="135">135</a>
-<a href="#136" id="136">136</a>
-<a href="#137" id="137">137</a>
-<a href="#138" id="138">138</a>
-<a href="#139" id="139">139</a>
-<a href="#140" id="140">140</a>
-<a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -159,6 +151,7 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::large_enum_variant)]
+#![deny(unused_crate_dependencies)]
 
 </span><span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="kw">use </span>sp_core::H256;
@@ -176,16 +169,6 @@
 	Post(PostLog),
 }
 
-<span class="kw">impl </span>Log {
-	<span class="kw">pub fn </span>into_hashes(<span class="self">self</span>) -&gt; Hashes {
-		<span class="kw">match </span><span class="self">self </span>{
-			Log::Post(PostLog::Hashes(post_hashes)) =&gt; post_hashes,
-			Log::Post(PostLog::Block(block)) =&gt; Hashes::from_block(block),
-			Log::Pre(PreLog::Block(block)) =&gt; Hashes::from_block(block),
-		}
-	}
-}
-
 <span class="attr">#[derive(Decode, Encode, Clone, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>PreLog {
 	<span class="attr">#[codec(index = <span class="number">3</span>)]
@@ -194,10 +177,15 @@
 
 <span class="attr">#[derive(Decode, Encode, Clone, PartialEq, Eq)]
 </span><span class="kw">pub enum </span>PostLog {
-	<span class="attr">#[codec(index = <span class="number">1</span>)]
+	<span class="doccomment">/// Ethereum block hash and txn hashes.
+	</span><span class="attr">#[codec(index = <span class="number">1</span>)]
 	</span>Hashes(Hashes),
-	<span class="attr">#[codec(index = <span class="number">2</span>)]
+	<span class="doccomment">/// Ethereum block.
+	</span><span class="attr">#[codec(index = <span class="number">2</span>)]
 	</span>Block(ethereum::BlockV2),
+	<span class="doccomment">/// Ethereum block hash.
+	</span><span class="attr">#[codec(index = <span class="number">3</span>)]
+	</span>BlockHash(H256),
 }
 
 <span class="attr">#[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -210,17 +198,13 @@
 
 <span class="kw">impl </span>Hashes {
 	<span class="kw">pub fn </span>from_block(block: ethereum::BlockV2) -&gt; <span class="self">Self </span>{
-		<span class="kw">let </span><span class="kw-2">mut </span>transaction_hashes = Vec::new();
-
-		<span class="kw">for </span>t <span class="kw">in </span><span class="kw-2">&amp;</span>block.transactions {
-			transaction_hashes.push(t.hash());
-		}
-
-		<span class="kw">let </span>block_hash = block.header.hash();
-
 		Hashes {
-			transaction_hashes,
-			block_hash,
+			block_hash: block.header.hash(),
+			transaction_hashes: block
+				.transactions
+				.into_iter()
+				.map(|txn| txn.hash())
+				.collect(),
 		}
 	}
 }

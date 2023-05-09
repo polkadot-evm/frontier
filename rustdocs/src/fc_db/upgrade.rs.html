@@ -522,26 +522,6 @@
 <a href="#522" id="522">522</a>
 <a href="#523" id="523">523</a>
 <a href="#524" id="524">524</a>
-<a href="#525" id="525">525</a>
-<a href="#526" id="526">526</a>
-<a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a>
-<a href="#531" id="531">531</a>
-<a href="#532" id="532">532</a>
-<a href="#533" id="533">533</a>
-<a href="#534" id="534">534</a>
-<a href="#535" id="535">535</a>
-<a href="#536" id="536">536</a>
-<a href="#537" id="537">537</a>
-<a href="#538" id="538">538</a>
-<a href="#539" id="539">539</a>
-<a href="#540" id="540">540</a>
-<a href="#541" id="541">541</a>
-<a href="#542" id="542">542</a>
-<a href="#543" id="543">543</a>
-<a href="#544" id="544">544</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -568,10 +548,11 @@
 };
 
 <span class="kw">use </span>scale_codec::{Decode, Encode};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_db::DatabaseSource;
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::H256;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
-
-<span class="kw">use </span><span class="kw">crate</span>::DatabaseSource;
 
 <span class="doccomment">/// Version file name.
 </span><span class="kw">const </span>VERSION_FILE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;db_version&quot;</span>;
@@ -634,14 +615,11 @@
 }
 
 <span class="doccomment">/// Upgrade database to current version.
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>upgrade_db&lt;Block: BlockT, C&gt;(
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>upgrade_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
 	source: <span class="kw-2">&amp;</span>DatabaseSource,
-) -&gt; UpgradeResult&lt;()&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; UpgradeResult&lt;()&gt; {
 	<span class="kw">let </span>db_version = current_version(db_path)<span class="question-mark">?</span>;
 	<span class="kw">match </span>db_version {
 		<span class="number">0 </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(UpgradeError::UnsupportedVersion(db_version)),
@@ -711,13 +689,10 @@
 <span class="doccomment">/// Migration from version1 to version2:
 /// - The format of the Ethereum&lt;&gt;Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec&lt;SubstrateHash&gt;) relationship.
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_rocks_db&lt;Block: BlockT, C&gt;(
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_rocks_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
-) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt; {
 	<span class="macro">log::info!</span>(<span class="string">&quot;🔨 Running Frontier DB migration from version 1 to version 2. Please wait.&quot;</span>);
 	<span class="kw">let </span><span class="kw-2">mut </span>res = UpgradeVersion1To2Summary {
 		success: <span class="number">0</span>,
@@ -795,13 +770,10 @@
 	<span class="prelude-val">Ok</span>(res)
 }
 
-<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_parity_db&lt;Block: BlockT, C&gt;(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
-) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt; {
 	<span class="macro">log::info!</span>(<span class="string">&quot;🔨 Running Frontier DB migration from version 1 to version 2. Please wait.&quot;</span>);
 	<span class="kw">let </span><span class="kw-2">mut </span>res = UpgradeVersion1To2Summary {
 		success: <span class="number">0</span>,
@@ -886,26 +858,22 @@
 	};
 
 	<span class="kw">use </span>scale_codec::Encode;
+	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>sp_core::H256;
 	<span class="kw">use </span>sp_runtime::{
-		generic::{Block, BlockId, Header},
-		traits::BlakeTwo256,
+		generic::{Block, Header},
+		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
 	};
 	<span class="kw">use </span>tempfile::tempdir;
 
 	<span class="kw">type </span>OpaqueBlock =
 		Block&lt;Header&lt;u64, BlakeTwo256&gt;, substrate_test_runtime_client::runtime::Extrinsic&gt;;
 
-	<span class="kw">pub fn </span>open_frontier_backend&lt;C&gt;(
+	<span class="kw">pub fn </span>open_frontier_backend&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 		client: Arc&lt;C&gt;,
 		setting: <span class="kw-2">&amp;</span><span class="kw">crate</span>::DatabaseSettings,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">crate</span>::Backend&lt;OpaqueBlock&gt;&gt;, String&gt;
-	<span class="kw">where
-		</span>C: sp_blockchain::HeaderBackend&lt;OpaqueBlock&gt;,
-	{
-		<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">crate</span>::Backend::&lt;OpaqueBlock&gt;::new(
-			client, setting,
-		)<span class="question-mark">?</span>))
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">crate</span>::Backend&lt;Block&gt;&gt;, String&gt; {
+		<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">crate</span>::Backend::&lt;Block&gt;::new(client, setting)<span class="question-mark">?</span>))
 	}
 
 	<span class="attr">#[test]
@@ -950,7 +918,7 @@
 			<span class="kw">let </span><span class="kw-2">mut </span>transaction_hashes = <span class="macro">vec!</span>[];
 			{
 				<span class="comment">// Create a temporary frontier secondary DB.
-				</span><span class="kw">let </span>backend = open_frontier_backend(client.clone(), <span class="kw-2">&amp;</span>setting)
+				</span><span class="kw">let </span>backend = open_frontier_backend::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>setting)
 					.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 
 				<span class="comment">// Fill the tmp db with some data
@@ -962,11 +930,7 @@
 					// Keep track of the canon hash to later verify the migration replaced it.
 					// A1
 					</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-						.new_block_at(
-							<span class="kw-2">&amp;</span>BlockId::Hash(previous_canon_block_hash),
-							Default::default(),
-							<span class="bool-val">false</span>,
-						)
+						.new_block_at(previous_canon_block_hash, Default::default(), <span class="bool-val">false</span>)
 						.unwrap();
 					builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 					<span class="kw">let </span>block = builder.build().unwrap().block;
@@ -974,11 +938,7 @@
 					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 					<span class="comment">// A2
 					</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-						.new_block_at(
-							<span class="kw-2">&amp;</span>BlockId::Hash(previous_canon_block_hash),
-							Default::default(),
-							<span class="bool-val">false</span>,
-						)
+						.new_block_at(previous_canon_block_hash, Default::default(), <span class="bool-val">false</span>)
 						.unwrap();
 					builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">2</span>], <span class="prelude-val">None</span>).unwrap();
 					<span class="kw">let </span>block = builder.build().unwrap().block;
@@ -1031,8 +991,8 @@
 			</span><span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;</span>setting.source);
 
 			<span class="comment">// Check data after migration
-			</span><span class="kw">let </span>backend =
-				open_frontier_backend(client, <span class="kw-2">&amp;</span>setting).expect(<span class="string">&quot;a temporary db was created&quot;</span>);
+			</span><span class="kw">let </span>backend = open_frontier_backend::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client, <span class="kw-2">&amp;</span>setting)
+				.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
 			<span class="kw">for </span>(i, original_ethereum_hash) <span class="kw">in </span>ethereum_hashes.iter().enumerate() {
 				<span class="kw">let </span>canon_substrate_block_hash = substrate_hashes.get(i).expect(<span class="string">&quot;Block hash&quot;</span>);
 				<span class="kw">let </span>mapped_block = backend

@@ -192,6 +192,45 @@
 <a href="#192" id="192">192</a>
 <a href="#193" id="193">193</a>
 <a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
+<a href="#221" id="221">221</a>
+<a href="#222" id="222">222</a>
+<a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -211,6 +250,7 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::too_many_arguments)]
+#![deny(unused_crate_dependencies)]
 
 </span><span class="kw">use </span>ethereum::Log;
 <span class="kw">use </span>ethereum_types::Bloom;
@@ -219,6 +259,7 @@
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sp_core::{H160, H256, U256};
 <span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, Permill, RuntimeDebug};
+<span class="kw">use </span>sp_state_machine::OverlayedChanges;
 <span class="kw">use </span>sp_std::vec::Vec;
 
 <span class="attr">#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
@@ -230,6 +271,43 @@
 	<span class="kw">pub </span>contract_address: <span class="prelude-ty">Option</span>&lt;H160&gt;,
 	<span class="kw">pub </span>logs: Vec&lt;Log&gt;,
 	<span class="kw">pub </span>logs_bloom: Bloom,
+}
+
+<span class="kw">pub trait </span>RuntimeStorageOverride&lt;B: BlockT, C&gt;: Send + Sync {
+	<span class="kw">fn </span>is_enabled() -&gt; bool;
+
+	<span class="kw">fn </span>set_overlayed_changes(
+		client: <span class="kw-2">&amp;</span>C,
+		overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+		block: B::Hash,
+		version: u32,
+		address: H160,
+		balance: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	);
+
+	<span class="kw">fn </span>into_account_id_bytes(address: H160) -&gt; Vec&lt;u8&gt;;
+}
+
+<span class="kw">impl</span>&lt;B: BlockT, C&gt; RuntimeStorageOverride&lt;B, C&gt; <span class="kw">for </span>() {
+	<span class="kw">fn </span>is_enabled() -&gt; bool {
+		<span class="bool-val">false
+	</span>}
+
+	<span class="kw">fn </span>set_overlayed_changes(
+		_client: <span class="kw-2">&amp;</span>C,
+		_overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+		_block: B::Hash,
+		_version: u32,
+		_address: H160,
+		_balance: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+		_nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	) {
+	}
+
+	<span class="kw">fn </span>into_account_id_bytes(_address: H160) -&gt; Vec&lt;u8&gt; {
+		Vec::default()
+	}
 }
 
 <span class="macro">sp_api::decl_runtime_apis! </span>{

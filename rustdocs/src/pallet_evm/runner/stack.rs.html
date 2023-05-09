@@ -890,6 +890,12 @@
 <a href="#890" id="890">890</a>
 <a href="#891" id="891">891</a>
 <a href="#892" id="892">892</a>
+<a href="#893" id="893">893</a>
+<a href="#894" id="894">894</a>
+<a href="#895" id="895">895</a>
+<a href="#896" id="896">896</a>
+<a href="#897" id="897">897</a>
+<a href="#898" id="898">898</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -920,7 +926,7 @@
 	ExitError, ExitReason, Transfer,
 };
 <span class="kw">use </span>fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
-<span class="kw">use </span>frame_support::traits::{Currency, ExistenceRequirement, Get};
+<span class="kw">use </span>frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
 <span class="kw">use </span>sp_core::{H160, H256, U256};
 <span class="kw">use </span>sp_runtime::traits::UniqueSaturatedInto;
 <span class="kw">use </span>sp_std::{
@@ -1022,14 +1028,20 @@
 			&gt;,
 		) -&gt; (ExitReason, R),
 	{
-		<span class="comment">// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
+		<span class="comment">// Only check the restrictions of EIP-3607 if the source of the EVM operation is from an external transaction.
+		// If the source of this EVM operation is from an internal call, like from `eth_call` or `eth_estimateGas` RPC,
+		// we will skip the checks for the EIP-3607.
+		//
+		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
 		//
 		// We extend the principle of this EIP to also prevent `tx.sender` to be the address
 		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
 		// projects using Frontier can have stateful precompiles that can manage funds or
 		// which calls other contracts that expects this precompile address to be trustworthy.
-		</span><span class="kw">if </span>!&lt;AccountCodes&lt;T&gt;&gt;::get(source).is_empty() || precompiles.is_precompile(source) {
+		</span><span class="kw">if </span>is_transactional
+			&amp;&amp; (!&lt;AccountCodes&lt;T&gt;&gt;::get(source).is_empty() || precompiles.is_precompile(source))
+		{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
 				error: Error::&lt;T&gt;::TransactionMustComeFromEOA,
 				weight,
@@ -1520,7 +1532,7 @@
 	}
 
 	<span class="kw">fn </span>block_timestamp(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
-		<span class="kw">let </span>now: u128 = pallet_timestamp::Pallet::&lt;T&gt;::get().unique_saturated_into();
+		<span class="kw">let </span>now: u128 = T::Timestamp::now().unique_saturated_into();
 		U256::from(now / <span class="number">1000</span>)
 	}
 

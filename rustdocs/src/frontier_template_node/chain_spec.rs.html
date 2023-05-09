@@ -256,19 +256,28 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, str::FromStr};
 
 <span class="kw">use </span>serde::{Deserialize, Serialize};
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_service::ChainType;
+</span><span class="kw">use </span>sc_chain_spec::{ChainType, Properties};
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
-<span class="kw">use </span>sp_core::{sr25519, storage::Storage, Pair, Public, H160, U256};
-<span class="kw">use </span>sp_finality_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
+<span class="kw">use </span>sp_consensus_grandpa::AuthorityId <span class="kw">as </span>GrandpaId;
+<span class="kw">use </span>sp_core::{ecdsa, storage::Storage, Pair, Public, H160, U256};
 <span class="kw">use </span>sp_runtime::traits::{IdentifyAccount, Verify};
 <span class="kw">use </span>sp_state_machine::BasicExternalities;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
+	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 <span class="comment">// The URL for the telemetry server.
@@ -322,6 +331,13 @@
 	(get_from_seed::&lt;AuraId&gt;(s), get_from_seed::&lt;GrandpaId&gt;(s))
 }
 
+<span class="kw">fn </span>properties() -&gt; Properties {
+	<span class="kw">let </span><span class="kw-2">mut </span>properties = Properties::new();
+	properties.insert(<span class="string">&quot;tokenDecimals&quot;</span>.into(), <span class="number">18</span>.into());
+	properties.insert(<span class="string">&quot;ss58Format&quot;</span>.into(), SS58Prefix::get().into());
+	properties
+}
+
 <span class="kw">pub fn </span>development_config(enable_manual_seal: <span class="prelude-ty">Option</span>&lt;bool&gt;) -&gt; DevChainSpec {
 	<span class="kw">let </span>wasm_binary = WASM_BINARY.expect(<span class="string">&quot;WASM not available&quot;</span>);
 
@@ -336,17 +352,18 @@
 				genesis_config: testnet_genesis(
 					wasm_binary,
 					<span class="comment">// Sudo account
-					</span>get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+					</span>get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
 					<span class="comment">// Pre-funded accounts
 					</span><span class="macro">vec!</span>[
-						get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
-						get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob&quot;</span>),
-						get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice//stash&quot;</span>),
-						get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob//stash&quot;</span>),
+						get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+						get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Bob&quot;</span>),
+						get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Alice//stash&quot;</span>),
+						get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Bob//stash&quot;</span>),
 					],
 					<span class="comment">// Initial PoA authorities
 					</span><span class="macro">vec!</span>[authority_keys_from_seed(<span class="string">&quot;Alice&quot;</span>)],
-					<span class="number">42</span>,
+					<span class="comment">// Ethereum chain ID
+					</span>SS58Prefix::get() <span class="kw">as </span>u64,
 				),
 				enable_manual_seal,
 			}
@@ -357,9 +374,10 @@
 		</span><span class="prelude-val">None</span>,
 		<span class="comment">// Protocol ID
 		</span><span class="prelude-val">None</span>,
-		<span class="prelude-val">None</span>,
-		<span class="comment">// Properties
+		<span class="comment">// Fork ID
 		</span><span class="prelude-val">None</span>,
+		<span class="comment">// Properties
+		</span><span class="prelude-val">Some</span>(properties()),
 		<span class="comment">// Extensions
 		</span><span class="prelude-val">None</span>,
 	)
@@ -379,21 +397,21 @@
 				wasm_binary,
 				<span class="comment">// Initial PoA authorities
 				// Sudo account
-				</span>get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+				</span>get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
 				<span class="comment">// Pre-funded accounts
 				</span><span class="macro">vec!</span>[
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Charlie&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Dave&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Eve&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Ferdie&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Alice//stash&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Bob//stash&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Charlie//stash&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Dave//stash&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Eve//stash&quot;</span>),
-					get_account_id_from_seed::&lt;sr25519::Public&gt;(<span class="string">&quot;Ferdie//stash&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Alice&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Bob&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Charlie&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Dave&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Eve&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Ferdie&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Alice//stash&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Bob//stash&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Charlie//stash&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Dave//stash&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Eve//stash&quot;</span>),
+					get_account_id_from_seed::&lt;ecdsa::Public&gt;(<span class="string">&quot;Ferdie//stash&quot;</span>),
 				],
 				<span class="macro">vec!</span>[
 					authority_keys_from_seed(<span class="string">&quot;Alice&quot;</span>),

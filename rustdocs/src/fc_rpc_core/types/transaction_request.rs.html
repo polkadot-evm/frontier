@@ -117,6 +117,8 @@
 <a href="#117" id="117">117</a>
 <a href="#118" id="118">118</a>
 <a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -137,12 +139,13 @@
 
 </span><span class="doccomment">//! `TransactionRequest` type
 
-</span><span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
-<span class="kw">use </span>ethereum::{
+</span><span class="kw">use </span>ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 <span class="kw">use </span>ethereum_types::{H160, U256};
 <span class="kw">use </span>serde::{Deserialize, Serialize};
+
+<span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
 
 <span class="kw">pub enum </span>TransactionMessage {
 	Legacy(LegacyTransactionMessage),
@@ -173,6 +176,7 @@
 	<span class="doccomment">/// Value of transaction in wei
 	</span><span class="kw">pub </span>value: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	<span class="doccomment">/// Additional data sent with transaction
+	</span><span class="attr">#[serde(alias = <span class="string">&quot;input&quot;</span>)]
 	</span><span class="kw">pub </span>data: <span class="prelude-ty">Option</span>&lt;Bytes&gt;,
 	<span class="doccomment">/// Transaction&#39;s nonce
 	</span><span class="kw">pub </span>nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,

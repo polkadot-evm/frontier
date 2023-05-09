@@ -51,6 +51,7 @@
 <a href="#51" id="51">51</a>
 <a href="#52" id="52">52</a>
 <a href="#53" id="53">53</a>
+<a href="#54" id="54">54</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -69,12 +70,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>ethereum_types::U256;
-<span class="kw">use </span>serde::Serialize;
-<span class="kw">use </span>std::{
+</span><span class="kw">use </span>std::{
 	collections::BTreeMap,
 	sync::{Arc, Mutex},
 };
+
+<span class="kw">use </span>ethereum_types::U256;
+<span class="kw">use </span>serde::Serialize;
 
 <span class="doccomment">/// `eth_feeHistory` response
 </span><span class="attr">#[derive(Debug, Serialize)]

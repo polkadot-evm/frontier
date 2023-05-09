@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":[["BlockHash",""],["CurrentBlock","The current Ethereum block."],["CurrentReceipts","The current Ethereum receipts."],["CurrentTransactionStatuses","The current transaction statuses."],["Pending","Current building block’s transactions and receipts."]]};

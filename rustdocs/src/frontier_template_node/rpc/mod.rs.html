@@ -88,6 +88,27 @@
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
+<a href="#100" id="100">100</a>
+<a href="#101" id="101">101</a>
+<a href="#102" id="102">102</a>
+<a href="#103" id="103">103</a>
+<a href="#104" id="104">104</a>
+<a href="#105" id="105">105</a>
+<a href="#106" id="106">106</a>
+<a href="#107" id="107">107</a>
+<a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
 </pre><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.
 
 </span><span class="kw">use </span>std::sync::Arc;
@@ -96,7 +117,7 @@
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 <span class="kw">use </span>sc_consensus_manual_seal::rpc::EngineCommand;
@@ -104,10 +125,9 @@
 <span class="kw">use </span>sc_rpc_api::DenyUnsafe;
 <span class="kw">use </span>sc_service::TransactionPool;
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
-<span class="kw">use </span>sp_api::ProvideRuntimeApi;
-<span class="kw">use </span>sp_block_builder::BlockBuilder;
+<span class="kw">use </span>sp_api::{CallApiAt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
-<span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Runtime
 </span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
 
@@ -128,23 +148,40 @@
 	</span><span class="kw">pub </span>eth: EthDeps&lt;C, P, A, CT, Block&gt;,
 }
 
+<span class="kw">pub struct </span>DefaultEthConfig&lt;C, BE&gt;(std::marker::PhantomData&lt;(C, BE)&gt;);
+
+<span class="kw">impl</span>&lt;C, BE&gt; fc_rpc::EthConfig&lt;Block, C&gt; <span class="kw">for </span>DefaultEthConfig&lt;C, BE&gt;
+<span class="kw">where
+	</span>C: sc_client_api::StorageProvider&lt;Block, BE&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
+	BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+{
+	<span class="kw">type </span>EstimateGasAdapter = ();
+	<span class="kw">type </span>RuntimeStorageOverride =
+		fc_rpc::frontier_backend_client::SystemAccountId20StorageOverride&lt;Block, C, BE&gt;;
+}
+
 <span class="doccomment">/// Instantiate all Full RPC extensions.
 </span><span class="kw">pub fn </span>create_full&lt;C, P, BE, A, CT&gt;(
 	deps: FullDeps&lt;C, P, A, CT&gt;,
 	subscription_task_executor: SubscriptionTaskExecutor,
+	pubsub_notification_sinks: Arc&lt;
+		fc_mapping_sync::EthereumBlockNotificationSinks&lt;
+			fc_mapping_sync::EthereumBlockNotification&lt;Block&gt;,
+		&gt;,
+	&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
-	</span>BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
-	C: ProvideRuntimeApi&lt;Block&gt; + StorageProvider&lt;Block, BE&gt; + AuxStore,
-	C: BlockchainEvents&lt;Block&gt;,
-	C: HeaderBackend&lt;Block&gt; + HeaderMetadata&lt;Block, Error = BlockChainError&gt;,
-	C: Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>C: CallApiAt&lt;Block&gt; + ProvideRuntimeApi&lt;Block&gt;,
 	C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Index&gt;,
-	C::Api: BlockBuilder&lt;Block&gt;,
+	C::Api: sp_block_builder::BlockBuilder&lt;Block&gt;,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
+	C: BlockchainEvents&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+	C: HeaderBackend&lt;Block&gt;
+		+ HeaderMetadata&lt;Block, Error = BlockChainError&gt;
+		+ StorageProvider&lt;Block, BE&gt;,
+	BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	P: TransactionPool&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 	CT: fp_rpc::ConvertTransaction&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
@@ -174,7 +211,12 @@
 	}
 
 	<span class="comment">// Ethereum compatibility RPCs
-	</span><span class="kw">let </span>io = create_eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>&gt;(io, eth, subscription_task_executor)<span class="question-mark">?</span>;
+	</span><span class="kw">let </span>io = create_eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, DefaultEthConfig&lt;C, BE&gt;&gt;(
+		io,
+		eth,
+		subscription_task_executor,
+		pubsub_notification_sinks,
+	)<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(io)
 }

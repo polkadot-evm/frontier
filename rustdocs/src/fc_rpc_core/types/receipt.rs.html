@@ -60,6 +60,7 @@
 <a href="#60" id="60">60</a>
 <a href="#61" id="61">61</a>
 <a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -78,12 +79,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span><span class="kw">crate</span>::types::Log;
-<span class="kw">use </span>ethereum_types::{Bloom <span class="kw">as </span>H2048, H160, H256, U256, U64};
+</span><span class="kw">use </span>ethereum_types::{Bloom <span class="kw">as </span>H2048, H160, H256, U256, U64};
 <span class="kw">use </span>serde::Serialize;
 
+<span class="kw">use </span><span class="kw">crate</span>::types::Log;
+
 <span class="doccomment">/// Receipt
-</span><span class="attr">#[derive(Debug, Serialize)]
+</span><span class="attr">#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>Receipt {
 	<span class="doccomment">/// Transaction Hash

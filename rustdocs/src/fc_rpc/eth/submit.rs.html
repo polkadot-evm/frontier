@@ -282,6 +282,7 @@
 <a href="#282" id="282">282</a>
 <a href="#283" id="283">283</a>
 <a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -302,42 +303,38 @@
 
 </span><span class="kw">use </span>ethereum_types::H256;
 <span class="kw">use </span>futures::future::TryFutureExt;
-<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="kw">use </span>jsonrpsee::core::RpcResult;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-<span class="kw">use </span>sc_network_common::ExHashT;
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
 <span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
-	transaction_validity::TransactionSource,
+	generic::BlockId, traits::Block <span class="kw">as </span>BlockT, transaction_validity::TransactionSource,
 };
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
 <span class="kw">use </span>fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 <span class="kw">use crate</span>::{
-	eth::{format, Eth},
+	eth::{format, Eth, EthConfig},
 	internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + ConvertTransactionRuntimeApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
-	P: TransactionPool&lt;Block = B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	<span class="kw">pub async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; RpcResult&lt;H256&gt; {
 		<span class="kw">let </span>from = <span class="kw">match </span>request.from {
 			<span class="prelude-val">Some</span>(from) =&gt; from,
 			<span class="prelude-val">None </span>=&gt; {
@@ -373,10 +370,7 @@
 		<span class="kw">let </span>gas_limit = <span class="kw">match </span>request.gas {
 			<span class="prelude-val">Some</span>(gas_limit) =&gt; gas_limit,
 			<span class="prelude-val">None </span>=&gt; {
-				<span class="kw">let </span>block = <span class="self">self
-					</span>.client
-					.runtime_api()
-					.current_block(<span class="kw-2">&amp;</span>BlockId::Hash(hash));
+				<span class="kw">let </span>block = <span class="self">self</span>.client.runtime_api().current_block(hash);
 				<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(block)) = block {
 					block.header.gas_limit
 				} <span class="kw">else </span>{
@@ -435,11 +429,11 @@
 		};
 		<span class="kw">let </span>transaction_hash = transaction.hash();
 
-		<span class="kw">let </span>block_hash = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
+		<span class="kw">let </span>block_hash = <span class="self">self</span>.client.info().best_hash;
 		<span class="kw">let </span>api_version = <span class="kw">match </span><span class="self">self
 			</span>.client
 			.runtime_api()
-			.api_version::&lt;<span class="kw">dyn </span>ConvertTransactionRuntimeApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>block_hash)
+			.api_version::&lt;<span class="kw">dyn </span>ConvertTransactionRuntimeApi&lt;B&gt;&gt;(block_hash)
 		{
 			<span class="prelude-val">Ok</span>(api_version) =&gt; api_version,
 			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
@@ -449,7 +443,7 @@
 			<span class="prelude-val">Some</span>(<span class="number">2</span>) =&gt; <span class="kw">match </span><span class="self">self
 				</span>.client
 				.runtime_api()
-				.convert_transaction(<span class="kw-2">&amp;</span>block_hash, transaction)
+				.convert_transaction(block_hash, transaction)
 			{
 				<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
@@ -461,7 +455,7 @@
 					</span><span class="kw">match </span><span class="self">self
 						</span>.client
 						.runtime_api()
-						.convert_transaction_before_version_2(<span class="kw-2">&amp;</span>block_hash, legacy_transaction)
+						.convert_transaction_before_version_2(block_hash, legacy_transaction)
 					{
 						<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
 						<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
@@ -487,13 +481,17 @@
 		};
 
 		<span class="self">self</span>.pool
-			.submit_one(<span class="kw-2">&amp;</span>block_hash, TransactionSource::Local, extrinsic)
+			.submit_one(
+				<span class="kw-2">&amp;</span>BlockId::Hash(block_hash),
+				TransactionSource::Local,
+				extrinsic,
+			)
 			.map_ok(<span class="kw">move </span>|<span class="kw">_</span>| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.<span class="kw">await
 	</span>}
 
-	<span class="kw">pub async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	<span class="kw">pub async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; RpcResult&lt;H256&gt; {
 		<span class="kw">let </span>slice = <span class="kw-2">&amp;</span>bytes.<span class="number">0</span>[..];
 		<span class="kw">if </span>slice.is_empty() {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;transaction data is empty&quot;</span>));
@@ -506,11 +504,11 @@
 
 		<span class="kw">let </span>transaction_hash = transaction.hash();
 
-		<span class="kw">let </span>block_hash = BlockId::hash(<span class="self">self</span>.client.info().best_hash);
+		<span class="kw">let </span>block_hash = <span class="self">self</span>.client.info().best_hash;
 		<span class="kw">let </span>api_version = <span class="kw">match </span><span class="self">self
 			</span>.client
 			.runtime_api()
-			.api_version::&lt;<span class="kw">dyn </span>ConvertTransactionRuntimeApi&lt;B&gt;&gt;(<span class="kw-2">&amp;</span>block_hash)
+			.api_version::&lt;<span class="kw">dyn </span>ConvertTransactionRuntimeApi&lt;B&gt;&gt;(block_hash)
 		{
 			<span class="prelude-val">Ok</span>(api_version) =&gt; api_version,
 			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
@@ -520,7 +518,7 @@
 			<span class="prelude-val">Some</span>(<span class="number">2</span>) =&gt; <span class="kw">match </span><span class="self">self
 				</span>.client
 				.runtime_api()
-				.convert_transaction(<span class="kw-2">&amp;</span>block_hash, transaction)
+				.convert_transaction(block_hash, transaction)
 			{
 				<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;cannot access runtime api&quot;</span>)),
@@ -532,7 +530,7 @@
 					</span><span class="kw">match </span><span class="self">self
 						</span>.client
 						.runtime_api()
-						.convert_transaction_before_version_2(<span class="kw-2">&amp;</span>block_hash, legacy_transaction)
+						.convert_transaction_before_version_2(block_hash, legacy_transaction)
 					{
 						<span class="prelude-val">Ok</span>(extrinsic) =&gt; extrinsic,
 						<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
@@ -560,7 +558,11 @@
 		};
 
 		<span class="self">self</span>.pool
-			.submit_one(<span class="kw-2">&amp;</span>block_hash, TransactionSource::Local, extrinsic)
+			.submit_one(
+				<span class="kw-2">&amp;</span>BlockId::Hash(block_hash),
+				TransactionSource::Local,
+				extrinsic,
+			)
 			.map_ok(<span class="kw">move </span>|<span class="kw">_</span>| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.<span class="kw">await

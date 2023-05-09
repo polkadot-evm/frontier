@@ -199,50 +199,30 @@
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
 <a href="#201" id="201">201</a>
-<a href="#202" id="202">202</a>
-<a href="#203" id="203">203</a>
-<a href="#204" id="204">204</a>
-<a href="#205" id="205">205</a>
-<a href="#206" id="206">206</a>
-<a href="#207" id="207">207</a>
-<a href="#208" id="208">208</a>
-<a href="#209" id="209">209</a>
-<a href="#210" id="210">210</a>
-<a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
-<a href="#218" id="218">218</a>
-<a href="#219" id="219">219</a>
-<a href="#220" id="220">220</a>
-<a href="#221" id="221">221</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, sync::Arc};
 
 <span class="kw">use </span>jsonrpsee::RpcModule;
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::{
-	backend::{AuxStore, Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 <span class="kw">use </span>sc_network::NetworkService;
+<span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_rpc::SubscriptionTaskExecutor;
 <span class="kw">use </span>sc_transaction_pool::{ChainApi, Pool};
 <span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
-<span class="kw">use </span>sp_api::ProvideRuntimeApi;
+<span class="kw">use </span>sp_api::{CallApiAt, ProvideRuntimeApi};
+<span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
 <span class="kw">use </span>sp_core::H256;
-<span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_db::Backend <span class="kw">as </span>FrontierBackend;
-<span class="kw">pub use </span>fc_rpc::{
-	EthBlockDataCacheTask, OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override,
-	SchemaV2Override, SchemaV3Override, StorageOverride,
-};
+<span class="kw">pub use </span>fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle, StorageOverride};
 <span class="kw">pub use </span>fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-<span class="kw">use </span>fp_storage::EthereumStorageSchema;
+<span class="kw">pub use </span>fc_storage::overrides_handle;
+<span class="kw">use </span>fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 <span class="doccomment">/// Extra dependencies for Ethereum compatibility.
 </span><span class="kw">pub struct </span>EthDeps&lt;C, P, A: ChainApi, CT, B: BlockT&gt; {
@@ -260,6 +240,8 @@
 	</span><span class="kw">pub </span>enable_dev_signer: bool,
 	<span class="doccomment">/// Network service
 	</span><span class="kw">pub </span>network: Arc&lt;NetworkService&lt;B, B::Hash&gt;&gt;,
+	<span class="doccomment">/// Chain syncing service
+	</span><span class="kw">pub </span>sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 	<span class="doccomment">/// Frontier Backend.
 	</span><span class="kw">pub </span>frontier_backend: Arc&lt;FrontierBackend&lt;B&gt;&gt;,
 	<span class="doccomment">/// Ethereum data access overrides.
@@ -277,6 +259,8 @@
 	<span class="doccomment">/// Maximum allowed gas limit will be ` block.gas_limit * execute_gas_limit_multiplier` when
 	/// using eth_call/eth_estimateGas.
 	</span><span class="kw">pub </span>execute_gas_limit_multiplier: u64,
+	<span class="doccomment">/// Mandated parent hashes for a given block hash.
+	</span><span class="kw">pub </span>forced_parent_hashes: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H256, H256&gt;&gt;,
 }
 
 <span class="kw">impl</span>&lt;C, P, A: ChainApi, CT: Clone, B: BlockT&gt; Clone <span class="kw">for </span>EthDeps&lt;C, P, A, CT, B&gt; {
@@ -289,6 +273,7 @@
 			is_authority: <span class="self">self</span>.is_authority,
 			enable_dev_signer: <span class="self">self</span>.enable_dev_signer,
 			network: <span class="self">self</span>.network.clone(),
+			sync: <span class="self">self</span>.sync.clone(),
 			frontier_backend: <span class="self">self</span>.frontier_backend.clone(),
 			overrides: <span class="self">self</span>.overrides.clone(),
 			block_data_cache: <span class="self">self</span>.block_data_cache.clone(),
@@ -297,62 +282,32 @@
 			fee_history_cache: <span class="self">self</span>.fee_history_cache.clone(),
 			fee_history_cache_limit: <span class="self">self</span>.fee_history_cache_limit,
 			execute_gas_limit_multiplier: <span class="self">self</span>.execute_gas_limit_multiplier,
+			forced_parent_hashes: <span class="self">self</span>.forced_parent_hashes.clone(),
 		}
 	}
 }
 
-<span class="kw">pub fn </span>overrides_handle&lt;C, BE, B&gt;(client: Arc&lt;C&gt;) -&gt; Arc&lt;OverrideHandle&lt;B&gt;&gt;
-<span class="kw">where
-	</span>C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + AuxStore,
-	C: HeaderBackend&lt;B&gt; + HeaderMetadata&lt;B, Error = BlockChainError&gt; + <span class="lifetime">&#39;static</span>,
-	C::Api: fp_rpc::EthereumRuntimeRPCApi&lt;B&gt;,
-	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
-	B: BlockT&lt;Hash = H256&gt;,
-{
-	<span class="kw">let </span><span class="kw-2">mut </span>overrides_map = BTreeMap::new();
-	overrides_map.insert(
-		EthereumStorageSchema::V1,
-		Box::new(SchemaV1Override::new(client.clone()))
-			<span class="kw">as </span>Box&lt;<span class="kw">dyn </span>StorageOverride&lt;<span class="kw">_</span>&gt; + Send + Sync&gt;,
-	);
-	overrides_map.insert(
-		EthereumStorageSchema::V2,
-		Box::new(SchemaV2Override::new(client.clone()))
-			<span class="kw">as </span>Box&lt;<span class="kw">dyn </span>StorageOverride&lt;<span class="kw">_</span>&gt; + Send + Sync&gt;,
-	);
-	overrides_map.insert(
-		EthereumStorageSchema::V3,
-		Box::new(SchemaV3Override::new(client.clone()))
-			<span class="kw">as </span>Box&lt;<span class="kw">dyn </span>StorageOverride&lt;<span class="kw">_</span>&gt; + Send + Sync&gt;,
-	);
-
-	Arc::new(OverrideHandle {
-		schemas: overrides_map,
-		fallback: Box::new(RuntimeApiStorageOverride::&lt;B, C&gt;::new(client)),
-	})
-}
-
 <span class="doccomment">/// Instantiate Ethereum-compatible RPC extensions.
-</span><span class="kw">pub fn </span>create_eth&lt;C, BE, P, A, CT, B&gt;(
+</span><span class="kw">pub fn </span>create_eth&lt;C, BE, P, A, CT, B, EC: EthConfig&lt;B, C&gt;&gt;(
 	<span class="kw-2">mut </span>io: RpcModule&lt;()&gt;,
 	deps: EthDeps&lt;C, P, A, CT, B&gt;,
 	subscription_task_executor: SubscriptionTaskExecutor,
+	pubsub_notification_sinks: Arc&lt;
+		fc_mapping_sync::EthereumBlockNotificationSinks&lt;
+			fc_mapping_sync::EthereumBlockNotification&lt;B&gt;,
+		&gt;,
+	&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
-	</span>C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + AuxStore,
-	C: BlockchainEvents&lt;B&gt;,
-	C: HeaderBackend&lt;B&gt; + HeaderMetadata&lt;B, Error = BlockChainError&gt; + <span class="lifetime">&#39;static</span>,
-	C::Api: sp_block_builder::BlockBuilder&lt;B&gt;,
-	C::Api: fp_rpc::EthereumRuntimeRPCApi&lt;B&gt;,
-	C::Api: fp_rpc::ConvertTransactionRuntimeApi&lt;B&gt;,
+	</span>B: BlockT,
+	C: CallApiAt&lt;B&gt; + ProvideRuntimeApi&lt;B&gt;,
+	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt; + ConvertTransactionRuntimeApi&lt;B&gt;,
+	C: BlockchainEvents&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	C: HeaderBackend&lt;B&gt; + HeaderMetadata&lt;B, Error = BlockChainError&gt; + StorageProvider&lt;B, BE&gt;,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
-	CT: fp_rpc::ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	B: BlockT&lt;Hash = H256&gt;,
-	B::Header: HeaderT&lt;Number = u32&gt;,
+	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use </span>fc_rpc::{
 		Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer, EthPubSub,
@@ -367,6 +322,7 @@
 		is_authority,
 		enable_dev_signer,
 		network,
+		sync,
 		frontier_backend,
 		overrides,
 		block_data_cache,
@@ -375,6 +331,7 @@
 		fee_history_cache,
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier,
+		forced_parent_hashes,
 	} = deps;
 
 	<span class="kw">let </span><span class="kw-2">mut </span>signers = Vec::new();
@@ -388,7 +345,7 @@
 			pool.clone(),
 			graph,
 			converter,
-			network.clone(),
+			sync.clone(),
 			<span class="macro">vec!</span>[],
 			overrides.clone(),
 			frontier_backend.clone(),
@@ -397,7 +354,9 @@
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 		)
+		.replace_config::&lt;EC&gt;()
 		.into_rpc(),
 	)<span class="question-mark">?</span>;
 
@@ -419,9 +378,10 @@
 		EthPubSub::new(
 			pool,
 			client.clone(),
-			network.clone(),
+			sync,
 			subscription_task_executor,
 			overrides,
+			pubsub_notification_sinks,
 		)
 		.into_rpc(),
 	)<span class="question-mark">?</span>;

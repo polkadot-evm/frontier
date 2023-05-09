@@ -73,6 +73,7 @@
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -94,12 +95,12 @@
 </span><span class="kw">use </span>std::{marker::PhantomData, sync::Arc};
 
 <span class="kw">use </span>ethereum_types::H256;
-<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="kw">use </span>jsonrpsee::core::RpcResult;
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sp_api::{Core, ProvideRuntimeApi};
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::keccak_256;
-<span class="kw">use </span>sp_runtime::{generic::BlockId, traits::Block <span class="kw">as </span>BlockT};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::{types::Bytes, Web3ApiServer};
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
@@ -123,16 +124,17 @@
 
 <span class="kw">impl</span>&lt;B, C&gt; Web3ApiServer <span class="kw">for </span>Web3&lt;B, C&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: HeaderBackend&lt;B&gt; + ProvideRuntimeApi&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">fn </span>client_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;String&gt; {
+	<span class="kw">fn </span>client_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;String&gt; {
 		<span class="kw">let </span>hash = <span class="self">self</span>.client.info().best_hash;
 		<span class="kw">let </span>version = <span class="self">self
 			</span>.client
 			.runtime_api()
-			.version(<span class="kw-2">&amp;</span>BlockId::Hash(hash))
+			.version(hash)
 			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime version failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(<span class="macro">format!</span>(
 			<span class="string">&quot;{spec_name}/v{spec_version}.{impl_version}/{pkg_name}-{pkg_version}&quot;</span>,
@@ -144,7 +146,7 @@
 		))
 	}
 
-	<span class="kw">fn </span>sha3(<span class="kw-2">&amp;</span><span class="self">self</span>, input: Bytes) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	<span class="kw">fn </span>sha3(<span class="kw-2">&amp;</span><span class="self">self</span>, input: Bytes) -&gt; RpcResult&lt;H256&gt; {
 		<span class="prelude-val">Ok</span>(H256::from(keccak_256(<span class="kw-2">&amp;</span>input.into_vec())))
 	}
 }

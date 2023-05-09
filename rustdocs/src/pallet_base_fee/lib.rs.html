@@ -226,9 +226,6 @@
 <a href="#226" id="226">226</a>
 <a href="#227" id="227">227</a>
 <a href="#228" id="228">228</a>
-<a href="#229" id="229">229</a>
-<a href="#230" id="230">230</a>
-<a href="#231" id="231">231</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -248,6 +245,7 @@
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
 #![allow(clippy::comparison_chain)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -271,8 +269,6 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
 	<span class="attr">#[pallet::pallet]
-	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
-	#[pallet::without_storage_info]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
 	<span class="attr">#[pallet::config]
@@ -327,7 +323,6 @@
 	}
 
 	<span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>base_fee_per_gas)]
 	</span><span class="kw">pub type </span>BaseFeePerGas&lt;T&gt; = StorageValue&lt;<span class="kw">_</span>, U256, ValueQuery, DefaultBaseFeePerGas&lt;T&gt;&gt;;
 
 	<span class="attr">#[pallet::type_value]
@@ -336,7 +331,6 @@
 	}
 
 	<span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>elasticity)]
 	</span><span class="kw">pub type </span>Elasticity&lt;T&gt; = StorageValue&lt;<span class="kw">_</span>, Permill, ValueQuery, DefaultElasticity&lt;T&gt;&gt;;
 
 	<span class="attr">#[pallet::event]

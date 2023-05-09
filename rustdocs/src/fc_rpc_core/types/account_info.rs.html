@@ -78,6 +78,7 @@
 <a href="#78" id="78">78</a>
 <a href="#79" id="79">79</a>
 <a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -98,9 +99,10 @@
 
 </span><span class="doccomment">//! Return types for RPC calls
 
-</span><span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
-<span class="kw">use </span>ethereum_types::{Address, Public, H160, H256, U256};
+</span><span class="kw">use </span>ethereum_types::{Address, Public, H160, H256, U256};
 <span class="kw">use </span>serde::Serialize;
+
+<span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
 
 <span class="doccomment">/// Account information.
 </span><span class="attr">#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]

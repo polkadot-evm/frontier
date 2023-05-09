@@ -183,6 +183,12 @@
 <a href="#183" id="183">183</a>
 <a href="#184" id="184">184</a>
 <a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -202,46 +208,41 @@
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
 </span><span class="kw">use </span>ethereum_types::{H160, H256, U256};
-<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+<span class="kw">use </span>jsonrpsee::core::RpcResult;
 <span class="kw">use </span>scale_codec::Encode;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-<span class="kw">use </span>sc_network_common::ExHashT;
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
 <span class="kw">use </span>sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
-};
+<span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
 <span class="kw">use crate</span>::{
-	eth::{pending_runtime_api, Eth},
+	eth::{pending_runtime_api, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
-	P: TransactionPool&lt;Block = B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">pub fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
 		<span class="kw">if </span>number == BlockNumber::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
-				.account_basic(<span class="kw-2">&amp;</span>BlockId::Hash(<span class="self">self</span>.client.info().best_hash), address)
+				.account_basic(<span class="self">self</span>.client.info().best_hash, address)
 				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {:?}&quot;</span>, err)))<span class="question-mark">?
 				</span>.balance)
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
@@ -249,10 +250,14 @@
 			<span class="self">self</span>.backend.as_ref(),
 			<span class="prelude-val">Some</span>(number),
 		) {
+			<span class="kw">let </span>substrate_hash = <span class="self">self
+				</span>.client
+				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(<span class="self">self
 				</span>.client
 				.runtime_api()
-				.account_basic(<span class="kw-2">&amp;</span>id, address)
+				.account_basic(substrate_hash, address)
 				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {:?}&quot;</span>, err)))<span class="question-mark">?
 				</span>.balance)
 		} <span class="kw">else </span>{
@@ -265,42 +270,43 @@
 		address: H160,
 		index: U256,
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	) -&gt; RpcResult&lt;H256&gt; {
 		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
 		<span class="kw">if </span>number == BlockNumber::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
-				.storage_at(<span class="kw-2">&amp;</span>BlockId::Hash(<span class="self">self</span>.client.info().best_hash), address, index)
+				.storage_at(<span class="self">self</span>.client.info().best_hash, address, index)
 				.unwrap_or_default())
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			<span class="prelude-val">Some</span>(number),
 		) {
-			<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(
-				<span class="self">self</span>.client.as_ref(),
-				id,
-			);
+			<span class="kw">let </span>substrate_hash = <span class="self">self
+				</span>.client
+				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
 			<span class="prelude-val">Ok</span>(<span class="self">self
 				</span>.overrides
 				.schemas
 				.get(<span class="kw-2">&amp;</span>schema)
 				.unwrap_or(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides.fallback)
-				.storage_at(<span class="kw-2">&amp;</span>id, address, index)
+				.storage_at(substrate_hash, address, index)
 				.unwrap_or_default())
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Ok</span>(H256::default())
 		}
 	}
 
-	<span class="kw">pub fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">pub fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(BlockNumber::Pending) = number {
-			<span class="kw">let </span>block = BlockId::Hash(<span class="self">self</span>.client.info().best_hash);
+			<span class="kw">let </span>substrate_hash = <span class="self">self</span>.client.info().best_hash;
 
 			<span class="kw">let </span>nonce = <span class="self">self
 				</span>.client
 				.runtime_api()
-				.account_basic(<span class="kw-2">&amp;</span>block, address)
+				.account_basic(substrate_hash, address)
 				.map_err(|err| {
 					internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime account basic failed: {:?}&quot;</span>, err))
 				})<span class="question-mark">?
@@ -329,20 +335,25 @@
 			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(U256::zero()),
 		};
 
+		<span class="kw">let </span>substrate_hash = <span class="self">self
+			</span>.client
+			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.client
 			.runtime_api()
-			.account_basic(<span class="kw-2">&amp;</span>id, address)
+			.account_basic(substrate_hash, address)
 			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime account basic failed: {:?}&quot;</span>, err)))<span class="question-mark">?
 			</span>.nonce)
 	}
 
-	<span class="kw">pub fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes&gt; {
+	<span class="kw">pub fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
 		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
 		<span class="kw">if </span>number == BlockNumber::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
-				.account_code_at(<span class="kw-2">&amp;</span>BlockId::Hash(<span class="self">self</span>.client.info().best_hash), address)
+				.account_code_at(<span class="self">self</span>.client.info().best_hash, address)
 				.unwrap_or_default()
 				.into())
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
@@ -350,17 +361,18 @@
 			<span class="self">self</span>.backend.as_ref(),
 			<span class="prelude-val">Some</span>(number),
 		) {
-			<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(
-				<span class="self">self</span>.client.as_ref(),
-				id,
-			);
+			<span class="kw">let </span>substrate_hash = <span class="self">self
+				</span>.client
+				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
+				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
 
 			<span class="prelude-val">Ok</span>(<span class="self">self
 				</span>.overrides
 				.schemas
 				.get(<span class="kw-2">&amp;</span>schema)
 				.unwrap_or(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides.fallback)
-				.account_code_at(<span class="kw-2">&amp;</span>id, address)
+				.account_code_at(substrate_hash, address)
 				.unwrap_or_default()
 				.into())
 		} <span class="kw">else </span>{

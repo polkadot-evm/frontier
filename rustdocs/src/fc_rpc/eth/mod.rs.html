@@ -541,6 +541,35 @@
 <a href="#541" id="541">541</a>
 <a href="#542" id="542">542</a>
 <a href="#543" id="543">543</a>
+<a href="#544" id="544">544</a>
+<a href="#545" id="545">545</a>
+<a href="#546" id="546">546</a>
+<a href="#547" id="547">547</a>
+<a href="#548" id="548">548</a>
+<a href="#549" id="549">549</a>
+<a href="#550" id="550">550</a>
+<a href="#551" id="551">551</a>
+<a href="#552" id="552">552</a>
+<a href="#553" id="553">553</a>
+<a href="#554" id="554">554</a>
+<a href="#555" id="555">555</a>
+<a href="#556" id="556">556</a>
+<a href="#557" id="557">557</a>
+<a href="#558" id="558">558</a>
+<a href="#559" id="559">559</a>
+<a href="#560" id="560">560</a>
+<a href="#561" id="561">561</a>
+<a href="#562" id="562">562</a>
+<a href="#563" id="563">563</a>
+<a href="#564" id="564">564</a>
+<a href="#565" id="565">565</a>
+<a href="#566" id="566">566</a>
+<a href="#567" id="567">567</a>
+<a href="#568" id="568">568</a>
+<a href="#569" id="569">569</a>
+<a href="#570" id="570">570</a>
+<a href="#571" id="571">571</a>
+<a href="#572" id="572">572</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -575,26 +604,26 @@
 
 <span class="kw">use </span>ethereum::{BlockV2 <span class="kw">as </span>EthereumBlock, TransactionV2 <span class="kw">as </span>EthereumTransaction};
 <span class="kw">use </span>ethereum_types::{H160, H256, H512, H64, U256, U64};
-<span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>};
+<span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult};
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-<span class="kw">use </span>sc_network::NetworkService;
-<span class="kw">use </span>sc_network_common::ExHashT;
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
+<span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_transaction_pool::{ChainApi, Pool};
 <span class="kw">use </span>sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
-<span class="kw">use </span>sp_api::{Core, HeaderT, ProvideRuntimeApi};
+<span class="kw">use </span>sp_api::{ApiRef, CallApiAt, Core, HeaderT, ProvideRuntimeApi};
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
-<span class="kw">use </span>sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, UniqueSaturatedInto},
-};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthApiServer};
-<span class="kw">use </span>fp_rpc::{ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TransactionStatus};
+<span class="kw">use </span>fc_storage::OverrideHandle;
+<span class="kw">use </span>fp_rpc::{
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
+	RuntimeStorageOverride, TransactionStatus,
+};
 
-<span class="kw">use crate</span>::{internal_err, overrides::OverrideHandle, public_key, signer::EthSigner};
+<span class="kw">use crate</span>::{internal_err, public_key, signer::EthSigner};
 
 <span class="kw">pub use </span><span class="self">self</span>::{
 	cache::{EthBlockDataCacheTask, EthTask},
@@ -602,13 +631,24 @@
 	filter::EthFilter,
 };
 
+<span class="comment">// Configuration trait for RPC configuration.
+</span><span class="kw">pub trait </span>EthConfig&lt;B: BlockT, C&gt;: Send + Sync + <span class="lifetime">&#39;static </span>{
+	<span class="kw">type </span>EstimateGasAdapter: EstimateGasAdapter + Send + Sync;
+	<span class="kw">type </span>RuntimeStorageOverride: RuntimeStorageOverride&lt;B, C&gt;;
+}
+
+<span class="kw">impl</span>&lt;B: BlockT, C&gt; EthConfig&lt;B, C&gt; <span class="kw">for </span>() {
+	<span class="kw">type </span>EstimateGasAdapter = ();
+	<span class="kw">type </span>RuntimeStorageOverride = ();
+}
+
 <span class="doccomment">/// Eth API implementation.
-</span><span class="kw">pub struct </span>Eth&lt;B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA = ()&gt; {
+</span><span class="kw">pub struct </span>Eth&lt;B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; {
 	pool: Arc&lt;P&gt;,
 	graph: Arc&lt;Pool&lt;A&gt;&gt;,
 	client: Arc&lt;C&gt;,
 	convert_transaction: <span class="prelude-ty">Option</span>&lt;CT&gt;,
-	network: Arc&lt;NetworkService&lt;B, H&gt;&gt;,
+	sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 	is_authority: bool,
 	signers: Vec&lt;Box&lt;<span class="kw">dyn </span>EthSigner&gt;&gt;,
 	overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
@@ -619,16 +659,17 @@
 	<span class="doccomment">/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	</span>execute_gas_limit_multiplier: u64,
-	_marker: PhantomData&lt;(B, BE, EGA)&gt;,
+	forced_parent_hashes: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H256, H256&gt;&gt;,
+	_marker: PhantomData&lt;(B, BE, EC)&gt;,
 }
 
-<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi&gt; Eth&lt;B, C, P, CT, BE, H, A, ()&gt; {
+<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, A: ChainApi&gt; Eth&lt;B, C, P, CT, BE, A, ()&gt; {
 	<span class="kw">pub fn </span>new(
 		client: Arc&lt;C&gt;,
 		pool: Arc&lt;P&gt;,
 		graph: Arc&lt;Pool&lt;A&gt;&gt;,
 		convert_transaction: <span class="prelude-ty">Option</span>&lt;CT&gt;,
-		network: Arc&lt;NetworkService&lt;B, H&gt;&gt;,
+		sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 		signers: Vec&lt;Box&lt;<span class="kw">dyn </span>EthSigner&gt;&gt;,
 		overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
 		backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
@@ -637,13 +678,14 @@
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
+		forced_parent_hashes: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H256, H256&gt;&gt;,
 	) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			client,
 			pool,
 			graph,
 			convert_transaction,
-			network,
+			sync,
 			is_authority,
 			signers,
 			overrides,
@@ -652,21 +694,20 @@
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 			_marker: PhantomData,
 		}
 	}
 }
 
-<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA&gt; {
-	<span class="kw">pub fn </span>with_estimate_gas_adapter&lt;EGA2: EstimateGasAdapter&gt;(
-		<span class="self">self</span>,
-	) -&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA2&gt; {
+<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt; {
+	<span class="kw">pub fn </span>replace_config&lt;EC2: EthConfig&lt;B, C&gt;&gt;(<span class="self">self</span>) -&gt; Eth&lt;B, C, P, CT, BE, A, EC2&gt; {
 		<span class="kw">let </span><span class="self">Self </span>{
 			client,
 			pool,
 			graph,
 			convert_transaction,
-			network,
+			sync,
 			is_authority,
 			signers,
 			overrides,
@@ -675,6 +716,7 @@
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 			_marker: <span class="kw">_</span>,
 		} = <span class="self">self</span>;
 
@@ -683,7 +725,7 @@
 			pool,
 			graph,
 			convert_transaction,
-			network,
+			sync,
 			is_authority,
 			signers,
 			overrides,
@@ -692,50 +734,50 @@
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			forced_parent_hashes,
 			_marker: PhantomData,
 		}
 	}
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A, EGA&gt; EthApiServer <span class="kw">for </span>Eth&lt;B, C, P, CT, BE, H, A, EGA&gt;
+</span><span class="kw">impl</span>&lt;B, C, P, CT, BE, A, EC&gt; EthApiServer <span class="kw">for </span>Eth&lt;B, C, P, CT, BE, A, EC&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: CallApiAt&lt;B&gt; + ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + ConvertTransactionRuntimeApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
-	P: TransactionPool&lt;Block = B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	CT: fp_rpc::ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
+	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
-	EGA: EstimateGasAdapter + Send + Sync + <span class="lifetime">&#39;static</span>,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="comment">// ########################################################################
 	// Client
 	// ########################################################################
 
-	</span><span class="kw">fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt; {
+	</span><span class="kw">fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;u64&gt; {
 		<span class="self">self</span>.protocol_version()
 	}
 
-	<span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;SyncStatus&gt; {
+	<span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
 		<span class="self">self</span>.syncing()
 	}
 
-	<span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;H160&gt; {
+	<span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;H160&gt; {
 		<span class="self">self</span>.author()
 	}
 
-	<span class="kw">fn </span>accounts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;H160&gt;&gt; {
+	<span class="kw">fn </span>accounts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Vec&lt;H160&gt;&gt; {
 		<span class="self">self</span>.accounts()
 	}
 
-	<span class="kw">fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.block_number()
 	}
 
-	<span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;U64&gt;&gt; {
+	<span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U64&gt;&gt; {
 		<span class="self">self</span>.chain_id()
 	}
 
@@ -743,31 +785,39 @@
 	// Block
 	// ########################################################################
 
-	</span><span class="kw">async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
+	</span><span class="kw">async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
 		<span class="self">self</span>.block_by_hash(hash, full).<span class="kw">await
 	</span>}
 
-	<span class="kw">async fn </span>block_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber, full: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
+	<span class="kw">async fn </span>block_by_number(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		number: BlockNumber,
+		full: bool,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
 		<span class="self">self</span>.block_by_number(number, full).<span class="kw">await
 	</span>}
 
-	<span class="kw">fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
+	<span class="kw">fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
 		<span class="self">self</span>.block_transaction_count_by_hash(hash)
 	}
 
-	<span class="kw">fn </span>block_transaction_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
+	<span class="kw">fn </span>block_transaction_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
 		<span class="self">self</span>.block_transaction_count_by_number(number)
 	}
 
-	<span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.block_uncles_count_by_hash(hash)
 	}
 
-	<span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.block_uncles_count_by_number(number)
 	}
 
-	<span class="kw">fn </span>uncle_by_block_hash_and_index(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
+	<span class="kw">fn </span>uncle_by_block_hash_and_index(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		hash: H256,
+		index: Index,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
 		<span class="self">self</span>.uncle_by_block_hash_and_index(hash, index)
 	}
 
@@ -775,7 +825,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number: BlockNumber,
 		index: Index,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
 		<span class="self">self</span>.uncle_by_block_number_and_index(number, index)
 	}
 
@@ -783,7 +833,7 @@
 	// Transaction
 	// ########################################################################
 
-	</span><span class="kw">async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
+	</span><span class="kw">async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="self">self</span>.transaction_by_hash(hash).<span class="kw">await
 	</span>}
 
@@ -791,7 +841,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: H256,
 		index: Index,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="self">self</span>.transaction_by_block_hash_and_index(hash, index).<span class="kw">await
 	</span>}
 
@@ -799,12 +849,12 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number: BlockNumber,
 		index: Index,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="self">self</span>.transaction_by_block_number_and_index(number, index)
 			.<span class="kw">await
 	</span>}
 
-	<span class="kw">async fn </span>transaction_receipt(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Receipt&gt;&gt; {
+	<span class="kw">async fn </span>transaction_receipt(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Receipt&gt;&gt; {
 		<span class="self">self</span>.transaction_receipt(hash).<span class="kw">await
 	</span>}
 
@@ -812,19 +862,24 @@
 	// State
 	// ########################################################################
 
-	</span><span class="kw">fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	</span><span class="kw">fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.balance(address, number)
 	}
 
-	<span class="kw">fn </span>storage_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, index: U256, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	<span class="kw">fn </span>storage_at(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		index: U256,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	) -&gt; RpcResult&lt;H256&gt; {
 		<span class="self">self</span>.storage_at(address, index, number)
 	}
 
-	<span class="kw">fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.transaction_count(address, number)
 	}
 
-	<span class="kw">fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes&gt; {
+	<span class="kw">fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
 		<span class="self">self</span>.code_at(address, number)
 	}
 
@@ -832,15 +887,20 @@
 	// Execute
 	// ########################################################################
 
-	</span><span class="kw">fn </span>call(<span class="kw-2">&amp;</span><span class="self">self</span>, request: CallRequest, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes&gt; {
-		<span class="self">self</span>.call(request, number)
+	</span><span class="kw">fn </span>call(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		request: CallRequest,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		state_overrides: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H160, CallStateOverride&gt;&gt;,
+	) -&gt; RpcResult&lt;Bytes&gt; {
+		<span class="self">self</span>.call(request, number, state_overrides)
 	}
 
 	<span class="kw">async fn </span>estimate_gas(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.estimate_gas(request, number).<span class="kw">await
 	</span>}
 
@@ -848,7 +908,7 @@
 	// Fee
 	// ########################################################################
 
-	</span><span class="kw">fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	</span><span class="kw">fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.gas_price()
 	}
 
@@ -857,11 +917,11 @@
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;FeeHistory&gt; {
+	) -&gt; RpcResult&lt;FeeHistory&gt; {
 		<span class="self">self</span>.fee_history(block_count, newest_block, reward_percentiles)
 	}
 
-	<span class="kw">fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.max_priority_fee_per_gas()
 	}
 
@@ -869,23 +929,23 @@
 	// Mining
 	// ########################################################################
 
-	</span><span class="kw">fn </span>is_mining(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+	</span><span class="kw">fn </span>is_mining(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;bool&gt; {
 		<span class="self">self</span>.is_mining()
 	}
 
-	<span class="kw">fn </span>hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.hashrate()
 	}
 
-	<span class="kw">fn </span>work(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Work&gt; {
+	<span class="kw">fn </span>work(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Work&gt; {
 		<span class="self">self</span>.work()
 	}
 
-	<span class="kw">fn </span>submit_hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>, hashrate: U256, id: H256) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+	<span class="kw">fn </span>submit_hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>, hashrate: U256, id: H256) -&gt; RpcResult&lt;bool&gt; {
 		<span class="self">self</span>.submit_hashrate(hashrate, id)
 	}
 
-	<span class="kw">fn </span>submit_work(<span class="kw-2">&amp;</span><span class="self">self</span>, nonce: H64, pow_hash: H256, mix_digest: H256) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+	<span class="kw">fn </span>submit_work(<span class="kw-2">&amp;</span><span class="self">self</span>, nonce: H64, pow_hash: H256, mix_digest: H256) -&gt; RpcResult&lt;bool&gt; {
 		<span class="self">self</span>.submit_work(nonce, pow_hash, mix_digest)
 	}
 
@@ -893,11 +953,11 @@
 	// Submit
 	// ########################################################################
 
-	</span><span class="kw">async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	</span><span class="kw">async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; RpcResult&lt;H256&gt; {
 		<span class="self">self</span>.send_transaction(request).<span class="kw">await
 	</span>}
 
-	<span class="kw">async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt; {
+	<span class="kw">async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; RpcResult&lt;H256&gt; {
 		<span class="self">self</span>.send_raw_transaction(bytes).<span class="kw">await
 	</span>}
 }
@@ -1047,20 +1107,18 @@
 <span class="kw">fn </span>pending_runtime_api&lt;<span class="lifetime">&#39;a</span>, B: BlockT, C, BE, A: ChainApi&gt;(
 	client: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>C,
 	graph: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Pool&lt;A&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;sp_api::ApiRef&lt;<span class="lifetime">&#39;a</span>, C::Api&gt;&gt;
+) -&gt; RpcResult&lt;ApiRef&lt;<span class="lifetime">&#39;a</span>, C::Api&gt;&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
-	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
+	BE: Backend&lt;B&gt;,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="comment">// In case of Pending, we need an overlayed state to query over.
 	</span><span class="kw">let </span>api = client.runtime_api();
 	<span class="kw">let </span>best_hash = client.info().best_hash;
-	<span class="kw">let </span>best = BlockId::Hash(best_hash);
 	<span class="comment">// Get all transactions in the ready queue.
 	</span><span class="kw">let </span>xts: Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; = graph
 		.validated_pool()
@@ -1069,18 +1127,18 @@
 		.collect::&lt;Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;&gt;();
 	<span class="comment">// Manually initialize the overlay.
 	</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(best_hash) {
-		<span class="kw">let </span>parent_hash = BlockId::Hash(<span class="kw-2">*</span>header.parent_hash());
-		api.initialize_block(<span class="kw-2">&amp;</span>parent_hash, <span class="kw-2">&amp;</span>header)
+		<span class="kw">let </span>parent_hash = <span class="kw-2">*</span>header.parent_hash();
+		api.initialize_block(parent_hash, <span class="kw-2">&amp;</span>header)
 			.map_err(|e| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Runtime api access error: {:?}&quot;</span>, e)))<span class="question-mark">?</span>;
 		<span class="comment">// Apply the ready queue to the best block&#39;s state.
 		</span><span class="kw">for </span>xt <span class="kw">in </span>xts {
-			<span class="kw">let _ </span>= api.apply_extrinsic(<span class="kw-2">&amp;</span>best, xt);
+			<span class="kw">let _ </span>= api.apply_extrinsic(best_hash, xt);
 		}
 		<span class="prelude-val">Ok</span>(api)
 	} <span class="kw">else </span>{
 		<span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
 			<span class="string">&quot;Cannot get header for block {:?}&quot;</span>,
-			best
+			best_hash
 		)))
 	}
 }

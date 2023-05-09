@@ -75,6 +75,7 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -93,6 +94,7 @@
 // limitations under the License.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+#![deny(unused_crate_dependencies)]
 
 </span><span class="kw">mod </span>checked_extrinsic;
 <span class="kw">mod </span>unchecked_extrinsic;

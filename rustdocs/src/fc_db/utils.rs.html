@@ -114,20 +114,6 @@
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
-<a href="#119" id="119">119</a>
-<a href="#120" id="120">120</a>
-<a href="#121" id="121">121</a>
-<a href="#122" id="122">122</a>
-<a href="#123" id="123">123</a>
-<a href="#124" id="124">124</a>
-<a href="#125" id="125">125</a>
-<a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -148,17 +134,15 @@
 
 </span><span class="kw">use </span>std::{path::Path, sync::Arc};
 
+<span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
 <span class="kw">use crate</span>::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
-<span class="kw">pub fn </span>open_database&lt;Block: BlockT, C&gt;(
+<span class="kw">pub fn </span>open_database&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	config: <span class="kw-2">&amp;</span>DatabaseSettings,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="kw">let </span>db: Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span>config.source {
 		DatabaseSource::ParityDb { path } =&gt; {
 			open_parity_db::&lt;Block, C&gt;(client, path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
@@ -183,15 +167,12 @@
 }
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;kvdb-rocksdb&quot;</span>)]
-</span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C&gt;(
+</span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	path: <span class="kw-2">&amp;</span>Path,
 	create: bool,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="comment">// first upgrade database to required version
 	</span><span class="attr">#[cfg(not(test))]
 	</span><span class="kw">match </span><span class="kw">crate</span>::upgrade::upgrade_db::&lt;Block, C&gt;(client, path, _source) {
@@ -210,27 +191,21 @@
 }
 
 <span class="attr">#[cfg(not(feature = <span class="string">&quot;kvdb-rocksdb&quot;</span>))]
-</span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C&gt;(
+</span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	_client: Arc&lt;C&gt;,
 	_path: <span class="kw-2">&amp;</span>Path,
 	_create: bool,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `kvdb-rocksdb`&quot;</span>.to_string())
 }
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C&gt;(
+</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	path: <span class="kw-2">&amp;</span>Path,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="comment">// first upgrade database to required version
 	</span><span class="attr">#[cfg(not(test))]
 	</span><span class="kw">match </span><span class="kw">crate</span>::upgrade::upgrade_db::&lt;Block, C&gt;(client, path, _source) {
@@ -248,14 +223,11 @@
 }
 
 <span class="attr">#[cfg(not(feature = <span class="string">&quot;parity-db&quot;</span>))]
-</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C&gt;(
+</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	_client: Arc&lt;C&gt;,
 	_path: <span class="kw-2">&amp;</span>Path,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt;
-<span class="kw">where
-	</span>C: sp_blockchain::HeaderBackend&lt;Block&gt; + Send + Sync,
-{
+) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.to_string())
 }
 </code></pre></div>

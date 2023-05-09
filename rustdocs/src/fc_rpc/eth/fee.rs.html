@@ -224,39 +224,37 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>ethereum_types::{H256, U256};
-<span class="kw">use </span>jsonrpsee::core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>;
+</span><span class="kw">use </span>ethereum_types::U256;
+<span class="kw">use </span>jsonrpsee::core::RpcResult;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-<span class="kw">use </span>sc_network_common::ExHashT;
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, UniqueSaturatedInto},
-};
+<span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
-<span class="kw">use crate</span>::{eth::Eth, frontier_backend_client, internal_err};
+<span class="kw">use crate</span>::{
+	eth::{Eth, EthConfig},
+	frontier_backend_client, internal_err,
+};
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA&gt; Eth&lt;B, C, P, CT, BE, H, A, EGA&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
-	<span class="kw">pub fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
-		<span class="kw">let </span>block = BlockId::Hash(<span class="self">self</span>.client.info().best_hash);
+	<span class="kw">pub fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
+		<span class="kw">let </span>block_hash = <span class="self">self</span>.client.info().best_hash;
 
 		<span class="self">self</span>.client
 			.runtime_api()
-			.gas_price(<span class="kw-2">&amp;</span>block)
+			.gas_price(block_hash)
 			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {:?}&quot;</span>, err)))
 	}
 
@@ -265,7 +263,7 @@
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;FeeHistory&gt; {
+	) -&gt; RpcResult&lt;FeeHistory&gt; {
 		<span class="comment">// The max supported range size is 1024 by spec.
 		</span><span class="kw">let </span>range_limit = U256::from(<span class="number">1024</span>);
 		<span class="kw">let </span>block_count = <span class="kw">if </span>block_count &gt; range_limit {
@@ -339,10 +337,12 @@
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
-					<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(
-						<span class="self">self</span>.client.as_ref(),
-						id,
-					);
+					<span class="kw">let </span>substrate_hash =
+						<span class="self">self</span>.client.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id).map_err(|<span class="kw">_</span>| {
+							internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id))
+						})<span class="question-mark">?</span>;
+					<span class="kw">let </span>schema =
+						fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
 					<span class="kw">let </span>handler = <span class="self">self
 						</span>.overrides
 						.schemas
@@ -350,7 +350,7 @@
 						.unwrap_or(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides.fallback);
 					<span class="kw">let </span>default_elasticity = sp_runtime::Permill::from_parts(<span class="number">125_000</span>);
 					<span class="kw">let </span>elasticity = handler
-						.elasticity(<span class="kw-2">&amp;</span>id)
+						.elasticity(substrate_hash)
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					<span class="kw">let </span>elasticity = elasticity <span class="kw">as </span>f64 / <span class="number">1_000_000f64</span>;
@@ -385,7 +385,7 @@
 		)))
 	}
 
-	<span class="kw">pub fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">pub fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="comment">// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51
 		</span><span class="kw">let </span>at_percentile = <span class="number">60</span>;
 		<span class="kw">let </span>block_count = <span class="number">20</span>;

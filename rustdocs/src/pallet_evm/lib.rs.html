@@ -913,6 +913,32 @@
 <a href="#913" id="913">913</a>
 <a href="#914" id="914">914</a>
 <a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
+<a href="#927" id="927">927</a>
+<a href="#928" id="928">928</a>
+<a href="#929" id="929">929</a>
+<a href="#930" id="930">930</a>
+<a href="#931" id="931">931</a>
+<a href="#932" id="932">932</a>
+<a href="#933" id="933">933</a>
+<a href="#934" id="934">934</a>
+<a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
+<a href="#940" id="940">940</a>
+<a href="#941" id="941">941</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -967,8 +993,9 @@
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
-#![allow(clippy::too_many_arguments)]
 #![cfg_attr(test, feature(assert_matches))]
+#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, deny(unused_crate_dependencies))]
+#![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">pub mod </span>benchmarking;
@@ -978,12 +1005,13 @@
 <span class="kw">pub mod </span>runner;
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests;
+<span class="kw">pub mod </span>weights;
 
 <span class="kw">use </span>frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, WithdrawReasons,
+		OnUnbalanced, SignedImbalance, Time, WithdrawReasons,
 	},
 	weights::Weight,
 };
@@ -999,6 +1027,7 @@
 <span class="kw">pub use </span>evm::{
 	Config <span class="kw">as </span>EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
+<span class="kw">use </span>fp_account::AccountId20;
 <span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
 </span><span class="kw">use </span>fp_evm::GenesisAccount;
 <span class="kw">pub use </span>fp_evm::{
@@ -1010,6 +1039,7 @@
 <span class="kw">pub use </span><span class="self">self</span>::{
 	pallet::<span class="kw-2">*</span>,
 	runner::{Runner, RunnerError},
+	weights::WeightInfo,
 };
 
 <span class="attr">#[frame_support::pallet]
@@ -1019,12 +1049,11 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
 	<span class="attr">#[pallet::pallet]
-	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
 	#[pallet::without_storage_info]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
 	<span class="attr">#[pallet::config]
-	</span><span class="kw">pub trait </span>Config: frame_system::Config + pallet_timestamp::Config {
+	</span><span class="kw">pub trait </span>Config: frame_system::Config {
 		<span class="doccomment">/// Calculator for current gas price.
 		</span><span class="kw">type </span>FeeCalculator: FeeCalculator;
 
@@ -1070,6 +1099,12 @@
 		<span class="doccomment">/// Find author for the current block.
 		</span><span class="kw">type </span>FindAuthor: FindAuthor&lt;H160&gt;;
 
+		<span class="doccomment">/// Get the timestamp for the current block.
+		</span><span class="kw">type </span>Timestamp: Time;
+
+		<span class="doccomment">/// Weight information for extrinsics in this pallet.
+		</span><span class="kw">type </span>WeightInfo: WeightInfo;
+
 		<span class="doccomment">/// EVM config used in the module.
 		</span><span class="kw">fn </span>config() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>EvmConfig {
 			<span class="kw-2">&amp;</span>LONDON_CONFIG
@@ -1080,7 +1115,7 @@
 	</span><span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
 		<span class="doccomment">/// Withdraw balance from EVM into currency/balances pallet.
 		</span><span class="attr">#[pallet::call_index(<span class="number">0</span>)]
-		#[pallet::weight(<span class="number">0</span>)]
+		#[pallet::weight(&lt;T <span class="kw">as </span>pallet::Config&gt;::WeightInfo::withdraw())]
 		</span><span class="kw">pub fn </span>withdraw(
 			origin: OriginFor&lt;T&gt;,
 			address: H160,
@@ -1416,11 +1451,9 @@
 	}
 
 	<span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>account_codes)]
 	</span><span class="kw">pub type </span>AccountCodes&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Blake2_128Concat, H160, Vec&lt;u8&gt;, ValueQuery&gt;;
 
 	<span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>account_storages)]
 	</span><span class="kw">pub type </span>AccountStorages&lt;T: Config&gt; =
 		StorageDoubleMap&lt;<span class="kw">_</span>, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery&gt;;
 }
@@ -1518,16 +1551,35 @@
 	}
 }
 
-<span class="kw">pub trait </span>AddressMapping&lt;A&gt; {
+<span class="doccomment">/// Ensure that the address is AccountId20.
+</span><span class="kw">pub struct </span>EnsureAccountId20;
+
+<span class="kw">impl</span>&lt;OuterOrigin&gt; EnsureAddressOrigin&lt;OuterOrigin&gt; <span class="kw">for </span>EnsureAccountId20
+<span class="kw">where
+	</span>OuterOrigin: Into&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin&lt;AccountId20&gt;, OuterOrigin&gt;&gt; + From&lt;RawOrigin&lt;AccountId20&gt;&gt;,
+{
+	<span class="kw">type </span>Success = AccountId20;
+
+	<span class="kw">fn </span>try_address_origin(address: <span class="kw-2">&amp;</span>H160, origin: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;AccountId20, OuterOrigin&gt; {
+		<span class="kw">let </span>acc: AccountId20 = AccountId20::from(<span class="kw-2">*</span>address);
+		origin.into().and_then(|o| <span class="kw">match </span>o {
+			RawOrigin::Signed(who) <span class="kw">if </span>who == acc =&gt; <span class="prelude-val">Ok</span>(who),
+			r =&gt; <span class="prelude-val">Err</span>(OuterOrigin::from(r)),
+		})
+	}
+}
+
+<span class="doccomment">/// Trait to be implemented for evm address mapping.
+</span><span class="kw">pub trait </span>AddressMapping&lt;A&gt; {
 	<span class="kw">fn </span>into_account_id(address: H160) -&gt; A;
 }
 
 <span class="doccomment">/// Identity address mapping.
 </span><span class="kw">pub struct </span>IdentityAddressMapping;
 
-<span class="kw">impl </span>AddressMapping&lt;H160&gt; <span class="kw">for </span>IdentityAddressMapping {
-	<span class="kw">fn </span>into_account_id(address: H160) -&gt; H160 {
-		address
+<span class="kw">impl</span>&lt;T: From&lt;H160&gt;&gt; AddressMapping&lt;T&gt; <span class="kw">for </span>IdentityAddressMapping {
+	<span class="kw">fn </span>into_account_id(address: H160) -&gt; T {
+		address.into()
 	}
 }
 

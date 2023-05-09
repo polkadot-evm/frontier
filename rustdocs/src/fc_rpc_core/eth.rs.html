@@ -249,6 +249,28 @@
 <a href="#249" id="249">249</a>
 <a href="#250" id="250">250</a>
 <a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
+<a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
+<a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -270,7 +292,8 @@
 </span><span class="doccomment">//! Eth rpc interface.
 
 </span><span class="kw">use </span>ethereum_types::{H160, H256, H64, U256, U64};
-<span class="kw">use </span>jsonrpsee::{core::RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>, proc_macros::rpc};
+<span class="kw">use </span>jsonrpsee::{core::RpcResult, proc_macros::rpc};
+<span class="kw">use </span>std::collections::BTreeMap;
 
 <span class="kw">use </span><span class="kw">crate</span>::types::<span class="kw-2">*</span>;
 
@@ -284,29 +307,29 @@
 
 	</span><span class="doccomment">/// Returns protocol version encoded as a string (quotes are necessary).
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_protocolVersion&quot;</span>)]
-	</span><span class="kw">fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;u64&gt;;
+	</span><span class="kw">fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;u64&gt;;
 
 	<span class="doccomment">/// Returns an object with data about the sync status or false. (wtf?)
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_syncing&quot;</span>)]
-	</span><span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;SyncStatus&gt;;
+	</span><span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt;;
 
 	<span class="doccomment">/// Returns block author.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_coinbase&quot;</span>)]
-	</span><span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;H160&gt;;
+	</span><span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;H160&gt;;
 
 	<span class="doccomment">/// Returns accounts list.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_accounts&quot;</span>)]
-	</span><span class="kw">fn </span>accounts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;H160&gt;&gt;;
+	</span><span class="kw">fn </span>accounts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Vec&lt;H160&gt;&gt;;
 
 	<span class="doccomment">/// Returns highest block number.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_blockNumber&quot;</span>)]
-	</span><span class="kw">fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the chain ID used for transaction signing at the
 	/// current best block. None is returned if not
 	/// available.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_chainId&quot;</span>)]
-	</span><span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;U64&gt;&gt;;
+	</span><span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U64&gt;&gt;;
 
 	<span class="comment">// ########################################################################
 	// Block
@@ -314,31 +337,39 @@
 
 	</span><span class="doccomment">/// Returns block with given hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockByHash&quot;</span>)]
-	</span><span class="kw">async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
+	</span><span class="kw">async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="doccomment">/// Returns block with given number.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockByNumber&quot;</span>)]
-	</span><span class="kw">async fn </span>block_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber, full: bool) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
+	</span><span class="kw">async fn </span>block_by_number(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		number: BlockNumber,
+		full: bool,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions in a block with given hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockTransactionCountByHash&quot;</span>)]
-	</span><span class="kw">fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
+	</span><span class="kw">fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions in a block with given block number.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockTransactionCountByNumber&quot;</span>)]
-	</span><span class="kw">fn </span>block_transaction_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
+	</span><span class="kw">fn </span>block_transaction_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of uncles in a block with given hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleCountByBlockHash&quot;</span>)]
-	</span><span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the number of uncles in a block with given block number.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleCountByBlockNumber&quot;</span>)]
-	</span><span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns an uncles at given block and index.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleByBlockHashAndIndex&quot;</span>)]
-	</span><span class="kw">fn </span>uncle_by_block_hash_and_index(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
+	</span><span class="kw">fn </span>uncle_by_block_hash_and_index(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		hash: H256,
+		index: Index,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="doccomment">/// Returns an uncles at given block and index.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleByBlockNumberAndIndex&quot;</span>)]
@@ -346,7 +377,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number: BlockNumber,
 		index: Index,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="comment">// ########################################################################
 	// Transaction
@@ -354,7 +385,7 @@
 
 	</span><span class="doccomment">/// Get transaction by its hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByHash&quot;</span>)]
-	</span><span class="kw">async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
+	</span><span class="kw">async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
 	<span class="doccomment">/// Returns transaction at given block hash and index.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByBlockHashAndIndex&quot;</span>)]
@@ -362,7 +393,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: H256,
 		index: Index,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
 	<span class="doccomment">/// Returns transaction by given block number and index.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByBlockNumberAndIndex&quot;</span>)]
@@ -370,11 +401,11 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number: BlockNumber,
 		index: Index,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
 	<span class="doccomment">/// Returns transaction receipt by transaction hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionReceipt&quot;</span>)]
-	</span><span class="kw">async fn </span>transaction_receipt(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Receipt&gt;&gt;;
+	</span><span class="kw">async fn </span>transaction_receipt(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Receipt&gt;&gt;;
 
 	<span class="comment">// ########################################################################
 	// State
@@ -382,19 +413,24 @@
 
 	</span><span class="doccomment">/// Returns balance of the given account.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBalance&quot;</span>)]
-	</span><span class="kw">fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns content of the storage at given address.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getStorageAt&quot;</span>)]
-	</span><span class="kw">fn </span>storage_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, index: U256, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt;;
+	</span><span class="kw">fn </span>storage_at(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		index: U256,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	) -&gt; RpcResult&lt;H256&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions sent from given address at given time (block number).
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionCount&quot;</span>)]
-	</span><span class="kw">fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the code at given address at given time (block number).
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getCode&quot;</span>)]
-	</span><span class="kw">fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes&gt;;
+	</span><span class="kw">fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt;;
 
 	<span class="comment">// ########################################################################
 	// Execute
@@ -402,12 +438,20 @@
 
 	</span><span class="doccomment">/// Call contract, returning the output data.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_call&quot;</span>)]
-	</span><span class="kw">fn </span>call(<span class="kw-2">&amp;</span><span class="self">self</span>, request: CallRequest, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;Bytes&gt;;
+	</span><span class="kw">fn </span>call(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		request: CallRequest,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		state_overrides: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H160, CallStateOverride&gt;&gt;,
+	) -&gt; RpcResult&lt;Bytes&gt;;
 
 	<span class="doccomment">/// Estimate gas needed for execution of given contract.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_estimateGas&quot;</span>)]
-	</span><span class="kw">async fn </span>estimate_gas(<span class="kw-2">&amp;</span><span class="self">self</span>, request: CallRequest, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;)
-		-&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">async fn </span>estimate_gas(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		request: CallRequest,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="comment">// ########################################################################
 	// Fee
@@ -415,7 +459,7 @@
 
 	</span><span class="doccomment">/// Returns current gas_price.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_gasPrice&quot;</span>)]
-	</span><span class="kw">fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Introduced in EIP-1159 for getting information on the appropriate priority fee to use.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_feeHistory&quot;</span>)]
@@ -424,12 +468,12 @@
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;FeeHistory&gt;;
+	) -&gt; RpcResult&lt;FeeHistory&gt;;
 
 	<span class="doccomment">/// Introduced in EIP-1159, a Geth-specific and simplified priority fee oracle.
 	/// Leverages the already existing fee history cache.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_maxPriorityFeePerGas&quot;</span>)]
-	</span><span class="kw">fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="comment">// ########################################################################
 	// Mining
@@ -437,23 +481,23 @@
 
 	</span><span class="doccomment">/// Returns true if client is actively mining new blocks.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_mining&quot;</span>)]
-	</span><span class="kw">fn </span>is_mining(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt;;
+	</span><span class="kw">fn </span>is_mining(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="doccomment">/// Returns the number of hashes per second that the node is mining with.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_hashrate&quot;</span>)]
-	</span><span class="kw">fn </span>hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the hash of the current block, the seedHash, and the boundary condition to be met.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getWork&quot;</span>)]
-	</span><span class="kw">fn </span>work(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Work&gt;;
+	</span><span class="kw">fn </span>work(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Work&gt;;
 
 	<span class="doccomment">/// Used for submitting mining hashrate.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_submitHashrate&quot;</span>)]
-	</span><span class="kw">fn </span>submit_hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>, hashrate: U256, id: H256) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt;;
+	</span><span class="kw">fn </span>submit_hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>, hashrate: U256, id: H256) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="doccomment">/// Used for submitting a proof-of-work solution.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_submitWork&quot;</span>)]
-	</span><span class="kw">fn </span>submit_work(<span class="kw-2">&amp;</span><span class="self">self</span>, nonce: H64, pow_hash: H256, mix_digest: H256) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt;;
+	</span><span class="kw">fn </span>submit_work(<span class="kw-2">&amp;</span><span class="self">self</span>, nonce: H64, pow_hash: H256, mix_digest: H256) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="comment">// ########################################################################
 	// Submit
@@ -462,11 +506,11 @@
 	</span><span class="doccomment">/// Sends transaction; will block waiting for signer to return the
 	/// transaction hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_sendTransaction&quot;</span>)]
-	</span><span class="kw">async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt;;
+	</span><span class="kw">async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; RpcResult&lt;H256&gt;;
 
 	<span class="doccomment">/// Sends signed transaction, returning its hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_sendRawTransaction&quot;</span>)]
-	</span><span class="kw">async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; <span class="prelude-ty">Result</span>&lt;H256&gt;;
+	</span><span class="kw">async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; RpcResult&lt;H256&gt;;
 }
 
 <span class="doccomment">/// Eth filters rpc api (polling).
@@ -474,31 +518,31 @@
 </span><span class="kw">pub trait </span>EthFilterApi {
 	<span class="doccomment">/// Returns id of new filter.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_newFilter&quot;</span>)]
-	</span><span class="kw">fn </span>new_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>new_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns id of new block filter.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_newBlockFilter&quot;</span>)]
-	</span><span class="kw">fn </span>new_block_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>new_block_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns id of new block filter.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_newPendingTransactionFilter&quot;</span>)]
-	</span><span class="kw">fn </span>new_pending_transaction_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt;;
+	</span><span class="kw">fn </span>new_pending_transaction_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns filter changes since last poll.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getFilterChanges&quot;</span>)]
-	</span><span class="kw">async fn </span>filter_changes(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;FilterChanges&gt;;
+	</span><span class="kw">async fn </span>filter_changes(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;FilterChanges&gt;;
 
 	<span class="doccomment">/// Returns all logs matching given filter (in a range &#39;from&#39; - &#39;to&#39;).
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getFilterLogs&quot;</span>)]
-	</span><span class="kw">async fn </span>filter_logs(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Log&gt;&gt;;
+	</span><span class="kw">async fn </span>filter_logs(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;Vec&lt;Log&gt;&gt;;
 
 	<span class="doccomment">/// Uninstalls filter.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_uninstallFilter&quot;</span>)]
-	</span><span class="kw">fn </span>uninstall_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt;;
+	</span><span class="kw">fn </span>uninstall_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="doccomment">/// Returns logs matching given filter object.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getLogs&quot;</span>)]
-	</span><span class="kw">async fn </span>logs(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Log&gt;&gt;;
+	</span><span class="kw">async fn </span>logs(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;Vec&lt;Log&gt;&gt;;
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0-nightly (a00f8ba7f 2022-11-15)" data-search-js="search-df80cc3cb87b6482.js" data-settings-js="settings-7873449fa8c00e11.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

@@ -663,6 +663,27 @@
 <a href="#663" id="663">663</a>
 <a href="#664" id="664">664</a>
 <a href="#665" id="665">665</a>
+<a href="#666" id="666">666</a>
+<a href="#667" id="667">667</a>
+<a href="#668" id="668">668</a>
+<a href="#669" id="669">669</a>
+<a href="#670" id="670">670</a>
+<a href="#671" id="671">671</a>
+<a href="#672" id="672">672</a>
+<a href="#673" id="673">673</a>
+<a href="#674" id="674">674</a>
+<a href="#675" id="675">675</a>
+<a href="#676" id="676">676</a>
+<a href="#677" id="677">677</a>
+<a href="#678" id="678">678</a>
+<a href="#679" id="679">679</a>
+<a href="#680" id="680">680</a>
+<a href="#681" id="681">681</a>
+<a href="#682" id="682">682</a>
+<a href="#683" id="683">683</a>
+<a href="#684" id="684">684</a>
+<a href="#685" id="685">685</a>
+<a href="#686" id="686">686</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span>std::{cell::RefCell, sync::Arc, time::Duration};
@@ -673,6 +694,7 @@
 <span class="kw">use </span>sc_client_api::{BlockBackend, StateBackendFor};
 <span class="kw">use </span>sc_consensus::BasicQueue;
 <span class="kw">use </span>sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
+<span class="kw">use </span>sc_network_common::sync::warp::WarpSyncParams;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 <span class="kw">use </span>sp_api::{ConstructRuntimeApi, TransactionFor};
@@ -701,8 +723,8 @@
 <span class="kw">type </span>FullSelectChain = sc_consensus::LongestChain&lt;FullBackend, Block&gt;;
 
 <span class="kw">type </span>GrandpaBlockImport&lt;Client&gt; =
-	sc_finality_grandpa::GrandpaBlockImport&lt;FullBackend, Block, Client, FullSelectChain&gt;;
-<span class="kw">type </span>GrandpaLinkHalf&lt;Client&gt; = sc_finality_grandpa::LinkHalf&lt;Block, Client, FullSelectChain&gt;;
+	sc_consensus_grandpa::GrandpaBlockImport&lt;FullBackend, Block, Client, FullSelectChain&gt;;
+<span class="kw">type </span>GrandpaLinkHalf&lt;Client&gt; = sc_consensus_grandpa::LinkHalf&lt;Block, Client, FullSelectChain&gt;;
 <span class="kw">type </span>BoxBlockImport&lt;Client&gt; = sc_consensus::BoxBlockImport&lt;Block, TransactionFor&lt;Client, Block&gt;&gt;;
 
 <span class="kw">pub fn </span>new_partial&lt;RuntimeApi, Executor, BIQ&gt;(
@@ -781,9 +803,9 @@
 	});
 
 	<span class="kw">let </span>select_chain = sc_consensus::LongestChain::new(backend.clone());
-	<span class="kw">let </span>(grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
+	<span class="kw">let </span>(grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
-		<span class="kw-2">&amp;</span>(client.clone() <span class="kw">as </span>Arc&lt;<span class="kw">_</span>&gt;),
+		<span class="kw-2">&amp;</span>client,
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
 	)<span class="question-mark">?</span>;
@@ -953,31 +975,30 @@
 		fee_history_cache_limit,
 	} = new_frontier_partial(<span class="kw-2">&amp;</span>eth_config)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>grandpa_protocol_name = sc_finality_grandpa::protocol_standard_name(
+	<span class="kw">let </span>grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>)<span class="question-mark">?</span>.expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>),
 		<span class="kw-2">&amp;</span>config.chain_spec,
 	);
 
-	<span class="kw">let </span>warp_sync: <span class="prelude-ty">Option</span>&lt;Arc&lt;<span class="kw">dyn </span>sc_network::config::WarpSyncProvider&lt;Block&gt;&gt;&gt; =
-		<span class="kw">if </span>sealing.is_some() {
-			<span class="prelude-val">None
-		</span>} <span class="kw">else </span>{
-			config
-				.network
-				.extra_sets
-				.push(sc_finality_grandpa::grandpa_peers_set_config(
-					grandpa_protocol_name.clone(),
-				));
-			<span class="prelude-val">Some</span>(Arc::new(
-				sc_finality_grandpa::warp_proof::NetworkProvider::new(
-					backend.clone(),
-					grandpa_link.shared_authority_set().clone(),
-					Vec::default(),
-				),
-			))
-		};
+	<span class="kw">let </span>warp_sync_params = <span class="kw">if </span>sealing.is_some() {
+		<span class="prelude-val">None
+	</span>} <span class="kw">else </span>{
+		config
+			.network
+			.extra_sets
+			.push(sc_consensus_grandpa::grandpa_peers_set_config(
+				grandpa_protocol_name.clone(),
+			));
+		<span class="kw">let </span>warp_sync: Arc&lt;<span class="kw">dyn </span>sc_network::config::WarpSyncProvider&lt;Block&gt;&gt; =
+			Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
+				backend.clone(),
+				grandpa_link.shared_authority_set().clone(),
+				Vec::default(),
+			));
+		<span class="prelude-val">Some</span>(WarpSyncParams::WithProvider(warp_sync))
+	};
 
-	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter) =
+	<span class="kw">let </span>(network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: <span class="kw-2">&amp;</span>config,
 			client: client.clone(),
@@ -985,7 +1006,7 @@
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: <span class="prelude-val">None</span>,
-			warp_sync,
+			warp_sync_params,
 		})<span class="question-mark">?</span>;
 
 	<span class="kw">if </span>config.offchain_worker.enabled {
@@ -1006,6 +1027,15 @@
 	<span class="comment">// Channel for the rpc handler to communicate with the authorship task.
 	</span><span class="kw">let </span>(command_sink, commands_stream) = mpsc::channel(<span class="number">1000</span>);
 
+	<span class="comment">// Sinks for pubsub notifications.
+	// Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+	// The MappingSyncWorker sends through the channel on block import and the subscription emits a notification to the subscriber on receiving a message through this channel.
+	// This way we avoid race conditions when using native substrate block import notification stream.
+	</span><span class="kw">let </span>pubsub_notification_sinks: fc_mapping_sync::EthereumBlockNotificationSinks&lt;
+		fc_mapping_sync::EthereumBlockNotification&lt;Block&gt;,
+	&gt; = Default::default();
+	<span class="kw">let </span>pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
 	<span class="comment">// for ethereum-compatibility rpc.
 	</span>config.rpc_id_provider = <span class="prelude-val">Some</span>(Box::new(fc_rpc::EthereumSubIdProvider));
 	<span class="kw">let </span>overrides = <span class="kw">crate</span>::rpc::overrides_handle(client.clone());
@@ -1017,6 +1047,7 @@
 		is_authority: config.role.is_authority(),
 		enable_dev_signer: eth_config.enable_dev_signer,
 		network: network.clone(),
+		sync: sync_service.clone(),
 		frontier_backend: frontier_backend.clone(),
 		overrides: overrides.clone(),
 		block_data_cache: Arc::new(fc_rpc::EthBlockDataCacheTask::new(
@@ -1031,11 +1062,13 @@
 		fee_history_cache: fee_history_cache.clone(),
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
+		forced_parent_hashes: <span class="prelude-val">None</span>,
 	};
 
 	<span class="kw">let </span>rpc_builder = {
 		<span class="kw">let </span>client = client.clone();
 		<span class="kw">let </span>pool = transaction_pool.clone();
+		<span class="kw">let </span>pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
 		Box::new(<span class="kw">move </span>|deny_unsafe, subscription_task_executor| {
 			<span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
@@ -1050,7 +1083,12 @@
 				eth: eth_rpc_params.clone(),
 			};
 
-			<span class="kw">crate</span>::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
+			<span class="kw">crate</span>::rpc::create_full(
+				deps,
+				subscription_task_executor,
+				pubsub_notification_sinks.clone(),
+			)
+			.map_err(Into::into)
 		})
 	};
 
@@ -1065,6 +1103,7 @@
 		network: network.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
+		sync_service: sync_service.clone(),
 		telemetry: telemetry.as_mut(),
 	})<span class="question-mark">?</span>;
 
@@ -1077,6 +1116,8 @@
 		overrides,
 		fee_history_cache,
 		fee_history_cache_limit,
+		sync_service.clone(),
+		pubsub_notification_sinks,
 	);
 
 	<span class="kw">if </span>role.is_authority() {
@@ -1127,8 +1168,8 @@
 				select_chain,
 				block_import,
 				proposer_factory,
-				sync_oracle: network.clone(),
-				justification_sync_link: network.clone(),
+				sync_oracle: sync_service.clone(),
+				justification_sync_link: sync_service.clone(),
 				create_inherent_data_providers,
 				force_authoring,
 				backoff_authoring_blocks: <span class="prelude-ty">Option</span>::&lt;()&gt;::None,
@@ -1155,7 +1196,7 @@
 			<span class="prelude-val">None
 		</span>};
 
-		<span class="kw">let </span>grandpa_config = sc_finality_grandpa::Config {
+		<span class="kw">let </span>grandpa_config = sc_consensus_grandpa::Config {
 			<span class="comment">// FIXME #1578 make this available through chainspec
 			</span>gossip_duration: Duration::from_millis(<span class="number">333</span>),
 			justification_period: <span class="number">512</span>,
@@ -1174,13 +1215,14 @@
 		// been tested extensively yet and having most nodes in a network run it
 		// could lead to finality stalls.
 		</span><span class="kw">let </span>grandpa_voter =
-			sc_finality_grandpa::run_grandpa_voter(sc_finality_grandpa::GrandpaParams {
+			sc_consensus_grandpa::run_grandpa_voter(sc_consensus_grandpa::GrandpaParams {
 				config: grandpa_config,
 				link: grandpa_link,
 				network,
-				voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
+				sync: sync_service,
+				voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
 				prometheus_registry,
-				shared_voter_state: sc_finality_grandpa::SharedVoterState::empty(),
+				shared_voter_state: sc_consensus_grandpa::SharedVoterState::empty(),
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
 			})<span class="question-mark">?</span>;
 

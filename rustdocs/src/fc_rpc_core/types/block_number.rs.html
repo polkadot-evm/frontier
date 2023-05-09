@@ -234,6 +234,7 @@
 <a href="#234" id="234">234</a>
 <a href="#235" id="235">235</a>
 <a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -252,12 +253,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>ethereum_types::H256;
+</span><span class="kw">use </span>std::fmt;
+
+<span class="kw">use </span>ethereum_types::H256;
 <span class="kw">use </span>serde::{
 	de::{Error, MapAccess, Visitor},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-<span class="kw">use </span>std::fmt;
 
 <span class="doccomment">/// Represents rpc api block number param.
 </span><span class="attr">#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]

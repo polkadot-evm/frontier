@@ -139,8 +139,6 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
-<a href="#142" id="142">142</a>
-<a href="#143" id="143">143</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -160,6 +158,7 @@
 
 // Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -181,8 +180,6 @@
 	<span class="kw">use </span>frame_system::pallet_prelude::<span class="kw-2">*</span>;
 
 	<span class="attr">#[pallet::pallet]
-	#[pallet::generate_store(<span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">trait </span>Store)]
-	#[pallet::without_storage_info]
 	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
 
 	<span class="attr">#[pallet::config]
@@ -242,11 +239,10 @@
 	}
 
 	<span class="attr">#[pallet::storage]
-	#[pallet::getter(<span class="kw">fn </span>min_gas_price)]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>MinGasPrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, U256, ValueQuery&gt;;
+	</span><span class="kw">pub type </span>MinGasPrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, U256, ValueQuery&gt;;
 
 	<span class="attr">#[pallet::storage]
-	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>TargetMinGasPrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, U256&gt;;
+	</span><span class="kw">pub type </span>TargetMinGasPrice&lt;T: Config&gt; = StorageValue&lt;<span class="kw">_</span>, U256&gt;;
 
 	<span class="attr">#[derive(Encode, Decode, RuntimeDebug)]
 	</span><span class="kw">pub enum </span>InherentError {}

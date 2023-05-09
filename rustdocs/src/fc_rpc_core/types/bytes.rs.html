@@ -135,6 +135,7 @@
 <a href="#135" id="135">135</a>
 <a href="#136" id="136">136</a>
 <a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -155,12 +156,13 @@
 
 </span><span class="doccomment">//! Serializable wrapper around vector of bytes
 
-</span><span class="kw">use </span>rustc_hex::{FromHex, ToHex};
+</span><span class="kw">use </span>std::fmt;
+
+<span class="kw">use </span>rustc_hex::{FromHex, ToHex};
 <span class="kw">use </span>serde::{
 	de::{Error, Visitor},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-<span class="kw">use </span>std::fmt;
 
 <span class="doccomment">/// Wrapper structure around vector of bytes.
 </span><span class="attr">#[derive(Clone, Debug, Default, Eq, PartialEq, Hash)]

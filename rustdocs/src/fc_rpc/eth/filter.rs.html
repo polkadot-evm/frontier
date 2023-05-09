@@ -551,15 +551,6 @@
 <a href="#551" id="551">551</a>
 <a href="#552" id="552">552</a>
 <a href="#553" id="553">553</a>
-<a href="#554" id="554">554</a>
-<a href="#555" id="555">555</a>
-<a href="#556" id="556">556</a>
-<a href="#557" id="557">557</a>
-<a href="#558" id="558">558</a>
-<a href="#559" id="559">559</a>
-<a href="#560" id="560">560</a>
-<a href="#561" id="561">561</a>
-<a href="#562" id="562">562</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -582,15 +573,15 @@
 
 <span class="kw">use </span>ethereum::BlockV2 <span class="kw">as </span>EthereumBlock;
 <span class="kw">use </span>ethereum_types::{H256, U256};
-<span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult <span class="kw">as </span><span class="prelude-ty">Result</span>};
+<span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult};
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_client_api::backend::{Backend, StateBackend, StorageProvider};
+</span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
 <span class="kw">use </span>sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
+	traits::{Block <span class="kw">as </span>BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthFilterApiServer};
@@ -631,10 +622,10 @@
 
 <span class="kw">impl</span>&lt;B, C, BE&gt; EthFilter&lt;B, C, BE&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: HeaderBackend&lt;B&gt;,
 {
-	<span class="kw">fn </span>create_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter_type: FilterType) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>create_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter_type: FilterType) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>block_number =
 			UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(<span class="self">self</span>.client.info().best_number);
 		<span class="kw">let </span>pool = <span class="self">self</span>.filter_pool.clone();
@@ -673,26 +664,25 @@
 <span class="attr">#[async_trait]
 </span><span class="kw">impl</span>&lt;B, C, BE&gt; EthFilterApiServer <span class="kw">for </span>EthFilter&lt;B, C, BE&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
-	<span class="kw">fn </span>new_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>new_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.create_filter(FilterType::Log(filter))
 	}
 
-	<span class="kw">fn </span>new_block_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>new_block_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.create_filter(FilterType::Block)
 	}
 
-	<span class="kw">fn </span>new_pending_transaction_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;U256&gt; {
+	<span class="kw">fn </span>new_pending_transaction_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;Method not available.&quot;</span>))
 	}
 
-	<span class="kw">async fn </span>filter_changes(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;FilterChanges&gt; {
+	<span class="kw">async fn </span>filter_changes(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;FilterChanges&gt; {
 		<span class="comment">// There are multiple branches that needs to return async blocks.
 		// Also, each branch need to (synchronously) do stuff with the pool
 		// (behind a lock), and the lock should be released before entering
@@ -809,10 +799,8 @@
 						internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id))
 					})<span class="question-mark">?</span>;
 
-					<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(
-						client.as_ref(),
-						id,
-					);
+					<span class="kw">let </span>schema =
+						fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 					<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(block) = block {
@@ -843,13 +831,13 @@
 		}
 	}
 
-	<span class="kw">async fn </span>filter_logs(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Log&gt;&gt; {
+	<span class="kw">async fn </span>filter_logs(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;Vec&lt;Log&gt;&gt; {
 		<span class="kw">let </span>key = U256::from(index.value());
 		<span class="kw">let </span>pool = <span class="self">self</span>.filter_pool.clone();
 
 		<span class="comment">// We want to get the filter, while releasing the pool lock outside
 		// of the async block.
-		</span><span class="kw">let </span>filter_result: <span class="prelude-ty">Result</span>&lt;Filter&gt; = (|| {
+		</span><span class="kw">let </span>filter_result: RpcResult&lt;Filter&gt; = (|| {
 			<span class="kw">let </span>pool = pool
 				.lock()
 				.map_err(|<span class="kw">_</span>| internal_err(<span class="string">&quot;Filter pool is not available.&quot;</span>))<span class="question-mark">?</span>;
@@ -904,7 +892,7 @@
 		<span class="prelude-val">Ok</span>(ret)
 	}
 
-	<span class="kw">fn </span>uninstall_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; <span class="prelude-ty">Result</span>&lt;bool&gt; {
+	<span class="kw">fn </span>uninstall_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;bool&gt; {
 		<span class="kw">let </span>key = U256::from(index.value());
 		<span class="kw">let </span>pool = <span class="self">self</span>.filter_pool.clone();
 		<span class="comment">// Try to lock.
@@ -920,7 +908,7 @@
 		response
 	}
 
-	<span class="kw">async fn </span>logs(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Log&gt;&gt; {
+	<span class="kw">async fn </span>logs(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;Vec&lt;Log&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
 		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
 		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
@@ -928,7 +916,7 @@
 
 		<span class="kw">let </span><span class="kw-2">mut </span>ret: Vec&lt;Log&gt; = Vec::new();
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(hash) = filter.block_hash {
-			<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
+			<span class="kw">let </span>substrate_hash = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
 				client.as_ref(),
 				backend.as_ref(),
 				hash,
@@ -938,12 +926,7 @@
 				<span class="prelude-val">Some</span>(hash) =&gt; hash,
 				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Vec::new()),
 			};
-			<span class="kw">let </span>substrate_hash = client
-				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
-
-			<span class="kw">let </span>schema =
-				frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client.as_ref(), id);
+			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
 			<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 			<span class="kw">let </span>statuses = block_data_cache
@@ -993,14 +976,13 @@
 	filter: <span class="kw-2">&amp;</span>Filter,
 	from: NumberFor&lt;B&gt;,
 	to: NumberFor&lt;B&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;()&gt;
+) -&gt; RpcResult&lt;()&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
-	C: ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt;,
-	C: HeaderBackend&lt;B&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>B: BlockT,
+	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	BE::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="comment">// Max request duration of 10 seconds.
 	</span><span class="kw">let </span>max_duration = time::Duration::from_secs(<span class="number">10</span>);
@@ -1024,7 +1006,7 @@
 			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
 			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
 
-		<span class="kw">let </span>schema = frontier_backend_client::onchain_storage_schema::&lt;B, C, BE&gt;(client, id);
+		<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(client, substrate_hash);
 
 		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
 

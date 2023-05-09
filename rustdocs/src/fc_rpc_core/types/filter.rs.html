@@ -753,17 +753,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>core::convert::AsRef;
+</span><span class="kw">use </span>std::{
+	collections::BTreeMap,
+	sync::{Arc, Mutex},
+};
+
 <span class="kw">use </span>ethereum_types::{Bloom, BloomInput, H160, H256, U256};
 <span class="kw">use </span>serde::{
 	de::{DeserializeOwned, Error},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 <span class="kw">use </span>serde_json::{from_value, Value};
-<span class="kw">use </span>std::{
-	collections::BTreeMap,
-	sync::{Arc, Mutex},
-};
 
 <span class="kw">use </span><span class="kw">crate</span>::types::{BlockNumber, Log};
 
@@ -804,7 +804,7 @@
 
 <span class="doccomment">/// Filter Address
 </span><span class="kw">pub type </span>FilterAddress = VariadicValue&lt;H160&gt;;
-<span class="doccomment">/// Topic, supports `A` | `null` | `[A,B,C]` | `[A,[B,C]]` | [null,[B,C]] | [null,[null,C]]
+<span class="doccomment">/// Topic, supports `A` | `null` | `[A,B,C]` | `[A,[B,C]]` | `[null,[B,C]]` | `[null,[null,C]]`
 </span><span class="kw">pub type </span>Topic = VariadicValue&lt;<span class="prelude-ty">Option</span>&lt;VariadicValue&lt;<span class="prelude-ty">Option</span>&lt;H256&gt;&gt;&gt;&gt;;
 <span class="doccomment">/// FlatTopic, simplifies the matching logic.
 </span><span class="kw">pub type </span>FlatTopic = VariadicValue&lt;<span class="prelude-ty">Option</span>&lt;H256&gt;&gt;;
