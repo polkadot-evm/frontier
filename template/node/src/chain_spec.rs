@@ -5,10 +5,10 @@ use serde::{Deserialize, Serialize};
 use hex_literal::hex;
 use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
 #[allow(unused_imports)]
 use sp_core::ecdsa;
 use sp_core::{storage::Storage, Pair, Public, H160, U256};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier

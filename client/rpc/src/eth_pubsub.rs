@@ -27,8 +27,7 @@ use sc_client_api::{
 	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
-use sc_network::{NetworkService, NetworkStatusProvider};
-use sc_network_common::ExHashT;
+use sc_network_sync::SyncingService;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -37,6 +36,7 @@ use sp_consensus::SyncOracle;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
+use fc_mapping_sync::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 use fc_rpc_core::{
 	types::{
 		pubsub::{Kind, Params, PubSubSyncStatus, Result as PubSubResult, SyncStatusMetadata},
@@ -57,26 +57,30 @@ impl jsonrpsee::core::traits::IdProvider for EthereumSubIdProvider {
 }
 
 /// Eth pub-sub API implementation.
-pub struct EthPubSub<B: BlockT, P, C, BE, H: ExHashT> {
+pub struct EthPubSub<B: BlockT, P, C, BE> {
 	pool: Arc<P>,
 	client: Arc<C>,
-	network: Arc<NetworkService<B, H>>,
+	sync: Arc<SyncingService<B>>,
 	subscriptions: SubscriptionTaskExecutor,
 	overrides: Arc<OverrideHandle<B>>,
 	starting_block: u64,
+	pubsub_notification_sinks: Arc<EthereumBlockNotificationSinks<EthereumBlockNotification<B>>>,
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSub<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE> EthPubSub<B, P, C, BE>
 where
 	C: HeaderBackend<B>,
 {
 	pub fn new(
 		pool: Arc<P>,
 		client: Arc<C>,
-		network: Arc<NetworkService<B, H>>,
+		sync: Arc<SyncingService<B>>,
 		subscriptions: SubscriptionTaskExecutor,
 		overrides: Arc<OverrideHandle<B>>,
+		pubsub_notification_sinks: Arc<
+			EthereumBlockNotificationSinks<EthereumBlockNotification<B>>,
+		>,
 	) -> Self {
 		// Capture the best block as seen on initialization. Used for syncing subscriptions.
 		let starting_block =
@@ -84,10 +88,11 @@ where
 		Self {
 			pool,
 			client,
-			network,
+			sync,
 			subscriptions,
 			overrides,
 			starting_block,
+			pubsub_notification_sinks,
 			_marker: PhantomData,
 		}
 	}
@@ -193,7 +198,7 @@ impl EthSubscriptionResult {
 	}
 }
 
-impl<B: BlockT, P, C, BE, H: ExHashT> EthPubSubApiServer for EthPubSub<B, P, C, BE, H>
+impl<B: BlockT, P, C, BE> EthPubSubApiServer for EthPubSub<B, P, C, BE>
 where
 	B: BlockT,
 	P: TransactionPool<Block = B> + 'static,
@@ -217,15 +222,18 @@ where
 		};
 
 		let client = self.client.clone();
+		// Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+		let (inner_sink, block_notification_stream) =
+			sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+		self.pubsub_notification_sinks.lock().push(inner_sink);
 		let pool = self.pool.clone();
-		let network = self.network.clone();
+		let sync = self.sync.clone();
 		let overrides = self.overrides.clone();
 		let starting_block = self.starting_block;
 		let fut = async move {
 			match kind {
 				Kind::Logs => {
-					let stream = client
-						.import_notification_stream()
+					let stream = block_notification_stream
 						.filter_map(move |notification| {
 							if notification.is_new_best {
 								let substrate_hash = notification.hash;
@@ -263,8 +271,7 @@ where
 					sink.pipe_from_stream(stream).await;
 				}
 				Kind::NewHeads => {
-					let stream = client
-						.import_notification_stream()
+					let stream = block_notification_stream
 						.filter_map(move |notification| {
 							if notification.is_new_best {
 								let schema = fc_storage::onchain_storage_schema(
@@ -339,21 +346,21 @@ where
 				}
 				Kind::Syncing => {
 					let client = Arc::clone(&client);
-					let network = Arc::clone(&network);
+					let sync = Arc::clone(&sync);
 					// Gets the node syncing status.
 					// The response is expected to be serialized either as a plain boolean
 					// if the node is not syncing, or a structure containing syncing metadata
 					// in case it is.
-					async fn status<C: HeaderBackend<B>, B: BlockT, H: ExHashT + Send + Sync>(
+					async fn status<C: HeaderBackend<B>, B: BlockT>(
 						client: Arc<C>,
-						network: Arc<NetworkService<B, H>>,
+						sync: Arc<SyncingService<B>>,
 						starting_block: u64,
 					) -> PubSubSyncStatus {
-						if network.is_major_syncing() {
+						if sync.is_major_syncing() {
 							// Get the target block to sync.
 							// This value is only exposed through substrate async Api
 							// in the `NetworkService`.
-							let highest_block = network
+							let highest_block = sync
 								.status()
 								.await
 								.ok()
@@ -376,9 +383,9 @@ where
 					}
 					// On connection subscriber expects a value.
 					// Because import notifications are only emitted when the node is synced or
-					// in case of reorg, the first event is emited right away.
+					// in case of reorg, the first event is emitted right away.
 					let _ = sink.send(&PubSubResult::SyncState(
-						status(Arc::clone(&client), Arc::clone(&network), starting_block).await,
+						status(Arc::clone(&client), Arc::clone(&sync), starting_block).await,
 					));
 
 					// When the node is not under a major syncing (i.e. from genesis), react
@@ -386,12 +393,12 @@ where
 					//
 					// Only send new notifications down the pipe when the syncing status changed.
 					let mut stream = client.clone().import_notification_stream();
-					let mut last_syncing_status = network.is_major_syncing();
+					let mut last_syncing_status = sync.is_major_syncing();
 					while (stream.next().await).is_some() {
-						let syncing_status = network.is_major_syncing();
+						let syncing_status = sync.is_major_syncing();
 						if syncing_status != last_syncing_status {
 							let _ = sink.send(&PubSubResult::SyncState(
-								status(client.clone(), network.clone(), starting_block).await,
+								status(client.clone(), sync.clone(), starting_block).await,
 							));
 						}
 						last_syncing_status = syncing_status;

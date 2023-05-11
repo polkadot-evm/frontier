@@ -16,11 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::types::Bytes;
+use std::collections::BTreeMap;
+
 use ethereum::AccessListItem;
 use ethereum_types::{H160, H256, U256};
 use serde::Deserialize;
-use std::collections::BTreeMap;
+
+use crate::types::Bytes;
 
 /// Call request
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
@@ -42,6 +44,7 @@ pub struct CallRequest {
 	/// Value
 	pub value: Option<U256>,
 	/// Data
+	#[serde(alias = "input")]
 	pub data: Option<Bytes>,
 	/// Nonce
 	pub nonce: Option<U256>,

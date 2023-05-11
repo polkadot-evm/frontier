@@ -16,9 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::types::Log;
 use ethereum_types::{Bloom as H2048, H160, H256, U256, U64};
 use serde::Serialize;
+
+use crate::types::Log;
 
 /// Receipt
 #[derive(Clone, Debug, Serialize)]

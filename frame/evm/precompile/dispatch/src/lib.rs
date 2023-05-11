@@ -51,7 +51,7 @@ where
 	T: pallet_evm::Config,
 	T::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo + Decode,
 	<T::RuntimeCall as Dispatchable>::RuntimeOrigin: From<Option<T::AccountId>>,
-	DispatchValidator: DispatchValidateT<T>,
+	DispatchValidator: DispatchValidateT<T::AccountId, T::RuntimeCall>,
 	DecodeLimit: Get<u32>,
 {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
@@ -106,22 +106,21 @@ where
 }
 
 /// Dispatch validation trait.
-pub trait DispatchValidateT<T: pallet_evm::Config> {
+pub trait DispatchValidateT<AccountId, RuntimeCall> {
 	fn validate_before_dispatch(
-		origin: &T::AccountId,
-		call: &T::RuntimeCall,
+		origin: &AccountId,
+		call: &RuntimeCall,
 	) -> Option<PrecompileFailure>;
 }
 
 /// The default implementation of `DispatchValidateT`.
-impl<T> DispatchValidateT<T> for ()
+impl<AccountId, RuntimeCall> DispatchValidateT<AccountId, RuntimeCall> for ()
 where
-	T: pallet_evm::Config,
-	T::RuntimeCall: GetDispatchInfo,
+	RuntimeCall: GetDispatchInfo,
 {
 	fn validate_before_dispatch(
-		_origin: &T::AccountId,
-		call: &T::RuntimeCall,
+		_origin: &AccountId,
+		call: &RuntimeCall,
 	) -> Option<PrecompileFailure> {
 		let info = call.get_dispatch_info();
 		if !(info.pays_fee == Pays::Yes && info.class == DispatchClass::Normal) {
