@@ -657,7 +657,7 @@ pub fn build_full(
 }
 
 pub fn new_chain_ops(
-	mut config: &mut Configuration,
+	config: &mut Configuration,
 	eth_config: &EthConfiguration,
 ) -> Result<
 	(
