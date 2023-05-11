@@ -261,7 +261,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						info.used_gas.unique_saturated_into(),
+						info.used_gas.standard.unique_saturated_into(),
 						true,
 					);
 					if let Some(weight_info) = info.weight_info {
@@ -348,7 +348,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						info.used_gas.unique_saturated_into(),
+						info.used_gas.standard.unique_saturated_into(),
 						true,
 					);
 					if let Some(weight_info) = info.weight_info {
@@ -436,7 +436,7 @@ pub mod pallet {
 			Ok(PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						info.used_gas.unique_saturated_into(),
+						info.used_gas.standard.unique_saturated_into(),
 						true,
 					);
 					if let Some(weight_info) = info.weight_info {

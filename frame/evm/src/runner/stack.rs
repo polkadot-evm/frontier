@@ -226,8 +226,19 @@ where
 		let (reason, retv) = f(&mut executor);
 
 		// Post execution.
-		let used_gas = U256::from(executor.used_gas());
-		let actual_fee = executor.fee(total_fee_per_gas);
+		let used_gas = executor.used_gas();
+		let effective_gas = match executor.state().weight_info() {
+			Some(weight_info) => U256::from(sp_std::cmp::max(
+				used_gas,
+				weight_info
+					.proof_size_usage
+					.unwrap_or_default()
+					.saturating_mul(T::GasLimitPovSizeRatio::get()),
+			)),
+			_ => used_gas.into(),
+		};
+		let actual_fee = effective_gas.saturating_mul(total_fee_per_gas);
+
 		log::debug!(
 			target: "evm",
 			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, is_transactional: {}]",
@@ -303,7 +314,10 @@ where
 		Ok(ExecutionInfo {
 			value: retv,
 			exit_reason: reason,
-			used_gas,
+			used_gas: fp_evm::UsedGas {
+				standard: used_gas.into(),
+				effective: effective_gas.into(),
+			},
 			weight_info: state.weight_info(),
 			logs: state.substate.logs,
 		})
@@ -675,7 +689,10 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	}
 }
 
-impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 'config, T> {
+impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 'config, T>
+where
+	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+{
 	fn gas_price(&self) -> U256 {
 		self.vicinity.gas_price
 	}
@@ -730,15 +747,46 @@ impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 
 		}
 	}
 
-	fn code(&self, address: H160) -> Vec<u8> {
-		<AccountCodes<T>>::get(address)
+	fn code(&mut self, address: H160) -> Result<Vec<u8>, ExitError> {
+		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
+		// Skip if the address has been already recorded this block
+		if maybe_record {
+			let size_limit: u64 = self
+				.metadata()
+				.gasometer()
+				.config()
+				.create_contract_limit
+				.unwrap_or_default() as u64;
+			if let Some(weight_info) = self.weight_info_mut() {
+				// First try to record fixed sized `AccountCodesMetadata` read
+				// Tentatively 20 + 8 + 32
+				// TODO we need a way to check whether AccountCodesMetadata for an address is already
+				// recorded in this transaction, otherwise we are over accounting..
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+
+				if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+					weight_info.try_record_proof_size_or_fail(meta.size)?;
+				} else {
+					// If it does not exist, try to record `create_contract_limit` first.
+					weight_info.try_record_proof_size_or_fail(size_limit)?;
+					let meta = Pallet::<T>::account_code_metadata(address);
+					let actual_size = meta.size;
+					// Refund if applies
+					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+				}
+				<AccountCodesAccessed<T>>::insert(address, true);
+			}
+		}
+		Ok(<AccountCodes<T>>::get(address))
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
+		// TODO record external cost
 		<AccountStorages<T>>::get(address, index)
 	}
 
 	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
+		// TODO record external cost
 		// Not being cached means that it was never changed, which means we
 		// can fetch it from storage.
 		Some(
@@ -784,8 +832,9 @@ where
 		self.substate.exit_discard()
 	}
 
-	fn is_empty(&self, address: H160) -> bool {
-		Pallet::<T>::is_account_empty(&address)
+	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
+		// TODO record external cost
+		Ok(Pallet::<T>::is_account_empty(&address))
 	}
 
 	fn deleted(&self, address: H160) -> bool {
@@ -793,6 +842,7 @@ where
 	}
 
 	fn inc_nonce(&mut self, address: H160) {
+		// TODO record external cost?
 		let account_id = T::AddressMapping::into_account_id(address);
 		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 	}
@@ -872,7 +922,6 @@ where
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
-
 		T::Currency::transfer(
 			&source,
 			&target,
@@ -924,7 +973,7 @@ where
 				.unwrap_or_default() as u64;
 			if let Some(weight_info) = self.weight_info_mut() {
 				// First try to record fixed sized `AccountCodesMetadata` read
-				// Temptatively 20 + 8 + 32
+				// Tentatively 20 + 8 + 32
 				// TODO we need a way to check whether AccountCodesMetadata for an address is already
 				// recorded in this transaction, otherwise we are over accounting..
 				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
@@ -962,7 +1011,7 @@ where
 				.unwrap_or_default() as u64;
 			if let Some(weight_info) = self.weight_info_mut() {
 				// First try to record fixed sized `AccountCodesMetadata` read
-				// Temptatively 20 + 8 + 32
+				// Tentatively 20 + 8 + 32
 				// TODO we need a way to check whether AccountCodesMetadata for an address is already
 				// recorded in this transaction, otherwise we are over accounting..
 				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
@@ -1064,7 +1113,7 @@ where
 					return Err(ExitError::OutOfGas);
 				};
 				// First try to record fixed sized `AccountCodesMetadata` read
-				// Temptatively 20 + 8 + 32
+				// Tentatively 20 + 8 + 32
 				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 				let size = if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 					meta.size
@@ -1075,7 +1124,8 @@ where
 					let actual_size = meta.size;
 					// Refund if applies
 					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-					actual_size
+					// Already recorded, return
+					return Ok(());
 				};
 				U256::from(size)
 			}
@@ -1086,8 +1136,7 @@ where
 			// Calling SUICIDE means we already read the code and accounted for its size.
 			// For clarity the match pattern is left included.
 			Opcode::SUICIDE => return Ok(()),
-			// This must be unreachable, free of (proof) cost opcodes cannot be recorded.
-			// TODO decide how do we want to gracefully handle.
+			// Rest of dynamic opcodes that do not involve proof size recording, do nothing
 			_ => return Ok(()),
 		};
 

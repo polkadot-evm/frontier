@@ -335,7 +335,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
-				assert_eq!(info.used_gas, expected_gas);
+				assert_eq!(info.used_gas.standard, expected_gas);
 			}
 			CallOrCreateInfo::Call(_) => panic!("expected create info"),
 		}

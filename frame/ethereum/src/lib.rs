@@ -655,11 +655,11 @@ impl<T: Config> Pallet<T> {
 			let cumulative_gas_used = if let Some((_, _, receipt)) = pending.last() {
 				match receipt {
 					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
-						d.used_gas.saturating_add(used_gas)
+						d.used_gas.saturating_add(used_gas.effective)
 					}
 				}
 			} else {
-				used_gas
+				used_gas.effective
 			};
 			match &transaction {
 				Transaction::Legacy(_) => Receipt::Legacy(ethereum::EIP658ReceiptData {
@@ -695,8 +695,10 @@ impl<T: Config> Pallet<T> {
 
 		Ok(PostDispatchInfo {
 			actual_weight: {
-				let mut gas_to_weight =
-					T::GasWeightMapping::gas_to_weight(used_gas.unique_saturated_into(), true);
+				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+					used_gas.standard.unique_saturated_into(),
+					true,
+				);
 				if let Some(weight_info) = weight_info {
 					if let Some(proof_size_usage) = weight_info.proof_size_usage {
 						*gas_to_weight.proof_size_mut() = proof_size_usage;

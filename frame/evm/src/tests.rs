@@ -45,13 +45,10 @@ mod proof_size_test {
 		include_str!("./res/proof_size_test_callee_contract_bytecode.txt");
 	// pragma solidity ^0.8.2;
 	// contract ProofSizeTest {
-
 	//     uint256 foo;
-
 	//     constructor() {
 	//         foo = 6;
 	//     }
-
 	//     // 35f56c3b
 	//     function test_balance(address who) public {
 	//         // cold
@@ -235,9 +232,12 @@ mod proof_size_test {
 			.expect("call succeeds");
 
 			// Expected proof size
-			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
-			let expected_proof_size = (read_account_metadata + reading_contract_len) as u64;
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let expected_proof_size = ((read_account_metadata * 2)
+				+ reading_contract_len
+				+ reading_main_contract_len) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -283,8 +283,14 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// Contract makes two account reads - cold, then warm -, only cold reads record proof size.
-			let expected_proof_size = ACCOUNT_BASIC_PROOF_SIZE;
+			// - Two account reads - cold, then warm -, only cold reads record proof size.
+			// - Main contract code read.
+			// - One metadata read.
+			let basic_account_size = ACCOUNT_BASIC_PROOF_SIZE as usize;
+			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
+			let expected_proof_size =
+				(basic_account_size + read_account_metadata + reading_main_contract_len) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -327,8 +333,11 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// Contract does two sloads - cold, then warm -, only cold reads record proof size.
-			let expected_proof_size = ACCOUNT_STORAGE_PROOF_SIZE;
+			let reading_main_contract_len =
+				AccountCodes::<Test>::get(call_contract_address).len() as u64;
+			let expected_proof_size = reading_main_contract_len
+				+ ACCOUNT_STORAGE_PROOF_SIZE
+				+ ACCOUNT_CODES_METADATA_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
@@ -371,8 +380,10 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// Contract does two sstore - cold, then warm -, only cold writes record proof size.
-			let expected_proof_size = WRITE_PROOF_SIZE;
+			let reading_main_contract_len =
+				AccountCodes::<Test>::get(call_contract_address).len() as u64;
+			let expected_proof_size =
+				reading_main_contract_len + WRITE_PROOF_SIZE + ACCOUNT_CODES_METADATA_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
@@ -419,11 +430,15 @@ mod proof_size_test {
 			.expect("call succeeds");
 
 			// Find how many random balance reads can we do with the available proof size.
-			let available_proof_size = weight_limit.proof_size();
+			let reading_main_contract_len =
+				AccountCodes::<Test>::get(call_contract_address).len() as u64;
+			let overhead = reading_main_contract_len + ACCOUNT_CODES_METADATA_PROOF_SIZE;
+			let available_proof_size = weight_limit.proof_size() - overhead;
 			let number_balance_reads =
 				available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
 			// The actual proof size consumed by those balance reads.
-			let expected_proof_size = (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) as u64;
+			let expected_proof_size =
+				overhead + (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -446,10 +461,9 @@ mod proof_size_test {
 
 			let subcall_contract_address = result.value;
 
-			// Assert callee contract code hash and size are cached
-			let CodeMetadata { size, .. } =
-				<AccountCodesMetadata<Test>>::get(subcall_contract_address)
-					.expect("contract code hash and size are cached");
+			// Expect callee contract code hash and size to be cached
+			let _ = <AccountCodesMetadata<Test>>::get(subcall_contract_address)
+				.expect("contract code hash and size are cached");
 
 			// Remove callee cache
 			<AccountCodesMetadata<Test>>::remove(subcall_contract_address);
@@ -484,10 +498,14 @@ mod proof_size_test {
 
 			// Expected proof size
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
-			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
-			// In addition, callee code size is unchached and thus included in the pov
-			let expected_proof_size =
-				(read_account_metadata + reading_contract_len + size as usize) as u64;
+			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
+			let reading_callee_contract_len =
+				AccountCodes::<Test>::get(subcall_contract_address).len();
+			// In order to do the subcall, we need to check metadata 3 times -
+			// one for each contract + one for the call opcode -, load two bytecodes - caller and callee.
+			let expected_proof_size = ((read_account_metadata * 3)
+				+ reading_callee_contract_len
+				+ reading_main_contract_len) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -628,6 +646,94 @@ mod proof_size_test {
 				.expect("proof size usage");
 
 			assert_eq!(0, actual_proof_size);
+		});
+	}
+
+	#[test]
+	fn proof_size_breaks_standard_transfer() {
+		new_test_ext().execute_with(|| {
+			// In this test we do a simple transfer to an address with an stored code which is
+			// greater in size (and thus load cost) than the transfer flat fee of 21_000.
+
+			// We assert that providing 21_000 gas limit will not work, because the pov size limit
+			// will OOG.
+			let fake_contract_address = H160::random();
+			let config = <Test as Config>::config().clone();
+			let fake_contract_code = vec![0; config.create_contract_limit.expect("a value")];
+			AccountCodes::<Test>::insert(fake_contract_address, fake_contract_code);
+
+			let gas_limit: u64 = 21_000;
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				fake_contract_address,
+				Vec::new(),
+				U256::from(777),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // transactional
+				true, // must be validated
+				Some(weight_limit),
+				Some(0),
+				&config,
+			)
+			.expect("call succeeds");
+
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Error(crate::ExitError::OutOfGas)
+			);
+		});
+	}
+
+	#[test]
+	fn proof_size_based_refunding_works() {
+		new_test_ext().execute_with(|| {
+			// In this test we do a simple transfer to an address with an stored code which is
+			// greater in size (and thus load cost) than the transfer flat fee of 21_000.
+
+			// Assert that if we provide enough gas limit, the refund will be based on the pov
+			// size consumption, not the 21_000 gas.
+			let fake_contract_address = H160::random();
+			let config = <Test as Config>::config().clone();
+			let fake_contract_code = vec![0; config.create_contract_limit.expect("a value")];
+			AccountCodes::<Test>::insert(fake_contract_address, fake_contract_code);
+
+			let gas_limit: u64 = 700_000;
+			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+			let result = <Test as Config>::Runner::call(
+				H160::default(),
+				fake_contract_address,
+				Vec::new(),
+				U256::from(777),
+				gas_limit,
+				Some(FixedGasPrice::min_gas_price().0),
+				None,
+				None,
+				Vec::new(),
+				true, // transactional
+				true, // must be validated
+				Some(weight_limit),
+				Some(0),
+				&config,
+			)
+			.expect("call succeeds");
+
+			let ratio = <<Test as Config>::GasLimitPovSizeRatio as Get<u64>>::get();
+			let used_gas = result.used_gas;
+			let actual_proof_size = result
+				.weight_info
+				.expect("weight info")
+				.proof_size_usage
+				.expect("proof size usage");
+
+			assert_eq!(used_gas.standard, U256::from(21_000));
+			assert_eq!(used_gas.effective, U256::from(actual_proof_size * ratio));
 		});
 	}
 }

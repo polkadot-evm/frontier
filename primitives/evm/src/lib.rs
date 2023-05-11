@@ -152,10 +152,20 @@ impl WeightInfo {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct UsedGas {
+	/// The used_gas as returned by the evm gasometer on exit.
+	pub standard: U256,
+	/// The result of applying a gas ratio to the most used
+	/// external metric during the evm execution.
+	pub effective: U256,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct ExecutionInfo<T> {
 	pub exit_reason: ExitReason,
 	pub value: T,
-	pub used_gas: U256,
+	pub used_gas: UsedGas,
 	pub weight_info: Option<WeightInfo>,
 	pub logs: Vec<Log>,
 }

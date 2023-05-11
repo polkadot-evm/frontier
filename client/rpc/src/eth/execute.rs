@@ -553,7 +553,7 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						};
 
-						(info.exit_reason, info.value, info.used_gas)
+						(info.exit_reason, info.value, info.used_gas.effective)
 					}
 					None => {
 						let info = if api_version == 1 {
@@ -611,7 +611,7 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
 						};
 
-						(info.exit_reason, Vec::new(), info.used_gas)
+						(info.exit_reason, Vec::new(), info.used_gas.effective)
 					}
 				};
 				Ok(ExecutableResult {
