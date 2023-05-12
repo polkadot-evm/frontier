@@ -43,7 +43,7 @@ pub use fp_evm::{
 	ACCOUNT_STORAGE_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
 
-use frame_support::traits::{Currency, ExistenceRequirement, Get};
+use frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
@@ -316,7 +316,7 @@ where
 			exit_reason: reason,
 			used_gas: fp_evm::UsedGas {
 				standard: used_gas.into(),
-				effective: effective_gas.into(),
+				effective: effective_gas,
 			},
 			weight_info: state.weight_info(),
 			logs: state.substate.logs,
@@ -718,7 +718,7 @@ where
 	}
 
 	fn block_timestamp(&self) -> U256 {
-		let now: u128 = pallet_timestamp::Pallet::<T>::get().unique_saturated_into();
+		let now: u128 = T::Timestamp::now().unique_saturated_into();
 		U256::from(now / 1000)
 	}
 

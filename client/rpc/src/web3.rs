@@ -19,7 +19,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ethereum_types::H256;
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
 use sp_api::{Core, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -53,7 +53,7 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + 'static,
 {
-	fn client_version(&self) -> Result<String> {
+	fn client_version(&self) -> RpcResult<String> {
 		let hash = self.client.info().best_hash;
 		let version = self
 			.client
@@ -70,7 +70,7 @@ where
 		))
 	}
 
-	fn sha3(&self, input: Bytes) -> Result<H256> {
+	fn sha3(&self, input: Bytes) -> RpcResult<H256> {
 		Ok(H256::from(keccak_256(&input.into_vec())))
 	}
 }
