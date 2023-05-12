@@ -91,18 +91,15 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 				genesis_config: testnet_genesis(
 					wasm_binary,
 					// Sudo account (Alith)
-					AccountId::from(hex!("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b")),
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 					// Pre-funded accounts
 					vec![
-						// Alith, Baltathar, Charleth, Dorothy and Faith
-						AccountId::from(hex!("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b")),
-						AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")),
-						AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")),
-						AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")),
-						AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")),
-						// Additional accounts
-						AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")),
-						AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
+						AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
+						AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
+						AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
+						AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
+						AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
+						AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
 					],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
@@ -141,18 +138,15 @@ pub fn local_testnet_config() -> ChainSpec {
 				wasm_binary,
 				// Initial PoA authorities
 				// Sudo account (Alith)
-				AccountId::from(hex!("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b")),
+				AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 				// Pre-funded accounts
 				vec![
-					// Alith, Baltathar, Charleth, Dorothy and Faith
-					AccountId::from(hex!("6Be02d1d3665660d22FF9624b7BE0551ee1Ac91b")),
-					AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")),
-					AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")),
-					AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")),
-					AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")),
-					// Additional accounts
-					AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")),
-					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
+					AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
+					AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
+					AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
+					AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
+					AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
 				],
 				vec![
 					authority_keys_from_seed("Alice"),
