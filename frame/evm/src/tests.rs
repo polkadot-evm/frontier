@@ -392,6 +392,7 @@ mod proof_size_test {
 			let expected_proof_size = reading_main_contract_len
 				+ WRITE_PROOF_SIZE
 				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
+				+ ACCOUNT_STORAGE_PROOF_SIZE
 				+ IS_EMPTY_CHECK_PROOF_SIZE;
 
 			let actual_proof_size = result

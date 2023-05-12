@@ -789,14 +789,10 @@ where
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		// TODO record external cost
 		<AccountStorages<T>>::get(address, index)
 	}
 
 	fn original_storage(&self, address: H160, index: H256) -> Option<H256> {
-		// TODO record external cost
-		// Not being cached means that it was never changed, which means we
-		// can fetch it from storage.
 		Some(
 			self.original_storage
 				.get(&(address, index))
@@ -1153,8 +1149,29 @@ where
 			}
 			// (H160, H256) double map blake2 128 concat key size (68) + value 32
 			Opcode::SLOAD => U256::from(ACCOUNT_STORAGE_PROOF_SIZE),
+			Opcode::SSTORE => {
+				let (address, index) =
+					if let Some(AccessedStorage::AccountStorages((address, index))) =
+						accessed_storage
+					{
+						(address, index)
+					} else {
+						// This must be unreachable, a valid target must be set.
+						// TODO decide how do we want to gracefully handle.
+						return Err(ExitError::OutOfGas);
+					};
+				let mut cost = WRITE_PROOF_SIZE;
+				let maybe_record = !<AccountStoragesAccessed<T>>::get(address, index);
+				// If the slot is yet to be accessed we charge for it, as the evm reads
+				// it prior to the opcode execution.
+				// Skip if the address and index has been already recorded this block.
+				if maybe_record {
+					cost = cost.saturating_add(ACCOUNT_STORAGE_PROOF_SIZE);
+				}
+				U256::from(cost)
+			}
 			// Fixed trie 32 byte hash
-			Opcode::SSTORE | Opcode::CREATE | Opcode::CREATE2 => U256::from(WRITE_PROOF_SIZE),
+			Opcode::CREATE | Opcode::CREATE2 => U256::from(WRITE_PROOF_SIZE),
 			// When calling SUICIDE a target account will receive the self destructing
 			// address's balance. We need to account for both:
 			//	- Target basic account read
