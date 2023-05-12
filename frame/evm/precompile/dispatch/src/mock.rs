@@ -93,7 +93,7 @@ impl pallet_utility::Config for Test {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: u64 = 0;
+	pub const ExistentialDeposit: u64 = 1;
 }
 impl pallet_balances::Config for Test {
 	type Balance = u64;
@@ -105,6 +105,10 @@ impl pallet_balances::Config for Test {
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type ReserveIdentifier = ();
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
+	type MaxHolds = ();
+	type MaxFreezes = ();
 }
 
 parameter_types! {

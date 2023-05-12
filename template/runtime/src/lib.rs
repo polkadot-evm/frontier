@@ -34,7 +34,9 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 #[cfg(feature = "with-rocksdb-weights")]
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
+	codec::MaxEncodedLen,
 	construct_runtime, parameter_types,
+	scale_info::TypeInfo,
 	traits::{ConstU32, ConstU8, FindAuthor, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
@@ -274,6 +276,17 @@ impl pallet_balances::Config for Runtime {
 	type MaxLocks = MaxLocks;
 	type MaxReserves = ();
 	type ReserveIdentifier = [u8; 8];
+	type FreezeIdentifier = ();
+	type MaxFreezes = ();
+	type HoldIdentifier = HoldIdentifier;
+	type MaxHolds = ConstU32<1>;
+}
+
+#[derive(
+	Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Encode, Decode, MaxEncodedLen, Debug, TypeInfo,
+)]
+pub enum HoldIdentifier {
+	Nis,
 }
 
 parameter_types! {
@@ -560,6 +573,14 @@ impl_runtime_apis! {
 	impl sp_api::Metadata<Block> for Runtime {
 		fn metadata() -> OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		fn metadata_at_version(version: u32) -> Option<OpaqueMetadata> {
+			Runtime::metadata_at_version(version)
+		}
+		
+		fn metadata_versions() -> sp_std::vec::Vec<u32> {
+			Runtime::metadata_versions()
 		}
 	}
 

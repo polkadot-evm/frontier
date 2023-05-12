@@ -69,7 +69,7 @@ pub mod weights;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
-		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
+		tokens::{fungible::Inspect, Fortitude, Preservation}, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
 		OnUnbalanced, SignedImbalance, Time, WithdrawReasons,
 	},
 	weights::Weight,
@@ -744,7 +744,7 @@ impl<T: Config> Pallet<T> {
 
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
-		let balance = T::Currency::reducible_balance(&account_id, true);
+		let balance = T::Currency::reducible_balance(&account_id, Preservation::Protect, Fortitude::Polite);
 
 		(
 			Account {

@@ -411,7 +411,7 @@ where
 		client: client.clone(),
 		backend: backend.clone(),
 		task_manager: &mut task_manager,
-		keystore: keystore_container.sync_keystore(),
+		keystore: keystore_container.keystore(),
 		transaction_pool: transaction_pool.clone(),
 		rpc_builder,
 		network: network.clone(),
@@ -487,7 +487,7 @@ where
 				create_inherent_data_providers,
 				force_authoring,
 				backoff_authoring_blocks: Option::<()>::None,
-				keystore: keystore_container.sync_keystore(),
+				keystore: keystore_container.keystore(),
 				block_proposal_slot_portion: sc_consensus_aura::SlotProportion::new(2f32 / 3f32),
 				max_block_proposal_slot_portion: None,
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -505,7 +505,7 @@ where
 		// if the node isn't actively participating in consensus then it doesn't
 		// need a keystore, regardless of which protocol we use below.
 		let keystore = if role.is_authority() {
-			Some(keystore_container.sync_keystore())
+			Some(keystore_container.keystore())
 		} else {
 			None
 		};
