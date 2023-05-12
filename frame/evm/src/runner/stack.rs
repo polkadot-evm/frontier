@@ -747,6 +747,7 @@ where
 		}
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn code(&mut self, address: H160) -> Result<Vec<u8>, ExitError> {
 		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
 		// Skip if the address has been already recorded this block
@@ -779,6 +780,11 @@ where
 				<AccountCodesAccessed<T>>::insert(address, true);
 			}
 		}
+		Ok(<AccountCodes<T>>::get(address))
+	}
+
+	#[cfg(not(feature = "evm-with-weight-limit"))]
+	fn code(&mut self, address: H160) -> Result<Vec<u8>, ExitError> {
 		Ok(<AccountCodes<T>>::get(address))
 	}
 
