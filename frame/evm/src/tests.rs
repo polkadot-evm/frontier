@@ -31,7 +31,7 @@ mod proof_size_test {
 	use super::*;
 	use fp_evm::{
 		CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
-		ACCOUNT_STORAGE_PROOF_SIZE, WRITE_PROOF_SIZE,
+		ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 	};
 	use frame_support::traits::StorageInfoTrait;
 	// pragma solidity ^0.8.2;
@@ -179,7 +179,8 @@ mod proof_size_test {
 			// We just account for a fixed hash proof size write and a storage read from AccountCodesMetadata.
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let write_cost = WRITE_PROOF_SIZE as usize;
-			let expected_proof_size = (read_account_metadata + write_cost) as u64;
+			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
+			let expected_proof_size = (read_account_metadata + write_cost + is_empty_check) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -235,9 +236,11 @@ mod proof_size_test {
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
 			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_contract_len
-				+ reading_main_contract_len) as u64;
+				+ reading_main_contract_len
+				+ is_empty_check) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -283,14 +286,17 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// - Two account reads - cold, then warm -, only cold reads record proof size.
+			// - Two account reads.
 			// - Main contract code read.
 			// - One metadata read.
-			let basic_account_size = ACCOUNT_BASIC_PROOF_SIZE as usize;
+			let basic_account_size = (ACCOUNT_BASIC_PROOF_SIZE * 2) as usize;
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
-			let expected_proof_size =
-				(basic_account_size + read_account_metadata + reading_main_contract_len) as u64;
+			let expected_proof_size = (basic_account_size
+				+ read_account_metadata
+				+ reading_main_contract_len
+				+ is_empty_check) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -337,7 +343,8 @@ mod proof_size_test {
 				AccountCodes::<Test>::get(call_contract_address).len() as u64;
 			let expected_proof_size = reading_main_contract_len
 				+ ACCOUNT_STORAGE_PROOF_SIZE
-				+ ACCOUNT_CODES_METADATA_PROOF_SIZE;
+				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
+				+ IS_EMPTY_CHECK_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
@@ -382,8 +389,10 @@ mod proof_size_test {
 
 			let reading_main_contract_len =
 				AccountCodes::<Test>::get(call_contract_address).len() as u64;
-			let expected_proof_size =
-				reading_main_contract_len + WRITE_PROOF_SIZE + ACCOUNT_CODES_METADATA_PROOF_SIZE;
+			let expected_proof_size = reading_main_contract_len
+				+ WRITE_PROOF_SIZE
+				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
+				+ IS_EMPTY_CHECK_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
@@ -432,7 +441,9 @@ mod proof_size_test {
 			// Find how many random balance reads can we do with the available proof size.
 			let reading_main_contract_len =
 				AccountCodes::<Test>::get(call_contract_address).len() as u64;
-			let overhead = reading_main_contract_len + ACCOUNT_CODES_METADATA_PROOF_SIZE;
+			let overhead = reading_main_contract_len
+				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
+				+ IS_EMPTY_CHECK_PROOF_SIZE;
 			let available_proof_size = weight_limit.proof_size() - overhead;
 			let number_balance_reads =
 				available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
@@ -498,14 +509,16 @@ mod proof_size_test {
 
 			// Expected proof size
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let reading_callee_contract_len =
 				AccountCodes::<Test>::get(subcall_contract_address).len();
 			// In order to do the subcall, we need to check metadata 3 times -
 			// one for each contract + one for the call opcode -, load two bytecodes - caller and callee.
-			let expected_proof_size = ((read_account_metadata * 3)
+			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_callee_contract_len
-				+ reading_main_contract_len) as u64;
+				+ reading_main_contract_len
+				+ is_empty_check) as u64;
 
 			let actual_proof_size = result
 				.weight_info

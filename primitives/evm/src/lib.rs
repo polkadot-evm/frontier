@@ -64,6 +64,8 @@ pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
 pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 /// Fixed trie 32 byte hash.
 pub const WRITE_PROOF_SIZE: u64 = 32;
+/// Account basic proof size + 5 bytes max of `decode_len` call.
+pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
 
 pub enum AccessedStorage {
 	AccountCodes(H160),
