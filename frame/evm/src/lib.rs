@@ -64,12 +64,13 @@ mod mock;
 pub mod runner;
 #[cfg(test)]
 mod tests;
+pub mod weights;
 
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, WithdrawReasons,
+		OnUnbalanced, SignedImbalance, Time, WithdrawReasons,
 	},
 	weights::Weight,
 };
@@ -97,6 +98,7 @@ pub use fp_evm::{
 pub use self::{
 	pallet::*,
 	runner::{Runner, RunnerError},
+	weights::WeightInfo,
 };
 
 #[frame_support::pallet]
@@ -110,7 +112,7 @@ pub mod pallet {
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+	pub trait Config: frame_system::Config {
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -156,6 +158,12 @@ pub mod pallet {
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
 
+		/// Get the timestamp for the current block.
+		type Timestamp: Time;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&LONDON_CONFIG
@@ -166,7 +174,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			address: H160,

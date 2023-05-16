@@ -1,17 +1,11 @@
 import { expect, use as chaiUse } from "chai";
 import chaiAsPromised from "chai-as-promised";
-import { RLP } from "ethers/lib/utils";
 import Web3 from "web3";
 import { AbiItem } from "web3-utils";
 
 import StateOverrideTest from "../build/contracts/StateOverrideTest.json";
 import Test from "../build/contracts/Test.json";
-import {
-	GENESIS_ACCOUNT,
-	GENESIS_ACCOUNT_PRIVATE_KEY,
-	FIRST_CONTRACT_ADDRESS,
-	GENESIS_ACCOUNT_BALANCE,
-} from "./config";
+import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 chaiUse(chaiAsPromised);
@@ -49,7 +43,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.setAllowance(otherAddress, 10).encodeABI(),
+				data: contract.methods.setAllowance(otherAddress, 10).encodeABI(),
 				gas: "0x100000",
 				gasPrice: "0x3B9ACA00",
 				value: "0x0",
@@ -65,7 +59,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.getSenderBalance().encodeABI(),
+				data: contract.methods.getSenderBalance().encodeABI(),
 			},
 		]);
 		const balance = Web3.utils.toBN(
@@ -79,7 +73,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.getSenderBalance().encodeABI(),
+				data: contract.methods.getSenderBalance().encodeABI(),
 			},
 			"latest",
 			{
@@ -96,7 +90,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.availableFunds().encodeABI(),
+				data: contract.methods.availableFunds().encodeABI(),
 			},
 		]);
 		expect(Web3.utils.hexToNumberString(result)).to.equal("100");
@@ -110,7 +104,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.availableFunds().encodeABI(),
+				data: contract.methods.availableFunds().encodeABI(),
 			},
 			"latest",
 			{
@@ -129,7 +123,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.allowance(GENESIS_ACCOUNT, otherAddress).encodeABI(),
+				data: contract.methods.allowance(GENESIS_ACCOUNT, otherAddress).encodeABI(),
 			},
 		]);
 		expect(Web3.utils.hexToNumberString(result)).to.equal("10");
@@ -161,7 +155,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.allowance(GENESIS_ACCOUNT, otherAddress).encodeABI(),
+				data: contract.methods.allowance(GENESIS_ACCOUNT, otherAddress).encodeABI(),
 			},
 			"latest",
 			{
@@ -201,7 +195,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.allowance(GENESIS_ACCOUNT, otherAddress).encodeABI(),
+				data: contract.methods.allowance(GENESIS_ACCOUNT, otherAddress).encodeABI(),
 			},
 			"latest",
 			{
@@ -218,7 +212,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await contract.methods.availableFunds().encodeABI(),
+				data: contract.methods.availableFunds().encodeABI(),
 			},
 			"latest",
 			{
@@ -238,7 +232,7 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: contractAddress,
-				data: await testContract.methods.multiply(5).encodeABI(), // multiplies by 7
+				data: testContract.methods.multiply(5).encodeABI(), // multiplies by 7
 			},
 			"latest",
 			{

@@ -55,13 +55,17 @@ pub mod frontier_backend_client {
 	use jsonrpsee::core::RpcResult;
 	use scale_codec::Encode;
 	// Substrate
-	use sc_client_api::{StorageKey, StorageProvider};
+	use sc_client_api::{
+		backend::{Backend, StorageProvider},
+		StorageKey,
+	};
 	use sp_blockchain::HeaderBackend;
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
 		traits::{Block as BlockT, UniqueSaturatedInto, Zero},
 	};
+	use sp_state_machine::OverlayedChanges;
 	// Frontier
 	use fc_rpc_core::types::BlockNumber;
 
@@ -74,7 +78,7 @@ pub mod frontier_backend_client {
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
-		BE: sc_client_api::Backend<B> + Send + Sync,
+		BE: Backend<B>,
 	{
 		fn is_enabled() -> bool {
 			true
@@ -82,7 +86,7 @@ pub mod frontier_backend_client {
 
 		fn set_overlayed_changes(
 			client: &C,
-			overlayed_changes: &mut sp_state_machine::OverlayedChanges,
+			overlayed_changes: &mut OverlayedChanges,
 			block: B::Hash,
 			_version: u32,
 			address: H160,
@@ -127,7 +131,7 @@ pub mod frontier_backend_client {
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
-		BE: sc_client_api::Backend<B> + Send + Sync,
+		BE: Backend<B>,
 	{
 		fn is_enabled() -> bool {
 			true
@@ -135,7 +139,7 @@ pub mod frontier_backend_client {
 
 		fn set_overlayed_changes(
 			client: &C,
-			overlayed_changes: &mut sp_state_machine::OverlayedChanges,
+			overlayed_changes: &mut OverlayedChanges,
 			block: B::Hash,
 			_version: u32,
 			address: H160,

@@ -20,3 +20,14 @@
 
 pub mod kv;
 pub mod sql;
+
+use sp_api::BlockT;
+
+pub type EthereumBlockNotificationSinks<T> =
+	parking_lot::Mutex<Vec<sc_utils::mpsc::TracingUnboundedSender<T>>>;
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub struct EthereumBlockNotification<Block: BlockT> {
+	pub is_new_best: bool,
+	pub hash: Block::Hash,
+}
