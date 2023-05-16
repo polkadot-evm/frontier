@@ -483,23 +483,16 @@ impl<T: Config> Pallet<T> {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
 
-		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-			transaction_data.gas_limit.low_u64(),
-			true,
-		) {
-			weight_limit if weight_limit.proof_size() > 0 => {
-				// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
-				// Validate the weight limit can afford recording transaction len
-				let _ = weight_limit
-					.proof_size()
-					.checked_sub(Self::transaction_len(transaction))
-					.ok_or(InvalidTransactionWrapper(InvalidTransaction::Custom(
-						TransactionValidationError::GasLimitTooLow as u8,
-					)))
-					.map_err(|e| e.0)?;
-			}
-			_ => {}
-		};
+		let (weight_limit, proof_size_base_cost) =
+			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+				transaction_data.gas_limit.low_u64(),
+				true,
+			) {
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(weight_limit), Some(Self::transaction_len(transaction)))
+				}
+				_ => (None, None),
+			};
 
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
@@ -513,6 +506,8 @@ impl<T: Config> Pallet<T> {
 				is_transactional: true,
 			},
 			transaction_data.clone().into(),
+			weight_limit,
+			proof_size_base_cost,
 		)
 		.validate_in_pool_for(&who)
 		.and_then(|v| v.with_chain_id())
@@ -877,6 +872,17 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
+		let (weight_limit, proof_size_base_cost) =
+			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+				transaction_data.gas_limit.low_u64(),
+				true,
+			) {
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(weight_limit), Some(Self::transaction_len(transaction)))
+				}
+				_ => (None, None),
+			};
+
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -886,6 +892,8 @@ impl<T: Config> Pallet<T> {
 				is_transactional: true,
 			},
 			transaction_data.into(),
+			weight_limit,
+			proof_size_base_cost,
 		)
 		.validate_in_block_for(&who)
 		.and_then(|v| v.with_chain_id())

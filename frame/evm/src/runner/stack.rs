@@ -347,20 +347,6 @@ where
 		proof_size_base_cost: Option<u64>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
-		// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail
-		// Validate the weight limit can afford recording transaction len
-		if let (Some(weight_limit), Some(proof_size_base_cost)) =
-			(weight_limit, proof_size_base_cost)
-		{
-			let _ = weight_limit
-				.proof_size()
-				.checked_sub(proof_size_base_cost)
-				.ok_or(RunnerError {
-					error: Error::<T>::GasLimitTooLow,
-					weight: Weight::zero(),
-				})?;
-		}
-
 		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
 		let (source_account, inner_weight) = Pallet::<T>::account_basic(&source);
 		weight = weight.saturating_add(inner_weight);
@@ -385,6 +371,8 @@ where
 				value,
 				access_list,
 			},
+			weight_limit,
+			proof_size_base_cost,
 		)
 		.validate_in_block_for(&source_account)
 		.and_then(|v| v.with_base_fee())
