@@ -991,7 +991,7 @@ where
 				weight_info.try_record_proof_size_or_fail(
 					IS_EMPTY_CHECK_PROOF_SIZE,
 				)?;
-				
+
 				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
 					return Ok(U256::zero());
 				}
@@ -1040,7 +1040,7 @@ where
 				weight_info.try_record_proof_size_or_fail(
 					IS_EMPTY_CHECK_PROOF_SIZE,
 				)?;
-				
+
 				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
 					return Ok(hex_literal::hex!(
 						"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
