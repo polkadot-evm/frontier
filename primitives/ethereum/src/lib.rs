@@ -24,7 +24,6 @@ pub use ethereum::{
 };
 use ethereum_types::{H160, H256, U256};
 use fp_evm::CheckEvmTransactionInput;
-use frame_support::weights::Weight;
 use scale_codec::{Decode, Encode};
 use sp_std::vec::Vec;
 
@@ -45,7 +44,6 @@ pub trait ValidatedTransaction {
 	fn apply(
 		source: H160,
 		transaction: Transaction,
-		weight_limit: Option<Weight>,
 	) -> frame_support::dispatch::DispatchResultWithPostInfo;
 }
 

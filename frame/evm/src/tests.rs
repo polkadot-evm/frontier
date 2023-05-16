@@ -176,11 +176,10 @@ mod proof_size_test {
 				.expect("create succeeds");
 
 			// Creating a new contract does not involve reading the code from storage.
-			// We just account for a fixed hash proof size write and a storage read from AccountCodesMetadata.
-			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
+			// We just account for a fixed hash proof size write and an empty check.
 			let write_cost = WRITE_PROOF_SIZE as usize;
 			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
-			let expected_proof_size = (read_account_metadata + write_cost + is_empty_check) as u64;
+			let expected_proof_size = (write_cost + is_empty_check) as u64;
 
 			let actual_proof_size = result
 				.weight_info
