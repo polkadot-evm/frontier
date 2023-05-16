@@ -763,18 +763,14 @@ where
 				// First we record account emptiness check.
 				// Transfers to EOAs with standard 21_000 gas limit are able to
 				// pay for this pov size.
-				weight_info.try_record_proof_size_or_fail(
-					IS_EMPTY_CHECK_PROOF_SIZE,
-				)?;
+				weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
 
 				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
 					return Ok(Vec::new());
 				}
 				// Try to record fixed sized `AccountCodesMetadata` read
 				// Tentatively 20 + 8 + 32
-				weight_info.try_record_proof_size_or_fail(
-					ACCOUNT_CODES_METADATA_PROOF_SIZE,
-				)?;
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 				if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 					weight_info.try_record_proof_size_or_fail(meta.size)?;
 				} else {
@@ -988,9 +984,7 @@ where
 				// First we record account emptiness check.
 				// Transfers to EOAs with standard 21_000 gas limit are able to
 				// pay for this pov size.
-				weight_info.try_record_proof_size_or_fail(
-					IS_EMPTY_CHECK_PROOF_SIZE,
-				)?;
+				weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
 
 				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
 					return Ok(U256::zero());
@@ -998,9 +992,7 @@ where
 
 				// Try to record fixed sized `AccountCodesMetadata` read
 				// Tentatively 20 + 8 + 32
-				weight_info.try_record_proof_size_or_fail(
-					ACCOUNT_CODES_METADATA_PROOF_SIZE,
-				)?;
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 
 				if <AccountCodesMetadata<T>>::get(address).is_none() {
 					// If it does not exist, try to record `create_contract_limit` first.
@@ -1037,9 +1029,7 @@ where
 				// First we record account emptiness check.
 				// Transfers to EOAs with standard 21_000 gas limit are able to
 				// pay for this pov size.
-				weight_info.try_record_proof_size_or_fail(
-					IS_EMPTY_CHECK_PROOF_SIZE,
-				)?;
+				weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
 
 				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
 					return Ok(hex_literal::hex!(
@@ -1050,9 +1040,7 @@ where
 
 				// Try to record fixed sized `AccountCodesMetadata` read
 				// Tentatively 20 + 8 + 32
-				weight_info.try_record_proof_size_or_fail(
-					ACCOUNT_CODES_METADATA_PROOF_SIZE,
-				)?;
+				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 
 				if <AccountCodesMetadata<T>>::get(address).is_none() {
 					// If it does not exist, try to record `create_contract_limit` first.

@@ -483,19 +483,22 @@ impl<T: Config> Pallet<T> {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
 
-		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(transaction_data.gas_limit.low_u64(), true) {
+		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+			transaction_data.gas_limit.low_u64(),
+			true,
+		) {
 			weight_limit if weight_limit.proof_size() > 0 => {
 				// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
 				// Validate the weight limit can afford recording transaction len
 				let _ = weight_limit
 					.proof_size()
 					.checked_sub(Self::transaction_len(transaction))
-					.ok_or(InvalidTransactionWrapper(
-						InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
-					))
+					.ok_or(InvalidTransactionWrapper(InvalidTransaction::Custom(
+						TransactionValidationError::GasLimitTooLow as u8,
+					)))
 					.map_err(|e| e.0)?;
 			}
-			_ => {},
+			_ => {}
 		};
 
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
@@ -775,24 +778,27 @@ impl<T: Config> Pallet<T> {
 		let validate = false;
 
 		let (transaction_len, weight_limit) =
-				match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit.low_u64(), true) {
-					weight_limit if weight_limit.proof_size() > 0 => {
-						// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
-						// Validate the weight limit can afford recording transaction len
-						let _ = weight_limit
-							.proof_size()
-							.checked_sub(Self::transaction_len(transaction))
-							.ok_or(DispatchErrorWithPostInfo {
-								post_info: PostDispatchInfo {
-									actual_weight: None,
-									pays_fee: Pays::No,
-								},
-								error: sp_runtime::DispatchError::Exhausted,
-							})?;
-						(Some(Self::transaction_len(transaction)), Some(weight_limit))
-					}
-					_ => (None, None),
-				};
+			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+				gas_limit.low_u64(),
+				true,
+			) {
+				weight_limit if weight_limit.proof_size() > 0 => {
+					// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
+					// Validate the weight limit can afford recording transaction len
+					let _ = weight_limit
+						.proof_size()
+						.checked_sub(Self::transaction_len(transaction))
+						.ok_or(DispatchErrorWithPostInfo {
+							post_info: PostDispatchInfo {
+								actual_weight: None,
+								pays_fee: Pays::No,
+							},
+							error: sp_runtime::DispatchError::Exhausted,
+						})?;
+					(Some(Self::transaction_len(transaction)), Some(weight_limit))
+				}
+				_ => (None, None),
+			};
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(
@@ -957,10 +963,7 @@ impl<T: Config> Pallet<T> {
 
 pub struct ValidatedTransaction<T>(PhantomData<T>);
 impl<T: Config> ValidatedTransactionT for ValidatedTransaction<T> {
-	fn apply(
-		source: H160,
-		transaction: Transaction,
-	) -> DispatchResultWithPostInfo {
+	fn apply(source: H160, transaction: Transaction) -> DispatchResultWithPostInfo {
 		Pallet::<T>::apply_validated_transaction(source, transaction)
 	}
 }
