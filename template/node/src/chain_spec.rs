@@ -1,8 +1,8 @@
 use std::{collections::BTreeMap, str::FromStr};
 
+use hex_literal::hex;
 use serde::{Deserialize, Serialize};
 // Substrate
-use hex_literal::hex;
 use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
