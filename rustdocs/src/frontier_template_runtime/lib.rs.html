@@ -912,8 +912,8 @@
 <span class="kw">use </span>sp_runtime::{
 	create_runtime_str, generic, impl_opaque_keys,
 	traits::{
-		AccountIdLookup, BlakeTwo256, Block <span class="kw">as </span>BlockT, DispatchInfoOf, Dispatchable, Get,
-		IdentifyAccount, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+		BlakeTwo256, Block <span class="kw">as </span>BlockT, DispatchInfoOf, Dispatchable, Get, IdentifyAccount,
+		IdentityLookup, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
@@ -1073,7 +1073,7 @@
 	<span class="doccomment">/// The identifier used to distinguish between accounts.
 	</span><span class="kw">type </span>AccountId = AccountId;
 	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
-	</span><span class="kw">type </span>Lookup = AccountIdLookup&lt;AccountId, ()&gt;;
+	</span><span class="kw">type </span>Lookup = IdentityLookup&lt;AccountId&gt;;
 	<span class="doccomment">/// The header type.
 	</span><span class="kw">type </span>Header = generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
 	<span class="doccomment">/// The ubiquitous event type.
@@ -1330,7 +1330,7 @@
 }
 
 <span class="doccomment">/// The address format for describing accounts.
-</span><span class="kw">pub type </span>Address = sp_runtime::MultiAddress&lt;AccountId, ()&gt;;
+</span><span class="kw">pub type </span>Address = AccountId;
 <span class="doccomment">/// Block header type as expected by this runtime.
 </span><span class="kw">pub type </span>Header = generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
 <span class="doccomment">/// Block type as expected by this runtime.
