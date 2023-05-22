@@ -1,4 +1,6 @@
-use pallet_evm::{Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
+use pallet_evm::{
+	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
+};
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
@@ -46,8 +48,11 @@ where
 		}
 	}
 
-	fn is_precompile(&self, address: H160) -> bool {
-		Self::used_addresses().contains(&address)
+	fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+		IsPrecompileResult::Answer {
+			is_precompile: Self::used_addresses().contains(&address),
+			extra_cost: 0,
+		}
 	}
 }
 
