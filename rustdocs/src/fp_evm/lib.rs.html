@@ -145,6 +145,7 @@
 <a href="#145" id="145">145</a>
 <a href="#146" id="146">146</a>
 <a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -178,6 +179,7 @@
 
 <span class="kw">pub use </span>evm::{
 	backend::{Basic <span class="kw">as </span>Account, Log},
+	executor::stack::IsPrecompileResult,
 	Config, ExitReason,
 };
 

@@ -896,6 +896,33 @@
 <a href="#896" id="896">896</a>
 <a href="#897" id="897">897</a>
 <a href="#898" id="898">898</a>
+<a href="#899" id="899">899</a>
+<a href="#900" id="900">900</a>
+<a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+<a href="#912" id="912">912</a>
+<a href="#913" id="913">913</a>
+<a href="#914" id="914">914</a>
+<a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -925,7 +952,9 @@
 	executor::stack::{Accessed, StackExecutor, StackState <span class="kw">as </span>StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-<span class="kw">use </span>fp_evm::{CallInfo, CreateInfo, ExecutionInfo, Log, PrecompileSet, Vicinity};
+<span class="kw">use </span>fp_evm::{
+	CallInfo, CreateInfo, ExecutionInfo, IsPrecompileResult, Log, PrecompileSet, Vicinity,
+};
 <span class="kw">use </span>frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
 <span class="kw">use </span>sp_core::{H160, H256, U256};
 <span class="kw">use </span>sp_runtime::traits::UniqueSaturatedInto;
@@ -971,6 +1000,7 @@
 				T::PrecompilesType,
 			&gt;,
 		) -&gt; (ExitReason, R),
+		R: Default,
 	{
 		<span class="kw">let </span>(base_fee, weight) = T::FeeCalculator::min_gas_price();
 
@@ -1008,7 +1038,7 @@
 	</span><span class="kw">fn </span>execute_inner&lt;<span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, F, R&gt;(
 		source: H160,
 		value: U256,
-		gas_limit: u64,
+		<span class="kw-2">mut </span>gas_limit: u64,
 		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config </span>evm::Config,
@@ -1027,7 +1057,28 @@
 				T::PrecompilesType,
 			&gt;,
 		) -&gt; (ExitReason, R),
+		R: Default,
 	{
+		<span class="comment">// The precompile check is only used for transactional invocations. However, here we always
+		// execute the check, because the check has side effects.
+		</span><span class="kw">let </span>is_precompile = <span class="kw">match </span>precompiles.is_precompile(source, gas_limit) {
+			IsPrecompileResult::Answer {
+				is_precompile,
+				extra_cost,
+			} =&gt; {
+				gas_limit = gas_limit.saturating_sub(extra_cost);
+				is_precompile
+			}
+			IsPrecompileResult::OutOfGas =&gt; {
+				<span class="kw">return </span><span class="prelude-val">Ok</span>(ExecutionInfo {
+					exit_reason: ExitError::OutOfGas.into(),
+					value: Default::default(),
+					used_gas: gas_limit.into(),
+					logs: Default::default(),
+				})
+			}
+		};
+
 		<span class="comment">// Only check the restrictions of EIP-3607 if the source of the EVM operation is from an external transaction.
 		// If the source of this EVM operation is from an internal call, like from `eth_call` or `eth_estimateGas` RPC,
 		// we will skip the checks for the EIP-3607.
@@ -1039,9 +1090,7 @@
 		// of a precompile. While mainnet Ethereum currently only has stateless precompiles,
 		// projects using Frontier can have stateful precompiles that can manage funds or
 		// which calls other contracts that expects this precompile address to be trustworthy.
-		</span><span class="kw">if </span>is_transactional
-			&amp;&amp; (!&lt;AccountCodes&lt;T&gt;&gt;::get(source).is_empty() || precompiles.is_precompile(source))
-		{
+		</span><span class="kw">if </span>is_transactional &amp;&amp; (!&lt;AccountCodes&lt;T&gt;&gt;::get(source).is_empty() || is_precompile) {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
 				error: Error::&lt;T&gt;::TransactionMustComeFromEOA,
 				weight,
@@ -1514,6 +1563,10 @@
 		<span class="self">self</span>.vicinity.origin
 	}
 
+	<span class="kw">fn </span>block_randomness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
+		<span class="prelude-val">None
+	</span>}
+
 	<span class="kw">fn </span>block_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, number: U256) -&gt; H256 {
 		<span class="kw">if </span>number &gt; U256::from(u32::MAX) {
 			H256::default()
@@ -1623,9 +1676,10 @@
 		<span class="self">self</span>.substate.deleted(address)
 	}
 
-	<span class="kw">fn </span>inc_nonce(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160) {
+	<span class="kw">fn </span>inc_nonce(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
 		<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(address);
 		frame_system::Pallet::&lt;T&gt;::inc_account_nonce(<span class="kw-2">&amp;</span>account_id);
+		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="kw">fn </span>set_storage(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160, index: H256, value: H256) {
