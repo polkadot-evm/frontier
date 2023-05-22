@@ -545,6 +545,7 @@ async fn index_genesis_block<Block, Client, Backend>(
 #[cfg(test)]
 mod test {
 	use super::*;
+	use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
 	use fp_storage::{
 		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
@@ -556,13 +557,31 @@ mod test {
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_io::hashing::twox_128;
-	use sp_runtime::generic::Digest;
+	use sp_runtime::{
+		generic::{Digest, Header},
+		traits::BlakeTwo256,
+	};
 	use sqlx::Row;
 	use std::{collections::BTreeMap, path::Path, sync::Arc};
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	use tempfile::tempdir;
+
+	type OpaqueBlock = sp_runtime::generic::Block<
+		Header<u64, BlakeTwo256>,
+		substrate_test_runtime_client::runtime::Extrinsic,
+	>;
+
+	struct TestSyncOracleNotSyncing;
+	impl sp_consensus::SyncOracle for TestSyncOracleNotSyncing {
+		fn is_major_syncing(&self) -> bool {
+			false
+		}
+		fn is_offline(&self) -> bool {
+			false
+		}
+	}
 
 	fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
 		[twox_128(module), twox_128(storage)].concat().to_vec()
@@ -715,6 +734,14 @@ mod test {
 			));
 		}
 
+		let test_sync_oracle = TestSyncOracleNotSyncing {};
+		let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+			EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
+		let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+
 		// Spawn worker after creating the blocks will resolve the interval future.
 		// Because the SyncWorker is spawned at service level, in the real world this will only
 		// happen when we are in major syncing (where there is lack of import notificatons).
@@ -729,6 +756,8 @@ mod test {
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
 				crate::SyncStrategy::Parachain,
+				Arc::new(test_sync_oracle),
+				pubsub_notification_sinks_inner,
 			)
 			.await
 		});
@@ -833,6 +862,14 @@ mod test {
 		// Pool
 		let pool = indexer_backend.pool().clone();
 
+		let test_sync_oracle = TestSyncOracleNotSyncing {};
+		let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+			EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
+		let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+
 		// Spawn worker after creating the blocks will resolve the interval future.
 		// Because the SyncWorker is spawned at service level, in the real world this will only
 		// happen when we are in major syncing (where there is lack of import notifications).
@@ -849,6 +886,8 @@ mod test {
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
 				crate::SyncStrategy::Parachain,
+				Arc::new(test_sync_oracle),
+				pubsub_notification_sinks_inner,
 			)
 			.await
 		});
@@ -1029,6 +1068,14 @@ mod test {
 		let pool = indexer_backend.pool().clone();
 
 		// Spawn indexer task
+		let test_sync_oracle = TestSyncOracleNotSyncing {};
+		let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+			EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
+		let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+
 		let notification_stream = client.clone().import_notification_stream();
 		let client_inner = client.clone();
 		tokio::task::spawn(async move {
@@ -1042,6 +1089,8 @@ mod test {
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
 				crate::SyncStrategy::Parachain,
+				Arc::new(test_sync_oracle),
+				pubsub_notification_sinks_inner,
 			)
 			.await
 		});
@@ -1214,6 +1263,14 @@ mod test {
 			.expect("sql query must succeed");
 
 		// Spawn indexer task
+		let test_sync_oracle = TestSyncOracleNotSyncing {};
+		let pubsub_notification_sinks: EthereumBlockNotificationSinks<
+			EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
+		let pubsub_notification_sinks_inner = pubsub_notification_sinks.clone();
+
 		let client_inner = client.clone();
 		tokio::task::spawn(async move {
 			crate::sql::SyncWorker::run(
@@ -1226,6 +1283,8 @@ mod test {
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
 				crate::SyncStrategy::Parachain,
+				Arc::new(test_sync_oracle),
+				pubsub_notification_sinks_inner,
 			)
 			.await
 		});
