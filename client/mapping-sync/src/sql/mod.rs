@@ -16,14 +16,18 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+#![allow(clippy::too_many_arguments)]
+
+use crate::EthereumBlockNotification;
 use fp_rpc::EthereumRuntimeRPCApi;
 use futures::prelude::*;
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Backend, HeaderBackend};
+use sp_consensus::SyncOracle;
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use std::{sync::Arc, time::Duration};
+use std::{ops::DerefMut, sync::Arc, time::Duration};
 
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
@@ -72,6 +76,9 @@ where
 		client: Arc<Client>,
 		substrate_backend: Arc<Backend>,
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
+		pubsub_notification_sinks: Arc<
+			crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>,
+		>,
 	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
@@ -131,6 +138,13 @@ where
 							block_hash,
 						)
 						.await;
+						let sinks = &mut pubsub_notification_sinks.lock();
+						for sink in sinks.iter() {
+							let _ = sink.unbounded_send(EthereumBlockNotification {
+								is_new_best: true,
+								hash: block_hash,
+							});
+						}
 					}
 					WorkerCommand::Canonicalize {
 						common,
@@ -178,6 +192,10 @@ where
 		import_notifications: sc_client_api::ImportNotifications<Block>,
 		worker_config: SyncWorkerConfig,
 		sync_strategy: crate::SyncStrategy,
+		sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
+		pubsub_notification_sinks: Arc<
+			crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>,
+		>,
 	) {
 		// work in progress for `SyncStrategy::Normal` to also index non-best blocks.
 		if sync_strategy == crate::SyncStrategy::Normal {
@@ -188,6 +206,7 @@ where
 			client.clone(),
 			substrate_backend.clone(),
 			indexer_backend.clone(),
+			pubsub_notification_sinks.clone(),
 		)
 		.await;
 
@@ -213,7 +232,13 @@ where
 					if let Ok(leaves) = substrate_backend.blockchain().leaves() {
 						tx.send(WorkerCommand::IndexLeaves(leaves)).await.ok();
 					}
-				},
+					if sync_oracle.is_major_syncing() {
+						let sinks = &mut pubsub_notification_sinks.lock();
+						if !sinks.is_empty() {
+							*sinks.deref_mut() = vec![];
+						}
+					}
+				}
 				notification = notifications.next() => if let Some(notification) = notification {
 					log::debug!(
 						target: "frontier-sql",

@@ -197,6 +197,8 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 						check_indexed_blocks_interval: Duration::from_secs(60),
 					},
 					fc_mapping_sync::SyncStrategy::Parachain,
+					sync,
+					pubsub_notification_sinks,
 				),
 			);
 		}
