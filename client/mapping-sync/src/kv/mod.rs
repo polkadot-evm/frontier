@@ -31,11 +31,10 @@ use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Zero};
 // Frontier
+use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 use fc_storage::OverrideHandle;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
-
-use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 
 pub fn sync_block<Block: BlockT, C, BE>(
 	client: &C,
@@ -214,7 +213,6 @@ where
 		frontier_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
-		Ok(true)
 	} else {
 		if SyncStrategy::Parachain == strategy
 			&& operating_header.number() > &client.info().best_number
@@ -227,22 +225,22 @@ where
 		frontier_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
-		// Notify on import and remove closed channels.
-		// Only notify when the node is node in major syncing.
-		let sinks = &mut pubsub_notification_sinks.lock();
-		sinks.retain(|sink| {
-			if !sync_oracle.is_major_syncing() {
-				let hash = operating_header.hash();
-				let is_new_best = client.info().best_hash == hash;
-				sink.unbounded_send(EthereumBlockNotification { is_new_best, hash })
-					.is_ok()
-			} else {
-				// Remove from the pool if in major syncing.
-				false
-			}
-		});
-		Ok(true)
 	}
+	// Notify on import and remove closed channels.
+	// Only notify when the node is node in major syncing.
+	let sinks = &mut pubsub_notification_sinks.lock();
+	sinks.retain(|sink| {
+		if !sync_oracle.is_major_syncing() {
+			let hash = operating_header.hash();
+			let is_new_best = client.info().best_hash == hash;
+			sink.unbounded_send(EthereumBlockNotification { is_new_best, hash })
+				.is_ok()
+		} else {
+			// Remove from the pool if in major syncing.
+			false
+		}
+	});
+	Ok(true)
 }
 
 pub fn sync_blocks<Block: BlockT, C, BE>(
