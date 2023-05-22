@@ -20,7 +20,7 @@
 
 mod worker;
 
-pub use worker::{MappingSyncWorker, SyncStrategy};
+pub use worker::MappingSyncWorker;
 
 use std::sync::Arc;
 
@@ -31,7 +31,7 @@ use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Zero};
 // Frontier
-use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
+use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 use fc_storage::OverrideHandle;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;

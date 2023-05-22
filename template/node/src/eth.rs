@@ -176,7 +176,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 					Arc::new(b),
 					3,
 					0,
-					fc_mapping_sync::kv::SyncStrategy::Normal,
+					fc_mapping_sync::SyncStrategy::Normal,
 					sync,
 					pubsub_notification_sinks,
 				)
@@ -196,6 +196,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 						read_notification_timeout: Duration::from_secs(10),
 						check_indexed_blocks_interval: Duration::from_secs(60),
 					},
+					fc_mapping_sync::SyncStrategy::Parachain,
 				),
 			);
 		}

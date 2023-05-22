@@ -177,7 +177,13 @@ where
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 		import_notifications: sc_client_api::ImportNotifications<Block>,
 		worker_config: SyncWorkerConfig,
+		sync_strategy: crate::SyncStrategy,
 	) {
+		// work in progress for `SyncStrategy::Normal` to also index non-best blocks.
+		if sync_strategy == crate::SyncStrategy::Normal {
+			panic!("'SyncStrategy::Normal' is not supported")
+		}
+
 		let tx = Self::spawn_worker(
 			client.clone(),
 			substrate_backend.clone(),
@@ -697,6 +703,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(1),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
+				crate::SyncStrategy::Parachain,
 			)
 			.await
 		});
@@ -816,6 +823,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(10),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
+				crate::SyncStrategy::Parachain,
 			)
 			.await
 		});
@@ -1008,6 +1016,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(10),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
+				crate::SyncStrategy::Parachain,
 			)
 			.await
 		});
@@ -1191,6 +1200,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(10),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
+				crate::SyncStrategy::Parachain,
 			)
 			.await
 		});

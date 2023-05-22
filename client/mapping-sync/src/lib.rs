@@ -23,6 +23,12 @@ pub mod sql;
 
 use sp_api::BlockT;
 
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub enum SyncStrategy {
+	Normal,
+	Parachain,
+}
+
 pub type EthereumBlockNotificationSinks<T> =
 	parking_lot::Mutex<Vec<sc_utils::mpsc::TracingUnboundedSender<T>>>;
 
