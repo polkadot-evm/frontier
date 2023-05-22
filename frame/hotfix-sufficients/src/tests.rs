@@ -27,7 +27,7 @@ use crate::{
 fn test_hotfix_inc_account_sufficients_returns_error_if_max_addresses_exceeded() {
 	new_test_ext().execute_with(|| {
 		let max_address_count = 1000;
-		let addresses = (0..max_address_count + 1 as u64)
+		let addresses = (0..max_address_count + 1_u64)
 			.map(H160::from_low_u64_le)
 			.collect::<Vec<H160>>();
 

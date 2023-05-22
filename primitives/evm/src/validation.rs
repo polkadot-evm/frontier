@@ -318,93 +318,108 @@ mod tests {
 	fn default_transaction<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.is_transactional = is_transactional;
-		test_env(input)
+		test_env(TestCase {
+			is_transactional,
+			..Default::default()
+		})
 	}
 
 	fn transaction_gas_limit_low<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.gas_limit = U256::from(1u8);
-		input.is_transactional = is_transactional;
-		test_env(input)
+		test_env(TestCase {
+			is_transactional,
+			gas_limit: U256::from(1u8),
+			..Default::default()
+		})
 	}
 
 	fn transaction_gas_limit_high<'config>() -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.blockchain_gas_limit = U256::from(1u8);
-		test_env(input)
+		test_env(TestCase {
+			blockchain_gas_limit: U256::from(1u8),
+			..Default::default()
+		})
 	}
 
 	fn transaction_nonce_high<'config>() -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.nonce = U256::from(10u8);
-		test_env(input)
+		test_env(TestCase {
+			nonce: U256::from(10u8),
+			..Default::default()
+		})
 	}
 
 	fn transaction_invalid_chain_id<'config>() -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.chain_id = Some(555u64);
-		test_env(input)
+		test_env(TestCase {
+			chain_id: Some(555u64),
+			..Default::default()
+		})
 	}
 
 	fn transaction_none_fee<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.max_fee_per_gas = None;
-		input.max_priority_fee_per_gas = None;
-		input.is_transactional = is_transactional;
-		test_env(input)
+		test_env(TestCase {
+			max_fee_per_gas: None,
+			max_priority_fee_per_gas: None,
+			is_transactional,
+			..Default::default()
+		})
 	}
 
 	fn transaction_max_fee_low<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.max_fee_per_gas = Some(U256::from(1u8));
-		input.max_priority_fee_per_gas = None;
-		input.is_transactional = is_transactional;
-		test_env(input)
+		test_env(TestCase {
+			max_fee_per_gas: Some(U256::from(1u8)),
+			max_priority_fee_per_gas: None,
+			is_transactional,
+			..Default::default()
+		})
 	}
 
 	fn transaction_priority_fee_high<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.max_priority_fee_per_gas = Some(U256::from(1_100_000_000));
-		input.is_transactional = is_transactional;
-		test_env(input)
+		test_env(TestCase {
+			max_priority_fee_per_gas: Some(U256::from(1_100_000_000)),
+			is_transactional,
+			..Default::default()
+		})
 	}
 
 	fn transaction_max_fee_high<'config>(tip: bool) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.max_fee_per_gas = Some(U256::from(5_000_000_000u128));
 		if !tip {
-			input.max_priority_fee_per_gas = None;
+			return test_env(TestCase {
+				max_fee_per_gas: Some(U256::from(5_000_000_000u128)),
+				max_priority_fee_per_gas: None,
+				..Default::default()
+			});
 		}
-		test_env(input)
+		test_env(TestCase {
+			max_fee_per_gas: Some(U256::from(5_000_000_000u128)),
+			..Default::default()
+		})
 	}
 
 	fn legacy_transaction<'config>() -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.gas_price = Some(U256::from(1_000_000_000u128));
-		input.max_fee_per_gas = None;
-		input.max_priority_fee_per_gas = None;
-		test_env(input)
+		test_env(TestCase {
+			gas_price: Some(U256::from(1_000_000_000u128)),
+			max_fee_per_gas: None,
+			max_priority_fee_per_gas: None,
+			..Default::default()
+		})
 	}
 
 	fn invalid_transaction_mixed_fees<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
-		let mut input = TestCase::default();
-		input.max_fee_per_gas = Some(U256::from(1_000_000_000u128));
-		input.gas_price = Some(U256::from(1_000_000_000u128));
-		input.max_priority_fee_per_gas = None;
-		input.is_transactional = is_transactional;
-		test_env(input)
+		test_env(TestCase {
+			gas_price: Some(U256::from(1_000_000_000u128)),
+			max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+			max_priority_fee_per_gas: None,
+			is_transactional,
+			..Default::default()
+		})
 	}
 
 	// Tests

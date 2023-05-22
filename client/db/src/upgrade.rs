@@ -454,7 +454,7 @@ mod tests {
 			}
 
 			// Writes version 1 to file.
-			let _ = std::fs::create_dir_all(&path).expect("db path created");
+			std::fs::create_dir_all(path).expect("db path created");
 			let mut version_path = path.to_owned();
 			version_path.push("db_version");
 			let mut version_file =
@@ -464,7 +464,7 @@ mod tests {
 				.expect("write version 1");
 
 			// Upgrade database from version 1 to 2
-			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
+			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), path, &setting.source);
 
 			// Check data after migration
 			let backend = open_frontier_backend::<OpaqueBlock, _>(client, &setting)
@@ -491,7 +491,7 @@ mod tests {
 			}
 
 			// Upgrade db version file
-			assert_eq!(super::current_version(&path).expect("version"), 2u32);
+			assert_eq!(super::current_version(path).expect("version"), 2u32);
 		}
 	}
 
@@ -512,10 +512,10 @@ mod tests {
 			},
 		};
 		let path = setting.source.path().unwrap();
-		let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), &path, &setting.source);
+		let _ = super::upgrade_db::<OpaqueBlock, _>(client, path, &setting.source);
 
 		let mut file =
-			std::fs::File::open(crate::upgrade::version_file_path(&path)).expect("file exist");
+			std::fs::File::open(crate::upgrade::version_file_path(path)).expect("file exist");
 
 		let mut s = String::new();
 		file.read_to_string(&mut s).expect("read file contents");

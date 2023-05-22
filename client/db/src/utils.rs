@@ -51,6 +51,7 @@ pub fn open_database<Block: BlockT, C: HeaderBackend<Block>>(
 }
 
 #[cfg(feature = "kvdb-rocksdb")]
+#[allow(unused_variables)]
 fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: &Path,
@@ -85,6 +86,7 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 }
 
 #[cfg(feature = "parity-db")]
+#[allow(unused_variables)]
 fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: &Path,
