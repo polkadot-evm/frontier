@@ -25,12 +25,12 @@ use hex_literal::hex;
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
 ))]
-use frontier_template_runtime::Signature;
+use frontier_template_runtime_accountid32 as frontier_template_runtime;
 #[cfg(any(
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
 ))]
-use frontier_template_runtime_accountid32 as frontier_template_runtime;
+use frontier_template_runtime::Signature;
 #[cfg(any(
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
@@ -87,7 +87,6 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
 ))]
-#[allow(dead_code)]
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
