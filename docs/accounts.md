@@ -16,3 +16,13 @@ The Runtime's `Signature` type is configured as [`sp_runtime::MultiSignature`](h
 The second strategy consists of using `fp-account` so that `AccountId20` is the Account type used for `frame_system::pallet::Config::AccountId`.
 
 The Runtime's `Signature` type is configured as `EthereumSigner`, which means only `ECDSA` signatures are supported.
+
+# Template Runtimes
+
+Frontier provides two different runtimes, one for each strategy.
+You can choose which one want to build by using the `--feature` flag. For example:
+```
+$ cargo build --release                        # this builds a runtime with AccountId32
+$ cargo build --release --features accountid32 # this also builds a runtime with AccountId32
+$ cargo build --release --features accountid20 # this build a runtime with AccountId20
+```

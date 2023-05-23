@@ -28,6 +28,11 @@ To build the chain, execute the following commands from the project root:
 $ cargo build --release
 ```
 
+By default, this will build a runtime with `AccountId32` as the account type. The same happens if you build it with `--features accountid32`.
+Alternatively, you can use the `--features accountid20` to choose `AccountId20` instead.
+
+Please refer to [`docs/accounts.md`](../docs/accounts.md) for more information on account types.
+
 To execute the chain, run:
 
 ```
