@@ -248,8 +248,10 @@ mod tests {
 		// Backend
 		let backend = builder.backend();
 		// Client
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime_accountid32::RuntimeApi, _>(None);
+		let (client, _) = builder
+			.build_with_native_executor::<frontier_template_runtime_accountid32::RuntimeApi, _>(
+				None,
+			);
 		let mut client = Arc::new(client);
 		// Overrides
 		let mut overrides_map = BTreeMap::new();
@@ -386,8 +388,10 @@ mod tests {
 		// Backend
 		let backend = builder.backend();
 		// Client
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime_accountid32::RuntimeApi, _>(None);
+		let (client, _) = builder
+			.build_with_native_executor::<frontier_template_runtime_accountid32::RuntimeApi, _>(
+				None,
+			);
 		let mut client = Arc::new(client);
 		// Overrides
 		let mut overrides_map = BTreeMap::new();

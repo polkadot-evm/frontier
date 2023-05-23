@@ -2,7 +2,9 @@ use std::{collections::BTreeMap, str::FromStr};
 
 // we don't allow accountid20 and accountid32 features to be enabled at the same time
 #[cfg(all(feature = "accountid20", feature = "accountid32"))]
-compile_error!("feature \"accountid20\" and feature \"accountid32\" cannot be enabled at the same time");
+compile_error!(
+	"feature \"accountid20\" and feature \"accountid32\" cannot be enabled at the same time"
+);
 
 use serde::{Deserialize, Serialize};
 // Substrate
@@ -19,13 +21,25 @@ use frontier_template_runtime_accountid20 as frontier_template_runtime;
 use hex_literal::hex;
 
 // if accountid32 feature is explictly enabled, or no accountid feature is enabled
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
-use frontier_template_runtime_accountid32 as frontier_template_runtime;
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 use frontier_template_runtime::Signature;
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
+use frontier_template_runtime_accountid32 as frontier_template_runtime;
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 use sp_core::ecdsa;
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 use sp_runtime::traits::{IdentifyAccount, Verify};
 
 // Frontier
@@ -69,12 +83,18 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 		.public()
 }
 
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 #[allow(dead_code)]
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
@@ -108,7 +128,7 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 			DevGenesisExt {
 				genesis_config: testnet_genesis(
 					wasm_binary,
-						// Sudo account (Alith)
+					// Sudo account (Alith)
 					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 					// Pre-funded accounts
 					vec![
@@ -142,7 +162,10 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	)
 }
 
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -234,7 +257,10 @@ pub fn local_testnet_config() -> ChainSpec {
 	)
 }
 
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 pub fn local_testnet_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 

@@ -5,14 +5,19 @@ use sp_runtime::traits::BlakeTwo256;
 
 // we don't allow accountid20 and accountid32 features to be enabled at the same time
 #[cfg(all(feature = "accountid20", feature = "accountid32"))]
-compile_error!("feature \"accountid20\" and feature \"accountid32\" cannot be enabled at the same time");
+compile_error!(
+	"feature \"accountid20\" and feature \"accountid32\" cannot be enabled at the same time"
+);
 
 // if accountid20 feature is enabled
 #[cfg(feature = "accountid20")]
 use frontier_template_runtime_accountid20 as frontier_template_runtime;
 
 // if accountid32 feature is explictly enabled, or no accountid feature is enabled
-#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+#[cfg(any(
+	feature = "accountid32",
+	not(any(feature = "accountid20", feature = "accountid32"))
+))]
 use frontier_template_runtime_accountid32 as frontier_template_runtime;
 
 // Local
