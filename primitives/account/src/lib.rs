@@ -157,8 +157,8 @@ impl EthereumSignature {
 	Decode,
 	PassByInner,
 	MaxEncodedLen,
-	RuntimeDebug.
-	TypeInfo
+	RuntimeDebug,
+	TypeInfo,
 )]
 pub struct EthereumSigner([u8; 20]);
 
