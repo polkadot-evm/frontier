@@ -1,8 +1,8 @@
 [package]
-name = "frontier-template-runtime"
+name = "frontier-template-runtime-accountid32"
 version = "0.0.0"
 license = "Unlicense"
-description = "A fresh FRAME-based Substrate runtime, ready for hacking."
+description = "A fresh FRAME-based Substrate runtime, ready for hacking. Uses AccountId32."
 publish = false
 authors = { workspace = true }
 edition = { workspace = true }
@@ -57,6 +57,8 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
+# Frontier Template Runtime Common
+frontier-template-runtime-common = { path = "../frontier-template-runtime-common", workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
@@ -110,6 +112,8 @@ std = [
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",
 	"pallet-hotfix-sufficients/std",
+	# Frontier Template Runtime Common
+	"frontier-template-runtime-common/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",

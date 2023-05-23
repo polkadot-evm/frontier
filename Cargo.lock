@@ -2050,7 +2050,7 @@ dependencies = [
  "fc-db",
  "fp-rpc",
  "fp-storage",
- "frontier-template-runtime",
+ "frontier-template-runtime-accountid32",
  "futures",
  "parity-scale-codec",
  "sc-block-builder",
@@ -2117,7 +2117,7 @@ dependencies = [
  "fp-consensus",
  "fp-rpc",
  "fp-storage",
- "frontier-template-runtime",
+ "frontier-template-runtime-accountid32",
  "futures",
  "futures-timer",
  "log",
@@ -2672,7 +2672,8 @@ dependencies = [
  "frame-benchmarking-cli",
  "frame-system",
  "frame-system-rpc-runtime-api",
- "frontier-template-runtime",
+ "frontier-template-runtime-accountid20",
+ "frontier-template-runtime-accountid32",
  "futures",
  "hex-literal",
  "jsonrpsee",
@@ -2720,7 +2721,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "frontier-template-runtime"
+name = "frontier-template-runtime-accountid20"
 version = "0.0.0"
 dependencies = [
  "fp-account",
@@ -2733,6 +2734,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "frontier-template-runtime-common",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",
@@ -2763,6 +2765,65 @@ dependencies = [
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
+]
+
+[[package]]
+name = "frontier-template-runtime-accountid32"
+version = "0.0.0"
+dependencies = [
+ "fp-account",
+ "fp-evm",
+ "fp-rpc",
+ "fp-self-contained",
+ "frame-benchmarking",
+ "frame-executive",
+ "frame-support",
+ "frame-system",
+ "frame-system-benchmarking",
+ "frame-system-rpc-runtime-api",
+ "frontier-template-runtime-common",
+ "pallet-aura",
+ "pallet-balances",
+ "pallet-base-fee",
+ "pallet-dynamic-fee",
+ "pallet-ethereum",
+ "pallet-evm",
+ "pallet-evm-chain-id",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "pallet-grandpa",
+ "pallet-hotfix-sufficients",
+ "pallet-sudo",
+ "pallet-timestamp",
+ "pallet-transaction-payment",
+ "pallet-transaction-payment-rpc-runtime-api",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-api",
+ "sp-block-builder",
+ "sp-consensus-aura",
+ "sp-core",
+ "sp-inherents",
+ "sp-offchain",
+ "sp-runtime",
+ "sp-session",
+ "sp-std",
+ "sp-transaction-pool",
+ "sp-version",
+ "substrate-wasm-builder",
+]
+
+[[package]]
+name = "frontier-template-runtime-common"
+version = "0.0.0"
+dependencies = [
+ "pallet-evm",
+ "pallet-evm-precompile-modexp",
+ "pallet-evm-precompile-sha3fips",
+ "pallet-evm-precompile-simple",
+ "sp-core",
+ "sp-std",
 ]
 
 [[package]]

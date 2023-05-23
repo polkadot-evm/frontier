@@ -1,0 +1,35 @@
+[package]
+name = "frontier-template-runtime-common"
+version = "0.0.0"
+license = "Unlicense"
+description = "Common definitions for the Frontier template runtimes."
+publish = false
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+
+# Substrate
+sp-core = { workspace = true }
+sp-std = { workspace = true }
+
+# Frontier FRAME
+pallet-evm = { workspace = true }
+pallet-evm-precompile-modexp = { workspace = true }
+pallet-evm-precompile-sha3fips = { workspace = true }
+pallet-evm-precompile-simple = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+    "sp-core/std",
+    "sp-std/std",
+    "pallet-evm/std",
+    "pallet-evm-precompile-modexp/std",
+    "pallet-evm-precompile-sha3fips/std",
+    "pallet-evm-precompile-simple/std",
+]

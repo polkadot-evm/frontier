@@ -1,19 +1,36 @@
 use std::{collections::BTreeMap, str::FromStr};
 
-use hex_literal::hex;
+// we don't allow accountid20 and accountid32 features to be enabled at the same time
+#[cfg(all(feature = "accountid20", feature = "accountid32"))]
+compile_error!("feature \"accountid20\" and feature \"accountid32\" cannot be enabled at the same time");
+
 use serde::{Deserialize, Serialize};
 // Substrate
 use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-#[allow(unused_imports)]
-use sp_core::ecdsa;
 use sp_core::{storage::Storage, Pair, Public, H160, U256};
-use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
+
+// iff accountid20 feature is enabled
+#[cfg(feature = "accountid20")]
+use frontier_template_runtime_accountid20 as frontier_template_runtime;
+#[cfg(feature = "accountid20")]
+use hex_literal::hex;
+
+// if accountid32 feature is explictly enabled, or no accountid feature is enabled
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+use frontier_template_runtime_accountid32 as frontier_template_runtime;
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+use frontier_template_runtime::Signature;
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+use sp_core::ecdsa;
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+use sp_runtime::traits::{IdentifyAccount, Verify};
+
 // Frontier
 use frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
+	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -52,12 +69,12 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 		.public()
 }
 
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
 #[allow(dead_code)]
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
-/// For use with `AccountId32`, `dead_code` if `AccountId20`.
-#[allow(dead_code)]
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
@@ -77,6 +94,7 @@ fn properties() -> Properties {
 	properties
 }
 
+#[cfg(feature = "accountid20")]
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -90,7 +108,7 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 			DevGenesisExt {
 				genesis_config: testnet_genesis(
 					wasm_binary,
-					// Sudo account (Alith)
+						// Sudo account (Alith)
 					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 					// Pre-funded accounts
 					vec![
@@ -124,6 +142,53 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	)
 }
 
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
+	let wasm_binary = WASM_BINARY.expect("WASM not available");
+
+	DevChainSpec::from_genesis(
+		// Name
+		"Development",
+		// ID
+		"dev",
+		ChainType::Development,
+		move || {
+			DevGenesisExt {
+				genesis_config: testnet_genesis(
+					wasm_binary,
+					// Sudo account (Alith)
+					get_account_id_from_seed::<ecdsa::Public>("Alice"),
+					// Pre-funded accounts
+					vec![
+						get_account_id_from_seed::<ecdsa::Public>("Alice"),
+						get_account_id_from_seed::<ecdsa::Public>("Bob"),
+						get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
+						get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
+					],
+					// Initial PoA authorities
+					vec![authority_keys_from_seed("Alice")],
+					// Ethereum chain ID
+					SS58Prefix::get() as u64,
+				),
+				enable_manual_seal,
+			}
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Fork ID
+		None,
+		// Properties
+		Some(properties()),
+		// Extensions
+		None,
+	)
+}
+
+#[cfg(feature = "accountid20")]
 pub fn local_testnet_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -147,6 +212,57 @@ pub fn local_testnet_config() -> ChainSpec {
 					AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
 					AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
 					AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
+				],
+				vec![
+					authority_keys_from_seed("Alice"),
+					authority_keys_from_seed("Bob"),
+				],
+				42,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		None,
+		// Properties
+		None,
+		// Extensions
+		None,
+	)
+}
+
+#[cfg(any(feature = "accountid32", not(any(feature = "accountid20", feature = "accountid32"))))]
+pub fn local_testnet_config() -> ChainSpec {
+	let wasm_binary = WASM_BINARY.expect("WASM not available");
+
+	ChainSpec::from_genesis(
+		// Name
+		"Local Testnet",
+		// ID
+		"local_testnet",
+		ChainType::Local,
+		move || {
+			testnet_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				get_account_id_from_seed::<ecdsa::Public>("Alice"),
+				// Pre-funded accounts
+				vec![
+					get_account_id_from_seed::<ecdsa::Public>("Alice"),
+					get_account_id_from_seed::<ecdsa::Public>("Bob"),
+					get_account_id_from_seed::<ecdsa::Public>("Charlie"),
+					get_account_id_from_seed::<ecdsa::Public>("Dave"),
+					get_account_id_from_seed::<ecdsa::Public>("Eve"),
+					get_account_id_from_seed::<ecdsa::Public>("Ferdie"),
+					get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Charlie//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Dave//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Eve//stash"),
+					get_account_id_from_seed::<ecdsa::Public>("Ferdie//stash"),
 				],
 				vec![
 					authority_keys_from_seed("Alice"),

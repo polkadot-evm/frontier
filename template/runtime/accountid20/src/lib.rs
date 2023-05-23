@@ -56,8 +56,7 @@ pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
-mod precompiles;
-use precompiles::FrontierPrecompiles;
+use frontier_template_runtime_common::precompiles::FrontierPrecompiles;
 
 /// Type of block number.
 pub type BlockNumber = u32;

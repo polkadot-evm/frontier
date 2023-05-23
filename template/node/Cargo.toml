@@ -79,19 +79,29 @@ fp-account = { workspace = true }
 fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
-frontier-template-runtime = { workspace = true, features = ["default"] }
+frontier-template-runtime-accountid20 = { workspace = true, features = ["default"] }
+frontier-template-runtime-accountid32 = { workspace = true, features = ["default"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
 
 [features]
 default = ["with-rocksdb-weights"]
-with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
-with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
+accountid20 = []
+accountid32 = []
+with-rocksdb-weights = [
+	"frontier-template-runtime-accountid20/with-rocksdb-weights",
+	"frontier-template-runtime-accountid32/with-rocksdb-weights"
+]
+with-paritydb-weights = [
+	"frontier-template-runtime-accountid20/with-paritydb-weights",
+	"frontier-template-runtime-accountid32/with-rocksdb-weights"
+]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
-	"frontier-template-runtime/runtime-benchmarks",
+	"frontier-template-runtime-accountid20/runtime-benchmarks",
+	"frontier-template-runtime-accountid32/runtime-benchmarks",
 ]

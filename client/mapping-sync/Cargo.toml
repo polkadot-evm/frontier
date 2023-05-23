@@ -35,7 +35,7 @@ tempfile = "3.3.0"
 tokio = { version = "1.24", features = ["sync"] }
 #Frontier
 fp-storage = { workspace = true, features = ["default"] }
-frontier-template-runtime = { workspace = true, features = ["default"] }
+frontier-template-runtime-accountid32 = { workspace = true, features = ["default"] }
 # Substrate
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true }
