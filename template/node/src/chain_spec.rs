@@ -25,12 +25,12 @@ use hex_literal::hex;
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
 ))]
-use frontier_template_runtime_accountid32 as frontier_template_runtime;
+use frontier_template_runtime::Signature;
 #[cfg(any(
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
 ))]
-use frontier_template_runtime::Signature;
+use frontier_template_runtime_accountid32 as frontier_template_runtime;
 #[cfg(any(
 	feature = "accountid32",
 	not(any(feature = "accountid20", feature = "accountid32"))
