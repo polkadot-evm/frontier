@@ -485,7 +485,7 @@ impl<T: Config> Pallet<T> {
 
 		let (weight_limit, proof_size_base_cost) =
 			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.low_u64(),
+				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
 				weight_limit if weight_limit.proof_size() > 0 => {
@@ -774,7 +774,7 @@ impl<T: Config> Pallet<T> {
 
 		let (transaction_len, weight_limit) =
 			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				gas_limit.low_u64(),
+				gas_limit.unique_saturated_into(),
 				true,
 			) {
 				weight_limit if weight_limit.proof_size() > 0 => {
@@ -874,7 +874,7 @@ impl<T: Config> Pallet<T> {
 
 		let (weight_limit, proof_size_base_cost) =
 			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.low_u64(),
+				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
 				weight_limit if weight_limit.proof_size() > 0 => {
