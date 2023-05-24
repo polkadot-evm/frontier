@@ -91,11 +91,11 @@ accountid20 = []
 accountid32 = []
 with-rocksdb-weights = [
 	"frontier-template-runtime-accountid20/with-rocksdb-weights",
-	"frontier-template-runtime-accountid32/with-rocksdb-weights"
+	"frontier-template-runtime-accountid32/with-rocksdb-weights",
 ]
 with-paritydb-weights = [
 	"frontier-template-runtime-accountid20/with-paritydb-weights",
-	"frontier-template-runtime-accountid32/with-rocksdb-weights"
+	"frontier-template-runtime-accountid32/with-rocksdb-weights",
 ]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [

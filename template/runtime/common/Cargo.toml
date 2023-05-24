@@ -26,10 +26,10 @@ pallet-evm-precompile-simple = { workspace = true }
 [features]
 default = ["std"]
 std = [
-    "sp-core/std",
-    "sp-std/std",
-    "pallet-evm/std",
-    "pallet-evm-precompile-modexp/std",
-    "pallet-evm-precompile-sha3fips/std",
-    "pallet-evm-precompile-simple/std",
+	"sp-core/std",
+	"sp-std/std",
+	"pallet-evm/std",
+	"pallet-evm-precompile-modexp/std",
+	"pallet-evm-precompile-sha3fips/std",
+	"pallet-evm-precompile-simple/std",
 ]

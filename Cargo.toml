@@ -155,9 +155,9 @@ pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evm/precom
 pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test-vector-support" }
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
-frontier-template-runtime-common = { path = "template/runtime/common", default-features = false }
 frontier-template-runtime-accountid20 = { path = "template/runtime/accountid20", default-features = false }
 frontier-template-runtime-accountid32 = { path = "template/runtime/accountid32", default-features = false }
+frontier-template-runtime-common = { path = "template/runtime/common", default-features = false }
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-bw6-761 = { version = "0.4.0", default-features = false }
