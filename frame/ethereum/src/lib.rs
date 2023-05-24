@@ -778,18 +778,6 @@ impl<T: Config> Pallet<T> {
 				true,
 			) {
 				weight_limit if weight_limit.proof_size() > 0 => {
-					// Try to subtract the encoded extrinsic from the Weight proof_size limit or fail
-					// Validate the weight limit can afford recording transaction len
-					let _ = weight_limit
-						.proof_size()
-						.checked_sub(Self::transaction_len(transaction))
-						.ok_or(DispatchErrorWithPostInfo {
-							post_info: PostDispatchInfo {
-								actual_weight: None,
-								pays_fee: Pays::No,
-							},
-							error: sp_runtime::DispatchError::Exhausted,
-						})?;
 					(Some(Self::transaction_len(transaction)), Some(weight_limit))
 				}
 				_ => (None, None),
