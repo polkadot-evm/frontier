@@ -64,12 +64,13 @@ mod mock;
 pub mod runner;
 #[cfg(test)]
 mod tests;
+pub mod weights;
 
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, WithdrawReasons,
+		OnUnbalanced, SignedImbalance, Time, WithdrawReasons,
 	},
 	weights::Weight,
 };
@@ -91,13 +92,14 @@ use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
+	PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 pub use self::{
 	pallet::*,
 	runner::{Runner, RunnerError},
+	weights::WeightInfo,
 };
 
 #[frame_support::pallet]
@@ -107,12 +109,11 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+	pub trait Config: frame_system::Config {
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -158,6 +159,12 @@ pub mod pallet {
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
 
+		/// Get the timestamp for the current block.
+		type Timestamp: Time;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&LONDON_CONFIG
@@ -168,7 +175,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			address: H160,
@@ -504,7 +511,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_codes)]
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
@@ -512,7 +518,6 @@ pub mod pallet {
 		StorageMap<_, Blake2_128Concat, H160, CodeMetadata, OptionQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_storages)]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
 }
@@ -645,6 +650,7 @@ where
 	}
 }
 
+/// Trait to be implemented for evm address mapping.
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
 }

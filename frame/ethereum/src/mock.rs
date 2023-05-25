@@ -139,7 +139,7 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub const BlockGasLimit: U256 = U256::MAX;
-	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
+	pub const WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
 pub struct HashedAddressMapping;
@@ -169,6 +169,8 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type Timestamp = Timestamp;
+	type WeightInfo = ();
 }
 
 parameter_types! {
@@ -179,6 +181,7 @@ impl Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type StateRoot = IntermediateStateRoot<Self>;
 	type PostLogContent = PostBlockAndTxnHashes;
+	type ExtraDataLength = ConstU32<30>;
 }
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {

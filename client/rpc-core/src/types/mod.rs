@@ -40,7 +40,7 @@ pub use self::{
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
 	block_number::BlockNumber,
 	bytes::Bytes,
-	call_request::CallRequest,
+	call_request::{CallRequest, CallStateOverride},
 	fee::{FeeHistory, FeeHistoryCache, FeeHistoryCacheItem, FeeHistoryCacheLimit},
 	filter::{
 		Filter, FilterAddress, FilterChanges, FilterPool, FilterPoolItem, FilterType,

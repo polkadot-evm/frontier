@@ -106,7 +106,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 			self.client.as_ref(),
 			acc,
 			BalancesCall::transfer_keep_alive {
-				dest: self.dest.into(),
+				dest: self.dest,
 				value: self.value,
 			}
 			.into(),
@@ -171,7 +171,7 @@ pub fn create_benchmark_extrinsic(
 
 	runtime::UncheckedExtrinsic::new_signed(
 		call,
-		AccountId20::from(sender.public()).into(),
+		AccountId20::from(sender.public()),
 		runtime::Signature::new(signature),
 		extra,
 	)

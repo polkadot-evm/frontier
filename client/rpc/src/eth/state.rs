@@ -17,11 +17,10 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H160, H256, U256};
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 use scale_codec::Encode;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
@@ -33,11 +32,11 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, Eth},
+	eth::{pending_runtime_api, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -47,7 +46,7 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -80,7 +79,7 @@ where
 		address: H160,
 		index: U256,
 		number: Option<BlockNumber>,
-	) -> Result<H256> {
+	) -> RpcResult<H256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -109,7 +108,7 @@ where
 		}
 	}
 
-	pub fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
 		if let Some(BlockNumber::Pending) = number {
 			let substrate_hash = self.client.info().best_hash;
 
@@ -158,7 +157,7 @@ where
 			.nonce)
 	}
 
-	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<Bytes> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;

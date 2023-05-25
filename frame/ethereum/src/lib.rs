@@ -44,7 +44,7 @@ use frame_support::{
 	codec::{Decode, Encode, MaxEncodedLen},
 	dispatch::{DispatchInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	scale_info::TypeInfo,
-	traits::{EnsureOrigin, Get, PalletInfoAccess},
+	traits::{EnsureOrigin, Get, PalletInfoAccess, Time},
 	weights::Weight,
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
@@ -55,7 +55,7 @@ use sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
-	DispatchErrorWithPostInfo, RuntimeDebug,
+	DispatchErrorWithPostInfo, RuntimeDebug, SaturatedConversion,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 
@@ -181,7 +181,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
@@ -189,13 +188,15 @@ pub mod pallet {
 	pub type Origin = RawOrigin;
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config + pallet_evm::Config {
+	pub trait Config: frame_system::Config + pallet_evm::Config {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
 		/// What's included in the PostLog.
 		type PostLogContent: Get<PostLogContent>;
+		/// The maximum length of the extra data in the Executed event.
+		type ExtraDataLength: Get<u32>;
 	}
 
 	#[pallet::hooks]
@@ -302,6 +303,7 @@ pub mod pallet {
 			to: H160,
 			transaction_hash: H256,
 			exit_reason: ExitReason,
+			extra_data: Vec<u8>,
 		},
 	}
 
@@ -315,29 +317,24 @@ pub mod pallet {
 
 	/// Current building block's transactions and receipts.
 	#[pallet::storage]
-	#[pallet::getter(fn pending)]
 	pub(super) type Pending<T: Config> =
 		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
-	#[pallet::getter(fn current_block)]
-	pub(super) type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV2>;
+	pub type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV2>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
-	#[pallet::getter(fn current_receipts)]
-	pub(super) type CurrentReceipts<T: Config> = StorageValue<_, Vec<Receipt>>;
+	pub type CurrentReceipts<T: Config> = StorageValue<_, Vec<Receipt>>;
 
 	/// The current transaction statuses.
 	#[pallet::storage]
-	#[pallet::getter(fn current_transaction_statuses)]
-	pub(super) type CurrentTransactionStatuses<T: Config> = StorageValue<_, Vec<TransactionStatus>>;
+	pub type CurrentTransactionStatuses<T: Config> = StorageValue<_, Vec<TransactionStatus>>;
 
 	// Mapping for block number and hashes.
 	#[pallet::storage]
-	#[pallet::getter(fn block_hash)]
-	pub(super) type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
+	pub type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
 
 	#[pallet::genesis_config]
 	#[derive(Default)]
@@ -426,9 +423,7 @@ impl<T: Config> Pallet<T> {
 			number: block_number,
 			gas_limit: T::BlockGasLimit::get(),
 			gas_used: cumulative_gas_used,
-			timestamp: UniqueSaturatedInto::<u64>::unique_saturated_into(
-				pallet_timestamp::Pallet::<T>::get(),
-			),
+			timestamp: T::Timestamp::now().unique_saturated_into(),
 			extra_data: Vec::new(),
 			mix_hash: H256::default(),
 			nonce: H64::default(),
@@ -545,9 +540,9 @@ impl<T: Config> Pallet<T> {
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
 
-		let (reason, status, used_gas, dest) = match info {
+		let (reason, status, used_gas, dest, extra_data) = match info {
 			CallOrCreateInfo::Call(info) => (
-				info.exit_reason,
+				info.exit_reason.clone(),
 				TransactionStatus {
 					transaction_hash,
 					transaction_index,
@@ -563,6 +558,31 @@ impl<T: Config> Pallet<T> {
 				},
 				info.used_gas,
 				to,
+				match info.exit_reason {
+					ExitReason::Revert(_) => {
+						const LEN_START: usize = 36;
+						const MESSAGE_START: usize = 68;
+
+						let data = info.value;
+						let data_len = data.len();
+						if data_len > MESSAGE_START {
+							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
+								.saturated_into::<usize>();
+							let message_end = MESSAGE_START.saturating_add(
+								message_len.min(T::ExtraDataLength::get() as usize),
+							);
+
+							if data_len >= message_end {
+								data[MESSAGE_START..message_end].to_vec()
+							} else {
+								data
+							}
+						} else {
+							data
+						}
+					}
+					_ => vec![],
+				},
 			),
 			CallOrCreateInfo::Create(info) => (
 				info.exit_reason,
@@ -581,6 +601,7 @@ impl<T: Config> Pallet<T> {
 				},
 				info.used_gas,
 				Some(info.value),
+				Vec::new(),
 			),
 		};
 
@@ -629,6 +650,7 @@ impl<T: Config> Pallet<T> {
 			to: dest.unwrap_or_default(),
 			transaction_hash,
 			exit_reason: reason,
+			extra_data,
 		});
 
 		Ok(PostDispatchInfo {
@@ -642,7 +664,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
-		Self::current_block().map(|block| block.header.hash())
+		<CurrentBlock<T>>::get().map(|block| block.header.hash())
 	}
 
 	/// Execute an Ethereum transaction.

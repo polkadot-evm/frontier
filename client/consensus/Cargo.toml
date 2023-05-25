@@ -17,7 +17,6 @@ thiserror = "1.0"
 sc-consensus = { workspace = true }
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true, features = ["default"] }
-sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
 sp-runtime = { workspace = true }
 # Frontier
