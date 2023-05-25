@@ -538,10 +538,8 @@ pub struct CodeMetadata {
 
 impl CodeMetadata {
 	fn from_code(code: &[u8]) -> Self {
-		use sha3::Digest;
-
 		let size = code.len() as u64;
-		let hash = H256::from_slice(sha3::Keccak256::digest(code).as_slice());
+		let hash = H256::from_slice(sp_io::hashing::keccak_256(code).as_slice());
 
 		Self { size, hash }
 	}

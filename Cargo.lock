@@ -5117,7 +5117,6 @@ dependencies = [
  "parity-scale-codec",
  "rlp",
  "scale-info",
- "sha3",
  "sp-core",
  "sp-io",
  "sp-runtime",
