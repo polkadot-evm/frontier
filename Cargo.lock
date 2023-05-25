@@ -2670,6 +2670,7 @@ dependencies = [
  "frame-system-rpc-runtime-api",
  "frontier-template-runtime",
  "futures",
+ "hex-literal",
  "jsonrpsee",
  "log",
  "pallet-transaction-payment",

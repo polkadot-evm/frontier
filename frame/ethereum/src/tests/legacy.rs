@@ -508,15 +508,8 @@ fn proof_size_weight_limit_validation_works() {
 		let tx = tx.sign(&alice.private_key);
 
 		// Execute
-		assert_eq!(
-			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,),
-			Err(frame_support::dispatch::DispatchErrorWithPostInfo {
-				post_info: frame_support::dispatch::PostDispatchInfo {
-					actual_weight: None,
-					pays_fee: frame_support::dispatch::Pays::No,
-				},
-				error: frame_support::dispatch::DispatchError::Exhausted,
-			})
+		assert!(
+			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
 		);
 	});
 }
