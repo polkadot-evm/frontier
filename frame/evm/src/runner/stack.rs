@@ -861,6 +861,7 @@ where
 		self.substate.exit_discard()
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
 		if let Some(weight_info) = self.weight_info_mut() {
 			weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
@@ -869,15 +870,28 @@ where
 		Ok(Pallet::<T>::is_account_empty(&address))
 	}
 
+	#[cfg(not(feature = "evm-with-weight-limit"))]
+	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
+		Ok(Pallet::<T>::is_account_empty(&address))
+	}
+
 	fn deleted(&self, address: H160) -> bool {
 		self.substate.deleted(address)
 	}
 
+	#[cfg(feature = "evm-with-weight-limit")]
 	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
 		if let Some(weight_info) = self.weight_info_mut() {
 			weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?;
 		}
 
+		let account_id = T::AddressMapping::into_account_id(address);
+		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+		Ok(())
+	}
+
+	#[cfg(not(feature = "evm-with-weight-limit"))]
+	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
 		let account_id = T::AddressMapping::into_account_id(address);
 		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 		Ok(())
