@@ -539,7 +539,7 @@ pub struct CodeMetadata {
 impl CodeMetadata {
 	fn from_code(code: &[u8]) -> Self {
 		let size = code.len() as u64;
-		let hash = H256::from_slice(sp_io::hashing::keccak_256(code).as_slice());
+		let hash = H256::from(sp_io::hashing::keccak_256(code));
 
 		Self { size, hash }
 	}
@@ -775,12 +775,12 @@ impl<T: Config> Pallet<T> {
 		// If code is empty we return precomputed hash for empty code.
 		// We don't store it as this address could get code deployed in the future.
 		if code.is_empty() {
+			const EMPTY_CODE_HASH: [u8; 32] = hex_literal::hex!(
+				"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+			);
 			return CodeMetadata {
 				size: 0,
-				hash: hex_literal::hex!(
-					"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-				)
-				.into(),
+				hash: EMPTY_CODE_HASH.into(),
 			};
 		}
 
