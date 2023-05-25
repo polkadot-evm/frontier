@@ -2742,9 +2742,6 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-chain-id",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
  "pallet-grandpa",
  "pallet-hotfix-sufficients",
  "pallet-sudo",
@@ -2771,7 +2768,6 @@ dependencies = [
 name = "frontier-template-runtime-accountid32"
 version = "0.0.0"
 dependencies = [
- "fp-account",
  "fp-evm",
  "fp-rpc",
  "fp-self-contained",
@@ -2789,9 +2785,6 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-chain-id",
- "pallet-evm-precompile-modexp",
- "pallet-evm-precompile-sha3fips",
- "pallet-evm-precompile-simple",
  "pallet-grandpa",
  "pallet-hotfix-sufficients",
  "pallet-sudo",
