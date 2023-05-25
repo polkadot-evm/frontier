@@ -176,10 +176,11 @@ mod proof_size_test {
 				.expect("create succeeds");
 
 			// Creating a new contract does not involve reading the code from storage.
-			// We just account for a fixed hash proof size write and an empty check.
-			let write_cost = WRITE_PROOF_SIZE as usize;
-			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
-			let expected_proof_size = (write_cost + is_empty_check) as u64;
+			// We account for a fixed hash proof size write, an empty check and .
+			let write_cost = WRITE_PROOF_SIZE;
+			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE;
+			let nonce_increases = ACCOUNT_BASIC_PROOF_SIZE * 2;
+			let expected_proof_size = write_cost + is_empty_check + nonce_increases;
 
 			let actual_proof_size = result
 				.weight_info
@@ -235,11 +236,12 @@ mod proof_size_test {
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
-			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
+			let is_empty_check = (IS_EMPTY_CHECK_PROOF_SIZE * 2) as usize;
+			let increase_nonce = ACCOUNT_BASIC_PROOF_SIZE as usize;
 			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_contract_len
 				+ reading_main_contract_len
-				+ is_empty_check) as u64;
+				+ is_empty_check + increase_nonce) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -291,11 +293,12 @@ mod proof_size_test {
 			let basic_account_size = (ACCOUNT_BASIC_PROOF_SIZE * 2) as usize;
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
+			let increase_nonce = ACCOUNT_BASIC_PROOF_SIZE as usize;
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let expected_proof_size = (basic_account_size
 				+ read_account_metadata
 				+ reading_main_contract_len
-				+ is_empty_check) as u64;
+				+ is_empty_check + increase_nonce) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -343,7 +346,8 @@ mod proof_size_test {
 			let expected_proof_size = reading_main_contract_len
 				+ ACCOUNT_STORAGE_PROOF_SIZE
 				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
-				+ IS_EMPTY_CHECK_PROOF_SIZE;
+				+ IS_EMPTY_CHECK_PROOF_SIZE
+				+ ACCOUNT_BASIC_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
@@ -392,7 +396,8 @@ mod proof_size_test {
 				+ WRITE_PROOF_SIZE
 				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
 				+ ACCOUNT_STORAGE_PROOF_SIZE
-				+ IS_EMPTY_CHECK_PROOF_SIZE;
+				+ IS_EMPTY_CHECK_PROOF_SIZE
+				+ ACCOUNT_BASIC_PROOF_SIZE;
 
 			let actual_proof_size = result
 				.weight_info
@@ -509,7 +514,8 @@ mod proof_size_test {
 
 			// Expected proof size
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
-			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
+			let is_empty_check = (IS_EMPTY_CHECK_PROOF_SIZE * 2) as usize;
+			let increase_nonce = ACCOUNT_BASIC_PROOF_SIZE as usize;
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let reading_callee_contract_len =
 				AccountCodes::<Test>::get(subcall_contract_address).len();
@@ -518,7 +524,7 @@ mod proof_size_test {
 			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_callee_contract_len
 				+ reading_main_contract_len
-				+ is_empty_check) as u64;
+				+ is_empty_check + increase_nonce) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -596,7 +602,9 @@ mod proof_size_test {
 				.proof_size_usage
 				.expect("proof size usage");
 
-			assert_eq!(0, actual_proof_size);
+			// Only expect is empty + increase nonce cost
+			let expected_proof_size = ACCOUNT_BASIC_PROOF_SIZE + IS_EMPTY_CHECK_PROOF_SIZE;
+			assert_eq!(expected_proof_size, actual_proof_size);
 		});
 	}
 
@@ -658,7 +666,9 @@ mod proof_size_test {
 				.proof_size_usage
 				.expect("proof size usage");
 
-			assert_eq!(0, actual_proof_size);
+			// Only increase nonce cost
+			let expected_proof_size = ACCOUNT_BASIC_PROOF_SIZE;
+			assert_eq!(expected_proof_size, actual_proof_size);
 		});
 	}
 

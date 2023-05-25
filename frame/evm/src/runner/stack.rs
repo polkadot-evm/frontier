@@ -160,7 +160,7 @@ where
 		let maybe_weight_info =
 			WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
 				|_| RunnerError {
-					error: Error::<T>::Exhausted,
+					error: Error::<T>::Undefined,
 					weight,
 				},
 			)?;
@@ -862,7 +862,9 @@ where
 	}
 
 	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
-		// TODO record external cost
+		if let Some(weight_info) = self.weight_info_mut() {
+			weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
+		}
 
 		Ok(Pallet::<T>::is_account_empty(&address))
 	}
@@ -872,7 +874,10 @@ where
 	}
 
 	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
-		// TODO record external cost?
+		if let Some(weight_info) = self.weight_info_mut() {
+			weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?;
+		}
+
 		let account_id = T::AddressMapping::into_account_id(address);
 		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 		Ok(())
@@ -1175,11 +1180,9 @@ where
 		let opcode_proof_size = match opcode {
 			// Basic account fixed length
 			Opcode::BALANCE => {
-				// TODO cache also account basic
 				accessed_storage = None;
 				U256::from(ACCOUNT_BASIC_PROOF_SIZE)
 			}
-			// TODO requires https://github.com/paritytech/frontier/pull/893
 			Opcode::EXTCODESIZE | Opcode::EXTCODECOPY | Opcode::EXTCODEHASH => {
 				return maybe_record_and_refund(false)
 			}
