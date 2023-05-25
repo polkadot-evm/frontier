@@ -1942,7 +1942,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "evm"
-version = "0.37.0"
+version = "0.39.0"
 source = "git+https://github.com/purestake/evm?branch=tgm-record-external-cost#3d733d723fed467ce4f6e067f607df09be22d71f"
 dependencies = [
  "auto_impl",
@@ -1962,7 +1962,7 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.37.0"
+version = "0.39.0"
 source = "git+https://github.com/purestake/evm?branch=tgm-record-external-cost#3d733d723fed467ce4f6e067f607df09be22d71f"
 dependencies = [
  "parity-scale-codec",
@@ -1973,7 +1973,7 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.37.0"
+version = "0.39.0"
 source = "git+https://github.com/purestake/evm?branch=tgm-record-external-cost#3d733d723fed467ce4f6e067f607df09be22d71f"
 dependencies = [
  "environmental",
@@ -1984,7 +1984,7 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.37.0"
+version = "0.39.0"
 source = "git+https://github.com/purestake/evm?branch=tgm-record-external-cost#3d733d723fed467ce4f6e067f607df09be22d71f"
 dependencies = [
  "auto_impl",
