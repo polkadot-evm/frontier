@@ -35,7 +35,11 @@ compile_error!(
 
 // if accountid20 feature is enabled
 #[cfg(feature = "accountid20")]
+use frontier_template_runtime::AccountId;
+#[cfg(feature = "accountid20")]
 use frontier_template_runtime_accountid20 as frontier_template_runtime;
+#[cfg(feature = "accountid20")]
+use hex_literal::hex;
 
 // if accountid32 feature is explictly enabled, or no accountid feature is enabled
 #[cfg(any(
@@ -43,9 +47,6 @@ use frontier_template_runtime_accountid20 as frontier_template_runtime;
 	not(any(feature = "accountid20", feature = "accountid32"))
 ))]
 use frontier_template_runtime_accountid32 as frontier_template_runtime;
-
-#[cfg(feature = "runtime-benchmarks")]
-use crate::chain_spec::get_account_id_from_seed;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
@@ -207,7 +208,13 @@ pub fn run() -> sc_cli::Result<()> {
 						Box::new(RemarkBuilder::new(client.clone())),
 						Box::new(TransferKeepAliveBuilder::new(
 							client.clone(),
-							get_account_id_from_seed::<sp_core::ecdsa::Public>("Alice"),
+							#[cfg(feature = "accountid20")]
+							AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
+							#[cfg(any(
+								feature = "accountid32",
+								not(any(feature = "accountid20", feature = "accountid32"))
+							))]
+							sp_keyring::Sr25519Keyring::Alice.to_account_id(),
 							ExistentialDeposit::get(),
 						)),
 					]);
