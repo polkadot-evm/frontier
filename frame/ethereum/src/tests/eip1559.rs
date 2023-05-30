@@ -327,7 +327,7 @@ fn transaction_should_generate_correct_gas_used() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
-	let expected_gas = U256::from(893928);
+	let expected_gas = U256::from(894198);
 
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
