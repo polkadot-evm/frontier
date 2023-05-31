@@ -43,7 +43,7 @@ pub enum MappingKey {
 pub struct MappingDb<'a, C, B: BlockT> {
 	cmd: &'a FrontierDbCmd,
 	client: Arc<C>,
-	backend: Arc<fc_db::Backend<B>>,
+	backend: Arc<fc_db::kv::Backend<B>>,
 }
 
 impl<'a, C, B: BlockT> MappingDb<'a, C, B>
@@ -52,7 +52,11 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B>,
 {
-	pub fn new(cmd: &'a FrontierDbCmd, client: Arc<C>, backend: Arc<fc_db::Backend<B>>) -> Self {
+	pub fn new(
+		cmd: &'a FrontierDbCmd,
+		client: Arc<C>,
+		backend: Arc<fc_db::kv::Backend<B>>,
+	) -> Self {
 		Self {
 			cmd,
 			client,
@@ -93,7 +97,7 @@ where
 							vec![]
 						};
 
-						let commitment = fc_db::MappingCommitment::<B> {
+						let commitment = fc_db::kv::MappingCommitment::<B> {
 							block_hash: *substrate_block_hash,
 							ethereum_block_hash: *ethereum_block_hash,
 							ethereum_transaction_hashes: existing_transaction_hashes,
@@ -151,7 +155,7 @@ where
 							vec![]
 						};
 
-						let commitment = fc_db::MappingCommitment::<B> {
+						let commitment = fc_db::kv::MappingCommitment::<B> {
 							block_hash: *substrate_block_hash,
 							ethereum_block_hash: *ethereum_block_hash,
 							ethereum_transaction_hashes: existing_transaction_hashes,

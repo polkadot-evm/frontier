@@ -46,7 +46,7 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
+	pub async fn balance(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -58,11 +58,14 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
 			let substrate_hash = self
 				.client
 				.expect_block_hash_from_id(&id)
 				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 			Ok(self
 				.client
 				.runtime_api()
@@ -74,7 +77,7 @@ where
 		}
 	}
 
-	pub fn storage_at(
+	pub async fn storage_at(
 		&self,
 		address: H160,
 		index: U256,
@@ -90,7 +93,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
 			let substrate_hash = self
 				.client
 				.expect_block_hash_from_id(&id)
@@ -108,7 +113,11 @@ where
 		}
 	}
 
-	pub fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
+	pub async fn transaction_count(
+		&self,
+		address: H160,
+		number: Option<BlockNumber>,
+	) -> RpcResult<U256> {
 		if let Some(BlockNumber::Pending) = number {
 			let substrate_hash = self.client.info().best_hash;
 
@@ -139,7 +148,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => id,
 			None => return Ok(U256::zero()),
 		};
@@ -157,7 +168,7 @@ where
 			.nonce)
 	}
 
-	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<Bytes> {
+	pub async fn code_at(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<Bytes> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
@@ -169,7 +180,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
 			let substrate_hash = self
 				.client
 				.expect_block_hash_from_id(&id)

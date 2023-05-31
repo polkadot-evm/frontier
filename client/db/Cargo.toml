@@ -2,7 +2,7 @@
 name = "fc-db"
 version = "2.0.0-dev"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
-description = "Frontier database backend."
+description = "Frontier database backend"
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
@@ -11,28 +11,43 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-kvdb-rocksdb = { workspace = true, optional = true }
+async-trait = "0.1"
+ethereum = { workspace = true, features = ["with-codec"] }
+futures = "0.3.25"
 log = "0.4.17"
-parity-db = { workspace = true, optional = true }
 parking_lot = "0.12.1"
-scale-codec = { package = "parity-scale-codec", workspace = true }
 smallvec = "1.10"
+sqlx = { features = ["runtime-tokio-native-tls", "sqlite"], git = "https://github.com/launchbadge/sqlx", branch = "main" }
+tokio = { version = "1.19", features = ["macros", "sync"] }
+
+# Parity
+kvdb-rocksdb = { workspace = true, optional = true }
+parity-db = { workspace = true, optional = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+
 # Substrate
+sc-client-api = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
+sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-core = { workspace = true }
 sp-database = { workspace = true }
 sp-runtime = { workspace = true }
+sp-storage = { workspace = true }
+
 # Frontier
+fc-storage = { workspace = true }
+fp-consensus = { workspace = true, features = ["default"] }
+fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
 
 [features]
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
-futures = "0.3.25"
-tempfile = "3.3.0"
-# Substrate
+fc-rpc = { workspace = true }
+maplit = "1.0.2"
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
+tempfile = "3.3.0"
