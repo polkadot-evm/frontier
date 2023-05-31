@@ -201,7 +201,7 @@
 
 	<span class="comment">// A convenience function to verify the user input is known.
 	</span><span class="kw">fn </span>from_str(input: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;MetaKey, <span class="self">Self</span>::Err&gt; {
-		<span class="kw">let </span>tips = str::from_utf8(fc_db::static_keys::CURRENT_SYNCING_TIPS).unwrap();
+		<span class="kw">let </span>tips = str::from_utf8(fc_db::kv::static_keys::CURRENT_SYNCING_TIPS).unwrap();
 		<span class="kw">let </span>schema = str::from_utf8(fp_storage::PALLET_ETHEREUM_SCHEMA_CACHE).unwrap();
 		<span class="kw">match </span>input {
 			x <span class="kw">if </span>x == tips =&gt; <span class="prelude-val">Ok</span>(MetaKey::Tips),
@@ -213,11 +213,11 @@
 
 <span class="kw">pub struct </span>MetaDb&lt;<span class="lifetime">&#39;a</span>, B: BlockT&gt; {
 	cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd,
-	backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
+	backend: Arc&lt;fc_db::kv::Backend&lt;B&gt;&gt;,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, B: BlockT&gt; MetaDb&lt;<span class="lifetime">&#39;a</span>, B&gt; {
-	<span class="kw">pub fn </span>new(cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd, backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new(cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd, backend: Arc&lt;fc_db::kv::Backend&lt;B&gt;&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{ cmd, backend }
 	}
 

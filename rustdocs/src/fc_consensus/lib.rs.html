@@ -125,9 +125,6 @@
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
 <a href="#127" id="127">127</a>
-<a href="#128" id="128">128</a>
-<a href="#129" id="129">129</a>
-<a href="#130" id="130">130</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -194,7 +191,6 @@
 <span class="kw">pub struct </span>FrontierBlockImport&lt;B: BlockT, I, C&gt; {
 	inner: I,
 	client: Arc&lt;C&gt;,
-	backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
 	_marker: PhantomData&lt;B&gt;,
 }
 
@@ -203,7 +199,6 @@
 		FrontierBlockImport {
 			inner: <span class="self">self</span>.inner.clone(),
 			client: <span class="self">self</span>.client.clone(),
-			backend: <span class="self">self</span>.backend.clone(),
 			_marker: PhantomData,
 		}
 	}
@@ -217,11 +212,10 @@
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
 {
-	<span class="kw">pub fn </span>new(inner: I, client: Arc&lt;C&gt;, backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new(inner: I, client: Arc&lt;C&gt;) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			inner,
 			client,
-			backend,
 			_marker: PhantomData,
 		}
 	}

@@ -222,6 +222,39 @@
 <a href="#222" id="222">222</a>
 <a href="#223" id="223">223</a>
 <a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
+<a href="#239" id="239">239</a>
+<a href="#240" id="240">240</a>
+<a href="#241" id="241">241</a>
+<a href="#242" id="242">242</a>
+<a href="#243" id="243">243</a>
+<a href="#244" id="244">244</a>
+<a href="#245" id="245">245</a>
+<a href="#246" id="246">246</a>
+<a href="#247" id="247">247</a>
+<a href="#248" id="248">248</a>
+<a href="#249" id="249">249</a>
+<a href="#250" id="250">250</a>
+<a href="#251" id="251">251</a>
+<a href="#252" id="252">252</a>
+<a href="#253" id="253">253</a>
+<a href="#254" id="254">254</a>
+<a href="#255" id="255">255</a>
+<a href="#256" id="256">256</a>
+<a href="#257" id="257">257</a>
 </pre><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
@@ -239,11 +272,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Substrate
+</span><span class="kw">use </span>futures::TryFutureExt;
+<span class="comment">// Substrate
 </span><span class="kw">use </span>sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
 <span class="kw">use </span>sc_service::DatabaseSource;
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fc_db::frontier_database_dir;
+</span><span class="kw">use </span>fc_db::kv::frontier_database_dir;
 
 <span class="kw">use crate</span>::{
 	chain_spec,
@@ -344,19 +378,45 @@
 			runner.sync_run(|config| {
 				<span class="comment">// Remove Frontier offchain db
 				</span><span class="kw">let </span>db_config_dir = db_config_dir(<span class="kw-2">&amp;</span>config);
-				<span class="kw">let </span>frontier_database_config = <span class="kw">match </span>config.database {
-					DatabaseSource::RocksDb { .. } =&gt; DatabaseSource::RocksDb {
-						path: frontier_database_dir(<span class="kw-2">&amp;</span>db_config_dir, <span class="string">&quot;db&quot;</span>),
-						cache_size: <span class="number">0</span>,
-					},
-					DatabaseSource::ParityDb { .. } =&gt; DatabaseSource::ParityDb {
-						path: frontier_database_dir(<span class="kw-2">&amp;</span>db_config_dir, <span class="string">&quot;paritydb&quot;</span>),
-					},
-					<span class="kw">_ </span>=&gt; {
-						<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(<span class="string">&quot;Cannot purge `{:?}` database&quot;</span>, config.database).into())
+				<span class="kw">match </span>cli.eth.frontier_backend_type {
+					<span class="kw">crate</span>::eth::BackendType::KeyValue =&gt; {
+						<span class="kw">let </span>frontier_database_config = <span class="kw">match </span>config.database {
+							DatabaseSource::RocksDb { .. } =&gt; DatabaseSource::RocksDb {
+								path: frontier_database_dir(<span class="kw-2">&amp;</span>db_config_dir, <span class="string">&quot;db&quot;</span>),
+								cache_size: <span class="number">0</span>,
+							},
+							DatabaseSource::ParityDb { .. } =&gt; DatabaseSource::ParityDb {
+								path: frontier_database_dir(<span class="kw-2">&amp;</span>db_config_dir, <span class="string">&quot;paritydb&quot;</span>),
+							},
+							<span class="kw">_ </span>=&gt; {
+								<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+									<span class="string">&quot;Cannot purge `{:?}` database&quot;</span>,
+									config.database
+								)
+								.into())
+							}
+						};
+						cmd.run(frontier_database_config)<span class="question-mark">?</span>;
+					}
+					<span class="kw">crate</span>::eth::BackendType::Sql =&gt; {
+						<span class="kw">let </span>db_path = db_config_dir.join(<span class="string">&quot;sql&quot;</span>);
+						<span class="kw">match </span>std::fs::remove_dir_all(<span class="kw-2">&amp;</span>db_path) {
+							<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
+								<span class="macro">println!</span>(<span class="string">&quot;{:?} removed.&quot;</span>, <span class="kw-2">&amp;</span>db_path);
+							}
+							<span class="prelude-val">Err</span>(<span class="kw-2">ref </span>err) <span class="kw">if </span>err.kind() == std::io::ErrorKind::NotFound =&gt; {
+								<span class="macro">eprintln!</span>(<span class="string">&quot;{:?} did not exist.&quot;</span>, <span class="kw-2">&amp;</span>db_path);
+							}
+							<span class="prelude-val">Err</span>(err) =&gt; {
+								<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="macro">format!</span>(
+									<span class="string">&quot;Cannot purge `{:?}` database: {:?}&quot;</span>,
+									db_path, err,
+								)
+								.into())
+							}
+						};
 					}
 				};
-				cmd.run(frontier_database_config)<span class="question-mark">?</span>;
 				cmd.run(config.database)
 			})
 		}
@@ -435,14 +495,20 @@
 			runner.sync_run(|<span class="kw-2">mut </span>config| {
 				<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, frontier_backend) =
 					service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
+				<span class="kw">let </span>frontier_backend = <span class="kw">match </span>frontier_backend {
+					fc_db::Backend::KeyValue(kv) =&gt; std::sync::Arc::new(kv),
+					<span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;Only fc_db::Backend::KeyValue supported&quot;</span>),
+				};
 				cmd.run(client, frontier_backend)
 			})
 		}
 		<span class="prelude-val">None </span>=&gt; {
 			<span class="kw">let </span>runner = cli.create_runner(<span class="kw-2">&amp;</span>cli.run)<span class="question-mark">?</span>;
 			runner.run_node_until_exit(|config| <span class="kw">async move </span>{
-				service::build_full(config, cli.eth, cli.sealing).map_err(Into::into)
-			})
+				service::build_full(config, cli.eth, cli.sealing)
+					.map_err(Into::into)
+					.<span class="kw">await
+			</span>})
 		}
 	}
 }

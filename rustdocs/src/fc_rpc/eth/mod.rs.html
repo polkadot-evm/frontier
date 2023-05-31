@@ -570,6 +570,14 @@
 <a href="#570" id="570">570</a>
 <a href="#571" id="571">571</a>
 <a href="#572" id="572">572</a>
+<a href="#573" id="573">573</a>
+<a href="#574" id="574">574</a>
+<a href="#575" id="575">575</a>
+<a href="#576" id="576">576</a>
+<a href="#577" id="577">577</a>
+<a href="#578" id="578">578</a>
+<a href="#579" id="579">579</a>
+<a href="#580" id="580">580</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -652,7 +660,7 @@
 	is_authority: bool,
 	signers: Vec&lt;Box&lt;<span class="kw">dyn </span>EthSigner&gt;&gt;,
 	overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
-	backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
+	backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
 	block_data_cache: Arc&lt;EthBlockDataCacheTask&lt;B&gt;&gt;,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
@@ -672,7 +680,7 @@
 		sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 		signers: Vec&lt;Box&lt;<span class="kw">dyn </span>EthSigner&gt;&gt;,
 		overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
-		backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
+		backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
 		is_authority: bool,
 		block_data_cache: Arc&lt;EthBlockDataCacheTask&lt;B&gt;&gt;,
 		fee_history_cache: FeeHistoryCache,
@@ -797,13 +805,16 @@
 		<span class="self">self</span>.block_by_number(number, full).<span class="kw">await
 	</span>}
 
-	<span class="kw">fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
-		<span class="self">self</span>.block_transaction_count_by_hash(hash)
-	}
+	<span class="kw">async fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
+		<span class="self">self</span>.block_transaction_count_by_hash(hash).<span class="kw">await
+	</span>}
 
-	<span class="kw">fn </span>block_transaction_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
-		<span class="self">self</span>.block_transaction_count_by_number(number)
-	}
+	<span class="kw">async fn </span>block_transaction_count_by_number(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		number: BlockNumber,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
+		<span class="self">self</span>.block_transaction_count_by_number(number).<span class="kw">await
+	</span>}
 
 	<span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.block_uncles_count_by_hash(hash)
@@ -862,39 +873,43 @@
 	// State
 	// ########################################################################
 
-	</span><span class="kw">fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
-		<span class="self">self</span>.balance(address, number)
-	}
+	</span><span class="kw">async fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
+		<span class="self">self</span>.balance(address, number).<span class="kw">await
+	</span>}
 
-	<span class="kw">fn </span>storage_at(
+	<span class="kw">async fn </span>storage_at(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
 		index: U256,
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;H256&gt; {
-		<span class="self">self</span>.storage_at(address, index, number)
-	}
+		<span class="self">self</span>.storage_at(address, index, number).<span class="kw">await
+	</span>}
 
-	<span class="kw">fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
-		<span class="self">self</span>.transaction_count(address, number)
-	}
+	<span class="kw">async fn </span>transaction_count(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	) -&gt; RpcResult&lt;U256&gt; {
+		<span class="self">self</span>.transaction_count(address, number).<span class="kw">await
+	</span>}
 
-	<span class="kw">fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
-		<span class="self">self</span>.code_at(address, number)
-	}
+	<span class="kw">async fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
+		<span class="self">self</span>.code_at(address, number).<span class="kw">await
+	</span>}
 
 	<span class="comment">// ########################################################################
 	// Execute
 	// ########################################################################
 
-	</span><span class="kw">fn </span>call(
+	</span><span class="kw">async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 		state_overrides: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H160, CallStateOverride&gt;&gt;,
 	) -&gt; RpcResult&lt;Bytes&gt; {
-		<span class="self">self</span>.call(request, number, state_overrides)
-	}
+		<span class="self">self</span>.call(request, number, state_overrides).<span class="kw">await
+	</span>}
 
 	<span class="kw">async fn </span>estimate_gas(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -912,14 +927,15 @@
 		<span class="self">self</span>.gas_price()
 	}
 
-	<span class="kw">fn </span>fee_history(
+	<span class="kw">async fn </span>fee_history(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
 	) -&gt; RpcResult&lt;FeeHistory&gt; {
 		<span class="self">self</span>.fee_history(block_count, newest_block, reward_percentiles)
-	}
+			.<span class="kw">await
+	</span>}
 
 	<span class="kw">fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.max_priority_fee_per_gas()

@@ -933,6 +933,10 @@
 <a href="#933" id="933">933</a>
 <a href="#934" id="934">934</a>
 <a href="#935" id="935">935</a>
+<a href="#936" id="936">936</a>
+<a href="#937" id="937">937</a>
+<a href="#938" id="938">938</a>
+<a href="#939" id="939">939</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1008,7 +1012,7 @@
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub fn </span>call(
+	<span class="kw">pub async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
@@ -1041,7 +1045,9 @@
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			number,
-		)<span class="question-mark">? </span>{
+		)
+		.<span class="kw">await</span><span class="question-mark">?
+		</span>{
 			<span class="prelude-val">Some</span>(id) =&gt; {
 				<span class="kw">let </span>hash = <span class="self">self
 					</span>.client
@@ -1300,7 +1306,9 @@
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			number,
-		)<span class="question-mark">? </span>{
+		)
+		.<span class="kw">await</span><span class="question-mark">?
+		</span>{
 			<span class="prelude-val">Some</span>(id) =&gt; {
 				<span class="kw">let </span>hash = client
 					.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)

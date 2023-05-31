@@ -684,9 +684,38 @@
 <a href="#684" id="684">684</a>
 <a href="#685" id="685">685</a>
 <a href="#686" id="686">686</a>
+<a href="#687" id="687">687</a>
+<a href="#688" id="688">688</a>
+<a href="#689" id="689">689</a>
+<a href="#690" id="690">690</a>
+<a href="#691" id="691">691</a>
+<a href="#692" id="692">692</a>
+<a href="#693" id="693">693</a>
+<a href="#694" id="694">694</a>
+<a href="#695" id="695">695</a>
+<a href="#696" id="696">696</a>
+<a href="#697" id="697">697</a>
+<a href="#698" id="698">698</a>
+<a href="#699" id="699">699</a>
+<a href="#700" id="700">700</a>
+<a href="#701" id="701">701</a>
+<a href="#702" id="702">702</a>
+<a href="#703" id="703">703</a>
+<a href="#704" id="704">704</a>
+<a href="#705" id="705">705</a>
+<a href="#706" id="706">706</a>
+<a href="#707" id="707">707</a>
+<a href="#708" id="708">708</a>
+<a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
-</span><span class="kw">use </span>std::{cell::RefCell, sync::Arc, time::Duration};
+</span><span class="kw">use </span>std::{cell::RefCell, path::Path, sync::Arc, time::Duration};
 
 <span class="kw">use </span>futures::{channel::mpsc, prelude::<span class="kw-2">*</span>};
 <span class="comment">// Substrate
@@ -709,8 +738,8 @@
 	cli::Sealing,
 	client::{BaseRuntimeApiCollection, FullBackend, FullClient, RuntimeApiCollection},
 	eth::{
-		new_frontier_partial, spawn_frontier_tasks, FrontierBackend, FrontierBlockImport,
-		FrontierPartialComponents,
+		new_frontier_partial, spawn_frontier_tasks, BackendType, EthCompatRuntimeApiCollection,
+		FrontierBackend, FrontierBlockImport, FrontierPartialComponents,
 	},
 };
 <span class="kw">pub use crate</span>::{
@@ -742,7 +771,8 @@
 			<span class="prelude-ty">Option</span>&lt;Telemetry&gt;,
 			BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 			GrandpaLinkHalf&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-			Arc&lt;FrontierBackend&gt;,
+			FrontierBackend,
+			Arc&lt;fc_rpc::OverrideHandle&lt;Block&gt;&gt;,
 		),
 	&gt;,
 	ServiceError,
@@ -750,8 +780,8 @@
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi:
-		BaseRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: BaseRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;
+		+ EthCompatRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 	BIQ: FnOnce(
 		Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
@@ -760,7 +790,6 @@
 		<span class="kw-2">&amp;</span>TaskManager,
 		<span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 		GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-		Arc&lt;FrontierBackend&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;
 		(
 			BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
@@ -810,11 +839,36 @@
 		telemetry.as_ref().map(|x| x.handle()),
 	)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>frontier_backend = Arc::new(FrontierBackend::open(
-		client.clone(),
-		<span class="kw-2">&amp;</span>config.database,
-		<span class="kw-2">&amp;</span>db_config_dir(config),
-	)<span class="question-mark">?</span>);
+	<span class="kw">let </span>overrides = <span class="kw">crate</span>::rpc::overrides_handle(client.clone());
+	<span class="kw">let </span>frontier_backend = <span class="kw">match </span>eth_config.frontier_backend_type {
+		BackendType::KeyValue =&gt; FrontierBackend::KeyValue(fc_db::kv::Backend::open(
+			Arc::clone(<span class="kw-2">&amp;</span>client),
+			<span class="kw-2">&amp;</span>config.database,
+			<span class="kw-2">&amp;</span>db_config_dir(config),
+		)<span class="question-mark">?</span>),
+		BackendType::Sql =&gt; {
+			<span class="kw">let </span>db_path = db_config_dir(config).join(<span class="string">&quot;sql&quot;</span>);
+			std::fs::create_dir_all(<span class="kw-2">&amp;</span>db_path).expect(<span class="string">&quot;failed creating sql db directory&quot;</span>);
+			<span class="kw">let </span>backend = futures::executor::block_on(fc_db::sql::Backend::new(
+				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+					path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+						.join(db_path)
+						.join(<span class="string">&quot;frontier.db3&quot;</span>)
+						.to_str()
+						.unwrap(),
+					create_if_missing: <span class="bool-val">true</span>,
+					thread_count: eth_config.frontier_sql_backend_thread_count,
+					cache_size: eth_config.frontier_sql_backend_cache_size,
+				}),
+				eth_config.frontier_sql_backend_pool_size,
+				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
+				overrides.clone(),
+			))
+			.unwrap_or_else(|err| <span class="macro">panic!</span>(<span class="string">&quot;failed creating sql backend: {:?}&quot;</span>, err));
+			FrontierBackend::Sql(backend)
+		}
+	};
+
 	<span class="kw">let </span>(import_queue, block_import) = build_import_queue(
 		client.clone(),
 		config,
@@ -822,7 +876,6 @@
 		<span class="kw-2">&amp;</span>task_manager,
 		telemetry.as_ref().map(|x| x.handle()),
 		grandpa_block_import,
-		frontier_backend.clone(),
 	)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>transaction_pool = sc_transaction_pool::BasicPool::new_full(
@@ -841,7 +894,13 @@
 		select_chain,
 		import_queue,
 		transaction_pool,
-		other: (telemetry, block_import, grandpa_link, frontier_backend),
+		other: (
+			telemetry,
+			block_import,
+			grandpa_link,
+			frontier_backend,
+			overrides,
+		),
 	})
 }
 
@@ -853,7 +912,6 @@
 	task_manager: <span class="kw-2">&amp;</span>TaskManager,
 	telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 	grandpa_block_import: GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	frontier_backend: Arc&lt;FrontierBackend&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;
 	(
 		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
@@ -868,11 +926,8 @@
 		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(
-		grandpa_block_import.clone(),
-		client.clone(),
-		frontier_backend,
-	);
+	<span class="kw">let </span>frontier_block_import =
+		FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
 	<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
 	<span class="kw">let </span>target_gas_price = eth_config.target_gas_price;
@@ -913,7 +968,6 @@
 	task_manager: <span class="kw-2">&amp;</span>TaskManager,
 	_telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 	_grandpa_block_import: GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	frontier_backend: Arc&lt;FrontierBackend&gt;,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;
 	(
 		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
@@ -928,7 +982,7 @@
 		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(client.clone(), client, frontier_backend);
+	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(client.clone(), client);
 	<span class="prelude-val">Ok</span>((
 		sc_consensus_manual_seal::import_queue(
 			Box::new(frontier_block_import.clone()),
@@ -940,7 +994,7 @@
 }
 
 <span class="doccomment">/// Builds a new service for a full client.
-</span><span class="kw">pub fn </span>new_full&lt;RuntimeApi, Executor&gt;(
+</span><span class="kw">pub async fn </span>new_full&lt;RuntimeApi, Executor&gt;(
 	<span class="kw-2">mut </span>config: Configuration,
 	eth_config: EthConfiguration,
 	sealing: <span class="prelude-ty">Option</span>&lt;Sealing&gt;,
@@ -966,7 +1020,7 @@
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (<span class="kw-2">mut </span>telemetry, block_import, grandpa_link, frontier_backend),
+		other: (<span class="kw-2">mut </span>telemetry, block_import, grandpa_link, frontier_backend, overrides),
 	} = new_partial(<span class="kw-2">&amp;</span>config, <span class="kw-2">&amp;</span>eth_config, build_import_queue)<span class="question-mark">?</span>;
 
 	<span class="kw">let </span>FrontierPartialComponents {
@@ -1038,7 +1092,6 @@
 
 	<span class="comment">// for ethereum-compatibility rpc.
 	</span>config.rpc_id_provider = <span class="prelude-val">Some</span>(Box::new(fc_rpc::EthereumSubIdProvider));
-	<span class="kw">let </span>overrides = <span class="kw">crate</span>::rpc::overrides_handle(client.clone());
 	<span class="kw">let </span>eth_rpc_params = <span class="kw">crate</span>::rpc::EthDeps {
 		client: client.clone(),
 		pool: transaction_pool.clone(),
@@ -1048,7 +1101,10 @@
 		enable_dev_signer: eth_config.enable_dev_signer,
 		network: network.clone(),
 		sync: sync_service.clone(),
-		frontier_backend: frontier_backend.clone(),
+		frontier_backend: <span class="kw">match </span>frontier_backend.clone() {
+			fc_db::Backend::KeyValue(b) =&gt; Arc::new(b),
+			fc_db::Backend::Sql(b) =&gt; Arc::new(b),
+		},
 		overrides: overrides.clone(),
 		block_data_cache: Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 			task_manager.spawn_handle(),
@@ -1118,7 +1174,8 @@
 		fee_history_cache_limit,
 		sync_service.clone(),
 		pubsub_notification_sinks,
-	);
+	)
+	.<span class="kw">await</span>;
 
 	<span class="kw">if </span>role.is_authority() {
 		<span class="comment">// manual-seal authorship
@@ -1332,7 +1389,7 @@
 	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">pub fn </span>build_full(
+<span class="kw">pub async fn </span>build_full(
 	config: Configuration,
 	eth_config: EthConfiguration,
 	sealing: <span class="prelude-ty">Option</span>&lt;Sealing&gt;,
@@ -1340,7 +1397,8 @@
 	new_full::&lt;frontier_template_runtime::RuntimeApi, TemplateRuntimeExecutor&gt;(
 		config, eth_config, sealing,
 	)
-}
+	.<span class="kw">await
+</span>}
 
 <span class="kw">pub fn </span>new_chain_ops(
 	config: <span class="kw-2">&amp;mut </span>Configuration,
@@ -1351,7 +1409,7 @@
 		Arc&lt;FullBackend&gt;,
 		BasicQueue&lt;Block, PrefixedMemoryDB&lt;BlakeTwo256&gt;&gt;,
 		TaskManager,
-		Arc&lt;FrontierBackend&gt;,
+		FrontierBackend,
 	),
 	ServiceError,
 &gt; {

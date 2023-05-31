@@ -262,7 +262,7 @@
 	<span class="kw">pub fn </span>run&lt;C, B: BlockT&gt;(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		client: Arc&lt;C&gt;,
-		backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
+		backend: Arc&lt;fc_db::kv::Backend&lt;B&gt;&gt;,
 	) -&gt; sc_cli::Result&lt;()&gt;
 	<span class="kw">where
 		</span>C: ProvideRuntimeApi&lt;B&gt;,

@@ -189,6 +189,19 @@
 <a href="#189" id="189">189</a>
 <a href="#190" id="190">190</a>
 <a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
+<a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -237,7 +250,7 @@
 	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
+	<span class="kw">pub async fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
 		<span class="kw">if </span>number == BlockNumber::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
@@ -249,11 +262,14 @@
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			<span class="prelude-val">Some</span>(number),
-		) {
+		)
+		.<span class="kw">await
+		</span>{
 			<span class="kw">let </span>substrate_hash = <span class="self">self
 				</span>.client
 				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
 				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+
 			<span class="prelude-val">Ok</span>(<span class="self">self
 				</span>.client
 				.runtime_api()
@@ -265,7 +281,7 @@
 		}
 	}
 
-	<span class="kw">pub fn </span>storage_at(
+	<span class="kw">pub async fn </span>storage_at(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
 		index: U256,
@@ -281,7 +297,9 @@
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			<span class="prelude-val">Some</span>(number),
-		) {
+		)
+		.<span class="kw">await
+		</span>{
 			<span class="kw">let </span>substrate_hash = <span class="self">self
 				</span>.client
 				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
@@ -299,7 +317,11 @@
 		}
 	}
 
-	<span class="kw">pub fn </span>transaction_count(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
+	<span class="kw">pub async fn </span>transaction_count(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(BlockNumber::Pending) = number {
 			<span class="kw">let </span>substrate_hash = <span class="self">self</span>.client.info().best_hash;
 
@@ -330,7 +352,9 @@
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			number,
-		)<span class="question-mark">? </span>{
+		)
+		.<span class="kw">await</span><span class="question-mark">?
+		</span>{
 			<span class="prelude-val">Some</span>(id) =&gt; id,
 			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(U256::zero()),
 		};
@@ -348,7 +372,7 @@
 			</span>.nonce)
 	}
 
-	<span class="kw">pub fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
+	<span class="kw">pub async fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
 		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
 		<span class="kw">if </span>number == BlockNumber::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
@@ -360,7 +384,9 @@
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
 			<span class="prelude-val">Some</span>(number),
-		) {
+		)
+		.<span class="kw">await
+		</span>{
 			<span class="kw">let </span>substrate_hash = <span class="self">self
 				</span>.client
 				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)

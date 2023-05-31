@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"enum":[["WorkerCommand","Defines the commands for the sync worker."]],"struct":[["SyncWorker","Implements an indexer that imports blocks and their transactions."],["SyncWorkerConfig","Config parameters for the SyncWorker."]]};

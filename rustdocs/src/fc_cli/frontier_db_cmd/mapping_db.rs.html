@@ -173,6 +173,10 @@
 <a href="#173" id="173">173</a>
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -218,7 +222,7 @@
 <span class="kw">pub struct </span>MappingDb&lt;<span class="lifetime">&#39;a</span>, C, B: BlockT&gt; {
 	cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd,
 	client: Arc&lt;C&gt;,
-	backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;,
+	backend: Arc&lt;fc_db::kv::Backend&lt;B&gt;&gt;,
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>, C, B: BlockT&gt; MappingDb&lt;<span class="lifetime">&#39;a</span>, C, B&gt;
@@ -227,7 +231,11 @@
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt;,
 {
-	<span class="kw">pub fn </span>new(cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd, client: Arc&lt;C&gt;, backend: Arc&lt;fc_db::Backend&lt;B&gt;&gt;) -&gt; <span class="self">Self </span>{
+	<span class="kw">pub fn </span>new(
+		cmd: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>FrontierDbCmd,
+		client: Arc&lt;C&gt;,
+		backend: Arc&lt;fc_db::kv::Backend&lt;B&gt;&gt;,
+	) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			cmd,
 			client,
@@ -268,7 +276,7 @@
 							<span class="macro">vec!</span>[]
 						};
 
-						<span class="kw">let </span>commitment = fc_db::MappingCommitment::&lt;B&gt; {
+						<span class="kw">let </span>commitment = fc_db::kv::MappingCommitment::&lt;B&gt; {
 							block_hash: <span class="kw-2">*</span>substrate_block_hash,
 							ethereum_block_hash: <span class="kw-2">*</span>ethereum_block_hash,
 							ethereum_transaction_hashes: existing_transaction_hashes,
@@ -326,7 +334,7 @@
 							<span class="macro">vec!</span>[]
 						};
 
-						<span class="kw">let </span>commitment = fc_db::MappingCommitment::&lt;B&gt; {
+						<span class="kw">let </span>commitment = fc_db::kv::MappingCommitment::&lt;B&gt; {
 							block_hash: <span class="kw-2">*</span>substrate_block_hash,
 							ethereum_block_hash: <span class="kw-2">*</span>ethereum_block_hash,
 							ethereum_transaction_hashes: existing_transaction_hashes,

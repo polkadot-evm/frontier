@@ -1,8 +1,8 @@
 var sourcesIndex = JSON.parse('{\
 "fc_cli":["",[["frontier_db_cmd",[],["mapping_db.rs","meta_db.rs","mod.rs","utils.rs"]]],["lib.rs"]],\
 "fc_consensus":["",[],["lib.rs"]],\
-"fc_db":["",[],["lib.rs","parity_db_adapter.rs","upgrade.rs","utils.rs"]],\
-"fc_mapping_sync":["",[],["lib.rs","worker.rs"]],\
+"fc_db":["",[["kv",[],["mod.rs","parity_db_adapter.rs","upgrade.rs","utils.rs"]],["sql",[],["mod.rs"]]],["lib.rs"]],\
+"fc_mapping_sync":["",[["kv",[],["mod.rs","worker.rs"]],["sql",[],["mod.rs"]]],["lib.rs"]],\
 "fc_rpc":["",[["eth",[["cache",[],["lru_cache.rs","mod.rs"]]],["block.rs","client.rs","execute.rs","fee.rs","filter.rs","format.rs","mining.rs","mod.rs","state.rs","submit.rs","transaction.rs"]]],["eth_pubsub.rs","lib.rs","net.rs","signer.rs","web3.rs"]],\
 "fc_rpc_core":["",[["types",[],["account_info.rs","block.rs","block_number.rs","bytes.rs","call_request.rs","fee.rs","filter.rs","index.rs","log.rs","mod.rs","pubsub.rs","receipt.rs","sync.rs","transaction.rs","transaction_request.rs","work.rs"]]],["eth.rs","eth_pubsub.rs","lib.rs","net.rs","web3.rs"]],\
 "fc_storage":["",[["overrides",[],["mod.rs","schema_v1_override.rs","schema_v2_override.rs","schema_v3_override.rs"]]],["lib.rs"]],\
