@@ -483,7 +483,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 	let base_extrinsic_weight = frame_system::limits::BlockWeights::with_sensible_defaults(
-		Weight::from_ref_time(2000000000000).set_proof_size(u64::MAX),
+		Weight::from_parts(2000000000000, u64::MAX),
 		sp_runtime::Perbill::from_percent(75),
 	)
 	.per_class

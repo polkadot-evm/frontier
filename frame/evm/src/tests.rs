@@ -382,7 +382,7 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 		// Some used weight is returned as part of the error.
 		assert_eq!(
 			result.unwrap_err().post_info.actual_weight,
-			Some(Weight::from_ref_time(7))
+			Some(Weight::from_parts(7, 0))
 		);
 	});
 }
@@ -649,5 +649,42 @@ fn eip3607_transaction_from_precompile() {
 			&<Test as Config>::config().clone(),
 		)
 		.is_ok());
+	});
+}
+
+#[test]
+fn metadata_code_gets_cached() {
+	new_test_ext().execute_with(|| {
+		let address = H160::repeat_byte(0xaa);
+
+		crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec());
+
+		let metadata = crate::Pallet::<Test>::account_code_metadata(address);
+		assert_eq!(metadata.size, 7);
+		assert_eq!(
+			metadata.hash,
+			hex_literal::hex!("e8396a990fe08f2402e64a00647e41dadf360ba078a59ba79f55e876e67ed4bc")
+				.into()
+		);
+
+		let metadata2 = <AccountCodesMetadata<Test>>::get(&address).expect("to have metadata set");
+		assert_eq!(metadata, metadata2);
+	});
+}
+
+#[test]
+fn metadata_empty_dont_code_gets_cached() {
+	new_test_ext().execute_with(|| {
+		let address = H160::repeat_byte(0xaa);
+
+		let metadata = crate::Pallet::<Test>::account_code_metadata(address);
+		assert_eq!(metadata.size, 0);
+		assert_eq!(
+			metadata.hash,
+			hex_literal::hex!("c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470")
+				.into()
+		);
+
+		assert!(<AccountCodesMetadata<Test>>::get(&address).is_none());
 	});
 }

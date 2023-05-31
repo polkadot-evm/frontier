@@ -181,6 +181,7 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		let pending_transactions = [];
 		{
 			const pending = (await customRequest(context.web3, "eth_getBlockByNumber", ["pending", false])).result;
+			expect(pending.hash).to.be.null;
 			expect(pending.miner).to.be.null;
 			expect(pending.nonce).to.be.null;
 			expect(pending.totalDifficulty).to.be.null;

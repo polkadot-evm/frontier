@@ -18,13 +18,12 @@
 
 #![deny(unused_crate_dependencies)]
 
-use std::{collections::HashMap, marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
 // Substrate
 use sc_consensus::{BlockCheckParams, BlockImport, BlockImportParams, ImportResult};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
-use sp_blockchain::well_known_cache_keys::Id as CacheKeyId;
 use sp_consensus::Error as ConsensusError;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
@@ -65,7 +64,6 @@ impl From<Error> for ConsensusError {
 pub struct FrontierBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
-	backend: Arc<fc_db::Backend<B>>,
 	_marker: PhantomData<B>,
 }
 
@@ -74,7 +72,6 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 		FrontierBlockImport {
 			inner: self.inner.clone(),
 			client: self.client.clone(),
-			backend: self.backend.clone(),
 			_marker: PhantomData,
 		}
 	}
@@ -88,11 +85,10 @@ where
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
 {
-	pub fn new(inner: I, client: Arc<C>, backend: Arc<fc_db::Backend<B>>) -> Self {
+	pub fn new(inner: I, client: Arc<C>) -> Self {
 		Self {
 			inner,
 			client,
-			backend,
 			_marker: PhantomData,
 		}
 	}
@@ -120,16 +116,12 @@ where
 	async fn import_block(
 		&mut self,
 		block: BlockImportParams<B, Self::Transaction>,
-		new_cache: HashMap<CacheKeyId, Vec<u8>>,
 	) -> Result<ImportResult, Self::Error> {
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.
 		ensure_log(block.header.digest()).map_err(Error::from)?;
 
-		self.inner
-			.import_block(block, new_cache)
-			.await
-			.map_err(Into::into)
+		self.inner.import_block(block).await.map_err(Into::into)
 	}
 }

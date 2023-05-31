@@ -16,23 +16,25 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::BTreeMap, sync::Arc};
+use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
 use ethereum_types::{H160, H256, U256};
 use evm::{ExitError, ExitReason};
-use jsonrpsee::core::RpcResult as Result;
-use scale_codec::Encode;
+use jsonrpsee::core::RpcResult;
+use scale_codec::{Decode, Encode};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
-use sp_api::{ApiExt, CallApiAt, ProvideRuntimeApi};
+use sp_api::{ApiExt, CallApiAt, CallApiAtParams, ProvideRuntimeApi, StorageTransactionCache};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::ExecutionContext;
 use sp_io::hashing::{blake2_128, twox_128};
-use sp_runtime::{traits::Block as BlockT, SaturatedConversion};
+use sp_runtime::{traits::Block as BlockT, DispatchError, SaturatedConversion};
+use sp_state_machine::OverlayedChanges;
 // Frontier
 use fc_rpc_core::types::*;
+use fp_evm::CallInfo;
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
 use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
@@ -62,21 +64,21 @@ impl EstimateGasAdapter for () {
 	}
 }
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
 	B: BlockT,
-	C: ProvideRuntimeApi<B>,
+	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + CallApiAt<B> + StorageProvider<B, BE> + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn call(
+	pub async fn call(
 		&self,
 		request: CallRequest,
 		number: Option<BlockNumber>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
-	) -> Result<Bytes> {
+	) -> RpcResult<Bytes> {
 		let CallRequest {
 			from,
 			to,
@@ -104,7 +106,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => {
 				let hash = self
 					.client
@@ -208,7 +212,7 @@ where
 					Ok(Bytes(info.value))
 				} else if api_version == 4 {
 					// Post-london + access list support
-					let encoded_params = sp_api::Encode::encode(&(
+					let encoded_params = Encode::encode(&(
 						&from.unwrap_or_default(),
 						&to,
 						&data,
@@ -226,38 +230,34 @@ where
 								.collect::<Vec<(sp_core::H160, Vec<H256>)>>(),
 						),
 					));
-
 					let overlayed_changes = self.create_overrides_overlay(
 						substrate_hash,
 						api_version,
 						state_overrides,
 					)?;
-					let storage_transaction_cache = std::cell::RefCell::<
-						sp_api::StorageTransactionCache<B, C::StateBackend>,
-					>::default();
-					let params = sp_api::CallApiAtParams {
+					let storage_transaction_cache =
+						RefCell::<StorageTransactionCache<B, C::StateBackend>>::default();
+					let params = CallApiAtParams {
 						at: substrate_hash,
 						function: "EthereumRuntimeRPCApi_call",
 						arguments: encoded_params,
-						overlayed_changes: &std::cell::RefCell::new(overlayed_changes),
+						overlayed_changes: &RefCell::new(overlayed_changes),
 						storage_transaction_cache: &storage_transaction_cache,
-						context: sp_api::ExecutionContext::OffchainCall(None),
+						context: ExecutionContext::OffchainCall(None),
 						recorder: &None,
 					};
+
 					let info = self
 						.client
 						.call_api_at(params)
 						.and_then(|r| {
-							std::result::Result::map_err(
-									<std::result::Result<
-										fp_evm::CallInfo,
-										sp_runtime::DispatchError,
-									> as sp_api::Decode>::decode(&mut &r[..]),
-									|error| sp_api::ApiError::FailedToDecodeReturnValue {
-										function: "EthereumRuntimeRPCApi_call",
-										error,
-									},
-								)
+							Result::map_err(
+								<Result<CallInfo, DispatchError> as Decode>::decode(&mut &r[..]),
+								|error| sp_api::ApiError::FailedToDecodeReturnValue {
+									function: "EthereumRuntimeRPCApi_call",
+									error,
+								},
+							)
 						})
 						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
@@ -351,15 +351,38 @@ where
 		}
 	}
 
-	pub async fn estimate_gas(&self, request: CallRequest, _: Option<BlockNumber>) -> Result<U256> {
+	pub async fn estimate_gas(
+		&self,
+		request: CallRequest,
+		number: Option<BlockNumber>,
+	) -> RpcResult<U256> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 
 		// Define the lower bound of estimate
 		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 
-		// Get best hash (TODO missing support for estimating gas historically)
-		let substrate_hash = client.info().best_hash;
+		// Get substrate hash and runtime api
+		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			number,
+		)
+		.await?
+		{
+			Some(id) => {
+				let hash = client
+					.expect_block_hash_from_id(&id)
+					.map_err(|_| crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None))?;
+				(hash, client.runtime_api())
+			}
+			None => {
+				// Not mapped in the db, assume pending.
+				let hash = client.info().best_hash;
+				let api = pending_runtime_api(client.as_ref(), self.graph.as_ref())?;
+				(hash, api)
+			}
+		};
 
 		// Adapt request for gas estimation.
 		let request = EC::EstimateGasAdapter::adapt_request(request);
@@ -371,8 +394,7 @@ where
 		};
 		if is_simple_transfer {
 			if let Some(to) = request.to {
-				let to_code = client
-					.runtime_api()
+				let to_code = api
 					.account_code_at(substrate_hash, to)
 					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
 				if to_code.is_empty() {
@@ -404,8 +426,6 @@ where
 		};
 
 		let max_gas_limit = block_gas_limit * self.execute_gas_limit_multiplier;
-
-		let api = client.runtime_api();
 
 		// Determine the highest possible gas limits
 		let mut highest = match request.gas {
@@ -476,7 +496,7 @@ where
 		#[rustfmt::skip]
 			let executable = move |
 				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
-			| -> Result<ExecutableResult> {
+			| -> RpcResult<ExecutableResult> {
 				let CallRequest {
 					from,
 					to,
@@ -748,8 +768,8 @@ where
 		block_hash: B::Hash,
 		api_version: u32,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
-	) -> Result<sp_api::OverlayedChanges> {
-		let mut overlayed_changes = sp_api::OverlayedChanges::default();
+	) -> RpcResult<OverlayedChanges> {
+		let mut overlayed_changes = OverlayedChanges::default();
 		if let Some(state_overrides) = state_overrides {
 			for (address, state_override) in state_overrides {
 				if EC::RuntimeStorageOverride::is_enabled() {
@@ -825,7 +845,7 @@ where
 	}
 }
 
-pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> Result<()> {
+pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> RpcResult<()> {
 	match reason {
 		ExitReason::Succeed(_) => Ok(()),
 		ExitReason::Error(e) => {
@@ -876,7 +896,7 @@ fn fee_details(
 	request_gas_price: Option<U256>,
 	request_max_fee: Option<U256>,
 	request_priority: Option<U256>,
-) -> Result<FeeDetails> {
+) -> RpcResult<FeeDetails> {
 	match (request_gas_price, request_max_fee, request_priority) {
 		(gas_price, None, None) => {
 			// Legacy request, all default to gas price.

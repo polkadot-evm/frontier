@@ -18,9 +18,10 @@
 
 //! Return types for RPC calls
 
-use crate::types::Bytes;
 use ethereum_types::{Address, Public, H160, H256, U256};
 use serde::Serialize;
+
+use crate::types::Bytes;
 
 /// Account information.
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
