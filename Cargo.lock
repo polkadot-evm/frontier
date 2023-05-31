@@ -1999,9 +1999,9 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 
 [[package]]
 name = "evm"
-version = "0.39.0"
+version = "0.39.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1099df1dac16f32a136452ad98ee0f1ff42acd3e12ce65bea4462b61d656608a"
+checksum = "a49a4e11987c51220aa89dbe1a5cc877f5079fa6864c0a5b4533331db44e9365"
 dependencies = [
  "auto_impl",
  "environmental",
