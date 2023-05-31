@@ -854,6 +854,14 @@ where
 		self.substate
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
 	}
+
+	fn code_size(&self, address: H160) -> U256 {
+		U256::from(<Pallet<T>>::account_code_metadata(address).size)
+	}
+
+	fn code_hash(&self, address: H160) -> H256 {
+		<Pallet<T>>::account_code_metadata(address).hash
+	}
 }
 
 #[cfg(feature = "forbid-evm-reentrancy")]
