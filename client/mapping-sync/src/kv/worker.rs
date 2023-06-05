@@ -34,14 +34,9 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
+use crate::SyncStrategy;
 use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
-
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum SyncStrategy {
-	Normal,
-	Parachain,
-}
 
 pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	import_notifications: ImportNotifications<Block>,
@@ -51,7 +46,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	client: Arc<C>,
 	substrate_backend: Arc<BE>,
 	overrides: Arc<OverrideHandle<Block>>,
-	frontier_backend: Arc<fc_db::Backend<Block>>,
+	frontier_backend: Arc<fc_db::kv::Backend<Block>>,
 
 	have_next: bool,
 	retry_times: usize,
@@ -72,7 +67,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		client: Arc<C>,
 		substrate_backend: Arc<BE>,
 		overrides: Arc<OverrideHandle<Block>>,
-		frontier_backend: Arc<fc_db::Backend<Block>>,
+		frontier_backend: Arc<fc_db::kv::Backend<Block>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
@@ -141,7 +136,7 @@ where
 		if fire {
 			self.inner_delay = None;
 
-			match crate::sync_blocks(
+			match crate::kv::sync_blocks(
 				self.client.as_ref(),
 				self.substrate_backend.as_ref(),
 				self.overrides.clone(),
@@ -263,9 +258,9 @@ mod tests {
 		});
 
 		let frontier_backend = Arc::new(
-			fc_db::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock>::new(
 				client.clone(),
-				&fc_db::DatabaseSettings {
+				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {
 						path: tmp.path().to_path_buf(),
 						cache_size: 0,
@@ -401,9 +396,9 @@ mod tests {
 		});
 
 		let frontier_backend = Arc::new(
-			fc_db::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock>::new(
 				client.clone(),
-				&fc_db::DatabaseSettings {
+				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {
 						path: tmp.path().to_path_buf(),
 						cache_size: 0,

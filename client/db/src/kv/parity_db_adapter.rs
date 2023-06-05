@@ -61,6 +61,6 @@ impl<H: Clone + AsRef<[u8]>> Database<H> for DbAdapter {
 	}
 
 	fn sanitize_key(&self, key: &mut Vec<u8>) {
-		let _prefix = key.drain(0..key.len() - crate::DB_HASH_LEN);
+		let _prefix = key.drain(0..key.len() - super::DB_HASH_LEN);
 	}
 }
