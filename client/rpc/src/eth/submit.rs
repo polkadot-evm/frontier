@@ -18,10 +18,9 @@
 
 use ethereum_types::H256;
 use futures::future::TryFutureExt;
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
@@ -39,7 +38,7 @@ use crate::{
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, H, A, EC>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -50,7 +49,7 @@ where
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub async fn send_transaction(&self, request: TransactionRequest) -> Result<H256> {
+	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -207,7 +206,7 @@ where
 			.await
 	}
 
-	pub async fn send_raw_transaction(&self, bytes: Bytes) -> Result<H256> {
+	pub async fn send_raw_transaction(&self, bytes: Bytes) -> RpcResult<H256> {
 		let slice = &bytes.0[..];
 		if slice.is_empty() {
 			return Err(internal_err("transaction data is empty"));

@@ -12,6 +12,8 @@ members = [
 	"frame/evm/precompile/ed25519",
 	"frame/evm/precompile/bn128",
 	"frame/evm/precompile/blake2",
+	"frame/evm/precompile/bw6761",
+	"frame/evm/precompile/bls12377",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
 	"client/consensus",
@@ -38,7 +40,7 @@ repository = "https://github.com/paritytech/frontier/"
 
 [workspace.dependencies]
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
-environmental = { version = "1.1.3", default-features = false }
+environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
 evm = { version = "0.37.0", default-features = false }
@@ -48,7 +50,7 @@ jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.17.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.17", default-features = false }
-parity-db = "0.4.2"
+parity-db = "0.4.6"
 rlp = { version = "0.5", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
@@ -63,27 +65,29 @@ sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/su
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-consensus-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-finality-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-keystore = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network-common = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-network-sync = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-utils = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # Substrate Primitive
 sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-consensus-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-core = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sp-finality-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -150,3 +154,9 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }
+# Arkworks
+ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
+ark-bw6-761 = { version = "0.4.0", default-features = false }
+ark-ec = { version = "0.4.0", default-features = false }
+ark-ff = { version = "0.4.0", default-features = false }
+ark-std = { version = "0.4.0", default-features = false }

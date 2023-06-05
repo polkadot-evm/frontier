@@ -16,17 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use core::convert::AsRef;
+use std::{
+	collections::BTreeMap,
+	sync::{Arc, Mutex},
+};
+
 use ethereum_types::{Bloom, BloomInput, H160, H256, U256};
 use serde::{
 	de::{DeserializeOwned, Error},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 use serde_json::{from_value, Value};
-use std::{
-	collections::BTreeMap,
-	sync::{Arc, Mutex},
-};
 
 use crate::types::{BlockNumber, Log};
 

@@ -37,8 +37,8 @@ type FullPool<Client> = sc_transaction_pool::FullPool<Block, Client>;
 type FullSelectChain = sc_consensus::LongestChain<FullBackend, Block>;
 
 type GrandpaBlockImport<Client> =
-	sc_finality_grandpa::GrandpaBlockImport<FullBackend, Block, Client, FullSelectChain>;
-type GrandpaLinkHalf<Client> = sc_finality_grandpa::LinkHalf<Block, Client, FullSelectChain>;
+	sc_consensus_grandpa::GrandpaBlockImport<FullBackend, Block, Client, FullSelectChain>;
+type GrandpaLinkHalf<Client> = sc_consensus_grandpa::LinkHalf<Block, Client, FullSelectChain>;
 type BoxBlockImport<Client> = sc_consensus::BoxBlockImport<Block, TransactionFor<Client, Block>>;
 
 pub fn new_partial<RuntimeApi, Executor, BIQ>(
@@ -117,7 +117,7 @@ where
 	});
 
 	let select_chain = sc_consensus::LongestChain::new(backend.clone());
-	let (grandpa_block_import, grandpa_link) = sc_finality_grandpa::block_import(
+	let (grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
 		&client,
 		select_chain.clone(),
@@ -289,7 +289,7 @@ where
 		fee_history_cache_limit,
 	} = new_frontier_partial(&eth_config)?;
 
-	let grandpa_protocol_name = sc_finality_grandpa::protocol_standard_name(
+	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		&client.block_hash(0)?.expect("Genesis block exists; qed"),
 		&config.chain_spec,
 	);
@@ -300,11 +300,11 @@ where
 		config
 			.network
 			.extra_sets
-			.push(sc_finality_grandpa::grandpa_peers_set_config(
+			.push(sc_consensus_grandpa::grandpa_peers_set_config(
 				grandpa_protocol_name.clone(),
 			));
 		let warp_sync: Arc<dyn sc_network::config::WarpSyncProvider<Block>> =
-			Arc::new(sc_finality_grandpa::warp_proof::NetworkProvider::new(
+			Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 				backend.clone(),
 				grandpa_link.shared_authority_set().clone(),
 				Vec::default(),
@@ -312,7 +312,7 @@ where
 		Some(WarpSyncParams::WithProvider(warp_sync))
 	};
 
-	let (network, system_rpc_tx, tx_handler_controller, network_starter) =
+	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
 			client: client.clone(),
@@ -341,6 +341,15 @@ where
 	// Channel for the rpc handler to communicate with the authorship task.
 	let (command_sink, commands_stream) = mpsc::channel(1000);
 
+	// Sinks for pubsub notifications.
+	// Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
+	// The MappingSyncWorker sends through the channel on block import and the subscription emits a notification to the subscriber on receiving a message through this channel.
+	// This way we avoid race conditions when using native substrate block import notification stream.
+	let pubsub_notification_sinks: fc_mapping_sync::EthereumBlockNotificationSinks<
+		fc_mapping_sync::EthereumBlockNotification<Block>,
+	> = Default::default();
+	let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+
 	// for ethereum-compatibility rpc.
 	config.rpc_id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
 	let overrides = crate::rpc::overrides_handle(client.clone());
@@ -352,6 +361,7 @@ where
 		is_authority: config.role.is_authority(),
 		enable_dev_signer: eth_config.enable_dev_signer,
 		network: network.clone(),
+		sync: sync_service.clone(),
 		frontier_backend: frontier_backend.clone(),
 		overrides: overrides.clone(),
 		block_data_cache: Arc::new(fc_rpc::EthBlockDataCacheTask::new(
@@ -366,11 +376,13 @@ where
 		fee_history_cache: fee_history_cache.clone(),
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
+		forced_parent_hashes: None,
 	};
 
 	let rpc_builder = {
 		let client = client.clone();
 		let pool = transaction_pool.clone();
+		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
 			let deps = crate::rpc::FullDeps {
@@ -385,7 +397,12 @@ where
 				eth: eth_rpc_params.clone(),
 			};
 
-			crate::rpc::create_full(deps, subscription_task_executor).map_err(Into::into)
+			crate::rpc::create_full(
+				deps,
+				subscription_task_executor,
+				pubsub_notification_sinks.clone(),
+			)
+			.map_err(Into::into)
 		})
 	};
 
@@ -400,6 +417,7 @@ where
 		network: network.clone(),
 		system_rpc_tx,
 		tx_handler_controller,
+		sync_service: sync_service.clone(),
 		telemetry: telemetry.as_mut(),
 	})?;
 
@@ -412,6 +430,8 @@ where
 		overrides,
 		fee_history_cache,
 		fee_history_cache_limit,
+		sync_service.clone(),
+		pubsub_notification_sinks,
 	);
 
 	if role.is_authority() {
@@ -462,8 +482,8 @@ where
 				select_chain,
 				block_import,
 				proposer_factory,
-				sync_oracle: network.clone(),
-				justification_sync_link: network.clone(),
+				sync_oracle: sync_service.clone(),
+				justification_sync_link: sync_service.clone(),
 				create_inherent_data_providers,
 				force_authoring,
 				backoff_authoring_blocks: Option::<()>::None,
@@ -490,7 +510,7 @@ where
 			None
 		};
 
-		let grandpa_config = sc_finality_grandpa::Config {
+		let grandpa_config = sc_consensus_grandpa::Config {
 			// FIXME #1578 make this available through chainspec
 			gossip_duration: Duration::from_millis(333),
 			justification_period: 512,
@@ -509,13 +529,14 @@ where
 		// been tested extensively yet and having most nodes in a network run it
 		// could lead to finality stalls.
 		let grandpa_voter =
-			sc_finality_grandpa::run_grandpa_voter(sc_finality_grandpa::GrandpaParams {
+			sc_consensus_grandpa::run_grandpa_voter(sc_consensus_grandpa::GrandpaParams {
 				config: grandpa_config,
 				link: grandpa_link,
 				network,
-				voting_rule: sc_finality_grandpa::VotingRulesBuilder::default().build(),
+				sync: sync_service,
+				voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
 				prometheus_registry,
-				shared_voter_state: sc_finality_grandpa::SharedVoterState::empty(),
+				shared_voter_state: sc_consensus_grandpa::SharedVoterState::empty(),
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
 			})?;
 

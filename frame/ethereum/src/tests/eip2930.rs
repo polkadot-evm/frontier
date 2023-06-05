@@ -49,7 +49,12 @@ fn transaction_should_increment_nonce() {
 	ext.execute_with(|| {
 		let t = eip2930_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
-		assert_eq!(EVM::account_basic(&alice.address).0.nonce, U256::from(1));
+		assert_eq!(
+			pallet_evm::Pallet::<Test>::account_basic(&alice.address)
+				.0
+				.nonce,
+			U256::from(1)
+		);
 	});
 }
 
@@ -201,7 +206,7 @@ fn contract_constructor_should_get_executed() {
 
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 		assert_eq!(
-			EVM::account_storages(erc20_address, alice_storage_address),
+			pallet_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
@@ -225,7 +230,7 @@ fn source_should_be_derived_from_signature() {
 
 		// We verify the transaction happened with alice account.
 		assert_eq!(
-			EVM::account_storages(erc20_address, alice_storage_address),
+			pallet_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
@@ -242,7 +247,10 @@ fn contract_should_be_created_at_given_address() {
 	ext.execute_with(|| {
 		let t = eip2930_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
-		assert_ne!(EVM::account_codes(erc20_address).len(), 0);
+		assert_ne!(
+			pallet_evm::AccountCodes::<Test>::get(erc20_address).len(),
+			0
+		);
 	});
 }
 
@@ -401,7 +409,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 	let base_extrinsic_weight = frame_system::limits::BlockWeights::with_sensible_defaults(
-		Weight::from_ref_time(2000000000000).set_proof_size(u64::MAX),
+		Weight::from_parts(2000000000000, u64::MAX),
 		sp_runtime::Perbill::from_percent(75),
 	)
 	.per_class

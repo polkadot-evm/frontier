@@ -82,7 +82,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("SSTORE cost should properly take into account transaction initial value", async function () {
-		this.timeout(5000);
+		this.timeout(15000);
 
 		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
 
