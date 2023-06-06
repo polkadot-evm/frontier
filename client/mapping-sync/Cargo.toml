@@ -34,7 +34,7 @@ fp-rpc = { workspace = true, features = ["default"] }
 [dev-dependencies]
 ethereum = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-sqlx = { features = ["runtime-tokio-native-tls", "sqlite"], git = "https://github.com/launchbadge/sqlx", branch = "main" }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
 tempfile = "3.3.0"
 tokio = { version = "1.24", features = ["sync"] }
 # Frontier

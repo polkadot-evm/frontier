@@ -457,7 +457,7 @@ dependencies = [
  "slab",
  "socket2",
  "waker-fn",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -1699,15 +1699,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dirs"
-version = "4.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca3aa72a6f96ea37bbc5aa912f6788242832f75369bdfdadcb0e38423f100059"
-dependencies = [
- "dirs-sys",
-]
-
-[[package]]
 name = "dirs-sys"
 version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1921,6 +1912,17 @@ checksum = "aa68f1b12764fab894d2755d2518754e71b4fd80ecfb822714a1206c2aab39bf"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "etcetera"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "136d1b5283a1ab77bd9257427ffd09d8667ced0570b6f938942bc7568ed5b943"
+dependencies = [
+ "cfg-if",
+ "home",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
@@ -2308,7 +2310,7 @@ dependencies = [
  "cfg-if",
  "libc",
  "redox_syscall",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -3324,6 +3326,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "home"
+version = "0.5.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5444c27eef6923071f7ebcc33e3444508466a76f7a2b93da00ed6e19f30c1ddb"
+dependencies = [
+ "windows-sys 0.48.0",
+]
+
+[[package]]
 name = "hostname"
 version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3598,7 +3609,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e7d6c6f8c91b4b9ed43484ad1a938e393caf35960fce7f82a040497207bd8e9e"
 dependencies = [
  "libc",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -3634,7 +3645,7 @@ dependencies = [
  "hermit-abi 0.2.6",
  "io-lifetimes 1.0.4",
  "rustix 0.36.7",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -4320,9 +4331,9 @@ dependencies = [
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.25.2"
+version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29f835d03d717946d28b1d1ed632eb6f0e24a299388ee623d0c23118d3e8a7fa"
+checksum = "afc22eff61b133b115c6e8c74e818c628d6d5e7a502afea6f64dee076dd94326"
 dependencies = [
  "cc",
  "pkg-config",
@@ -4589,7 +4600,7 @@ dependencies = [
  "libc",
  "log",
  "wasi 0.11.0+wasi-snapshot-preview1",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -5724,7 +5735,7 @@ dependencies = [
  "libc",
  "redox_syscall",
  "smallvec",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -5918,7 +5929,7 @@ dependencies = [
  "libc",
  "log",
  "wepoll-ffi",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -6659,7 +6670,7 @@ dependencies = [
  "io-lifetimes 0.7.5",
  "libc",
  "linux-raw-sys 0.0.46",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -6673,7 +6684,7 @@ dependencies = [
  "io-lifetimes 1.0.4",
  "libc",
  "linux-raw-sys 0.1.4",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -7827,7 +7838,7 @@ version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "713cfb06c7059f3588fb8044c0fad1d09e3c01d225e25b9220dbfdcf16dbb1b3"
 dependencies = [
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -8942,8 +8953,9 @@ dependencies = [
 
 [[package]]
 name = "sqlx"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "afd8985c8822235a9ebeedf0bff971462470162759663d3184593c807ab6e898"
 dependencies = [
  "sqlx-core",
  "sqlx-macros",
@@ -8954,8 +8966,9 @@ dependencies = [
 
 [[package]]
 name = "sqlx-core"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4c12403de02d88e6808de30eb2153c6997d39cc9511a446b510d5944a3ea6727"
 dependencies = [
  "ahash 0.7.6",
  "atoi",
@@ -8995,8 +9008,9 @@ dependencies = [
 
 [[package]]
 name = "sqlx-macros"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2be74801a0852ace9d86bc8cc8ac36241e7dc712fea26b8f32bd80ce29c98a10"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -9007,8 +9021,9 @@ dependencies = [
 
 [[package]]
 name = "sqlx-macros-core"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ce71dd8afc7ad2aeff001bb6affa7128c9087bbdcab07fa97a7952e8ee3d1da"
 dependencies = [
  "dotenvy",
  "either",
@@ -9031,8 +9046,9 @@ dependencies = [
 
 [[package]]
 name = "sqlx-mysql"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9c430536df19e8b5b048a9ae19b266aba77f9f3e2255b7195f465d678cb2d0a"
 dependencies = [
  "atoi",
  "base64 0.21.0",
@@ -9041,7 +9057,6 @@ dependencies = [
  "bytes",
  "crc",
  "digest 0.10.6",
- "dirs",
  "dotenvy",
  "either",
  "futures-channel",
@@ -9073,16 +9088,17 @@ dependencies = [
 
 [[package]]
 name = "sqlx-postgres"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "210e0a1523b6d46ca73db1c5197a233a8e14787596910ce88ff5d47a00da0241"
 dependencies = [
  "atoi",
  "base64 0.21.0",
  "bitflags",
  "byteorder",
  "crc",
- "dirs",
  "dotenvy",
+ "etcetera",
  "futures-channel",
  "futures-core",
  "futures-io",
@@ -9090,6 +9106,7 @@ dependencies = [
  "hex",
  "hkdf",
  "hmac 0.12.1",
+ "home",
  "itoa",
  "log",
  "md-5",
@@ -9110,8 +9127,9 @@ dependencies = [
 
 [[package]]
 name = "sqlx-sqlite"
-version = "0.7.0-alpha.2"
-source = "git+https://github.com/launchbadge/sqlx?branch=main#4f1ac1d6060ee73edf83c8365fafb12df44deecc"
+version = "0.7.0-alpha.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f446c04b2d2d06b49b905e33c877b282e0f70b1b60a22513eacee8bf56d8afbe"
 dependencies = [
  "atoi",
  "flume",
@@ -9675,7 +9693,7 @@ dependencies = [
  "signal-hook-registry",
  "socket2",
  "tokio-macros",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10381,7 +10399,7 @@ dependencies = [
  "wasmtime-environ",
  "wasmtime-jit",
  "wasmtime-runtime",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10409,7 +10427,7 @@ dependencies = [
  "serde",
  "sha2 0.10.6",
  "toml",
- "windows-sys",
+ "windows-sys 0.42.0",
  "zstd",
 ]
 
@@ -10474,7 +10492,7 @@ dependencies = [
  "wasmtime-jit-debug",
  "wasmtime-jit-icache-coherence",
  "wasmtime-runtime",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10496,7 +10514,7 @@ checksum = "67d412e9340ab1c83867051d8d1d7c90aa8c9afc91da086088068e2734e25064"
 dependencies = [
  "cfg-if",
  "libc",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10520,7 +10538,7 @@ dependencies = [
  "wasmtime-asm-macros",
  "wasmtime-environ",
  "wasmtime-jit-debug",
- "windows-sys",
+ "windows-sys 0.42.0",
 ]
 
 [[package]]
@@ -10878,13 +10896,37 @@ version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a3e1820f08b8513f676f7ab6c1f99ff312fb97b553d30ff4dd86f9f15728aa7"
 dependencies = [
- "windows_aarch64_gnullvm",
+ "windows_aarch64_gnullvm 0.42.1",
  "windows_aarch64_msvc 0.42.1",
  "windows_i686_gnu 0.42.1",
  "windows_i686_msvc 0.42.1",
  "windows_x86_64_gnu 0.42.1",
- "windows_x86_64_gnullvm",
+ "windows_x86_64_gnullvm 0.42.1",
  "windows_x86_64_msvc 0.42.1",
+]
+
+[[package]]
+name = "windows-sys"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "677d2418bec65e3338edb076e806bc1ec15693c5d0104683f2efe857f61056a9"
+dependencies = [
+ "windows-targets",
+]
+
+[[package]]
+name = "windows-targets"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7b1eb6f0cd7c80c79759c929114ef071b87354ce476d9d94271031c0497adfd5"
+dependencies = [
+ "windows_aarch64_gnullvm 0.48.0",
+ "windows_aarch64_msvc 0.48.0",
+ "windows_i686_gnu 0.48.0",
+ "windows_i686_msvc 0.48.0",
+ "windows_x86_64_gnu 0.48.0",
+ "windows_x86_64_gnullvm 0.48.0",
+ "windows_x86_64_msvc 0.48.0",
 ]
 
 [[package]]
@@ -10892,6 +10934,12 @@ name = "windows_aarch64_gnullvm"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8c9864e83243fdec7fc9c5444389dcbbfd258f745e7853198f365e3c4968a608"
+
+[[package]]
+name = "windows_aarch64_gnullvm"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "91ae572e1b79dba883e0d315474df7305d12f569b400fcf90581b06062f7e1bc"
 
 [[package]]
 name = "windows_aarch64_msvc"
@@ -10906,6 +10954,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4c8b1b673ffc16c47a9ff48570a9d85e25d265735c503681332589af6253c6c7"
 
 [[package]]
+name = "windows_aarch64_msvc"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b2ef27e0d7bdfcfc7b868b317c1d32c641a6fe4629c171b8928c7b08d98d7cf3"
+
+[[package]]
 name = "windows_i686_gnu"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10916,6 +10970,12 @@ name = "windows_i686_gnu"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de3887528ad530ba7bdbb1faa8275ec7a1155a45ffa57c37993960277145d640"
+
+[[package]]
+name = "windows_i686_gnu"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "622a1962a7db830d6fd0a69683c80a18fda201879f0f447f065a3b7467daa241"
 
 [[package]]
 name = "windows_i686_msvc"
@@ -10930,6 +10990,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bf4d1122317eddd6ff351aa852118a2418ad4214e6613a50e0191f7004372605"
 
 [[package]]
+name = "windows_i686_msvc"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4542c6e364ce21bf45d69fdd2a8e455fa38d316158cfd43b3ac1c5b1b19f8e00"
+
+[[package]]
 name = "windows_x86_64_gnu"
 version = "0.34.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10942,10 +11008,22 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1040f221285e17ebccbc2591ffdc2d44ee1f9186324dd3e84e99ac68d699c45"
 
 [[package]]
+name = "windows_x86_64_gnu"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ca2b8a661f7628cbd23440e50b05d705db3686f894fc9580820623656af974b1"
+
+[[package]]
 name = "windows_x86_64_gnullvm"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "628bfdf232daa22b0d64fdb62b09fcc36bb01f05a3939e20ab73aaf9470d0463"
+
+[[package]]
+name = "windows_x86_64_gnullvm"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7896dbc1f41e08872e9d5e8f8baa8fdd2677f29468c4e156210174edc7f7b953"
 
 [[package]]
 name = "windows_x86_64_msvc"
@@ -10958,6 +11036,12 @@ name = "windows_x86_64_msvc"
 version = "0.42.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
+
+[[package]]
+name = "windows_x86_64_msvc"
+version = "0.48.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a515f5799fe4961cb532f983ce2b23082366b898e52ffbce459c86f67c8378a"
 
 [[package]]
 name = "winreg"
