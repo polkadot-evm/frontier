@@ -31,10 +31,11 @@ use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Zero};
 // Frontier
-use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 use fc_storage::OverrideHandle;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
+
+use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 
 pub fn sync_block<Block: BlockT, C, BE>(
 	client: &C,

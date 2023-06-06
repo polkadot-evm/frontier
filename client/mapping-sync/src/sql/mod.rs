@@ -16,18 +16,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#![allow(clippy::too_many_arguments)]
+use std::{ops::DerefMut, sync::Arc, time::Duration};
 
-use crate::EthereumBlockNotification;
-use fp_rpc::EthereumRuntimeRPCApi;
 use futures::prelude::*;
+// Substrate
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use sp_api::{HeaderT, ProvideRuntimeApi};
 use sp_blockchain::{Backend, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_core::H256;
 use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
-use std::{ops::DerefMut, sync::Arc, time::Duration};
+// Frontier
+use fp_rpc::EthereumRuntimeRPCApi;
+
+use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
@@ -63,10 +65,10 @@ pub struct SyncWorker<Block, Backend, Client> {
 
 impl<Block: BlockT, Backend, Client> SyncWorker<Block, Backend, Client>
 where
-	Block: BlockT<Hash = H256> + Send + Sync,
-	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256>,
 	Client: ProvideRuntimeApi<Block>,
 	Client::Api: EthereumRuntimeRPCApi<Block>,
+	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
 	Backend::State: StateBackend<BlakeTwo256>,
 {
@@ -77,28 +79,20 @@ where
 		substrate_backend: Arc<Backend>,
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 		pubsub_notification_sinks: Arc<
-			crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>,
+			EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 		>,
 	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
 			while let Some(cmd) = rx.recv().await {
-				log::debug!(
-					target: "frontier-sql",
-					"💬 Recv Worker Command {:?}",
-					cmd,
-				);
-				println!("💬 Recv Worker Command {:?}", cmd,);
+				log::debug!(target: "frontier-sql", "💬 Recv Worker Command {cmd:?}");
+				println!("💬 Recv Worker Command {cmd:?}");
 				match cmd {
 					WorkerCommand::ResumeSync => {
 						// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
 						match indexer_backend.get_last_indexed_canon_block().await.ok() {
 							Some(last_block_hash) => {
-								log::debug!(
-									target: "frontier-sql",
-									"Resume from last block {:?}",
-									last_block_hash,
-								);
+								log::debug!(target: "frontier-sql", "Resume from last block {last_block_hash:?}");
 								if let Some(parent_hash) = client
 									.header(last_block_hash)
 									.ok()
@@ -159,11 +153,7 @@ where
 						if let Some(block_hash) =
 							indexer_backend.get_first_pending_canon_block().await
 						{
-							log::debug!(
-								target: "frontier-sql",
-								"Indexing pending canonical block {:?}",
-								block_hash,
-							);
+							log::debug!(target: "frontier-sql", "Indexing pending canonical block {block_hash:?}");
 							indexer_backend
 								.index_block_logs(client.clone(), block_hash)
 								.await;
@@ -191,14 +181,14 @@ where
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 		import_notifications: sc_client_api::ImportNotifications<Block>,
 		worker_config: SyncWorkerConfig,
-		sync_strategy: crate::SyncStrategy,
+		sync_strategy: SyncStrategy,
 		sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 		pubsub_notification_sinks: Arc<
-			crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>,
+			EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 		>,
 	) {
 		// work in progress for `SyncStrategy::Normal` to also index non-best blocks.
-		if sync_strategy == crate::SyncStrategy::Normal {
+		if sync_strategy == SyncStrategy::Normal {
 			panic!("'SyncStrategy::Normal' is not supported")
 		}
 
@@ -292,10 +282,10 @@ async fn index_block_and_ancestors<Block, Backend, Client>(
 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 	hash: H256,
 ) where
-	Block: BlockT<Hash = H256> + Send + Sync,
-	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256>,
 	Client: ProvideRuntimeApi<Block>,
 	Client::Api: EthereumRuntimeRPCApi<Block>,
+	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
 	Backend::State: StateBackend<BlakeTwo256>,
 {
@@ -309,33 +299,18 @@ async fn index_block_and_ancestors<Block, Backend, Client>(
 
 		// exit if block is already imported
 		if indexer_backend.is_block_indexed(hash).await {
-			log::debug!(
-				target: "frontier-sql",
-				"🔴 Block {:?} already imported",
-				hash,
-			);
+			log::debug!(target: "frontier-sql", "🔴 Block {hash:?} already imported");
 			break;
 		}
 
-		log::debug!(
-			target: "frontier-sql",
-			"🛠️  Importing {:?}",
-			hash,
-		);
+		log::debug!(target: "frontier-sql", "🛠️  Importing {hash:?}");
 		let _ = indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.await
 			.map_err(|e| {
-				log::error!(
-					target: "frontier-sql",
-					"{}",
-					e,
-				);
+				log::error!(target: "frontier-sql", "{e}");
 			});
-		log::debug!(
-			target: "frontier-sql",
-			"Inserted block metadata"
-		);
+		log::debug!(target: "frontier-sql", "Inserted block metadata");
 		indexer_backend.index_block_logs(client.clone(), hash).await;
 
 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
@@ -355,10 +330,10 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 	hash: H256,
 ) where
-	Block: BlockT<Hash = H256> + Send + Sync,
-	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256>,
 	Client: ProvideRuntimeApi<Block>,
 	Client::Api: EthereumRuntimeRPCApi<Block>,
+	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
 	Backend::State: StateBackend<BlakeTwo256>,
 {
@@ -374,31 +349,18 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 
 		// exit if canonical block is already imported
 		if status.indexed && status.canon {
-			log::debug!(
-				target: "frontier-sql",
-				"🔴 Block {:?} already imported",
-				hash,
-			);
+			log::debug!(target: "frontier-sql", "🔴 Block {hash:?} already imported");
 			break;
 		}
 
 		// If block was previously indexed as non-canon then mark it as canon
 		if status.indexed && !status.canon {
 			if let Err(err) = indexer_backend.set_block_as_canon(hash).await {
-				log::error!(
-					target: "frontier-sql",
-					"Failed setting block {:?} as canon: {:?}",
-					hash,
-					err,
-				);
+				log::error!(target: "frontier-sql", "Failed setting block {hash:?} as canon: {err:?}");
 				continue;
 			}
 
-			log::debug!(
-				target: "frontier-sql",
-				"🛠️  Marked block as canon {:?}",
-				hash,
-			);
+			log::debug!(target: "frontier-sql", "🛠️  Marked block as canon {hash:?}");
 
 			// Check parent block
 			if let Ok(Some(header)) = blockchain_backend.header(hash) {
@@ -409,26 +371,14 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 		}
 
 		// Else, import the new block
-		log::debug!(
-			target: "frontier-sql",
-			"🛠️  Importing {:?}",
-			hash,
-		);
+		log::debug!(target: "frontier-sql", "🛠️  Importing {hash:?}");
 		let _ = indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.await
 			.map_err(|e| {
-				log::error!(
-					target: "frontier-sql",
-					"{}",
-					e,
-				);
+				log::error!(target: "frontier-sql", "{e}");
 			});
-		log::debug!(
-			target: "frontier-sql",
-			"Inserted block metadata  {:?}",
-			hash
-		);
+		log::debug!(target: "frontier-sql", "Inserted block metadata  {hash:?}");
 		indexer_backend.index_block_logs(client.clone(), hash).await;
 
 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
@@ -440,14 +390,12 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 
 /// Canonicalizes the database by setting the `is_canon` field for the retracted blocks to `0`,
 /// and `1` if they are enacted.
-async fn canonicalize_blocks<Block>(
+async fn canonicalize_blocks<Block: BlockT<Hash = H256>>(
 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 	common: H256,
 	enacted: Vec<H256>,
 	retracted: Vec<H256>,
-) where
-	Block: BlockT<Hash = H256> + Send + Sync,
-{
+) {
 	if (indexer_backend.canonicalize(&retracted, &enacted).await).is_err() {
 		log::error!(
 			target: "frontier-sql",
@@ -467,19 +415,15 @@ async fn index_missing_blocks<Block, Client, Backend>(
 	substrate_backend: Arc<Backend>,
 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 ) where
-	Block: BlockT<Hash = H256> + Send + Sync,
-	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256>,
 	Client: ProvideRuntimeApi<Block>,
 	Client::Api: EthereumRuntimeRPCApi<Block>,
+	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
 	Backend::State: StateBackend<BlakeTwo256>,
 {
 	if let Some(block_number) = indexer_backend.get_first_missing_canon_block().await {
-		log::debug!(
-			target: "frontier-sql",
-			"Missing {:?}",
-			block_number,
-		);
+		log::debug!(target: "frontier-sql", "Missing {block_number:?}");
 		if block_number == 0 {
 			index_genesis_block(client.clone(), indexer_backend.clone()).await;
 		} else if let Ok(Some(block_hash)) = client.hash(block_number.unique_saturated_into()) {
@@ -497,11 +441,7 @@ async fn index_missing_blocks<Block, Client, Backend>(
 			)
 			.await;
 		} else {
-			log::debug!(
-				target: "frontier-sql",
-				"Failed retrieving hash for block #{}",
-				block_number,
-			);
+			log::debug!(target: "frontier-sql", "Failed retrieving hash for block #{block_number}");
 		}
 	}
 }
@@ -513,10 +453,10 @@ async fn index_genesis_block<Block, Client, Backend>(
 	client: Arc<Client>,
 	indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 ) where
-	Block: BlockT<Hash = H256> + Send + Sync,
-	Client: StorageProvider<Block, Backend> + HeaderBackend<Block> + Send + Sync + 'static,
+	Block: BlockT<Hash = H256>,
 	Client: ProvideRuntimeApi<Block>,
 	Client::Api: EthereumRuntimeRPCApi<Block>,
+	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
 	Backend::State: StateBackend<BlakeTwo256>,
 {
@@ -528,32 +468,25 @@ async fn index_genesis_block<Block, Client, Backend>(
 		.insert_genesis_block_metadata(client.clone())
 		.await
 		.map_err(|e| {
-			log::error!(
-				target: "frontier-sql",
-				"💔  Cannot sync genesis block: {}",
-				e,
-			)
+			log::error!(target: "frontier-sql", "💔  Cannot sync genesis block: {e}");
 		}) {
-		log::debug!(
-			target: "frontier-sql",
-			"Imported genesis block {:?}",
-			substrate_genesis_hash,
-		);
+		log::debug!(target: "frontier-sql", "Imported genesis block {substrate_genesis_hash:?}");
 	}
 }
 
 #[cfg(test)]
 mod test {
 	use super::*;
-	use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
-	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
-	use fp_storage::{
-		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
-	};
+
+	use std::{collections::BTreeMap, path::Path, sync::Arc};
+
 	use futures::executor;
+	use scale_codec::Encode;
+	use sqlx::Row;
+	use tempfile::tempdir;
+	// Substrate
 	use sc_block_builder::BlockBuilderProvider;
 	use sc_client_api::{BlockchainEvents, HeaderBackend};
-	use scale_codec::Encode;
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_io::hashing::twox_128;
@@ -561,12 +494,14 @@ mod test {
 		generic::{Digest, Header},
 		traits::BlakeTwo256,
 	};
-	use sqlx::Row;
-	use std::{collections::BTreeMap, path::Path, sync::Arc};
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
-	use tempfile::tempdir;
+	// Frontier
+	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fp_storage::{
+		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
+	};
 
 	type OpaqueBlock = sp_runtime::generic::Block<
 		Header<u64, BlakeTwo256>,
@@ -755,7 +690,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(1),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
-				crate::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
@@ -885,7 +820,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(10),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
-				crate::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
@@ -1088,7 +1023,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(10),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
-				crate::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
@@ -1282,7 +1217,7 @@ mod test {
 					read_notification_timeout: Duration::from_secs(10),
 					check_indexed_blocks_interval: Duration::from_secs(60),
 				},
-				crate::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)

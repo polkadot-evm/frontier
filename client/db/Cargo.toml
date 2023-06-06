@@ -14,17 +14,14 @@ targets = ["x86_64-unknown-linux-gnu"]
 async-trait = "0.1"
 ethereum = { workspace = true, features = ["with-codec"] }
 futures = "0.3.25"
+kvdb-rocksdb = { workspace = true, optional = true }
 log = "0.4.17"
+parity-db = { workspace = true, optional = true }
 parking_lot = "0.12.1"
+scale-codec = { package = "parity-scale-codec", workspace = true }
 smallvec = "1.10"
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
 tokio = { version = "1.19", features = ["macros", "sync"] }
-
-# Parity
-kvdb-rocksdb = { workspace = true, optional = true }
-parity-db = { workspace = true, optional = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
-
 # Substrate
 sc-client-api = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
@@ -34,7 +31,6 @@ sp-core = { workspace = true }
 sp-database = { workspace = true }
 sp-runtime = { workspace = true }
 sp-storage = { workspace = true }
-
 # Frontier
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
@@ -45,9 +41,11 @@ fp-storage = { workspace = true, features = ["default"] }
 default = ["kvdb-rocksdb", "parity-db"]
 
 [dev-dependencies]
-fc-rpc = { workspace = true }
 maplit = "1.0.2"
+tempfile = "3.3.0"
+# Substrate
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
-tempfile = "3.3.0"
+# Frontier
+fc-rpc = { workspace = true }
