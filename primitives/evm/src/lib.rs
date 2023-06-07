@@ -63,7 +63,6 @@ pub struct ExecutionInfo<T> {
 	pub exit_reason: ExitReason,
 	pub value: T,
 	pub used_gas: U256,
-	pub logs: Vec<Log>,
 }
 
 pub type CallInfo = ExecutionInfo<Vec<u8>>;

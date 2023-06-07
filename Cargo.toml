@@ -44,7 +44,7 @@ environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
 evm = { version = "0.39.0", default-features = false }
-hex-literal = { version = "0.3.4" }
+hex-literal = { version = "0.4.1" }
 impl-serde = { version = "0.4.0", default-features = false }
 jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.17.0"

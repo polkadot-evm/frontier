@@ -171,6 +171,13 @@ pub mod pallet {
 		}
 	}
 
+	#[pallet::hooks]
+	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
+		fn on_finalize(_: T::BlockNumber) {
+			assert_eq!(<CurrentLogs<T>>::get().len(), 0, "fake transaction finalizer is not initialized, as some logs was left after block is finished");
+		}
+	}
+
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
@@ -520,6 +527,11 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
+
+	/// Written on log, reset after transaction
+	/// Should be empty between transactions
+	#[pallet::storage]
+	pub type CurrentLogs<T: Config> = StorageValue<_, Vec<Log>, ValueQuery>;
 }
 
 /// Type alias for currency balance.
@@ -788,6 +800,21 @@ impl<T: Config> Pallet<T> {
 
 		<AccountCodesMetadata<T>>::insert(address, meta);
 		meta
+	}
+
+	/// Add log to be injected in either real or fake ethereum transaction
+	pub fn deposit_log(log: Log) {
+		log::trace!(
+			target: "evm",
+			"Inserting mirrored log for {:?}, topics ({}) {:?}, data ({}): {:?}]",
+			log.address,
+			log.topics.len(),
+			log.topics,
+			log.data.len(),
+			log.data
+		);
+		<CurrentLogs<T>>::append(log);
+		// Log event is not emitted here, as these logs belong to pallets, which will emit pallet-specific logs on substrate side by themselves
 	}
 
 	/// Get the account basic in EVM format.

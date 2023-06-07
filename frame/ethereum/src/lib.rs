@@ -48,7 +48,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
-use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
+use pallet_evm::{BlockHashMapping, CurrentLogs, FeeCalculator, GasWeightMapping, Runner};
 use sp_runtime::{
 	generic::DigestItem,
 	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
@@ -336,6 +336,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
 
+	/// Injected transactions should have unique nonce, here we store current
+	#[pallet::storage]
+	pub(super) type InjectedNonce<T: Config> = StorageValue<_, U256, ValueQuery>;
+
 	#[pallet::genesis_config]
 	#[derive(Default)]
 	pub struct GenesisConfig {}
@@ -402,7 +406,7 @@ impl<T: Config> Pallet<T> {
 				}
 			};
 			cumulative_gas_used = used_gas;
-			Self::logs_bloom(logs, &mut logs_bloom);
+			Self::logs_bloom(logs.iter(), &mut logs_bloom);
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
@@ -454,10 +458,10 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	fn logs_bloom(logs: Vec<Log>, bloom: &mut Bloom) {
+	fn logs_bloom<'a>(logs: impl IntoIterator<Item = &'a Log>, bloom: &'a mut Bloom) {
 		for log in logs {
 			bloom.accrue(BloomInput::Raw(&log.address[..]));
-			for topic in log.topics {
+			for topic in &log.topics {
 				bloom.accrue(BloomInput::Raw(&topic[..]));
 			}
 		}
@@ -541,68 +545,74 @@ impl<T: Config> Pallet<T> {
 		let transaction_index = pending.len() as u32;
 
 		let (reason, status, used_gas, dest, extra_data) = match info {
-			CallOrCreateInfo::Call(info) => (
-				info.exit_reason.clone(),
-				TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to,
-					contract_address: None,
-					logs: info.logs.clone(),
-					logs_bloom: {
-						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(info.logs, &mut bloom);
-						bloom
+			CallOrCreateInfo::Call(info) => {
+				let logs = <CurrentLogs<T>>::take();
+				(
+					info.exit_reason.clone(),
+					TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: None,
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(logs.iter(), &mut bloom);
+							bloom
+						},
+						logs,
 					},
-				},
-				info.used_gas,
-				to,
-				match info.exit_reason {
-					ExitReason::Revert(_) => {
-						const LEN_START: usize = 36;
-						const MESSAGE_START: usize = 68;
+					info.used_gas,
+					to,
+					match info.exit_reason {
+						ExitReason::Revert(_) => {
+							const LEN_START: usize = 36;
+							const MESSAGE_START: usize = 68;
 
-						let data = info.value;
-						let data_len = data.len();
-						if data_len > MESSAGE_START {
-							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
-								.saturated_into::<usize>();
-							let message_end = MESSAGE_START.saturating_add(
-								message_len.min(T::ExtraDataLength::get() as usize),
-							);
+							let data = info.value;
+							let data_len = data.len();
+							if data_len > MESSAGE_START {
+								let message_len = U256::from(&data[LEN_START..MESSAGE_START])
+									.saturated_into::<usize>();
+								let message_end = MESSAGE_START.saturating_add(
+									message_len.min(T::ExtraDataLength::get() as usize),
+								);
 
-							if data_len >= message_end {
-								data[MESSAGE_START..message_end].to_vec()
+								if data_len >= message_end {
+									data[MESSAGE_START..message_end].to_vec()
+								} else {
+									data
+								}
 							} else {
 								data
 							}
-						} else {
-							data
 						}
-					}
-					_ => vec![],
-				},
-			),
-			CallOrCreateInfo::Create(info) => (
-				info.exit_reason,
-				TransactionStatus {
-					transaction_hash,
-					transaction_index,
-					from: source,
-					to,
-					contract_address: Some(info.value),
-					logs: info.logs.clone(),
-					logs_bloom: {
-						let mut bloom: Bloom = Bloom::default();
-						Self::logs_bloom(info.logs, &mut bloom);
-						bloom
+						_ => vec![],
 					},
-				},
-				info.used_gas,
-				Some(info.value),
-				Vec::new(),
-			),
+				)
+			}
+			CallOrCreateInfo::Create(info) => {
+				let logs = <CurrentLogs<T>>::take();
+				(
+					info.exit_reason,
+					TransactionStatus {
+						transaction_hash,
+						transaction_index,
+						from: source,
+						to,
+						contract_address: Some(info.value),
+						logs_bloom: {
+							let mut bloom: Bloom = Bloom::default();
+							Self::logs_bloom(logs.iter(), &mut bloom);
+							bloom
+						},
+						logs,
+					},
+					info.used_gas,
+					Some(info.value),
+					Vec::new(),
+				)
+			}
 		};
 
 		let receipt = {
@@ -660,6 +670,69 @@ impl<T: Config> Pallet<T> {
 			)),
 			pays_fee: Pays::No,
 		})
+	}
+
+	pub fn flush_injected_transaction() {
+		use ethereum::{
+			EIP658ReceiptData, EnvelopedEncodable, TransactionSignature, TransactionV0,
+		};
+
+		assert!(
+			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
+			"this method is supposed to be called only from other pallets",
+		);
+
+		let logs = <CurrentLogs<T>>::take();
+		if logs.is_empty() {
+			return;
+		}
+
+		let nonce = <InjectedNonce<T>>::get()
+			.checked_add(1u32.into())
+			.expect("u256 should be enough");
+		<InjectedNonce<T>>::set(nonce);
+
+		let transaction = Transaction::Legacy(TransactionV0 {
+			nonce,
+			gas_price: 0.into(),
+			gas_limit: 0.into(),
+			action: TransactionAction::Call(H160([0; 20])),
+			value: 0.into(),
+			// zero selector, this transaction always has same sender, so all data should be acquired from logs
+			input: Vec::from([0, 0, 0, 0]),
+			// if v is not 27 - then we need to pass some other validity checks
+			signature: TransactionSignature::new(27, H256([0x88; 32]), H256([0x88; 32])).unwrap(),
+		});
+
+		let transaction_hash = H256::from_slice(
+			sp_io::hashing::keccak_256(&EnvelopedEncodable::encode(&transaction)).as_slice(),
+		);
+		let transaction_index = <Pending<T>>::get().len() as u32;
+
+		let logs_bloom = {
+			let mut bloom: Bloom = Bloom::default();
+			Self::logs_bloom(&logs, &mut bloom);
+			bloom
+		};
+
+		let status = TransactionStatus {
+			transaction_hash,
+			transaction_index,
+			from: H160::default(),
+			to: None,
+			contract_address: None,
+			logs_bloom,
+			logs: logs.clone(),
+		};
+
+		let receipt = Receipt::Legacy(EIP658ReceiptData {
+			status_code: 1,
+			used_gas: 0u32.into(),
+			logs_bloom,
+			logs,
+		});
+
+		<Pending<T>>::append((transaction, status, receipt));
 	}
 
 	/// Get current block hash
@@ -959,5 +1032,53 @@ impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 				InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8),
 			),
 		}
+	}
+}
+
+#[derive(TypeInfo, PartialEq, Eq, Clone, Debug, Encode, Decode, Default)]
+pub struct FakeTransactionFinalizer<T>(PhantomData<T>);
+
+impl<T> FakeTransactionFinalizer<T> {
+	pub fn new() -> Self {
+		Self(Default::default())
+	}
+}
+
+impl<T: Config + TypeInfo + core::fmt::Debug + Send + Sync> sp_runtime::traits::SignedExtension
+	for FakeTransactionFinalizer<T>
+{
+	const IDENTIFIER: &'static str = "FakeTransactionFinalizer";
+
+	type AccountId = T::AccountId;
+
+	type Call = T::RuntimeCall;
+
+	type AdditionalSigned = ();
+
+	type Pre = ();
+
+	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+		Ok(())
+	}
+
+	fn pre_dispatch(
+		self,
+		_who: &Self::AccountId,
+		_call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		Ok(())
+	}
+
+	fn post_dispatch(
+		_pre: Option<Self::Pre>,
+		_info: &DispatchInfoOf<Self::Call>,
+		_post_info: &sp_runtime::traits::PostDispatchInfoOf<Self::Call>,
+		_len: usize,
+		_result: &sp_runtime::DispatchResult,
+	) -> Result<(), TransactionValidityError> {
+		<Pallet<T>>::flush_injected_transaction();
+		Ok(())
 	}
 }
