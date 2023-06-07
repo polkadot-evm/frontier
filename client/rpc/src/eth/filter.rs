@@ -112,19 +112,19 @@ where
 		response
 	}
 
-	fn pending_transactions(&self) -> RpcResult<Vec<H256>> {
-		let txs_ready = self
-			.graph
-			.validated_pool()
-			.ready()
-			.map(|in_pool_tx| in_pool_tx.data().clone())
-			.collect();
+	// fn pending_transactions(&self) -> RpcResult<Vec<H256>> {
+	// 	let txs_ready = self
+	// 		.graph
+	// 		.validated_pool()
+	// 		.ready()
+	// 		.map(|in_pool_tx| in_pool_tx.data().clone())
+	// 		.collect();
 
-		todo!();
-		// let txs_pending = txs_ready.into_iter().filter_map(|xt| match xt.0.function {
-		// 	RuntimeCall
-		// })
-	}
+	// 	todo!();
+	// 	// let txs_pending = txs_ready.into_iter().filter_map(|xt| match xt.0.function {
+	// 	// 	RuntimeCall
+	// 	// })
+	// }
 }
 
 #[async_trait]

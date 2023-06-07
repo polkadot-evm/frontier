@@ -30,6 +30,7 @@ mod eth;
 mod eth_pubsub;
 mod net;
 mod signer;
+mod txpool;
 mod web3;
 
 pub use self::{

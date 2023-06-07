@@ -40,6 +40,18 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct TxPoolResponseLegacy {
+	pub ready: Vec<ethereum::TransactionV0>,
+	pub future: Vec<ethereum::TransactionV0>,
+}
+
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct TxPoolResponse {
+	pub ready: Vec<ethereum::TransactionV2>,
+	pub future: Vec<ethereum::TransactionV2>,
+}
+
 pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
 	fn is_enabled() -> bool;
 
@@ -214,6 +226,19 @@ sp_api::decl_runtime_apis! {
 		fn convert_transaction(transaction: ethereum::TransactionV2) -> <Block as BlockT>::Extrinsic;
 		#[changed_in(2)]
 		fn convert_transaction(transaction: ethereum::TransactionV0) -> <Block as BlockT>::Extrinsic;
+	}
+
+	#[api_version(2)]
+	pub trait TxPoolRuntimeApi {
+		#[changed_in(2)]
+		fn extrinsic_filter(
+			xt_ready: Vec<<Block as BlockT>::Extrinsic>,
+			xt_future: Vec<<Block as BlockT>::Extrinsic>,
+		) -> TxPoolResponseLegacy;
+		fn extrinsic_filter(
+			xt_ready: Vec<<Block as BlockT>::Extrinsic>,
+			xt_future: Vec<<Block as BlockT>::Extrinsic>,
+		) -> TxPoolResponse;
 	}
 }
 

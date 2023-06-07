@@ -31,6 +31,7 @@ mod receipt;
 mod sync;
 mod transaction;
 mod transaction_request;
+mod txpool;
 mod work;
 
 pub mod pubsub;
@@ -55,5 +56,6 @@ pub use self::{
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
 	transaction_request::{TransactionMessage, TransactionRequest},
+	txpool::{Summary, TransactionMap, TxPoolResult, Get, TxPoolTransaction},
 	work::Work,
 };

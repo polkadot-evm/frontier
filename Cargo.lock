@@ -2228,6 +2228,8 @@ dependencies = [
  "sc-transaction-pool",
  "sc-transaction-pool-api",
  "sc-utils",
+ "serde",
+ "sha3",
  "sp-api",
  "sp-block-builder",
  "sp-blockchain",
