@@ -302,6 +302,7 @@
 <a href="#302" id="302">302</a>
 <a href="#303" id="303">303</a>
 <a href="#304" id="304">304</a>
+<a href="#305" id="305">305</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -335,10 +336,11 @@
 <span class="kw">use </span>sp_consensus::SyncOracle;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT, Zero};
 <span class="comment">// Frontier
-</span><span class="kw">use crate</span>::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
-<span class="kw">use </span>fc_storage::OverrideHandle;
+</span><span class="kw">use </span>fc_storage::OverrideHandle;
 <span class="kw">use </span>fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
+
+<span class="kw">use crate</span>::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 
 <span class="kw">pub fn </span>sync_block&lt;Block: BlockT, C, BE&gt;(
 	client: <span class="kw-2">&amp;</span>C,

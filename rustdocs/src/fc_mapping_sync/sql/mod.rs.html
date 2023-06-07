@@ -1239,71 +1239,6 @@
 <a href="#1239" id="1239">1239</a>
 <a href="#1240" id="1240">1240</a>
 <a href="#1241" id="1241">1241</a>
-<a href="#1242" id="1242">1242</a>
-<a href="#1243" id="1243">1243</a>
-<a href="#1244" id="1244">1244</a>
-<a href="#1245" id="1245">1245</a>
-<a href="#1246" id="1246">1246</a>
-<a href="#1247" id="1247">1247</a>
-<a href="#1248" id="1248">1248</a>
-<a href="#1249" id="1249">1249</a>
-<a href="#1250" id="1250">1250</a>
-<a href="#1251" id="1251">1251</a>
-<a href="#1252" id="1252">1252</a>
-<a href="#1253" id="1253">1253</a>
-<a href="#1254" id="1254">1254</a>
-<a href="#1255" id="1255">1255</a>
-<a href="#1256" id="1256">1256</a>
-<a href="#1257" id="1257">1257</a>
-<a href="#1258" id="1258">1258</a>
-<a href="#1259" id="1259">1259</a>
-<a href="#1260" id="1260">1260</a>
-<a href="#1261" id="1261">1261</a>
-<a href="#1262" id="1262">1262</a>
-<a href="#1263" id="1263">1263</a>
-<a href="#1264" id="1264">1264</a>
-<a href="#1265" id="1265">1265</a>
-<a href="#1266" id="1266">1266</a>
-<a href="#1267" id="1267">1267</a>
-<a href="#1268" id="1268">1268</a>
-<a href="#1269" id="1269">1269</a>
-<a href="#1270" id="1270">1270</a>
-<a href="#1271" id="1271">1271</a>
-<a href="#1272" id="1272">1272</a>
-<a href="#1273" id="1273">1273</a>
-<a href="#1274" id="1274">1274</a>
-<a href="#1275" id="1275">1275</a>
-<a href="#1276" id="1276">1276</a>
-<a href="#1277" id="1277">1277</a>
-<a href="#1278" id="1278">1278</a>
-<a href="#1279" id="1279">1279</a>
-<a href="#1280" id="1280">1280</a>
-<a href="#1281" id="1281">1281</a>
-<a href="#1282" id="1282">1282</a>
-<a href="#1283" id="1283">1283</a>
-<a href="#1284" id="1284">1284</a>
-<a href="#1285" id="1285">1285</a>
-<a href="#1286" id="1286">1286</a>
-<a href="#1287" id="1287">1287</a>
-<a href="#1288" id="1288">1288</a>
-<a href="#1289" id="1289">1289</a>
-<a href="#1290" id="1290">1290</a>
-<a href="#1291" id="1291">1291</a>
-<a href="#1292" id="1292">1292</a>
-<a href="#1293" id="1293">1293</a>
-<a href="#1294" id="1294">1294</a>
-<a href="#1295" id="1295">1295</a>
-<a href="#1296" id="1296">1296</a>
-<a href="#1297" id="1297">1297</a>
-<a href="#1298" id="1298">1298</a>
-<a href="#1299" id="1299">1299</a>
-<a href="#1300" id="1300">1300</a>
-<a href="#1301" id="1301">1301</a>
-<a href="#1302" id="1302">1302</a>
-<a href="#1303" id="1303">1303</a>
-<a href="#1304" id="1304">1304</a>
-<a href="#1305" id="1305">1305</a>
-<a href="#1306" id="1306">1306</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1322,18 +1257,20 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="attr">#![allow(clippy::too_many_arguments)]
+</span><span class="kw">use </span>std::{ops::DerefMut, sync::Arc, time::Duration};
 
-</span><span class="kw">use </span><span class="kw">crate</span>::EthereumBlockNotification;
-<span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 <span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
-<span class="kw">use </span>sc_client_api::backend::{Backend <span class="kw">as </span>BackendT, StateBackend, StorageProvider};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sc_client_api::backend::{Backend <span class="kw">as </span>BackendT, StateBackend, StorageProvider};
 <span class="kw">use </span>sp_api::{HeaderT, ProvideRuntimeApi};
 <span class="kw">use </span>sp_blockchain::{Backend, HeaderBackend};
 <span class="kw">use </span>sp_consensus::SyncOracle;
 <span class="kw">use </span>sp_core::H256;
 <span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
-<span class="kw">use </span>std::{ops::DerefMut, sync::Arc, time::Duration};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
+
+<span class="kw">use crate</span>::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 
 <span class="doccomment">/// Defines the commands for the sync worker.
 </span><span class="attr">#[derive(Debug)]
@@ -1369,10 +1306,10 @@
 
 <span class="kw">impl</span>&lt;Block: BlockT, Backend, Client&gt; SyncWorker&lt;Block, Backend, Client&gt;
 <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
-	Client: StorageProvider&lt;Block, Backend&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
 	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
@@ -1383,28 +1320,20 @@
 		substrate_backend: Arc&lt;Backend&gt;,
 		indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 		pubsub_notification_sinks: Arc&lt;
-			<span class="kw">crate</span>::EthereumBlockNotificationSinks&lt;<span class="kw">crate</span>::EthereumBlockNotification&lt;Block&gt;&gt;,
+			EthereumBlockNotificationSinks&lt;EthereumBlockNotification&lt;Block&gt;&gt;,
 		&gt;,
 	) -&gt; tokio::sync::mpsc::Sender&lt;WorkerCommand&gt; {
 		<span class="kw">let </span>(tx, <span class="kw-2">mut </span>rx) = tokio::sync::mpsc::channel(<span class="number">100</span>);
 		tokio::task::spawn(<span class="kw">async move </span>{
 			<span class="kw">while let </span><span class="prelude-val">Some</span>(cmd) = rx.recv().<span class="kw">await </span>{
-				<span class="macro">log::debug!</span>(
-					target: <span class="string">&quot;frontier-sql&quot;</span>,
-					<span class="string">&quot;💬 Recv Worker Command {:?}&quot;</span>,
-					cmd,
-				);
-				<span class="macro">println!</span>(<span class="string">&quot;💬 Recv Worker Command {:?}&quot;</span>, cmd,);
+				<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;💬 Recv Worker Command {cmd:?}&quot;</span>);
+				<span class="macro">println!</span>(<span class="string">&quot;💬 Recv Worker Command {cmd:?}&quot;</span>);
 				<span class="kw">match </span>cmd {
 					WorkerCommand::ResumeSync =&gt; {
 						<span class="comment">// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
 						</span><span class="kw">match </span>indexer_backend.get_last_indexed_canon_block().<span class="kw">await</span>.ok() {
 							<span class="prelude-val">Some</span>(last_block_hash) =&gt; {
-								<span class="macro">log::debug!</span>(
-									target: <span class="string">&quot;frontier-sql&quot;</span>,
-									<span class="string">&quot;Resume from last block {:?}&quot;</span>,
-									last_block_hash,
-								);
+								<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Resume from last block {last_block_hash:?}&quot;</span>);
 								<span class="kw">if let </span><span class="prelude-val">Some</span>(parent_hash) = client
 									.header(last_block_hash)
 									.ok()
@@ -1465,11 +1394,7 @@
 						</span><span class="kw">if let </span><span class="prelude-val">Some</span>(block_hash) =
 							indexer_backend.get_first_pending_canon_block().<span class="kw">await
 						</span>{
-							<span class="macro">log::debug!</span>(
-								target: <span class="string">&quot;frontier-sql&quot;</span>,
-								<span class="string">&quot;Indexing pending canonical block {:?}&quot;</span>,
-								block_hash,
-							);
+							<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Indexing pending canonical block {block_hash:?}&quot;</span>);
 							indexer_backend
 								.index_block_logs(client.clone(), block_hash)
 								.<span class="kw">await</span>;
@@ -1497,14 +1422,14 @@
 		indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 		import_notifications: sc_client_api::ImportNotifications&lt;Block&gt;,
 		worker_config: SyncWorkerConfig,
-		sync_strategy: <span class="kw">crate</span>::SyncStrategy,
+		sync_strategy: SyncStrategy,
 		sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">&#39;static</span>&gt;,
 		pubsub_notification_sinks: Arc&lt;
-			<span class="kw">crate</span>::EthereumBlockNotificationSinks&lt;<span class="kw">crate</span>::EthereumBlockNotification&lt;Block&gt;&gt;,
+			EthereumBlockNotificationSinks&lt;EthereumBlockNotification&lt;Block&gt;&gt;,
 		&gt;,
 	) {
 		<span class="comment">// work in progress for `SyncStrategy::Normal` to also index non-best blocks.
-		</span><span class="kw">if </span>sync_strategy == <span class="kw">crate</span>::SyncStrategy::Normal {
+		</span><span class="kw">if </span>sync_strategy == SyncStrategy::Normal {
 			<span class="macro">panic!</span>(<span class="string">&quot;&#39;SyncStrategy::Normal&#39; is not supported&quot;</span>)
 		}
 
@@ -1598,10 +1523,10 @@
 	indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 	hash: H256,
 ) <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
-	Client: StorageProvider&lt;Block, Backend&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
 	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
@@ -1615,33 +1540,18 @@
 
 		<span class="comment">// exit if block is already imported
 		</span><span class="kw">if </span>indexer_backend.is_block_indexed(hash).<span class="kw">await </span>{
-			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;🔴 Block {:?} already imported&quot;</span>,
-				hash,
-			);
+			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🔴 Block {hash:?} already imported&quot;</span>);
 			<span class="kw">break</span>;
 		}
 
-		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;🛠️  Importing {:?}&quot;</span>,
-			hash,
-		);
+		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  Importing {hash:?}&quot;</span>);
 		<span class="kw">let _ </span>= indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.<span class="kw">await
 			</span>.map_err(|e| {
-				<span class="macro">log::error!</span>(
-					target: <span class="string">&quot;frontier-sql&quot;</span>,
-					<span class="string">&quot;{}&quot;</span>,
-					e,
-				);
+				<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;{e}&quot;</span>);
 			});
-		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;Inserted block metadata&quot;
-		</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Inserted block metadata&quot;</span>);
 		indexer_backend.index_block_logs(client.clone(), hash).<span class="kw">await</span>;
 
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = blockchain_backend.header(hash) {
@@ -1661,10 +1571,10 @@
 	indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 	hash: H256,
 ) <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
-	Client: StorageProvider&lt;Block, Backend&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
 	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
@@ -1680,31 +1590,18 @@
 
 		<span class="comment">// exit if canonical block is already imported
 		</span><span class="kw">if </span>status.indexed &amp;&amp; status.canon {
-			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;🔴 Block {:?} already imported&quot;</span>,
-				hash,
-			);
+			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🔴 Block {hash:?} already imported&quot;</span>);
 			<span class="kw">break</span>;
 		}
 
 		<span class="comment">// If block was previously indexed as non-canon then mark it as canon
 		</span><span class="kw">if </span>status.indexed &amp;&amp; !status.canon {
 			<span class="kw">if let </span><span class="prelude-val">Err</span>(err) = indexer_backend.set_block_as_canon(hash).<span class="kw">await </span>{
-				<span class="macro">log::error!</span>(
-					target: <span class="string">&quot;frontier-sql&quot;</span>,
-					<span class="string">&quot;Failed setting block {:?} as canon: {:?}&quot;</span>,
-					hash,
-					err,
-				);
+				<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed setting block {hash:?} as canon: {err:?}&quot;</span>);
 				<span class="kw">continue</span>;
 			}
 
-			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;🛠️  Marked block as canon {:?}&quot;</span>,
-				hash,
-			);
+			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  Marked block as canon {hash:?}&quot;</span>);
 
 			<span class="comment">// Check parent block
 			</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = blockchain_backend.header(hash) {
@@ -1715,26 +1612,14 @@
 		}
 
 		<span class="comment">// Else, import the new block
-		</span><span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;🛠️  Importing {:?}&quot;</span>,
-			hash,
-		);
+		</span><span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  Importing {hash:?}&quot;</span>);
 		<span class="kw">let _ </span>= indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.<span class="kw">await
 			</span>.map_err(|e| {
-				<span class="macro">log::error!</span>(
-					target: <span class="string">&quot;frontier-sql&quot;</span>,
-					<span class="string">&quot;{}&quot;</span>,
-					e,
-				);
+				<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;{e}&quot;</span>);
 			});
-		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;Inserted block metadata  {:?}&quot;</span>,
-			hash
-		);
+		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Inserted block metadata  {hash:?}&quot;</span>);
 		indexer_backend.index_block_logs(client.clone(), hash).<span class="kw">await</span>;
 
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = blockchain_backend.header(hash) {
@@ -1746,14 +1631,12 @@
 
 <span class="doccomment">/// Canonicalizes the database by setting the `is_canon` field for the retracted blocks to `0`,
 /// and `1` if they are enacted.
-</span><span class="kw">async fn </span>canonicalize_blocks&lt;Block&gt;(
+</span><span class="kw">async fn </span>canonicalize_blocks&lt;Block: BlockT&lt;Hash = H256&gt;&gt;(
 	indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 	common: H256,
 	enacted: Vec&lt;H256&gt;,
 	retracted: Vec&lt;H256&gt;,
-) <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
-{
+) {
 	<span class="kw">if </span>(indexer_backend.canonicalize(<span class="kw-2">&amp;</span>retracted, <span class="kw-2">&amp;</span>enacted).<span class="kw">await</span>).is_err() {
 		<span class="macro">log::error!</span>(
 			target: <span class="string">&quot;frontier-sql&quot;</span>,
@@ -1773,19 +1656,15 @@
 	substrate_backend: Arc&lt;Backend&gt;,
 	indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 ) <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
-	Client: StorageProvider&lt;Block, Backend&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
 	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(block_number) = indexer_backend.get_first_missing_canon_block().<span class="kw">await </span>{
-		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;Missing {:?}&quot;</span>,
-			block_number,
-		);
+		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Missing {block_number:?}&quot;</span>);
 		<span class="kw">if </span>block_number == <span class="number">0 </span>{
 			index_genesis_block(client.clone(), indexer_backend.clone()).<span class="kw">await</span>;
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(block_hash)) = client.hash(block_number.unique_saturated_into()) {
@@ -1803,11 +1682,7 @@
 			)
 			.<span class="kw">await</span>;
 		} <span class="kw">else </span>{
-			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;Failed retrieving hash for block #{}&quot;</span>,
-				block_number,
-			);
+			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed retrieving hash for block #{block_number}&quot;</span>);
 		}
 	}
 }
@@ -1819,10 +1694,10 @@
 	client: Arc&lt;Client&gt;,
 	indexer_backend: Arc&lt;fc_db::sql::Backend&lt;Block&gt;&gt;,
 ) <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
-	Client: StorageProvider&lt;Block, Backend&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
+	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
 	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
@@ -1834,32 +1709,25 @@
 		.insert_genesis_block_metadata(client.clone())
 		.<span class="kw">await
 		</span>.map_err(|e| {
-			<span class="macro">log::error!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;💔  Cannot sync genesis block: {}&quot;</span>,
-				e,
-			)
+			<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;💔  Cannot sync genesis block: {e}&quot;</span>);
 		}) {
-		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;Imported genesis block {:?}&quot;</span>,
-			substrate_genesis_hash,
-		);
+		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Imported genesis block {substrate_genesis_hash:?}&quot;</span>);
 	}
 }
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>test {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use crate</span>::{EthereumBlockNotification, EthereumBlockNotificationSinks};
-	<span class="kw">use </span>fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
-	<span class="kw">use </span>fp_storage::{
-		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
-	};
+
+	<span class="kw">use </span>std::{collections::BTreeMap, path::Path, sync::Arc};
+
 	<span class="kw">use </span>futures::executor;
-	<span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
-	<span class="kw">use </span>sc_client_api::{BlockchainEvents, HeaderBackend};
 	<span class="kw">use </span>scale_codec::Encode;
+	<span class="kw">use </span>sqlx::Row;
+	<span class="kw">use </span>tempfile::tempdir;
+	<span class="comment">// Substrate
+	</span><span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
+	<span class="kw">use </span>sc_client_api::{BlockchainEvents, HeaderBackend};
 	<span class="kw">use </span>sp_consensus::BlockOrigin;
 	<span class="kw">use </span>sp_core::{H160, H256, U256};
 	<span class="kw">use </span>sp_io::hashing::twox_128;
@@ -1867,12 +1735,14 @@
 		generic::{Digest, Header},
 		traits::BlakeTwo256,
 	};
-	<span class="kw">use </span>sqlx::Row;
-	<span class="kw">use </span>std::{collections::BTreeMap, path::Path, sync::Arc};
 	<span class="kw">use </span>substrate_test_runtime_client::{
 		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
-	<span class="kw">use </span>tempfile::tempdir;
+	<span class="comment">// Frontier
+	</span><span class="kw">use </span>fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	<span class="kw">use </span>fp_storage::{
+		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
+	};
 
 	<span class="kw">type </span>OpaqueBlock = sp_runtime::generic::Block&lt;
 		Header&lt;u64, BlakeTwo256&gt;,
@@ -2061,7 +1931,7 @@
 					read_notification_timeout: Duration::from_secs(<span class="number">1</span>),
 					check_indexed_blocks_interval: Duration::from_secs(<span class="number">60</span>),
 				},
-				<span class="kw">crate</span>::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
@@ -2191,7 +2061,7 @@
 					read_notification_timeout: Duration::from_secs(<span class="number">10</span>),
 					check_indexed_blocks_interval: Duration::from_secs(<span class="number">60</span>),
 				},
-				<span class="kw">crate</span>::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
@@ -2394,7 +2264,7 @@
 					read_notification_timeout: Duration::from_secs(<span class="number">10</span>),
 					check_indexed_blocks_interval: Duration::from_secs(<span class="number">60</span>),
 				},
-				<span class="kw">crate</span>::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)
@@ -2588,7 +2458,7 @@
 					read_notification_timeout: Duration::from_secs(<span class="number">10</span>),
 					check_indexed_blocks_interval: Duration::from_secs(<span class="number">60</span>),
 				},
-				<span class="kw">crate</span>::SyncStrategy::Parachain,
+				SyncStrategy::Parachain,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
 			)

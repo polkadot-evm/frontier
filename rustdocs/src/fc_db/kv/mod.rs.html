@@ -356,6 +356,7 @@
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
+<a href="#359" id="359">359</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -394,8 +395,9 @@
 <span class="kw">pub use </span>sp_database::Database;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
-</span><span class="kw">use </span><span class="kw">crate</span>::TransactionMetadata;
-<span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
+</span><span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
+
+<span class="kw">use </span><span class="kw">crate</span>::TransactionMetadata;
 
 <span class="kw">const </span>DB_HASH_LEN: usize = <span class="number">32</span>;
 <span class="doccomment">/// Hash type that this backend uses for the database.
