@@ -56,6 +56,6 @@ pub use self::{
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
 	transaction_request::{TransactionMessage, TransactionRequest},
-	txpool::{Summary, TransactionMap, TxPoolResult, Get, TxPoolTransaction},
+	txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	work::Work,
 };

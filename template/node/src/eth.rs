@@ -125,6 +125,7 @@ pub trait EthCompatRuntimeApiCollection:
 	sp_api::ApiExt<Block>
 	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 	+ fp_rpc::ConvertTransactionRuntimeApi<Block>
+	+ fp_rpc::TxPoolRuntimeApi<Block>
 where
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
@@ -134,7 +135,8 @@ impl<Api> EthCompatRuntimeApiCollection for Api
 where
 	Api: sp_api::ApiExt<Block>
 		+ fp_rpc::EthereumRuntimeRPCApi<Block>
-		+ fp_rpc::ConvertTransactionRuntimeApi<Block>,
+		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
+		+ fp_rpc::TxPoolRuntimeApi<Block>,
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }

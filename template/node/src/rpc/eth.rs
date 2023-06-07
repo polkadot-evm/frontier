@@ -20,7 +20,9 @@ use sp_runtime::traits::Block as BlockT;
 pub use fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle, StorageOverride};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 pub use fc_storage::overrides_handle;
-use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
+use fp_rpc::{
+	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi, TxPoolRuntimeApi,
+};
 
 /// Extra dependencies for Ethereum compatibility.
 pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
@@ -99,7 +101,10 @@ pub fn create_eth<C, BE, P, A, CT, B, EC: EthConfig<B, C>>(
 where
 	B: BlockT<Hash = sp_core::H256>,
 	C: CallApiAt<B> + ProvideRuntimeApi<B>,
-	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B> + ConvertTransactionRuntimeApi<B>,
+	C::Api: BlockBuilderApi<B>
+		+ EthereumRuntimeRPCApi<B>
+		+ ConvertTransactionRuntimeApi<B>
+		+ TxPoolRuntimeApi<B>,
 	C: BlockchainEvents<B> + 'static,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
@@ -141,7 +146,7 @@ where
 		Eth::new(
 			client.clone(),
 			pool.clone(),
-			graph,
+			graph.clone(),
 			converter,
 			sync.clone(),
 			vec![],
@@ -163,6 +168,7 @@ where
 			EthFilter::new(
 				client.clone(),
 				frontier_backend,
+				graph.clone(),
 				filter_pool,
 				500_usize, // max stored filters
 				max_past_logs,

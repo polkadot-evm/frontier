@@ -30,6 +30,6 @@ pub use self::{
 	eth::{EthApiServer, EthFilterApiServer},
 	eth_pubsub::EthPubSubApiServer,
 	net::NetApiServer,
-	web3::Web3ApiServer,
 	txpool::TxPoolApiServer,
+	web3::Web3ApiServer,
 };

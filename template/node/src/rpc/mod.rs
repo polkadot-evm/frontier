@@ -65,6 +65,7 @@ where
 	C::Api: sp_block_builder::BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,
+	C::Api: fp_rpc::TxPoolRuntimeApi<Block>,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi<Block>,
 	C: BlockchainEvents<Block> + 'static,
 	C: HeaderBackend<Block>
