@@ -36,8 +36,9 @@ use sp_core::H256;
 pub use sp_database::Database;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
-use crate::TransactionMetadata;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
+
+use crate::TransactionMetadata;
 
 const DB_HASH_LEN: usize = 32;
 /// Hash type that this backend uses for the database.

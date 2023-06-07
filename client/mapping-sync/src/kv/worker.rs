@@ -34,9 +34,10 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
-use crate::SyncStrategy;
 use fc_storage::OverrideHandle;
 use fp_rpc::EthereumRuntimeRPCApi;
+
+use crate::SyncStrategy;
 
 pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	import_notifications: ImportNotifications<Block>,
