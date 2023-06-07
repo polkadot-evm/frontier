@@ -167,7 +167,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&LONDON_CONFIG
+			&SHANGHAI_CONFIG
 		}
 	}
 
@@ -714,7 +714,7 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	}
 }
 
-static LONDON_CONFIG: EvmConfig = EvmConfig::london();
+static SHANGHAI_CONFIG: EvmConfig = EvmConfig::shanghai();
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
