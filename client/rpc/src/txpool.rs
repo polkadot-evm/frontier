@@ -41,6 +41,16 @@ pub struct TxPool<B: BlockT, C, A: ChainApi> {
 	_marker: PhantomData<B>,
 }
 
+impl<B: BlockT, C, A: ChainApi> Clone for TxPool<B, C, A> {
+	fn clone(&self) -> Self {
+		Self {
+			client: self.client.clone(),
+			graph: self.graph.clone(),
+			_marker: PhantomData,
+		}
+	}
+}
+
 impl<B, C, A> TxPool<B, C, A>
 where
 	C: ProvideRuntimeApi<B>,
@@ -56,6 +66,47 @@ where
 	where
 		T: Get + Serialize,
 	{
+		// Get the pending and queued ethereum transactions.
+		let ethereum_txns = self.tx_pool_response()?;
+		// Build the T response.
+		let mut pending = TransactionMap::<T>::new();
+		for txn in ethereum_txns.ready.iter() {
+			let hash = txn.hash();
+			let nonce = match txn {
+				TransactionV2::Legacy(t) => t.nonce,
+				TransactionV2::EIP2930(t) => t.nonce,
+				TransactionV2::EIP1559(t) => t.nonce,
+			};
+			let from_address = match public_key(txn) {
+				Ok(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
+				Err(_e) => H160::default(),
+			};
+			pending
+				.entry(from_address)
+				.or_insert_with(HashMap::new)
+				.insert(nonce, T::get(hash, from_address, txn));
+		}
+		let mut queued = TransactionMap::<T>::new();
+		for txn in ethereum_txns.future.iter() {
+			let hash = txn.hash();
+			let nonce = match txn {
+				TransactionV2::Legacy(t) => t.nonce,
+				TransactionV2::EIP2930(t) => t.nonce,
+				TransactionV2::EIP1559(t) => t.nonce,
+			};
+			let from_address = match public_key(txn) {
+				Ok(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
+				Err(_e) => H160::default(),
+			};
+			queued
+				.entry(from_address)
+				.or_insert_with(HashMap::new)
+				.insert(nonce, T::get(hash, from_address, txn));
+		}
+		Ok(TxPoolResult { pending, queued })
+	}
+
+	pub(crate) fn tx_pool_response(&self) -> RpcResult<TxPoolResponse> {
 		// Collect transactions in the ready validated pool.
 		let txs_ready = self
 			.graph
@@ -108,42 +159,8 @@ where
 					internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
 				})?
 		};
-		// Build the T response.
-		let mut pending = TransactionMap::<T>::new();
-		for txn in ethereum_txns.ready.iter() {
-			let hash = txn.hash();
-			let nonce = match txn {
-				TransactionV2::Legacy(t) => t.nonce,
-				TransactionV2::EIP2930(t) => t.nonce,
-				TransactionV2::EIP1559(t) => t.nonce,
-			};
-			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
-				Err(_e) => H160::default(),
-			};
-			pending
-				.entry(from_address)
-				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
-		}
-		let mut queued = TransactionMap::<T>::new();
-		for txn in ethereum_txns.future.iter() {
-			let hash = txn.hash();
-			let nonce = match txn {
-				TransactionV2::Legacy(t) => t.nonce,
-				TransactionV2::EIP2930(t) => t.nonce,
-				TransactionV2::EIP1559(t) => t.nonce,
-			};
-			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
-				Err(_e) => H160::default(),
-			};
-			queued
-				.entry(from_address)
-				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
-		}
-		Ok(TxPoolResult { pending, queued })
+
+		Ok(ethereum_txns)
 	}
 }
 

@@ -163,12 +163,13 @@ where
 		.into_rpc(),
 	)?;
 
+	let tx_pool = TxPool::new(client.clone(), graph);
 	if let Some(filter_pool) = filter_pool {
 		io.merge(
 			EthFilter::new(
 				client.clone(),
 				frontier_backend,
-				graph.clone(),
+				tx_pool.clone(),
 				filter_pool,
 				500_usize, // max stored filters
 				max_past_logs,
@@ -201,7 +202,7 @@ where
 	)?;
 
 	io.merge(Web3::new(client.clone()).into_rpc())?;
-	io.merge(TxPool::new(client, graph).into_rpc())?;
+	io.merge(tx_pool.into_rpc())?;
 
 	Ok(io)
 }

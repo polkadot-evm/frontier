@@ -16,16 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc, time};
+use std::{collections::HashSet, marker::PhantomData, sync::Arc, time};
 
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::{ChainApi, Pool};
+use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::HeaderBackend;
+use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
 	generic::BlockId,
@@ -33,14 +33,14 @@ use sp_runtime::{
 };
 // Frontier
 use fc_rpc_core::{types::*, EthFilterApiServer};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus, TxPoolRuntimeApi};
 
-use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
 
 pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
 	client: Arc<C>,
 	backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
-	graph: Arc<Pool<A>>,
+	tx_pool: TxPool<B, C, A>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -52,7 +52,7 @@ impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
-		graph: Arc<Pool<A>>,
+		tx_pool: TxPool<B, C, A>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -61,7 +61,7 @@ impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
 		Self {
 			client,
 			backend,
-			graph,
+			tx_pool,
 			filter_pool,
 			max_stored_filters,
 			max_past_logs,
@@ -73,9 +73,11 @@ impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
 
 impl<A, B, C, BE> EthFilter<A, B, C, BE>
 where
-	A: ChainApi,
+	A: ChainApi<Block = B> + 'static,
 	B: BlockT<Hash = H256>,
-	C: HeaderBackend<B>,
+	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B> + 'static,
+	C: ProvideRuntimeApi<B>,
+	C::Api: TxPoolRuntimeApi<B>,
 {
 	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let block_number =
@@ -95,6 +97,12 @@ where
 				Some((k, _)) => *k,
 				None => U256::zero(),
 			};
+			let pending_transaction_hashes = if let FilterType::PendingTransaction = filter_type {
+				let ethereum_txs = self.tx_pool.tx_pool_response()?;
+				ethereum_txs.ready.into_iter().map(|tx| tx.hash()).collect()
+			} else {
+				HashSet::new()
+			};
 			// Assume `max_stored_filters` is always < U256::max.
 			let key = last_key.checked_add(U256::one()).unwrap();
 			locked.insert(
@@ -103,6 +111,7 @@ where
 					last_poll: BlockNumber::Num(block_number),
 					filter_type,
 					at_block: block_number,
+					pending_transaction_hashes,
 				},
 			);
 			Ok(key)
@@ -111,30 +120,19 @@ where
 		};
 		response
 	}
-
-	// fn pending_transactions(&self) -> RpcResult<Vec<H256>> {
-	// 	let txs_ready = self
-	// 		.graph
-	// 		.validated_pool()
-	// 		.ready()
-	// 		.map(|in_pool_tx| in_pool_tx.data().clone())
-	// 		.collect();
-
-	// 	todo!();
-	// 	// let txs_pending = txs_ready.into_iter().filter_map(|xt| match xt.0.function {
-	// 	// 	RuntimeCall
-	// 	// })
-	// }
 }
 
 #[async_trait]
 impl<A, B, C, BE> EthFilterApiServer for EthFilter<A, B, C, BE>
 where
-	A: ChainApi + 'static,
+	A: ChainApi<Block = B> + 'static,
 	B: BlockT<Hash = H256>,
 	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	C::Api: EthereumRuntimeRPCApi<B> + TxPoolRuntimeApi<B>,
+	C: HeaderMetadata<B, Error = BlockChainError>
+		+ HeaderBackend<B>
+		+ StorageProvider<B, BE>
+		+ 'static,
 	BE: Backend<B> + 'static,
 {
 	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
@@ -162,6 +160,9 @@ where
 			Block {
 				last: u64,
 				next: u64,
+			},
+			PendingTransaction {
+				new_hashes: Vec<H256>,
 			},
 			Log {
 				filter: Filter,
@@ -191,10 +192,39 @@ where
 								last_poll: BlockNumber::Num(next),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
+								pending_transaction_hashes: HashSet::new(),
 							},
 						);
 
 						FuturePath::<B>::Block { last, next }
+					}
+					FilterType::PendingTransaction => {
+						let previous_hashes = pool_item.pending_transaction_hashes;
+						let current_hashes: HashSet<H256> = self
+							.tx_pool
+							.tx_pool_response()?
+							.ready
+							.into_iter()
+							.map(|tx| tx.hash())
+							.collect();
+
+						// Update filter `last_poll`.
+						locked.insert(
+							key,
+							FilterPoolItem {
+								last_poll: BlockNumber::Num(block_number + 1),
+								filter_type: pool_item.filter_type.clone(),
+								at_block: pool_item.at_block,
+								pending_transaction_hashes: current_hashes.clone(),
+							},
+						);
+
+						let mew_hashes = current_hashes
+							.difference(&previous_hashes)
+							.collect::<HashSet<&H256>>();
+						FuturePath::PendingTransaction {
+							new_hashes: mew_hashes.into_iter().map(|h| *h).collect(),
+						}
 					}
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
@@ -205,6 +235,7 @@ where
 								last_poll: BlockNumber::Num(block_number + 1),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
+								pending_transaction_hashes: HashSet::new(),
 							},
 						);
 
@@ -242,8 +273,6 @@ where
 							current_number,
 						}
 					}
-					// Should never reach here.
-					_ => FuturePath::Error(internal_err("Method not available.")),
 				}
 			} else {
 				FuturePath::Error(internal_err(format!("Filter id {:?} does not exist.", key)))
@@ -277,6 +306,7 @@ where
 				}
 				Ok(FilterChanges::Hashes(ethereum_hashes))
 			}
+			FuturePath::PendingTransaction { new_hashes } => Ok(FilterChanges::Hashes(new_hashes)),
 			FuturePath::Log {
 				filter,
 				from_number,
