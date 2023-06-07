@@ -23,6 +23,7 @@ use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
+use sc_transaction_pool::{ChainApi, Pool};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
@@ -36,9 +37,10 @@ use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
-pub struct EthFilter<B: BlockT, C, BE> {
+pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
 	client: Arc<C>,
 	backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
+	graph: Arc<Pool<A>>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -46,10 +48,11 @@ pub struct EthFilter<B: BlockT, C, BE> {
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
+impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
+		graph: Arc<Pool<A>>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -58,6 +61,7 @@ impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 		Self {
 			client,
 			backend,
+			graph,
 			filter_pool,
 			max_stored_filters,
 			max_past_logs,
@@ -67,8 +71,9 @@ impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 	}
 }
 
-impl<B, C, BE> EthFilter<B, C, BE>
+impl<A, B, C, BE> EthFilter<A, B, C, BE>
 where
+	A: ChainApi,
 	B: BlockT<Hash = H256>,
 	C: HeaderBackend<B>,
 {
@@ -106,11 +111,26 @@ where
 		};
 		response
 	}
+
+	fn pending_transactions(&self) -> RpcResult<Vec<H256>> {
+		let txs_ready = self
+			.graph
+			.validated_pool()
+			.ready()
+			.map(|in_pool_tx| in_pool_tx.data().clone())
+			.collect();
+
+		todo!();
+		// let txs_pending = txs_ready.into_iter().filter_map(|xt| match xt.0.function {
+		// 	RuntimeCall
+		// })
+	}
 }
 
 #[async_trait]
-impl<B, C, BE> EthFilterApiServer for EthFilter<B, C, BE>
+impl<A, B, C, BE> EthFilterApiServer for EthFilter<A, B, C, BE>
 where
+	A: ChainApi + 'static,
 	B: BlockT<Hash = H256>,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
@@ -126,7 +146,7 @@ where
 	}
 
 	fn new_pending_transaction_filter(&self) -> RpcResult<U256> {
-		Err(internal_err("Method not available."))
+		self.create_filter(FilterType::PendingTransaction)
 	}
 
 	async fn filter_changes(&self, index: Index) -> RpcResult<FilterChanges> {
