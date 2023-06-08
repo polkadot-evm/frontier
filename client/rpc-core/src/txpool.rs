@@ -18,10 +18,10 @@
 
 //! tx pool rpc interface
 
-// crates.io
+// Crates.io
 use ethereum_types::U256;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-// frontier
+// Frontier
 use crate::types::*;
 
 /// TxPool rpc interface

@@ -774,7 +774,7 @@ impl_runtime_apis! {
 			xts_ready: Vec<<Block as sp_runtime::traits::Block>::Extrinsic>,
 			xts_future: Vec<<Block as sp_runtime::traits::Block>::Extrinsic>,
 		) -> fp_rpc::TxPoolResponse {
-			// frontier
+			// Frontier
 			use pallet_ethereum::Call::transact;
 
 			fp_rpc::TxPoolResponse {

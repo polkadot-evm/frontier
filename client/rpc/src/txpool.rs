@@ -22,7 +22,7 @@ use ethereum::TransactionV2;
 use ethereum_types::{H160, H256, U256};
 use jsonrpsee::core::RpcResult;
 use serde::Serialize;
-// frontier
+// Frontier
 use crate::{internal_err, public_key};
 use fc_rpc_core::{
 	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},

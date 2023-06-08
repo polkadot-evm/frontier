@@ -17,10 +17,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use std::{collections::HashSet, marker::PhantomData, sync::Arc, time};
-
+// Crates.io
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult};
+// Frontier
+use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
+use fc_rpc_core::{types::*, EthFilterApiServer};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus, TxPoolRuntimeApi};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
@@ -31,11 +35,6 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
-// Frontier
-use fc_rpc_core::{types::*, EthFilterApiServer};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus, TxPoolRuntimeApi};
-
-use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
 
 pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
 	client: Arc<C>,
@@ -98,8 +97,12 @@ where
 				None => U256::zero(),
 			};
 			let pending_transaction_hashes = if let FilterType::PendingTransaction = filter_type {
-				let ethereum_txs = self.tx_pool.tx_pool_response()?;
-				ethereum_txs.ready.into_iter().map(|tx| tx.hash()).collect()
+				self.tx_pool
+					.tx_pool_response()?
+					.ready
+					.into_iter()
+					.map(|tx| tx.hash())
+					.collect()
 			} else {
 				HashSet::new()
 			};
