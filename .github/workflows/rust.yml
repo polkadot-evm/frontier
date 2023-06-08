@@ -49,7 +49,7 @@ jobs:
     - name: Build client
       run: |
         cd template/node
-        cargo build --release --locked --verbose --features rpc-binary-search-estimate
+        cargo build --release --locked --verbose --features rpc-binary-search-estimate,txpool
     - name: Use Node.js 18
       uses: actions/setup-node@v3
       with:
