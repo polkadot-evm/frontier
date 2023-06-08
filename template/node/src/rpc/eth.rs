@@ -102,8 +102,8 @@ where
 	B: BlockT<Hash = sp_core::H256>,
 	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B>
-		+ EthereumRuntimeRPCApi<B>
 		+ ConvertTransactionRuntimeApi<B>
+		+ EthereumRuntimeRPCApi<B>
 		+ TxPoolRuntimeApi<B>,
 	C: BlockchainEvents<B> + 'static,
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + StorageProvider<B, BE>,
@@ -202,6 +202,7 @@ where
 	)?;
 
 	io.merge(Web3::new(client.clone()).into_rpc())?;
+	#[cfg(feature = "txpool")]
 	io.merge(tx_pool.into_rpc())?;
 
 	Ok(io)
