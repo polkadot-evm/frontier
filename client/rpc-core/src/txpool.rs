@@ -18,7 +18,6 @@
 
 //! tx pool rpc interface
 
-// Crates.io
 use ethereum_types::U256;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 // Frontier

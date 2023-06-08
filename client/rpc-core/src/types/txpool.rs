@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use std::collections::HashMap;
-// Crates.io
+
 use ethereum::{TransactionAction, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, U256};
 use serde::{Serialize, Serializer};
