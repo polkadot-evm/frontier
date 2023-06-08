@@ -22,7 +22,6 @@ use ethereum::TransactionV2;
 use ethereum_types::{H160, H256, U256};
 use jsonrpsee::core::RpcResult;
 use serde::Serialize;
-use sha3::{Digest, Keccak256};
 // frontier
 use crate::{internal_err, public_key};
 use fc_rpc_core::{
@@ -35,6 +34,7 @@ use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
 
 pub struct TxPool<B: BlockT, C, A: ChainApi> {
@@ -81,7 +81,7 @@ where
 				TransactionV2::EIP1559(t) => t.nonce,
 			};
 			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
+				Ok(pk) => H160::from(H256::from_slice(keccak_256(&pk).as_slice())),
 				Err(_e) => H160::default(),
 			};
 			pending
@@ -98,7 +98,7 @@ where
 				TransactionV2::EIP1559(t) => t.nonce,
 			};
 			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from_slice(Keccak256::digest(&pk).as_slice())),
+				Ok(pk) => H160::from(H256::from_slice(keccak_256(&pk).as_slice())),
 				Err(_e) => H160::default(),
 			};
 			queued
