@@ -203,7 +203,7 @@ where
 		.into_rpc(),
 	)?;
 
-	io.merge(Web3::new(client.clone()).into_rpc())?;
+	io.merge(Web3::new(client).into_rpc())?;
 	#[cfg(feature = "txpool")]
 	io.merge(tx_pool.into_rpc())?;
 

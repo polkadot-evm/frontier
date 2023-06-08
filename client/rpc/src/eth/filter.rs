@@ -223,7 +223,7 @@ where
 							.difference(&previous_hashes)
 							.collect::<HashSet<&H256>>();
 						FuturePath::PendingTransaction {
-							new_hashes: mew_hashes.into_iter().map(|h| *h).collect(),
+							new_hashes: mew_hashes.into_iter().copied().collect(),
 						}
 					}
 					// For each event since last poll, get a vector of ethereum logs.
