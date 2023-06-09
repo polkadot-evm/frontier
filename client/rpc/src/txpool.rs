@@ -25,7 +25,7 @@ use serde::Serialize;
 // substrate
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::InPoolTransaction;
-use sp_api::{ApiExt, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
@@ -35,7 +35,7 @@ use fc_rpc_core::{
 	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	TxPoolApiServer,
 };
-use fp_rpc::{TxPoolResponse, TxPoolRuntimeApi};
+use fp_rpc::{EthereumRuntimeRPCApi, TxPoolResponse};
 
 pub struct TxPool<B: BlockT, C, A: ChainApi> {
 	client: Arc<C>,
@@ -56,11 +56,11 @@ impl<B: BlockT, C, A: ChainApi> Clone for TxPool<B, C, A> {
 impl<B, C, A> TxPool<B, C, A>
 where
 	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B> + 'static,
 	C: Send + Sync + 'static,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
-	C::Api: TxPoolRuntimeApi<B>,
 {
 	/// Use the transaction graph interface to get the extrinsics currently in the ready and future
 	/// queues.
@@ -130,40 +130,14 @@ where
 		// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
 		let best_block = self.client.info().best_hash;
 		let api = self.client.runtime_api();
-		let api_version =
-			if let Ok(Some(api_version)) = api.api_version::<dyn TxPoolRuntimeApi<B>>(best_block) {
-				api_version
-			} else {
-				return Err(internal_err(
-					"failed to retrieve Runtime Api version".to_string(),
-				));
-			};
-		let ethereum_txns: TxPoolResponse = if api_version == 1 {
-			#[allow(deprecated)]
-			let res = api.extrinsic_filter_before_version_2(best_block, txs_ready, txs_future)
-				.map_err(|err| {
-					internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
-				})?;
-			TxPoolResponse {
-				ready: res
-					.ready
-					.iter()
-					.map(|t| TransactionV2::Legacy(t.clone()))
-					.collect(),
-				future: res
-					.future
-					.iter()
-					.map(|t| TransactionV2::Legacy(t.clone()))
-					.collect(),
-			}
-		} else {
-			api.extrinsic_filter(best_block, txs_ready, txs_future)
-				.map_err(|err| {
-					internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
-				})?
-		};
+		let ready = api
+			.extrinsic_filter(best_block, txs_ready)
+			.map_err(|err| internal_err(format!("fetch ready transactions failed: {:?}", err)))?;
+		let future = api
+			.extrinsic_filter(best_block, txs_future)
+			.map_err(|err| internal_err(format!("fetch future transactions failed: {:?}", err)))?;
 
-		Ok(ethereum_txns)
+		Ok(TxPoolResponse { ready, future })
 	}
 }
 
@@ -179,12 +153,12 @@ impl<B: BlockT, C, A: ChainApi> TxPool<B, C, A> {
 
 impl<B, C, A> TxPoolApiServer for TxPool<B, C, A>
 where
+	A: ChainApi<Block = B> + 'static,
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	C: ProvideRuntimeApi<B>,
 	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B>,
 	C: Send + Sync + 'static,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
-	C::Api: TxPoolRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<TxPoolTransaction>>> {
 		self.map_build::<TxPoolTransaction>()

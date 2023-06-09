@@ -34,7 +34,7 @@ use sp_runtime::{
 // Frontier
 use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
 use fc_rpc_core::{types::*, EthFilterApiServer};
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus, TxPoolRuntimeApi};
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
 	client: Arc<C>,
@@ -76,7 +76,7 @@ where
 	B: BlockT<Hash = H256>,
 	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B> + 'static,
 	C: ProvideRuntimeApi<B>,
-	C::Api: TxPoolRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let block_number =
@@ -131,7 +131,7 @@ where
 	A: ChainApi<Block = B> + 'static,
 	B: BlockT<Hash = H256>,
 	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B> + TxPoolRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderMetadata<B, Error = BlockChainError>
 		+ HeaderBackend<B>
 		+ StorageProvider<B, BE>

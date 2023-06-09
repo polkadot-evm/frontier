@@ -769,33 +769,6 @@ impl_runtime_apis! {
 		}
 	}
 
-	impl fp_rpc::TxPoolRuntimeApi<Block> for Runtime {
-		fn extrinsic_filter(
-			xts_ready: Vec<<Block as sp_runtime::traits::Block>::Extrinsic>,
-			xts_future: Vec<<Block as sp_runtime::traits::Block>::Extrinsic>,
-		) -> fp_rpc::TxPoolResponse {
-			// Frontier
-			use pallet_ethereum::Call::transact;
-
-			fp_rpc::TxPoolResponse {
-				ready: xts_ready
-					.into_iter()
-					.filter_map(|xt| match xt.0.function {
-						RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
-						_ => None,
-					})
-					.collect(),
-				future: xts_future
-					.into_iter()
-					.filter_map(|xt| match xt.0.function {
-						RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
-						_ => None,
-					})
-					.collect(),
-			}
-		}
-	}
-
 	impl pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<
 		Block,
 		Balance,
