@@ -33,7 +33,7 @@ use fp_evm::{
 };
 
 #[cfg(feature = "evm-with-weight-limit")]
-use crate::{AccountCodesAccessed, AccountCodesMetadata, AccountStoragesAccessed};
+use crate::AccountCodesMetadata;
 
 #[cfg(feature = "evm-with-weight-limit")]
 pub use evm::{
@@ -667,11 +667,18 @@ impl<'config> SubstrateStackSubstate<'config> {
 	}
 }
 
+#[derive(Default, Clone, Eq, PartialEq)]
+pub struct Recorded {
+	account_codes: sp_std::vec::Vec<H160>,
+	account_storages: BTreeMap<(H160, H256), bool>,
+}
+
 /// Substrate backend for EVM.
 pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
+	recorded: Recorded,
 	weight_info: Option<WeightInfo>,
 	_marker: PhantomData<T>,
 }
@@ -693,6 +700,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			},
 			_marker: PhantomData,
 			original_storage: BTreeMap::new(),
+			recorded: Default::default(),
 			weight_info,
 		}
 	}
@@ -701,8 +709,12 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		self.weight_info
 	}
 
-	pub fn weight_info_mut(&mut self) -> &mut Option<WeightInfo> {
-		&mut self.weight_info
+	pub fn recorded(&self) -> &Recorded {
+		&self.recorded
+	}
+
+	pub fn info_mut(&mut self) -> (&mut Option<WeightInfo>, &mut Recorded) {
+		(&mut self.weight_info, &mut self.recorded)
 	}
 }
 
@@ -770,7 +782,7 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn code(&mut self, address: H160) -> Result<Vec<u8>, ExitError> {
-		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
+		let maybe_record = !self.recorded().account_codes.contains(&address);
 		// Skip if the address has been already recorded this block
 		if maybe_record {
 			let size_limit: u64 = self
@@ -780,7 +792,9 @@ where
 				.create_contract_limit
 				.unwrap_or_default() as u64;
 
-			if let Some(weight_info) = self.weight_info_mut() {
+			let (weight_info, recorded) = self.info_mut();
+
+			if let Some(weight_info) = weight_info {
 				// First we record account emptiness check.
 				// Transfers to EOAs with standard 21_000 gas limit are able to
 				// pay for this pov size.
@@ -802,7 +816,7 @@ where
 					// Refund if applies
 					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
 				}
-				<AccountCodesAccessed<T>>::insert(address, true);
+				recorded.account_codes.push(address);
 			}
 		}
 		Ok(<AccountCodes<T>>::get(address))
@@ -863,7 +877,7 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
-		if let Some(weight_info) = self.weight_info_mut() {
+		if let (Some(weight_info), _) = self.info_mut() {
 			weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
 		}
 
@@ -881,7 +895,7 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
-		if let Some(weight_info) = self.weight_info_mut() {
+		if let (Some(weight_info), _) = self.info_mut() {
 			weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?;
 		}
 
@@ -951,7 +965,7 @@ where
 			code.len(),
 			address
 		);
-		if let Some(weight_info) = self.weight_info_mut() {
+		if let (Some(weight_info), _) = self.info_mut() {
 			weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
 		}
 		Pallet::<T>::create_account(address, code);
@@ -1012,7 +1026,7 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
-		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
+		let maybe_record = !self.recorded().account_codes.contains(&address);
 		// Skip if the address has been already recorded this block
 		if maybe_record {
 			let size_limit: u64 = self
@@ -1021,7 +1035,7 @@ where
 				.config()
 				.create_contract_limit
 				.unwrap_or_default() as u64;
-			if let Some(weight_info) = self.weight_info_mut() {
+			if let (Some(weight_info), recorded) = self.info_mut() {
 				// First we record account emptiness check.
 				// Transfers to EOAs with standard 21_000 gas limit are able to
 				// pay for this pov size.
@@ -1044,7 +1058,7 @@ where
 					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
 					return Ok(U256::from(actual_size));
 				};
-				<AccountCodesAccessed<T>>::insert(address, true);
+				recorded.account_codes.push(address);
 			}
 		}
 		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
@@ -1057,7 +1071,7 @@ where
 
 	#[cfg(feature = "evm-with-weight-limit")]
 	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
-		let maybe_record = !<AccountCodesAccessed<T>>::get(address);
+		let maybe_record = !self.recorded().account_codes.contains(&address);
 		// Skip if the address has been already recorded this block
 		if maybe_record {
 			let size_limit: u64 = self
@@ -1066,7 +1080,7 @@ where
 				.config()
 				.create_contract_limit
 				.unwrap_or_default() as u64;
-			if let Some(weight_info) = self.weight_info_mut() {
+			if let (Some(weight_info), recorded) = self.info_mut() {
 				// First we record account emptiness check.
 				// Transfers to EOAs with standard 21_000 gas limit are able to
 				// pay for this pov size.
@@ -1092,7 +1106,7 @@ where
 					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
 					return Ok(meta.hash);
 				};
-				<AccountCodesAccessed<T>>::insert(address, true);
+				recorded.account_codes.push(address);
 			}
 		}
 		Ok(<Pallet<T>>::account_code_metadata(address).hash)
@@ -1110,6 +1124,29 @@ where
 		_gas_cost: GasCost,
 		target: evm::gasometer::StorageTarget,
 	) -> Result<(), ExitError> {
+		// If account code or storage slot is in the overlay it is already accounted for and early exit
+		let mut accessed_storage: Option<AccessedStorage> = match target {
+			StorageTarget::Address(address) => {
+				if self.recorded().account_codes.contains(&address) {
+					return Ok(());
+				} else {
+					Some(AccessedStorage::AccountCodes(address))
+				}
+			}
+			StorageTarget::Slot(address, index) => {
+				if self
+					.recorded()
+					.account_storages
+					.contains_key(&(address, index))
+				{
+					return Ok(());
+				} else {
+					Some(AccessedStorage::AccountStorages((address, index)))
+				}
+			}
+			_ => None,
+		};
+
 		let size_limit: u64 = self
 			.metadata()
 			.gasometer()
@@ -1117,10 +1154,13 @@ where
 			.create_contract_limit
 			.unwrap_or_default() as u64;
 
-		let weight_info = if let Some(weight_info) = self.weight_info_mut() {
-			weight_info
-		} else {
-			return Ok(());
+		let (weight_info, recorded) = {
+			let (weight_info, recorded) = self.info_mut();
+			if let Some(weight_info) = weight_info {
+				(weight_info, recorded)
+			} else {
+				return Ok(());
+			}
 		};
 
 		// Record ref_time first
@@ -1132,25 +1172,6 @@ where
 			proof_size_limit
 		} else {
 			return Ok(());
-		};
-
-		// If account code or storage slot is in the overlay it is already accounted for and early exit
-		let mut accessed_storage: Option<AccessedStorage> = match target {
-			StorageTarget::Address(address) => {
-				if <AccountCodesAccessed<T>>::get(address) {
-					return Ok(());
-				} else {
-					Some(AccessedStorage::AccountCodes(address))
-				}
-			}
-			StorageTarget::Slot(address, index) => {
-				if <AccountStoragesAccessed<T>>::get(address, index) {
-					return Ok(());
-				} else {
-					Some(AccessedStorage::AccountStorages((address, index)))
-				}
-			}
-			_ => None,
 		};
 
 		let mut maybe_record_and_refund = |with_empty_check: bool| -> Result<(), ExitError> {
@@ -1178,7 +1199,7 @@ where
 				// Refund if applies
 				weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
 			}
-			<AccountCodesAccessed<T>>::insert(address, true);
+			recorded.account_codes.push(address);
 			// Already recorded, return
 			Ok(())
 		};
@@ -1217,7 +1238,7 @@ where
 						return Err(ExitError::OutOfGas);
 					};
 				let mut cost = WRITE_PROOF_SIZE;
-				let maybe_record = !<AccountStoragesAccessed<T>>::get(address, index);
+				let maybe_record = !recorded.account_storages.contains_key(&(address, index));
 				// If the slot is yet to be accessed we charge for it, as the evm reads
 				// it prior to the opcode execution.
 				// Skip if the address and index has been already recorded this block.
@@ -1245,18 +1266,19 @@ where
 			return Err(ExitError::OutOfGas);
 		}
 
-		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))?;
-
-		// Once cost is recorded, cache the storage access
+		// Cache the storage access
 		match accessed_storage {
 			Some(AccessedStorage::AccountStorages((address, index))) => {
-				<AccountStoragesAccessed<T>>::insert(address, index, true)
+				recorded.account_storages.insert((address, index), true);
 			}
 			Some(AccessedStorage::AccountCodes(address)) => {
-				<AccountCodesAccessed<T>>::insert(address, true)
+				recorded.account_codes.push(address);
 			}
 			_ => {}
 		}
+
+		// Record cost
+		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))?;
 		Ok(())
 	}
 
@@ -1266,7 +1288,7 @@ where
 		ref_time: Option<u64>,
 		proof_size: Option<u64>,
 	) -> Result<(), ExitError> {
-		let weight_info = if let Some(weight_info) = self.weight_info_mut() {
+		let weight_info = if let (Some(weight_info), _) = self.info_mut() {
 			weight_info
 		} else {
 			return Ok(());
