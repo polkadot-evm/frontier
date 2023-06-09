@@ -26,7 +26,7 @@ use serde::Serialize;
 use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
@@ -37,13 +37,13 @@ use fc_rpc_core::{
 };
 use fp_rpc::{EthereumRuntimeRPCApi, TxPoolResponse};
 
-pub struct TxPool<B: BlockT, C, A: ChainApi> {
+pub struct TxPool<A: ChainApi, B, C> {
 	client: Arc<C>,
 	graph: Arc<Pool<A>>,
 	_marker: PhantomData<B>,
 }
 
-impl<B: BlockT, C, A: ChainApi> Clone for TxPool<B, C, A> {
+impl<A: ChainApi, B, C> Clone for TxPool<A, B, C> {
 	fn clone(&self) -> Self {
 		Self {
 			client: self.client.clone(),
@@ -53,14 +53,13 @@ impl<B: BlockT, C, A: ChainApi> Clone for TxPool<B, C, A> {
 	}
 }
 
-impl<B, C, A> TxPool<B, C, A>
+impl<A, B, C> TxPool<A, B, C>
 where
-	C: ProvideRuntimeApi<B>,
-	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B> + 'static,
-	C: Send + Sync + 'static,
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
+	B: BlockT<Hash = H256> + Send + Sync + 'static,
+	C: Send + Sync + 'static,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	/// Use the transaction graph interface to get the extrinsics currently in the ready and future
 	/// queues.
@@ -141,7 +140,7 @@ where
 	}
 }
 
-impl<B: BlockT, C, A: ChainApi> TxPool<B, C, A> {
+impl<A: ChainApi, B, C> TxPool<A, B, C> {
 	pub fn new(client: Arc<C>, graph: Arc<Pool<A>>) -> Self {
 		Self {
 			client,
@@ -151,13 +150,12 @@ impl<B: BlockT, C, A: ChainApi> TxPool<B, C, A> {
 	}
 }
 
-impl<B, C, A> TxPoolApiServer for TxPool<B, C, A>
+impl<A, B, C> TxPoolApiServer for TxPool<A, B, C>
 where
 	A: ChainApi<Block = B> + 'static,
 	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B>,
-	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B>,
 	C: Send + Sync + 'static,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<TxPoolTransaction>>> {

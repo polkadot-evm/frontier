@@ -39,7 +39,7 @@ use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
 	client: Arc<C>,
 	backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
-	tx_pool: TxPool<B, C, A>,
+	tx_pool: TxPool<A, B, C>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -51,7 +51,7 @@ impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
-		tx_pool: TxPool<B, C, A>,
+		tx_pool: TxPool<A, B, C>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
