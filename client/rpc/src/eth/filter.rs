@@ -25,7 +25,7 @@ use jsonrpsee::core::{async_trait, RpcResult};
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
-use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
+use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::{
 	generic::BlockId,
@@ -74,8 +74,7 @@ impl<A, B, C, BE> EthFilter<A, B, C, BE>
 where
 	A: ChainApi<Block = B> + 'static,
 	B: BlockT<Hash = H256>,
-	C: HeaderMetadata<B, Error = BlockChainError> + HeaderBackend<B> + 'static,
-	C: ProvideRuntimeApi<B>,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
@@ -130,12 +129,8 @@ impl<A, B, C, BE> EthFilterApiServer for EthFilter<A, B, C, BE>
 where
 	A: ChainApi<Block = B> + 'static,
 	B: BlockT<Hash = H256>,
-	C: ProvideRuntimeApi<B>,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B> + StorageProvider<B, BE> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderMetadata<B, Error = BlockChainError>
-		+ HeaderBackend<B>
-		+ StorageProvider<B, BE>
-		+ 'static,
 	BE: Backend<B> + 'static,
 {
 	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
@@ -525,9 +520,8 @@ async fn filter_range_logs_indexed<B, C, BE>(
 ) -> RpcResult<()>
 where
 	B: BlockT<Hash = H256>,
-	C: ProvideRuntimeApi<B>,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B> + StorageProvider<B, BE> + 'static,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
 	use std::time::Instant;
