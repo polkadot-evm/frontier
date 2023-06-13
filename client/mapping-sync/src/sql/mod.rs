@@ -471,7 +471,11 @@ async fn index_genesis_block<Block, Client, Backend>(
 mod test {
 	use super::*;
 
-	use std::{collections::BTreeMap, path::Path, sync::Arc};
+	use std::{
+		collections::BTreeMap,
+		path::Path,
+		sync::{Arc, Mutex},
+	};
 
 	use futures::executor;
 	use scale_codec::Encode;
@@ -1244,8 +1248,6 @@ mod test {
 		}
 	}
 
-	use std::sync::Mutex;
-
 	struct TestSyncOracleWrapper {
 		oracle: Arc<TestSyncOracle>,
 		sync_status: Arc<Mutex<bool>>,
@@ -1266,7 +1268,7 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn indexing_works_for_normal_sync_best_block() {
+	async fn sync_strategy_normal_indexes_best_blocks_if_not_major_sync() {
 		let tmp = tempdir().expect("create a temporary directory");
 		let builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -1333,7 +1335,7 @@ mod test {
 		// Enough time for startup
 		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
 
-		// Import 3 blocks as part of initial sync, storing them oldest first.
+		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
 		let mut parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
@@ -1369,7 +1371,7 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn indexing_works_for_normal_sync_non_best_block() {
+	async fn sync_strategy_normal_ignores_non_best_block_if_not_major_sync() {
 		let tmp = tempdir().expect("create a temporary directory");
 		let builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -1436,221 +1438,7 @@ mod test {
 		// Enough time for startup
 		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
 
-		// Import 3 blocks as part of initial sync, storing them oldest first.
-		sync_oracle_wrapper.set_sync_status(false);
-		let mut parent_hash = client
-			.hash(sp_runtime::traits::Zero::zero())
-			.unwrap()
-			.expect("genesis hash");
-		let mut best_best_block_hashes: Vec<H256> = vec![];
-		for _block_number in 1..=3 {
-			let builder = client
-				.new_block_at(parent_hash, ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_best_block_hashes.push(block_hash.clone());
-			parent_hash = block_hash;
-		}
-
-		// create non-best block
-		let builder = client
-			.new_block_at(best_best_block_hashes[0], ethereum_digest(), false)
-			.unwrap();
-		let block = builder.build().unwrap().block;
-
-		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-
-		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
-
-		// Test the chain is correctly indexed.
-		let actual_imported_blocks =
-			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
-				.fetch_all(&pool)
-				.await
-				.expect("test query result")
-				.iter()
-				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
-				.collect::<Vec<H256>>();
-		let expected_imported_blocks = best_best_block_hashes.clone();
-		assert_eq!(expected_imported_blocks, actual_imported_blocks);
-	}
-
-	#[tokio::test]
-	async fn indexing_works_for_parachain_sync_best_block() {
-		let tmp = tempdir().expect("create a temporary directory");
-		let builder = TestClientBuilder::new().add_extra_storage(
-			PALLET_ETHEREUM_SCHEMA.to_vec(),
-			Encode::encode(&EthereumStorageSchema::V3),
-		);
-		let backend = builder.backend();
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
-		let indexer_backend = fc_db::sql::Backend::new(
-			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new("sqlite:///")
-					.join(tmp.path())
-					.join("test.db3")
-					.to_str()
-					.unwrap(),
-				create_if_missing: true,
-				cache_size: 204800,
-				thread_count: 4,
-			}),
-			100,
-			None,
-			overrides.clone(),
-		)
-		.await
-		.expect("indexer pool to be created");
-
-		// Pool
-		let pool = indexer_backend.pool().clone();
-
-		// Spawn indexer task
-		let pubsub_notification_sinks: crate::EthereumBlockNotificationSinks<
-			crate::EthereumBlockNotification<OpaqueBlock>,
-		> = Default::default();
-		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
-		let mut sync_oracle_wrapper = TestSyncOracleWrapper::new();
-		let sync_oracle = sync_oracle_wrapper.oracle.clone();
-		let client_inner = client.clone();
-		tokio::task::spawn(async move {
-			crate::sql::SyncWorker::run(
-				client_inner.clone(),
-				backend.clone(),
-				Arc::new(indexer_backend),
-				client_inner.import_notification_stream(),
-				SyncWorkerConfig {
-					read_notification_timeout: Duration::from_secs(10),
-					check_indexed_blocks_interval: Duration::from_secs(60),
-				},
-				SyncStrategy::Parachain,
-				Arc::new(sync_oracle),
-				pubsub_notification_sinks.clone(),
-			)
-			.await
-		});
-		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
-
-		// Import 3 blocks as part of initial sync, storing them oldest first.
-		sync_oracle_wrapper.set_sync_status(false);
-		let mut parent_hash = client
-			.hash(sp_runtime::traits::Zero::zero())
-			.unwrap()
-			.expect("genesis hash");
-		let mut best_block_hashes: Vec<H256> = vec![];
-		for _block_number in 1..=3 {
-			let builder = client
-				.new_block_at(parent_hash, ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
-			parent_hash = block_hash;
-		}
-
-		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
-
-		// Test the chain is correctly indexed.
-		let actual_imported_blocks =
-			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
-				.fetch_all(&pool)
-				.await
-				.expect("test query result")
-				.iter()
-				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
-				.collect::<Vec<H256>>();
-		let expected_imported_blocks = best_block_hashes.clone();
-		assert_eq!(expected_imported_blocks, actual_imported_blocks);
-	}
-
-	#[tokio::test]
-	async fn indexing_works_for_parachain_sync_non_best_block() {
-		let tmp = tempdir().expect("create a temporary directory");
-		let builder = TestClientBuilder::new().add_extra_storage(
-			PALLET_ETHEREUM_SCHEMA.to_vec(),
-			Encode::encode(&EthereumStorageSchema::V3),
-		);
-		let backend = builder.backend();
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
-		let indexer_backend = fc_db::sql::Backend::new(
-			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new("sqlite:///")
-					.join(tmp.path())
-					.join("test.db3")
-					.to_str()
-					.unwrap(),
-				create_if_missing: true,
-				cache_size: 204800,
-				thread_count: 4,
-			}),
-			100,
-			None,
-			overrides.clone(),
-		)
-		.await
-		.expect("indexer pool to be created");
-
-		// Pool
-		let pool = indexer_backend.pool().clone();
-
-		// Spawn indexer task
-		let pubsub_notification_sinks: crate::EthereumBlockNotificationSinks<
-			crate::EthereumBlockNotification<OpaqueBlock>,
-		> = Default::default();
-		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
-		let mut sync_oracle_wrapper = TestSyncOracleWrapper::new();
-		let sync_oracle = sync_oracle_wrapper.oracle.clone();
-		let client_inner = client.clone();
-		tokio::task::spawn(async move {
-			crate::sql::SyncWorker::run(
-				client_inner.clone(),
-				backend.clone(),
-				Arc::new(indexer_backend),
-				client_inner.import_notification_stream(),
-				SyncWorkerConfig {
-					read_notification_timeout: Duration::from_secs(10),
-					check_indexed_blocks_interval: Duration::from_secs(60),
-				},
-				SyncStrategy::Parachain,
-				Arc::new(sync_oracle),
-				pubsub_notification_sinks.clone(),
-			)
-			.await
-		});
-		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
-
-		// Import 3 blocks as part of initial sync, storing them oldest first.
+		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
 		let mut parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
@@ -1694,110 +1482,7 @@ mod test {
 	}
 
 	#[tokio::test]
-	async fn indexing_ignored_for_normal_sync_best_block_during_network_sync() {
-		let tmp = tempdir().expect("create a temporary directory");
-		let builder = TestClientBuilder::new().add_extra_storage(
-			PALLET_ETHEREUM_SCHEMA.to_vec(),
-			Encode::encode(&EthereumStorageSchema::V3),
-		);
-		let backend = builder.backend();
-		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
-		let indexer_backend = fc_db::sql::Backend::new(
-			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new("sqlite:///")
-					.join(tmp.path())
-					.join("test.db3")
-					.to_str()
-					.unwrap(),
-				create_if_missing: true,
-				cache_size: 204800,
-				thread_count: 4,
-			}),
-			100,
-			None,
-			overrides.clone(),
-		)
-		.await
-		.expect("indexer pool to be created");
-
-		// Pool
-		let pool = indexer_backend.pool().clone();
-
-		// Spawn indexer task
-		let pubsub_notification_sinks: crate::EthereumBlockNotificationSinks<
-			crate::EthereumBlockNotification<OpaqueBlock>,
-		> = Default::default();
-		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
-		let mut sync_oracle_wrapper = TestSyncOracleWrapper::new();
-		let sync_oracle = sync_oracle_wrapper.oracle.clone();
-		let client_inner = client.clone();
-		tokio::task::spawn(async move {
-			crate::sql::SyncWorker::run(
-				client_inner.clone(),
-				backend.clone(),
-				Arc::new(indexer_backend),
-				client_inner.import_notification_stream(),
-				SyncWorkerConfig {
-					read_notification_timeout: Duration::from_secs(10),
-					check_indexed_blocks_interval: Duration::from_secs(60),
-				},
-				SyncStrategy::Normal,
-				Arc::new(sync_oracle),
-				pubsub_notification_sinks.clone(),
-			)
-			.await
-		});
-		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
-
-		// Import 3 blocks as part of initial sync, storing them oldest first.
-		sync_oracle_wrapper.set_sync_status(false);
-		let mut parent_hash = client
-			.hash(sp_runtime::traits::Zero::zero())
-			.unwrap()
-			.expect("genesis hash");
-		let mut best_block_hashes: Vec<H256> = vec![];
-		for _block_number in 1..=3 {
-			let builder = client
-				.new_block_at(parent_hash, ethereum_digest(), false)
-				.unwrap();
-			let block = builder.build().unwrap().block;
-			let block_hash = block.header.hash();
-
-			executor::block_on(client.import(BlockOrigin::NetworkInitialSync, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
-			parent_hash = block_hash;
-		}
-
-		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
-
-		// Test the chain is correctly indexed.
-		let actual_imported_blocks =
-			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
-				.fetch_all(&pool)
-				.await
-				.expect("test query result")
-				.iter()
-				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
-				.collect::<Vec<H256>>();
-		let expected_imported_blocks = Vec::<H256>::new();
-		assert_eq!(expected_imported_blocks, actual_imported_blocks);
-	}
-
-	#[tokio::test]
-	async fn indexing_ignored_for_parachain_sync_best_block_during_network_sync() {
+	async fn sync_strategy_parachain_indexes_best_blocks_if_not_major_sync() {
 		let tmp = tempdir().expect("create a temporary directory");
 		let builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -1864,8 +1549,325 @@ mod test {
 		// Enough time for startup
 		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
 
-		// Import 3 blocks as part of initial sync, storing them oldest first.
+		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
+		let mut parent_hash = client
+			.hash(sp_runtime::traits::Zero::zero())
+			.unwrap()
+			.expect("genesis hash");
+		let mut best_block_hashes: Vec<H256> = vec![];
+		for _block_number in 1..=3 {
+			let builder = client
+				.new_block_at(parent_hash, ethereum_digest(), false)
+				.unwrap();
+			let block = builder.build().unwrap().block;
+			let block_hash = block.header.hash();
+
+			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+			best_block_hashes.push(block_hash.clone());
+			parent_hash = block_hash;
+		}
+
+		// Enough time for indexing
+		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+
+		// Test the chain is correctly indexed.
+		let actual_imported_blocks =
+			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
+				.fetch_all(&pool)
+				.await
+				.expect("test query result")
+				.iter()
+				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+				.collect::<Vec<H256>>();
+		let expected_imported_blocks = best_block_hashes.clone();
+		assert_eq!(expected_imported_blocks, actual_imported_blocks);
+	}
+
+	#[tokio::test]
+	async fn sync_strategy_parachain_ignores_non_best_blocks_if_not_major_sync() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let backend = builder.backend();
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let mut client = Arc::new(client);
+		let mut overrides_map = BTreeMap::new();
+		overrides_map.insert(
+			EthereumStorageSchema::V3,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+		);
+		let overrides = Arc::new(OverrideHandle {
+			schemas: overrides_map,
+			fallback: Box::new(SchemaV3Override::new(client.clone())),
+		});
+		let indexer_backend = fc_db::sql::Backend::new(
+			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+				path: Path::new("sqlite:///")
+					.join(tmp.path())
+					.join("test.db3")
+					.to_str()
+					.unwrap(),
+				create_if_missing: true,
+				cache_size: 204800,
+				thread_count: 4,
+			}),
+			100,
+			None,
+			overrides.clone(),
+		)
+		.await
+		.expect("indexer pool to be created");
+
+		// Pool
+		let pool = indexer_backend.pool().clone();
+
+		// Spawn indexer task
+		let pubsub_notification_sinks: crate::EthereumBlockNotificationSinks<
+			crate::EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+		let mut sync_oracle_wrapper = TestSyncOracleWrapper::new();
+		let sync_oracle = sync_oracle_wrapper.oracle.clone();
+		let client_inner = client.clone();
+		tokio::task::spawn(async move {
+			crate::sql::SyncWorker::run(
+				client_inner.clone(),
+				backend.clone(),
+				Arc::new(indexer_backend),
+				client_inner.import_notification_stream(),
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(10),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
+				SyncStrategy::Parachain,
+				Arc::new(sync_oracle),
+				pubsub_notification_sinks.clone(),
+			)
+			.await
+		});
+		// Enough time for startup
+		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+
+		// Import 3 blocks as part of normal operation, storing them oldest first.
+		sync_oracle_wrapper.set_sync_status(false);
+		let mut parent_hash = client
+			.hash(sp_runtime::traits::Zero::zero())
+			.unwrap()
+			.expect("genesis hash");
+		let mut best_block_hashes: Vec<H256> = vec![];
+		for _block_number in 1..=3 {
+			let builder = client
+				.new_block_at(parent_hash, ethereum_digest(), false)
+				.unwrap();
+			let block = builder.build().unwrap().block;
+			let block_hash = block.header.hash();
+
+			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+			best_block_hashes.push(block_hash.clone());
+			parent_hash = block_hash;
+		}
+
+		// create non-best block
+		let builder = client
+			.new_block_at(best_block_hashes[0], ethereum_digest(), false)
+			.unwrap();
+		let block = builder.build().unwrap().block;
+
+		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+
+		// Enough time for indexing
+		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+
+		// Test the chain is correctly indexed.
+		let actual_imported_blocks =
+			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
+				.fetch_all(&pool)
+				.await
+				.expect("test query result")
+				.iter()
+				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+				.collect::<Vec<H256>>();
+		let expected_imported_blocks = best_block_hashes.clone();
+		assert_eq!(expected_imported_blocks, actual_imported_blocks);
+	}
+
+	#[tokio::test]
+	async fn sync_strategy_normal_ignores_best_blocks_if_major_sync() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let backend = builder.backend();
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let mut client = Arc::new(client);
+		let mut overrides_map = BTreeMap::new();
+		overrides_map.insert(
+			EthereumStorageSchema::V3,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+		);
+		let overrides = Arc::new(OverrideHandle {
+			schemas: overrides_map,
+			fallback: Box::new(SchemaV3Override::new(client.clone())),
+		});
+		let indexer_backend = fc_db::sql::Backend::new(
+			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+				path: Path::new("sqlite:///")
+					.join(tmp.path())
+					.join("test.db3")
+					.to_str()
+					.unwrap(),
+				create_if_missing: true,
+				cache_size: 204800,
+				thread_count: 4,
+			}),
+			100,
+			None,
+			overrides.clone(),
+		)
+		.await
+		.expect("indexer pool to be created");
+
+		// Pool
+		let pool = indexer_backend.pool().clone();
+
+		// Spawn indexer task
+		let pubsub_notification_sinks: crate::EthereumBlockNotificationSinks<
+			crate::EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+		let mut sync_oracle_wrapper = TestSyncOracleWrapper::new();
+		let sync_oracle = sync_oracle_wrapper.oracle.clone();
+		let client_inner = client.clone();
+		tokio::task::spawn(async move {
+			crate::sql::SyncWorker::run(
+				client_inner.clone(),
+				backend.clone(),
+				Arc::new(indexer_backend),
+				client_inner.import_notification_stream(),
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(10),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
+				SyncStrategy::Normal,
+				Arc::new(sync_oracle),
+				pubsub_notification_sinks.clone(),
+			)
+			.await
+		});
+		// Enough time for startup
+		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+
+		// Import 3 blocks as part of initial network sync, storing them oldest first.
+		sync_oracle_wrapper.set_sync_status(true);
+		let mut parent_hash = client
+			.hash(sp_runtime::traits::Zero::zero())
+			.unwrap()
+			.expect("genesis hash");
+		let mut best_block_hashes: Vec<H256> = vec![];
+		for _block_number in 1..=3 {
+			let builder = client
+				.new_block_at(parent_hash, ethereum_digest(), false)
+				.unwrap();
+			let block = builder.build().unwrap().block;
+			let block_hash = block.header.hash();
+
+			executor::block_on(client.import(BlockOrigin::NetworkInitialSync, block)).unwrap();
+			best_block_hashes.push(block_hash.clone());
+			parent_hash = block_hash;
+		}
+
+		// Enough time for indexing
+		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+
+		// Test the chain is correctly indexed.
+		let actual_imported_blocks =
+			sqlx::query("SELECT substrate_block_hash, is_canon, block_number FROM blocks")
+				.fetch_all(&pool)
+				.await
+				.expect("test query result")
+				.iter()
+				.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+				.collect::<Vec<H256>>();
+		let expected_imported_blocks = Vec::<H256>::new();
+		assert_eq!(expected_imported_blocks, actual_imported_blocks);
+	}
+
+	#[tokio::test]
+	async fn sync_strategy_parachain_ignores_best_blocks_if_major_sync() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let backend = builder.backend();
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let mut client = Arc::new(client);
+		let mut overrides_map = BTreeMap::new();
+		overrides_map.insert(
+			EthereumStorageSchema::V3,
+			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
+		);
+		let overrides = Arc::new(OverrideHandle {
+			schemas: overrides_map,
+			fallback: Box::new(SchemaV3Override::new(client.clone())),
+		});
+		let indexer_backend = fc_db::sql::Backend::new(
+			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
+				path: Path::new("sqlite:///")
+					.join(tmp.path())
+					.join("test.db3")
+					.to_str()
+					.unwrap(),
+				create_if_missing: true,
+				cache_size: 204800,
+				thread_count: 4,
+			}),
+			100,
+			None,
+			overrides.clone(),
+		)
+		.await
+		.expect("indexer pool to be created");
+
+		// Pool
+		let pool = indexer_backend.pool().clone();
+
+		// Spawn indexer task
+		let pubsub_notification_sinks: crate::EthereumBlockNotificationSinks<
+			crate::EthereumBlockNotification<OpaqueBlock>,
+		> = Default::default();
+		let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
+		let mut sync_oracle_wrapper = TestSyncOracleWrapper::new();
+		let sync_oracle = sync_oracle_wrapper.oracle.clone();
+		let client_inner = client.clone();
+		tokio::task::spawn(async move {
+			crate::sql::SyncWorker::run(
+				client_inner.clone(),
+				backend.clone(),
+				Arc::new(indexer_backend),
+				client_inner.import_notification_stream(),
+				SyncWorkerConfig {
+					read_notification_timeout: Duration::from_secs(10),
+					check_indexed_blocks_interval: Duration::from_secs(60),
+				},
+				SyncStrategy::Parachain,
+				Arc::new(sync_oracle),
+				pubsub_notification_sinks.clone(),
+			)
+			.await
+		});
+		// Enough time for startup
+		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+
+		// Import 3 blocks as part of initial network sync, storing them oldest first.
+		sync_oracle_wrapper.set_sync_status(true);
 		let mut parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
