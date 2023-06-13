@@ -16,6 +16,7 @@ members = [
 	"frame/evm/precompile/bls12377",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
+	"client/api",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
@@ -39,6 +40,7 @@ edition = "2021"
 repository = "https://github.com/paritytech/frontier/"
 
 [workspace.dependencies]
+async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
@@ -126,6 +128,7 @@ substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # Frontier Client
+fc-api = { version = "1.0.0-dev", path = "client/api" }
 fc-cli = { version = "1.0.0-dev", path = "client/cli" }
 fc-consensus = { version = "2.0.0-dev", path = "client/consensus" }
 fc-db = { version = "2.0.0-dev", path = "client/db" }

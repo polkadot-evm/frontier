@@ -580,7 +580,7 @@ fn commitment_create() {
 
 	// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
 	let expected_transaction_metadata = fc_db::TransactionMetadata {
-		block_hash,
+		substrate_block_hash: block_hash,
 		ethereum_block_hash,
 		ethereum_index: 0,
 	};
@@ -661,7 +661,7 @@ fn commitment_update() {
 
 	// Expect the offchain-stored transaction metadata to match the one we stored in the runtime.
 	let expected_transaction_metadata_a1_t1 = fc_db::TransactionMetadata {
-		block_hash: block_a1_hash,
+		substrate_block_hash: block_a1_hash,
 		ethereum_block_hash,
 		ethereum_index: 0,
 	};
@@ -707,12 +707,12 @@ fn commitment_update() {
 
 	// Expect the offchain-stored transaction metadata to have data for both blocks.
 	let expected_transaction_metadata_a2_t1 = fc_db::TransactionMetadata {
-		block_hash: block_a2_hash,
+		substrate_block_hash: block_a2_hash,
 		ethereum_block_hash,
 		ethereum_index: 0,
 	};
 	let expected_transaction_metadata_a2_t2 = fc_db::TransactionMetadata {
-		block_hash: block_a2_hash,
+		substrate_block_hash: block_a2_hash,
 		ethereum_block_hash,
 		ethereum_index: 1,
 	};

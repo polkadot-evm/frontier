@@ -2082,6 +2082,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-api"
+version = "1.0.0-dev"
+dependencies = [
+ "async-trait",
+ "fp-storage",
+ "parity-scale-codec",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
 name = "fc-cli"
 version = "1.0.0-dev"
 dependencies = [
@@ -2128,6 +2139,7 @@ version = "2.0.0-dev"
 dependencies = [
  "async-trait",
  "ethereum",
+ "fc-api",
  "fc-rpc",
  "fc-storage",
  "fp-consensus",
@@ -2198,6 +2210,7 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "evm",
+ "fc-api",
  "fc-db",
  "fc-mapping-sync",
  "fc-rpc-core",
@@ -2739,6 +2752,7 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "clap",
+ "fc-api",
  "fc-cli",
  "fc-consensus",
  "fc-db",

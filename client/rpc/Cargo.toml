@@ -47,7 +47,7 @@ sp-runtime = { workspace = true }
 sp-state-machine = { workspace = true }
 sp-storage = { workspace = true }
 # Frontier
-fc-db = { workspace = true }
+fc-api = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
@@ -64,6 +64,8 @@ sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
+# Frontier
+fc-db = { workspace = true }
 
 [features]
 rpc-binary-search-estimate = []

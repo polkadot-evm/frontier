@@ -41,7 +41,7 @@ pub struct EthDeps<C, P, A: ChainApi, CT, B: BlockT> {
 	/// Chain syncing service
 	pub sync: Arc<SyncingService<B>>,
 	/// Frontier Backend.
-	pub frontier_backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
+	pub frontier_backend: Arc<dyn fc_api::Backend<B>>,
 	/// Ethereum data access overrides.
 	pub overrides: Arc<OverrideHandle<B>>,
 	/// Cache for Ethereum block data.

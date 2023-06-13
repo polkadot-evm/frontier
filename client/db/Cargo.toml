@@ -11,7 +11,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-async-trait = "0.1"
+async-trait = { workspace = true }
 ethereum = { workspace = true, features = ["with-codec"] }
 futures = "0.3.25"
 kvdb-rocksdb = { workspace = true, optional = true }
@@ -32,6 +32,7 @@ sp-database = { workspace = true }
 sp-runtime = { workspace = true }
 sp-storage = { workspace = true }
 # Frontier
+fc-api = { workspace = true }
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
