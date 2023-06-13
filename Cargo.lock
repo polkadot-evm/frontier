@@ -2098,6 +2098,7 @@ version = "1.0.0-dev"
 dependencies = [
  "clap",
  "ethereum-types",
+ "fc-api",
  "fc-db",
  "fp-rpc",
  "fp-storage",

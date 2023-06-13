@@ -1056,6 +1056,7 @@ mod test {
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	// Frontier
+	use fc_api::Backend as BackendT;
 	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
@@ -1145,8 +1146,8 @@ mod test {
 		});
 
 		// Indexer backend
-		let indexer_backend = super::Backend::new(
-			super::BackendConfig::Sqlite(super::SqliteBackendConfig {
+		let indexer_backend = Backend::new(
+			BackendConfig::Sqlite(SqliteBackendConfig {
 				path: Path::new("sqlite:///")
 					.join(tmp.path())
 					.join("test.db3")
@@ -1393,10 +1394,11 @@ mod test {
 	}
 
 	async fn run_test_case(
-		backend: super::Backend<OpaqueBlock>,
+		backend: Backend<OpaqueBlock>,
 		test_case: &TestFilter,
-	) -> Result<Vec<FilteredLog>, String> {
+	) -> Result<Vec<FilteredLog<OpaqueBlock>>, String> {
 		backend
+			.log_indexer()
 			.filter_logs(
 				test_case.from_block,
 				test_case.to_block,
