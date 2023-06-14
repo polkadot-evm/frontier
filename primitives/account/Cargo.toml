@@ -33,10 +33,17 @@ std = [
 	"log/std",
 	"scale-codec/std",
 	"scale-info/std",
-	"serde",
+	"serde/std",
 	# Substrate
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
+]
+serde = [
+	"dep:serde",
+	"impl-serde",
+	"scale-info/serde",
+	"sp-core/serde",
+	"sp-runtime/serde",
 ]

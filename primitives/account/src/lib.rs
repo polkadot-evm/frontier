@@ -20,7 +20,7 @@
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
-use sp_core::{ecdsa, H160, H256};
+use sp_core::{ecdsa, RuntimeDebug, H160, H256};
 use sp_io::hashing::keccak_256;
 
 /// A fully Ethereum-compatible `AccountId`.
@@ -30,7 +30,7 @@ use sp_io::hashing::keccak_256;
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct AccountId20(pub [u8; 20]);
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 
 #[cfg(feature = "std")]
@@ -113,8 +113,8 @@ impl From<ecdsa::Public> for AccountId20 {
 	}
 }
 
-#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_core::RuntimeDebug, TypeInfo)]
+#[derive(Eq, PartialEq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EthereumSignature(ecdsa::Signature);
 
 impl sp_runtime::traits::Verify for EthereumSignature {
