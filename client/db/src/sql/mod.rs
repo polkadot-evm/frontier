@@ -303,8 +303,8 @@ where
 								}
 								None => {
 									return Err(Error::Protocol(format!(
-									"Missing ethereum block for hash mismatch {expect_eth_block_hash:?}"
-								)))
+										"Missing ethereum block for hash mismatch {expect_eth_block_hash:?}"
+									)))
 								}
 							}
 						}
@@ -341,24 +341,17 @@ where
 						is_canon,
 					})
 				}
-				Err(FindLogError::NotFound) => {
-					return Err(Error::Protocol(format!(
-						"[Metadata] No logs found for hash {:?}",
-						hash
-					)))
-				}
-				Err(FindLogError::MultipleLogs) => {
-					return Err(Error::Protocol(format!(
-						"[Metadata] Multiple logs found for hash {:?}",
-						hash
-					)))
-				}
+				Err(FindLogError::NotFound) => Err(Error::Protocol(format!(
+					"[Metadata] No logs found for hash {hash:?}",
+				))),
+				Err(FindLogError::MultipleLogs) => Err(Error::Protocol(format!(
+					"[Metadata] Multiple logs found for hash {hash:?}",
+				))),
 			}
 		} else {
-			return Err(Error::Protocol(format!(
-				"[Metadata] Failed retrieving header for hash {:?}",
-				hash
-			)));
+			Err(Error::Protocol(format!(
+				"[Metadata] Failed retrieving header for hash {hash:?}"
+			)))
 		}
 	}
 

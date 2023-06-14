@@ -37,18 +37,13 @@ pub fn db_config_dir(config: &Configuration) -> PathBuf {
 }
 
 /// Avalailable frontier backend types.
-#[derive(Debug, Copy, Clone, clap::ValueEnum)]
+#[derive(Debug, Copy, Clone, Default, clap::ValueEnum)]
 pub enum BackendType {
 	/// Either RocksDb or ParityDb as per inherited from the global backend settings.
+	#[default]
 	KeyValue,
 	/// Sql database with custom log indexing.
 	Sql,
-}
-
-impl Default for BackendType {
-	fn default() -> BackendType {
-		BackendType::KeyValue
-	}
 }
 
 /// The ethereum-compatibility configuration used to run a node.
