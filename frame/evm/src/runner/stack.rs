@@ -781,50 +781,56 @@ where
 	}
 
 	#[cfg(feature = "evm-with-weight-limit")]
-	fn code(&mut self, address: H160) -> Result<Vec<u8>, ExitError> {
-		let maybe_record = !self.recorded().account_codes.contains(&address);
-		// Skip if the address has been already recorded this block
-		if maybe_record {
-			let size_limit: u64 = self
-				.metadata()
-				.gasometer()
-				.config()
-				.create_contract_limit
-				.unwrap_or_default() as u64;
+	fn record_external_operation(&mut self, op: evm::ExternalOperation) -> Result<(), ExitError> {
+		let size_limit: u64 = self
+			.metadata()
+			.gasometer()
+			.config()
+			.create_contract_limit
+			.unwrap_or_default() as u64;
 
-			let (weight_info, recorded) = self.info_mut();
+		let (weight_info, recorded) = self.info_mut();
 
-			if let Some(weight_info) = weight_info {
-				// First we record account emptiness check.
-				// Transfers to EOAs with standard 21_000 gas limit are able to
-				// pay for this pov size.
-				weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
+		if let Some(weight_info) = weight_info {
+			match op {
+				evm::ExternalOperation::AccountBasicRead => weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?,
+				evm::ExternalOperation::AddressCodeRead(address) => {
+					let maybe_record = !recorded.account_codes.contains(&address);
+					// Skip if the address has been already recorded this block
+					if maybe_record {
+						// First we record account emptiness check.
+						// Transfers to EOAs with standard 21_000 gas limit are able to
+						// pay for this pov size.
+						weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
 
-				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
-					return Ok(Vec::new());
-				}
-				// Try to record fixed sized `AccountCodesMetadata` read
-				// Tentatively 20 + 8 + 32
-				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
-				if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
-					weight_info.try_record_proof_size_or_fail(meta.size)?;
-				} else {
-					// If it does not exist, try to record `create_contract_limit` first.
-					weight_info.try_record_proof_size_or_fail(size_limit)?;
-					let meta = Pallet::<T>::account_code_metadata(address);
-					let actual_size = meta.size;
-					// Refund if applies
-					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-				}
-				recorded.account_codes.push(address);
-			}
+						if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
+							return Ok(());
+						}
+						// Try to record fixed sized `AccountCodesMetadata` read
+						// Tentatively 20 + 8 + 32
+						weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+							weight_info.try_record_proof_size_or_fail(meta.size)?;
+						} else {
+							// If it does not exist, try to record `create_contract_limit` first.
+							weight_info.try_record_proof_size_or_fail(size_limit)?;
+							let meta = Pallet::<T>::account_code_metadata(address);
+							let actual_size = meta.size;
+							// Refund if applies
+							weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+						}
+						recorded.account_codes.push(address);
+					}
+				},
+				evm::ExternalOperation::IsEmpty => weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?,
+				evm::ExternalOperation::Write => weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?,
+			};
 		}
-		Ok(<AccountCodes<T>>::get(address))
+		Ok(())
 	}
 
-	#[cfg(not(feature = "evm-with-weight-limit"))]
-	fn code(&mut self, address: H160) -> Result<Vec<u8>, ExitError> {
-		Ok(<AccountCodes<T>>::get(address))
+	fn code(&self, address: H160) -> Vec<u8> {
+		<AccountCodes<T>>::get(address)
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
@@ -875,36 +881,14 @@ where
 		self.substate.exit_discard()
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
-	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
-		if let (Some(weight_info), _) = self.info_mut() {
-			weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
-		}
-
-		Ok(Pallet::<T>::is_account_empty(&address))
-	}
-
-	#[cfg(not(feature = "evm-with-weight-limit"))]
-	fn is_empty(&mut self, address: H160) -> Result<bool, ExitError> {
-		Ok(Pallet::<T>::is_account_empty(&address))
+	fn is_empty(&self, address: H160) -> bool {
+		Pallet::<T>::is_account_empty(&address)
 	}
 
 	fn deleted(&self, address: H160) -> bool {
 		self.substate.deleted(address)
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
-	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
-		if let (Some(weight_info), _) = self.info_mut() {
-			weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?;
-		}
-
-		let account_id = T::AddressMapping::into_account_id(address);
-		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
-		Ok(())
-	}
-
-	#[cfg(not(feature = "evm-with-weight-limit"))]
 	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
 		let account_id = T::AddressMapping::into_account_id(address);
 		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
@@ -957,22 +941,7 @@ where
 		self.substate.set_deleted(address)
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
-	fn set_code(&mut self, address: H160, code: Vec<u8>) -> Result<(), ExitError> {
-		log::debug!(
-			target: "evm",
-			"Inserting code ({} bytes) at {:?}",
-			code.len(),
-			address
-		);
-		if let (Some(weight_info), _) = self.info_mut() {
-			weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
-		}
-		Pallet::<T>::create_account(address, code);
-		Ok(())
-	}
-	#[cfg(not(feature = "evm-with-weight-limit"))]
-	fn set_code(&mut self, address: H160, code: Vec<u8>) -> Result<(), ExitError> {
+	fn set_code(&mut self, address: H160, code: Vec<u8>) {
 		log::debug!(
 			target: "evm",
 			"Inserting code ({} bytes) at {:?}",
@@ -980,7 +949,6 @@ where
 			address
 		);
 		Pallet::<T>::create_account(address, code);
-		Ok(())
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
@@ -1024,97 +992,12 @@ where
 			.recursive_is_cold(&|a: &Accessed| a.accessed_storage.contains(&(address, key)))
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
-	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
-		let maybe_record = !self.recorded().account_codes.contains(&address);
-		// Skip if the address has been already recorded this block
-		if maybe_record {
-			let size_limit: u64 = self
-				.metadata()
-				.gasometer()
-				.config()
-				.create_contract_limit
-				.unwrap_or_default() as u64;
-			if let (Some(weight_info), recorded) = self.info_mut() {
-				// First we record account emptiness check.
-				// Transfers to EOAs with standard 21_000 gas limit are able to
-				// pay for this pov size.
-				weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
-
-				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
-					return Ok(U256::zero());
-				}
-
-				// Try to record fixed sized `AccountCodesMetadata` read
-				// Tentatively 20 + 8 + 32
-				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
-
-				if <AccountCodesMetadata<T>>::get(address).is_none() {
-					// If it does not exist, try to record `create_contract_limit` first.
-					weight_info.try_record_proof_size_or_fail(size_limit)?;
-					let meta = Pallet::<T>::account_code_metadata(address);
-					let actual_size = meta.size;
-					// Refund if applies
-					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-					return Ok(U256::from(actual_size));
-				};
-				recorded.account_codes.push(address);
-			}
-		}
-		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
+	fn code_size(&self, address: H160) -> U256 {
+		U256::from(<Pallet<T>>::account_code_metadata(address).size)
 	}
 
-	#[cfg(not(feature = "evm-with-weight-limit"))]
-	fn code_size(&mut self, address: H160) -> Result<U256, ExitError> {
-		Ok(U256::from(<Pallet<T>>::account_code_metadata(address).size))
-	}
-
-	#[cfg(feature = "evm-with-weight-limit")]
-	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
-		let maybe_record = !self.recorded().account_codes.contains(&address);
-		// Skip if the address has been already recorded this block
-		if maybe_record {
-			let size_limit: u64 = self
-				.metadata()
-				.gasometer()
-				.config()
-				.create_contract_limit
-				.unwrap_or_default() as u64;
-			if let (Some(weight_info), recorded) = self.info_mut() {
-				// First we record account emptiness check.
-				// Transfers to EOAs with standard 21_000 gas limit are able to
-				// pay for this pov size.
-				weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
-
-				if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
-					return Ok(hex_literal::hex!(
-						"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-					)
-					.into());
-				}
-
-				// Try to record fixed sized `AccountCodesMetadata` read
-				// Tentatively 20 + 8 + 32
-				weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
-
-				if <AccountCodesMetadata<T>>::get(address).is_none() {
-					// If it does not exist, try to record `create_contract_limit` first.
-					weight_info.try_record_proof_size_or_fail(size_limit)?;
-					let meta = Pallet::<T>::account_code_metadata(address);
-					let actual_size = meta.size;
-					// Refund if applies
-					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-					return Ok(meta.hash);
-				};
-				recorded.account_codes.push(address);
-			}
-		}
-		Ok(<Pallet<T>>::account_code_metadata(address).hash)
-	}
-
-	#[cfg(not(feature = "evm-with-weight-limit"))]
-	fn code_hash(&mut self, address: H160) -> Result<H256, ExitError> {
-		Ok(<Pallet<T>>::account_code_metadata(address).hash)
+	fn code_hash(&self, address: H160) -> H256 {
+		<Pallet<T>>::account_code_metadata(address).hash
 	}
 
 	#[cfg(feature = "evm-with-weight-limit")]

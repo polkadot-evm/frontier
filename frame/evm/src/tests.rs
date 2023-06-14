@@ -101,7 +101,7 @@ mod proof_size_test {
 			None,
 			None,
 			Vec::new(),
-			true, // non-transactional
+			true, // transactional
 			true, // must be validated
 			weight_limit,
 			Some(0),
