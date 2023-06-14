@@ -59,6 +59,7 @@ where
 			hash,
 			true,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
@@ -127,6 +128,7 @@ where
 			backend.as_ref(),
 			hash,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -170,6 +172,7 @@ where
 			backend.as_ref(),
 			hash,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -222,7 +225,9 @@ where
 			client.as_ref(),
 			backend.as_ref(),
 			Some(number),
-		)? {
+		)
+		.await?
+		{
 			Some(id) => id,
 			None => return Ok(None),
 		};
@@ -274,6 +279,7 @@ where
 			hash,
 			true,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
@@ -285,6 +291,7 @@ where
 			backend.as_ref(),
 			hash,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,

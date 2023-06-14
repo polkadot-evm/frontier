@@ -67,7 +67,7 @@ where
 
 		let nonce = match request.nonce {
 			Some(nonce) => nonce,
-			None => match self.transaction_count(from, None) {
+			None => match self.transaction_count(from, None).await {
 				Ok(nonce) => nonce,
 				Err(e) => return Err(e),
 			},

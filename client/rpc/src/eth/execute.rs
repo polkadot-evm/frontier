@@ -73,7 +73,7 @@ where
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn call(
+	pub async fn call(
 		&self,
 		request: CallRequest,
 		number: Option<BlockNumber>,
@@ -106,7 +106,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => {
 				let hash = self
 					.client
@@ -365,7 +367,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => {
 				let hash = client
 					.expect_block_hash_from_id(&id)

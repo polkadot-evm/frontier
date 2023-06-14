@@ -7,7 +7,8 @@
     "fmt-check": "prettier ./tests --check",
     "fmt": "prettier ./tests --write",
     "build": "truffle compile",
-    "test": "mocha -r ts-node/register 'tests/**/*.ts'"
+    "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "test-sql": "FRONTIER_BACKEND_TYPE='sql' mocha -r ts-node/register 'tests/**/*.ts'"
   },
   "author": "",
   "license": "ISC",

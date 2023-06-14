@@ -49,10 +49,10 @@ type OpaqueBlock =
 pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: PathBuf,
-) -> Result<Arc<fc_db::Backend<Block>>, String> {
-	Ok(Arc::new(fc_db::Backend::<Block>::new(
+) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
+	Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
 		client,
-		&fc_db::DatabaseSettings {
+		&fc_db::kv::DatabaseSettings {
 			source: sc_client_db::DatabaseSource::RocksDb {
 				path,
 				cache_size: 0,

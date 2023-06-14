@@ -15,6 +15,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+hex-literal = { version = "0.3.4" }
 impl-trait-for-tuples = "0.2.2"
 log = { workspace = true }
 rlp = { workspace = true }
