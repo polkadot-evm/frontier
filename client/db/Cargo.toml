@@ -11,17 +11,17 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-async-trait = "0.1"
+async-trait = { workspace = true }
 ethereum = { workspace = true, features = ["with-codec"] }
-futures = "0.3.25"
+futures = { workspace = true }
 kvdb-rocksdb = { workspace = true, optional = true }
-log = "0.4.17"
+log = { workspace = true }
 parity-db = { workspace = true, optional = true }
-parking_lot = "0.12.1"
+parking_lot = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 smallvec = "1.10"
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
-tokio = { version = "1.19", features = ["macros", "sync"] }
+tokio = { workspace = true, features = ["macros", "sync"] }
 # Substrate
 sc-client-api = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
