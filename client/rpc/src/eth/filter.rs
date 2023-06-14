@@ -402,7 +402,7 @@ where
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
 				Some(hash) => hash,
-				_ => return Ok(Vec::new()),
+				_ => return Err(crate::err(-32000, "unknown block", None)),
 			};
 			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
