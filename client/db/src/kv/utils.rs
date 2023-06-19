@@ -18,10 +18,11 @@
 
 use std::{path::Path, sync::Arc};
 
+// Substrate
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 
-use crate::{Database, DatabaseSettings, DatabaseSource, DbHash};
+use super::{Database, DatabaseSettings, DatabaseSource, DbHash};
 
 pub fn open_database<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
@@ -59,18 +60,18 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block, C>(client, path, _source) {
+	match super::upgrade::upgrade_db::<Block, C>(client, path, _source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
 
-	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(crate::columns::NUM_COLUMNS);
+	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(super::columns::NUM_COLUMNS);
 	db_config.create_if_missing = create;
 
 	let db = kvdb_rocksdb::Database::open(&db_config, path).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
 	#[cfg(not(test))]
-	crate::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
+	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	return Ok(sp_database::as_database(db));
 }
 
@@ -92,18 +93,18 @@ fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	// first upgrade database to required version
 	#[cfg(not(test))]
-	match crate::upgrade::upgrade_db::<Block, C>(client, path, _source) {
+	match super::upgrade::upgrade_db::<Block, C>(client, path, _source) {
 		Ok(_) => (),
 		Err(_) => return Err("Frontier DB upgrade error".to_string()),
 	}
-	let mut config = parity_db::Options::with_columns(path, crate::columns::NUM_COLUMNS as u8);
-	config.columns[crate::columns::BLOCK_MAPPING as usize].btree_index = true;
+	let mut config = parity_db::Options::with_columns(path, super::columns::NUM_COLUMNS as u8);
+	config.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
 	// write database version only after the database is succesfully opened
 	#[cfg(not(test))]
-	crate::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
-	Ok(Arc::new(crate::parity_db_adapter::DbAdapter(db)))
+	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
+	Ok(Arc::new(super::parity_db_adapter::DbAdapter(db)))
 }
 
 #[cfg(not(feature = "parity-db"))]

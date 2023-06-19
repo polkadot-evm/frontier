@@ -62,6 +62,8 @@ jobs:
       run: cd ts-tests && npm run fmt-check
     - name: Run functional tests
       run: cd ts-tests && npm run build && npm run test
+    - name: Run functional tests (sql)
+      run: cd ts-tests && npm run build && npm run test-sql
 
   lint:
     name: 'Run lints'

@@ -12,32 +12,40 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 futures = "0.3.25"
-futures-timer = "3.0.1"
+futures-timer = "3.0.2"
 log = "0.4.17"
 parking_lot = "0.12.1"
+tokio = { version = "1.19", features = ["macros", "sync"] }
 # Substrate
 sc-client-api = { workspace = true }
+sc-utils = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true, features = ["default"] }
+sp-core = { workspace = true }
 sp-runtime = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
-sc-utils = { workspace = true }
 
 [dev-dependencies]
-ethereum = { workspace = true, features = ["with-codec"] }
+ethereum = { workspace = true }
 ethereum-types = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
 tempfile = "3.3.0"
 tokio = { version = "1.24", features = ["sync"] }
-#Frontier
-fp-storage = { workspace = true, features = ["default"] }
-frontier-template-runtime = { workspace = true, features = ["default"] }
 # Substrate
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true }
+sp-consensus = { workspace = true }
 sp-core = { workspace = true, features = ["default"] }
+sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
+# Frontier
+fc-rpc = { workspace = true }
+fp-consensus = { workspace = true, features = ["default"] }
+fp-storage = { workspace = true, features = ["default"] }
+frontier-template-runtime = { workspace = true, features = ["default"] }

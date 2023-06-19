@@ -54,6 +54,7 @@ where
 			backend.as_ref(),
 			hash,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -107,7 +108,9 @@ where
 			client.as_ref(),
 			backend.as_ref(),
 			Some(number),
-		)? {
+		)
+		.await?
+		{
 			Some(id) => id,
 			None => return Ok(None),
 		};
@@ -151,12 +154,13 @@ where
 		}
 	}
 
-	pub fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
+	pub async fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
 		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			hash,
 		)
+		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
@@ -176,7 +180,7 @@ where
 		}
 	}
 
-	pub fn block_transaction_count_by_number(
+	pub async fn block_transaction_count_by_number(
 		&self,
 		number: BlockNumber,
 	) -> RpcResult<Option<U256>> {
@@ -191,7 +195,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		)? {
+		)
+		.await?
+		{
 			Some(id) => id,
 			None => return Ok(None),
 		};
