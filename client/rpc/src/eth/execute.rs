@@ -342,26 +342,25 @@ where
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
 					#[allow(deprecated)]
-					let info = api
-						.create_before_version_5(
-							substrate_hash,
-							from.unwrap_or_default(),
-							data,
-							value.unwrap_or_default(),
-							gas_limit,
-							max_fee_per_gas,
-							max_priority_fee_per_gas,
-							nonce,
-							false,
-							Some(
-								access_list
-									.into_iter()
-									.map(|item| (item.address, item.storage_keys))
-									.collect(),
-							),
-						)
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+					let info = api.create_before_version_5(
+						substrate_hash,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+						Some(
+							access_list
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect(),
+						),
+					)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
 					error_on_execution_failure(&info.exit_reason, &[])?;
 

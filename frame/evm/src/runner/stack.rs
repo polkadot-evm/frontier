@@ -793,7 +793,9 @@ where
 
 		if let Some(weight_info) = weight_info {
 			match op {
-				evm::ExternalOperation::AccountBasicRead => weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?,
+				evm::ExternalOperation::AccountBasicRead => {
+					weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?
+				}
 				evm::ExternalOperation::AddressCodeRead(address) => {
 					let maybe_record = !recorded.account_codes.contains(&address);
 					// Skip if the address has been already recorded this block
@@ -808,7 +810,8 @@ where
 						}
 						// Try to record fixed sized `AccountCodesMetadata` read
 						// Tentatively 20 + 8 + 32
-						weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+						weight_info
+							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 							weight_info.try_record_proof_size_or_fail(meta.size)?;
 						} else {
@@ -821,9 +824,13 @@ where
 						}
 						recorded.account_codes.push(address);
 					}
-				},
-				evm::ExternalOperation::IsEmpty => weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?,
-				evm::ExternalOperation::Write => weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?,
+				}
+				evm::ExternalOperation::IsEmpty => {
+					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?
+				}
+				evm::ExternalOperation::Write => {
+					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?
+				}
 			};
 		}
 		Ok(())

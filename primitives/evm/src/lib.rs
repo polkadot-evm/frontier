@@ -182,7 +182,6 @@ pub enum CallOrCreateInfo {
 	Create(CreateInfo),
 }
 
-
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct ExecutionInfo<T> {
