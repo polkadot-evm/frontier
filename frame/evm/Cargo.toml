@@ -21,7 +21,6 @@ log = { workspace = true }
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-sha3 = { version = "0.10", default-features = false }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
 frame-support = { workspace = true }
