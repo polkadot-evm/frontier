@@ -586,7 +586,7 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-						
+
 							(info.exit_reason, info.value, info.used_gas)
 						} else if api_version < 4 {
 							// Post-london
@@ -605,7 +605,7 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-						
+
 							(info.exit_reason, info.value, info.used_gas)
 						} else if api_version == 4 {
 							// Post-london + access list support
@@ -631,7 +631,7 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-						
+
 							(info.exit_reason, info.value, info.used_gas)
 						} else {
 							// Post-london + access list support
@@ -676,7 +676,7 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-						
+
 							(info.exit_reason, Vec::new(), info.used_gas)
 						} else if api_version < 4 {
 							// Post-london
@@ -694,7 +694,7 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-						
+
 							(info.exit_reason, Vec::new(), info.used_gas)
 						} else if api_version == 4 {
 							// Post-london + access list support
@@ -719,7 +719,7 @@ where
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
 							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
-						
+
 							(info.exit_reason, Vec::new(), info.used_gas)
 						} else {
 							// Post-london + access list support
