@@ -28,7 +28,7 @@ use evm::{
 	ExitError, ExitReason, Transfer,
 };
 use fp_evm::{
-	CallInfo, CreateInfo, ExecutionInfo, IsPrecompileResult, Log, PrecompileSet, Vicinity,
+	CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet, Vicinity,
 	WeightInfo,
 };
 
@@ -83,7 +83,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		f: F,
-	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
+	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
 			&mut StackExecutor<
@@ -144,7 +144,7 @@ where
 		weight: Weight,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-	) -> Result<ExecutionInfo<R>, RunnerError<Error<T>>>
+	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
 			&mut StackExecutor<
@@ -171,7 +171,7 @@ where
 				gas_limit = gas_limit.saturating_sub(extra_cost);
 			}
 			IsPrecompileResult::OutOfGas => {
-				return Ok(ExecutionInfo {
+				return Ok(ExecutionInfoV2 {
 					exit_reason: ExitError::OutOfGas.into(),
 					value: Default::default(),
 					used_gas: fp_evm::UsedGas {
@@ -338,7 +338,7 @@ where
 			});
 		}
 
-		Ok(ExecutionInfo {
+		Ok(ExecutionInfoV2 {
 			value: retv,
 			exit_reason: reason,
 			used_gas: fp_evm::UsedGas {
@@ -1246,7 +1246,7 @@ mod tests {
 		);
 		assert_matches!(
 			res,
-			Ok(ExecutionInfo {
+			Ok(ExecutionInfoV2 {
 				exit_reason: ExitReason::Error(ExitError::CallTooDeep),
 				..
 			})

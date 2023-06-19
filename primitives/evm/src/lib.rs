@@ -164,7 +164,7 @@ pub struct UsedGas {
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
-pub struct ExecutionInfo<T> {
+pub struct ExecutionInfoV2<T> {
 	pub exit_reason: ExitReason,
 	pub value: T,
 	pub used_gas: UsedGas,
@@ -172,14 +172,24 @@ pub struct ExecutionInfo<T> {
 	pub logs: Vec<Log>,
 }
 
-pub type CallInfo = ExecutionInfo<Vec<u8>>;
-pub type CreateInfo = ExecutionInfo<H160>;
+pub type CallInfo = ExecutionInfoV2<Vec<u8>>;
+pub type CreateInfo = ExecutionInfoV2<H160>;
 
 #[derive(Clone, Eq, PartialEq, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub enum CallOrCreateInfo {
 	Call(CallInfo),
 	Create(CreateInfo),
+}
+
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct ExecutionInfo<T> {
+	pub exit_reason: ExitReason,
+	pub value: T,
+	pub used_gas: U256,
+	pub logs: Vec<Log>,
 }
 
 /// Account definition used for genesis block construction.
