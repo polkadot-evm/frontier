@@ -796,7 +796,7 @@ where
 							return Ok(());
 						}
 						// Try to record fixed sized `AccountCodesMetadata` read
-						// Tentatively 20 + 8 + 32
+						// Tentatively 16 + 20 + 40
 						weight_info
 							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
