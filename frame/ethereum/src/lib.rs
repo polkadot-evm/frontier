@@ -353,6 +353,16 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+	fn transaction_len(transaction: &Transaction) -> u64 {
+		transaction
+			.encode()
+			.len()
+			// pallet index
+			.saturating_add(1)
+			// call index
+			.saturating_add(1) as u64
+	}
+
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -473,6 +483,17 @@ impl<T: Config> Pallet<T> {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
 
+		let (weight_limit, proof_size_base_cost) =
+			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+				transaction_data.gas_limit.unique_saturated_into(),
+				true,
+			) {
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(weight_limit), Some(Self::transaction_len(transaction)))
+				}
+				_ => (None, None),
+			};
+
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
@@ -485,6 +506,8 @@ impl<T: Config> Pallet<T> {
 				is_transactional: true,
 			},
 			transaction_data.clone().into(),
+			weight_limit,
+			proof_size_base_cost,
 		)
 		.validate_in_pool_for(&who)
 		.and_then(|v| v.with_chain_id())
@@ -540,7 +563,7 @@ impl<T: Config> Pallet<T> {
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
 
-		let (reason, status, used_gas, dest, extra_data) = match info {
+		let (reason, status, weight_info, used_gas, dest, extra_data) = match info {
 			CallOrCreateInfo::Call(info) => (
 				info.exit_reason.clone(),
 				TransactionStatus {
@@ -556,6 +579,7 @@ impl<T: Config> Pallet<T> {
 						bloom
 					},
 				},
+				info.weight_info,
 				info.used_gas,
 				to,
 				match info.exit_reason {
@@ -599,6 +623,7 @@ impl<T: Config> Pallet<T> {
 						bloom
 					},
 				},
+				info.weight_info,
 				info.used_gas,
 				Some(info.value),
 				Vec::new(),
@@ -615,11 +640,11 @@ impl<T: Config> Pallet<T> {
 			let cumulative_gas_used = if let Some((_, _, receipt)) = pending.last() {
 				match receipt {
 					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
-						d.used_gas.saturating_add(used_gas)
+						d.used_gas.saturating_add(used_gas.effective)
 					}
 				}
 			} else {
-				used_gas
+				used_gas.effective
 			};
 			match &transaction {
 				Transaction::Legacy(_) => Receipt::Legacy(ethereum::EIP658ReceiptData {
@@ -654,10 +679,18 @@ impl<T: Config> Pallet<T> {
 		});
 
 		Ok(PostDispatchInfo {
-			actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-				used_gas.unique_saturated_into(),
-				true,
-			)),
+			actual_weight: {
+				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+					used_gas.standard.unique_saturated_into(),
+					true,
+				);
+				if let Some(weight_info) = weight_info {
+					if let Some(proof_size_usage) = weight_info.proof_size_usage {
+						*gas_to_weight.proof_size_mut() = proof_size_usage;
+					}
+				}
+				Some(gas_to_weight)
+			},
 			pays_fee: Pays::No,
 		})
 	}
@@ -738,6 +771,17 @@ impl<T: Config> Pallet<T> {
 
 		let is_transactional = true;
 		let validate = false;
+
+		let (transaction_len, weight_limit) =
+			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+				gas_limit.unique_saturated_into(),
+				true,
+			) {
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(Self::transaction_len(transaction)), Some(weight_limit))
+				}
+				_ => (None, None),
+			};
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(
@@ -752,6 +796,8 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
+					weight_limit,
+					transaction_len,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -780,6 +826,8 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
+					weight_limit,
+					transaction_len,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -812,6 +860,17 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
+		let (weight_limit, proof_size_base_cost) =
+			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+				transaction_data.gas_limit.unique_saturated_into(),
+				true,
+			) {
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(weight_limit), Some(Self::transaction_len(transaction)))
+				}
+				_ => (None, None),
+			};
+
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -821,6 +880,8 @@ impl<T: Config> Pallet<T> {
 				is_transactional: true,
 			},
 			transaction_data.into(),
+			weight_limit,
+			proof_size_base_cost,
 		)
 		.validate_in_block_for(&who)
 		.and_then(|v| v.with_chain_id())

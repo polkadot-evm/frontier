@@ -43,7 +43,7 @@ bn = { package = "substrate-bn", version = "0.6", default-features = false }
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
-evm = { version = "0.39.0", default-features = false }
+evm = { git = "https://github.com/rust-blockchain/evm", branch = "master", default-features = false }
 hex-literal = { version = "0.3.4" }
 impl-serde = { version = "0.4.0", default-features = false }
 jsonrpsee = "0.16.2"
