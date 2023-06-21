@@ -20,7 +20,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-11-16
+        toolchain: 1.68.2
         target: wasm32-unknown-unknown
         override: true
     - name: Install protoc
@@ -39,7 +39,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-11-16
+        toolchain: 1.68.2
         target: wasm32-unknown-unknown
         override: true
     - name: Install protoc
@@ -72,7 +72,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-11-16
+        toolchain: 1.68.2
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt, clippy
