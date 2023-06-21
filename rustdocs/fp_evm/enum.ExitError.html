@@ -7,7 +7,7 @@
     CallTooDeep,
     CreateCollision,
     CreateContractLimit,
-    InvalidCode(Opcode),
+    InvalidCode(<a class="struct" href="struct.Opcode.html" title="struct fp_evm::Opcode">Opcode</a>),
     OutOfOffset,
     OutOfGas,
     OutOfFund,
@@ -24,7 +24,7 @@
 </div><h3 id="variant.CallTooDeep" class="variant small-section-header"><a href="#variant.CallTooDeep" class="anchor field"></a><code>CallTooDeep</code></h3><div class="docblock"><p>Call stack is too deep (runtime).</p>
 </div><h3 id="variant.CreateCollision" class="variant small-section-header"><a href="#variant.CreateCollision" class="anchor field"></a><code>CreateCollision</code></h3><div class="docblock"><p>Create opcode encountered collision (runtime).</p>
 </div><h3 id="variant.CreateContractLimit" class="variant small-section-header"><a href="#variant.CreateContractLimit" class="anchor field"></a><code>CreateContractLimit</code></h3><div class="docblock"><p>Create init code exceeds limit (runtime).</p>
-</div><h3 id="variant.InvalidCode" class="variant small-section-header"><a href="#variant.InvalidCode" class="anchor field"></a><code>InvalidCode(Opcode)</code></h3><div class="docblock"><p>Invalid opcode during execution or starting byte is 0xef. See <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-3541.md">EIP-3541</a>.</p>
+</div><h3 id="variant.InvalidCode" class="variant small-section-header"><a href="#variant.InvalidCode" class="anchor field"></a><code>InvalidCode(<a class="struct" href="struct.Opcode.html" title="struct fp_evm::Opcode">Opcode</a>)</code></h3><div class="docblock"><p>Invalid opcode during execution or starting byte is 0xef. See <a href="https://github.com/ethereum/EIPs/blob/master/EIPS/eip-3541.md">EIP-3541</a>.</p>
 </div><h3 id="variant.OutOfOffset" class="variant small-section-header"><a href="#variant.OutOfOffset" class="anchor field"></a><code>OutOfOffset</code></h3><div class="docblock"><p>An opcode accesses external information, but the request is off offset
 limit (runtime).</p>
 </div><h3 id="variant.OutOfGas" class="variant small-section-header"><a href="#variant.OutOfGas" class="anchor field"></a><code>OutOfGas</code></h3><div class="docblock"><p>Execution runs out of gas (runtime).</p>

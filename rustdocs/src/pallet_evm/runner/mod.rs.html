@@ -89,6 +89,14 @@
 <a href="#89" id="89">89</a>
 <a href="#90" id="90">90</a>
 <a href="#91" id="91">91</a>
+<a href="#92" id="92">92</a>
+<a href="#93" id="93">93</a>
+<a href="#94" id="94">94</a>
+<a href="#95" id="95">95</a>
+<a href="#96" id="96">96</a>
+<a href="#97" id="97">97</a>
+<a href="#98" id="98">98</a>
+<a href="#99" id="99">99</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -108,7 +116,7 @@
 
 </span><span class="kw">pub mod </span>stack;
 
-<span class="kw">use </span><span class="kw">crate</span>::Config;
+<span class="kw">use crate</span>::{Config, Weight};
 <span class="kw">use </span>fp_evm::{CallInfo, CreateInfo};
 <span class="kw">use </span>sp_core::{H160, H256, U256};
 <span class="kw">use </span>sp_std::vec::Vec;
@@ -116,7 +124,7 @@
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub struct </span>RunnerError&lt;E: Into&lt;sp_runtime::DispatchError&gt;&gt; {
 	<span class="kw">pub </span>error: E,
-	<span class="kw">pub </span>weight: frame_support::weights::Weight,
+	<span class="kw">pub </span>weight: Weight,
 }
 
 <span class="kw">pub trait </span>Runner&lt;T: Config&gt; {
@@ -133,6 +141,8 @@
 		nonce: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 		is_transactional: bool,
+		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		evm_config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
@@ -148,6 +158,8 @@
 		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 		is_transactional: bool,
 		validate: bool,
+		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CallInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
@@ -162,6 +174,8 @@
 		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 		is_transactional: bool,
 		validate: bool,
+		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
@@ -177,6 +191,8 @@
 		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 		is_transactional: bool,
 		validate: bool,
+		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 }

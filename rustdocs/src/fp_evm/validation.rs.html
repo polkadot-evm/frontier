@@ -745,6 +745,77 @@
 <a href="#745" id="745">745</a>
 <a href="#746" id="746">746</a>
 <a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a>
+<a href="#769" id="769">769</a>
+<a href="#770" id="770">770</a>
+<a href="#771" id="771">771</a>
+<a href="#772" id="772">772</a>
+<a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
+<a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
+<a href="#788" id="788">788</a>
+<a href="#789" id="789">789</a>
+<a href="#790" id="790">790</a>
+<a href="#791" id="791">791</a>
+<a href="#792" id="792">792</a>
+<a href="#793" id="793">793</a>
+<a href="#794" id="794">794</a>
+<a href="#795" id="795">795</a>
+<a href="#796" id="796">796</a>
+<a href="#797" id="797">797</a>
+<a href="#798" id="798">798</a>
+<a href="#799" id="799">799</a>
+<a href="#800" id="800">800</a>
+<a href="#801" id="801">801</a>
+<a href="#802" id="802">802</a>
+<a href="#803" id="803">803</a>
+<a href="#804" id="804">804</a>
+<a href="#805" id="805">805</a>
+<a href="#806" id="806">806</a>
+<a href="#807" id="807">807</a>
+<a href="#808" id="808">808</a>
+<a href="#809" id="809">809</a>
+<a href="#810" id="810">810</a>
+<a href="#811" id="811">811</a>
+<a href="#812" id="812">812</a>
+<a href="#813" id="813">813</a>
+<a href="#814" id="814">814</a>
+<a href="#815" id="815">815</a>
+<a href="#816" id="816">816</a>
+<a href="#817" id="817">817</a>
+<a href="#818" id="818">818</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -764,7 +835,7 @@
 </span><span class="attr">#![allow(clippy::comparison_chain)]
 
 </span><span class="kw">pub use </span>evm::backend::Basic <span class="kw">as </span>Account;
-<span class="kw">use </span>frame_support::sp_runtime::traits::UniqueSaturatedInto;
+<span class="kw">use </span>frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
 <span class="kw">use </span>sp_core::{H160, H256, U256};
 <span class="kw">use </span>sp_std::vec::Vec;
 
@@ -795,6 +866,8 @@
 </span><span class="kw">pub struct </span>CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E: From&lt;InvalidEvmTransactionError&gt;&gt; {
 	<span class="kw">pub </span>config: CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt;,
 	<span class="kw">pub </span>transaction: CheckEvmTransactionInput,
+	<span class="kw">pub </span>weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+	<span class="kw">pub </span>proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 	_marker: sp_std::marker::PhantomData&lt;E&gt;,
 }
 
@@ -815,10 +888,14 @@
 	<span class="kw">pub fn </span>new(
 		config: CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt;,
 		transaction: CheckEvmTransactionInput,
+		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 	) -&gt; <span class="self">Self </span>{
 		CheckEvmTransaction {
 			config,
 			transaction,
+			weight_limit,
+			proof_size_base_cost,
 			_marker: Default::default(),
 		}
 	}
@@ -925,6 +1002,17 @@
 
 	<span class="kw">pub fn </span>validate_common(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
 		<span class="kw">if </span><span class="self">self</span>.config.is_transactional {
+			<span class="comment">// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
+			// Validate the weight limit can afford recording the proof size cost.
+			</span><span class="kw">if let </span>(<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">Some</span>(proof_size_base_cost)) =
+				(<span class="self">self</span>.weight_limit, <span class="self">self</span>.proof_size_base_cost)
+			{
+				<span class="kw">let _ </span>= weight_limit
+					.proof_size()
+					.checked_sub(proof_size_base_cost)
+					.ok_or(InvalidEvmTransactionError::GasLimitTooLow)<span class="question-mark">?</span>;
+			}
+
 			<span class="comment">// We must ensure a transaction can pay the cost of its data bytes.
 			// If it can&#39;t it should not be included in a block.
 			</span><span class="kw">let </span><span class="kw-2">mut </span>gasometer = evm::gasometer::Gasometer::new(
@@ -1004,6 +1092,8 @@
 		<span class="kw">pub </span>max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		<span class="kw">pub </span>max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		<span class="kw">pub </span>value: U256,
+		<span class="kw">pub </span>weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
+		<span class="kw">pub </span>proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 	}
 
 	<span class="kw">impl </span>Default <span class="kw">for </span>TestCase {
@@ -1020,6 +1110,8 @@
 				max_fee_per_gas: <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>)),
 				max_priority_fee_per_gas: <span class="prelude-val">Some</span>(U256::from(<span class="number">1_000_000_000u128</span>)),
 				value: U256::from(<span class="number">1u8</span>),
+				weight_limit: <span class="prelude-val">None</span>,
+				proof_size_base_cost: <span class="prelude-val">None</span>,
 			}
 		}
 	}
@@ -1037,6 +1129,8 @@
 			max_fee_per_gas,
 			max_priority_fee_per_gas,
 			value,
+			weight_limit,
+			proof_size_base_cost,
 		} = input;
 		CheckEvmTransaction::&lt;TestError&gt;::new(
 			CheckEvmTransactionConfig {
@@ -1058,6 +1152,8 @@
 				value,
 				access_list: <span class="macro">vec!</span>[],
 			},
+			weight_limit,
+			proof_size_base_cost,
 		)
 	}
 
@@ -1075,6 +1171,16 @@
 	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
 		input.gas_limit = U256::from(<span class="number">1u8</span>);
+		input.is_transactional = is_transactional;
+		test_env(input)
+	}
+
+	<span class="kw">fn </span>transaction_gas_limit_low_proof_size&lt;<span class="lifetime">&#39;config</span>&gt;(
+		is_transactional: bool,
+	) -&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, TestError&gt; {
+		<span class="kw">let </span><span class="kw-2">mut </span>input = TestCase::default();
+		input.weight_limit = <span class="prelude-val">Some</span>(Weight::from_parts(<span class="number">1</span>, <span class="number">1</span>));
+		input.proof_size_base_cost = <span class="prelude-val">Some</span>(<span class="number">2</span>);
 		input.is_transactional = is_transactional;
 		test_env(input)
 	}
@@ -1239,6 +1345,42 @@
 		};
 		<span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
 		<span class="kw">let </span>test = transaction_gas_limit_low(is_transactional);
+		<span class="comment">// Pool
+		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
+		<span class="comment">// Block
+		</span><span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_ok());
+	}
+
+	<span class="attr">#[test]
+	</span><span class="comment">// Gas limit too low for proof size recording transactional fails in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_and_block_transactional_fails_gas_limit_too_low_proof_size() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::zero(),
+		};
+		<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+		<span class="kw">let </span>test = transaction_gas_limit_low_proof_size(is_transactional);
+		<span class="comment">// Pool
+		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasLimitTooLow);
+		<span class="comment">// Block
+		</span><span class="kw">let </span>res = test.validate_in_block_for(<span class="kw-2">&amp;</span>who);
+		<span class="macro">assert!</span>(res.is_err());
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::GasLimitTooLow);
+	}
+
+	<span class="attr">#[test]
+	</span><span class="comment">// Gas limit too low non-transactional succeeds in pool and in block.
+	</span><span class="kw">fn </span>validate_in_pool_and_block_non_transactional_succeeds_gas_limit_too_low_proof_size() {
+		<span class="kw">let </span>who = Account {
+			balance: U256::from(<span class="number">1_000_000u128</span>),
+			nonce: U256::zero(),
+		};
+		<span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
+		<span class="kw">let </span>test = transaction_gas_limit_low_proof_size(is_transactional);
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>res = test.validate_in_pool_for(<span class="kw-2">&amp;</span>who);
 		<span class="macro">assert!</span>(res.is_ok());
