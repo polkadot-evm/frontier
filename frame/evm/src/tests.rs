@@ -236,7 +236,7 @@ mod proof_size_test {
 			let reading_contract_len = AccountCodes::<Test>::get(subcall_contract_address).len();
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let is_empty_check = (IS_EMPTY_CHECK_PROOF_SIZE * 2) as usize;
-			let increase_nonce = ACCOUNT_BASIC_PROOF_SIZE as usize;
+			let increase_nonce = (ACCOUNT_BASIC_PROOF_SIZE * 3) as usize;
 			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_contract_len
 				+ reading_main_contract_len
@@ -286,10 +286,10 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// - Two account reads.
+			// - Three account reads.
 			// - Main contract code read.
 			// - One metadata read.
-			let basic_account_size = (ACCOUNT_BASIC_PROOF_SIZE * 2) as usize;
+			let basic_account_size = (ACCOUNT_BASIC_PROOF_SIZE * 3) as usize;
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let is_empty_check = IS_EMPTY_CHECK_PROOF_SIZE as usize;
 			let increase_nonce = ACCOUNT_BASIC_PROOF_SIZE as usize;
@@ -346,7 +346,7 @@ mod proof_size_test {
 				+ ACCOUNT_STORAGE_PROOF_SIZE
 				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
 				+ IS_EMPTY_CHECK_PROOF_SIZE
-				+ ACCOUNT_BASIC_PROOF_SIZE;
+				+ (ACCOUNT_BASIC_PROOF_SIZE * 2);
 
 			let actual_proof_size = result
 				.weight_info
@@ -396,7 +396,7 @@ mod proof_size_test {
 				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
 				+ ACCOUNT_STORAGE_PROOF_SIZE
 				+ IS_EMPTY_CHECK_PROOF_SIZE
-				+ ACCOUNT_BASIC_PROOF_SIZE;
+				+ (ACCOUNT_BASIC_PROOF_SIZE * 2);
 
 			let actual_proof_size = result
 				.weight_info
@@ -514,7 +514,7 @@ mod proof_size_test {
 			// Expected proof size
 			let read_account_metadata = ACCOUNT_CODES_METADATA_PROOF_SIZE as usize;
 			let is_empty_check = (IS_EMPTY_CHECK_PROOF_SIZE * 2) as usize;
-			let increase_nonce = ACCOUNT_BASIC_PROOF_SIZE as usize;
+			let increase_nonce = (ACCOUNT_BASIC_PROOF_SIZE * 3) as usize;
 			let reading_main_contract_len = AccountCodes::<Test>::get(call_contract_address).len();
 			let reading_callee_contract_len =
 				AccountCodes::<Test>::get(subcall_contract_address).len();
