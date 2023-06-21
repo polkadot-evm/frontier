@@ -18,12 +18,13 @@
 
 //! `TransactionRequest` type
 
-use crate::types::Bytes;
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 use ethereum_types::{H160, U256};
 use serde::{Deserialize, Serialize};
+
+use crate::types::Bytes;
 
 pub enum TransactionMessage {
 	Legacy(LegacyTransactionMessage),
@@ -54,6 +55,7 @@ pub struct TransactionRequest {
 	/// Value of transaction in wei
 	pub value: Option<U256>,
 	/// Additional data sent with transaction
+	#[serde(alias = "input")]
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,

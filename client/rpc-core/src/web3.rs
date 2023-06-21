@@ -19,7 +19,7 @@
 //! Web3 rpc interface.
 
 use ethereum_types::H256;
-use jsonrpsee::{core::RpcResult as Result, proc_macros::rpc};
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
 
 use crate::types::Bytes;
 
@@ -28,9 +28,9 @@ use crate::types::Bytes;
 pub trait Web3Api {
 	/// Returns current client version.
 	#[method(name = "web3_clientVersion")]
-	fn client_version(&self) -> Result<String>;
+	fn client_version(&self) -> RpcResult<String>;
 
 	/// Returns sha3 of the given data
 	#[method(name = "web3_sha3")]
-	fn sha3(&self, input: Bytes) -> Result<H256>;
+	fn sha3(&self, input: Bytes) -> RpcResult<H256>;
 }

@@ -40,7 +40,7 @@ type Block = frame_system::mocking::MockBlock<Test>;
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_ref_time(1024));
+		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 impl frame_system::Config for Test {
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -149,7 +149,7 @@ fn should_not_overflow_u256() {
 	new_test_ext(Some(base_fee), None).execute_with(|| {
 		let init = BaseFeePerGas::<Test>::get();
 		System::register_extra_weight_unchecked(
-			Weight::from_ref_time(1000000000000),
+			Weight::from_parts(1000000000000, 0),
 			DispatchClass::Normal,
 		);
 		BaseFee::on_finalize(System::block_number());
@@ -202,7 +202,7 @@ fn should_handle_consecutive_full_blocks() {
 		for _ in 0..10000 {
 			// Register max weight in block.
 			System::register_extra_weight_unchecked(
-				Weight::from_ref_time(1000000000000),
+				Weight::from_parts(1000000000000, 0),
 				DispatchClass::Normal,
 			);
 			BaseFee::on_finalize(System::block_number());
@@ -222,7 +222,7 @@ fn should_handle_consecutive_full_blocks() {
 		for _ in 0..10000 {
 			// Register max weight in block.
 			System::register_extra_weight_unchecked(
-				Weight::from_ref_time(1000000000000),
+				Weight::from_parts(1000000000000, 0),
 				DispatchClass::Normal,
 			);
 			BaseFee::on_finalize(System::block_number());
@@ -243,7 +243,7 @@ fn should_increase_total_base_fee() {
 		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		// Register max weight in block.
 		System::register_extra_weight_unchecked(
-			Weight::from_ref_time(1000000000000),
+			Weight::from_parts(1000000000000, 0),
 			DispatchClass::Normal,
 		);
 		BaseFee::on_finalize(System::block_number());
@@ -259,7 +259,7 @@ fn should_increase_delta_of_base_fee() {
 		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		// Register 75% capacity in block weight.
 		System::register_extra_weight_unchecked(
-			Weight::from_ref_time(750000000000),
+			Weight::from_parts(750000000000, 0),
 			DispatchClass::Normal,
 		);
 		BaseFee::on_finalize(System::block_number());
@@ -275,7 +275,7 @@ fn should_idle_base_fee() {
 		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000000000));
 		// Register half capacity in block weight.
 		System::register_extra_weight_unchecked(
-			Weight::from_ref_time(500000000000),
+			Weight::from_parts(500000000000, 0),
 			DispatchClass::Normal,
 		);
 		BaseFee::on_finalize(System::block_number());

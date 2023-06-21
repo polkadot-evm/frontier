@@ -227,7 +227,7 @@ mod tests {
 		InvalidChainId,
 	}
 
-	static LONDON_CONFIG: evm::Config = evm::Config::london();
+	static SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
 
 	impl From<InvalidEvmTransactionError> for TestError {
 		fn from(e: InvalidEvmTransactionError) -> Self {
@@ -293,7 +293,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &LONDON_CONFIG,
+				evm_config: &SHANGHAI_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,

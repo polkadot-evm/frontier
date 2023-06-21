@@ -18,10 +18,11 @@
 
 //! Pub-Sub types.
 
-use crate::types::{Filter, Log, RichHeader};
 use ethereum_types::H256;
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{from_value, Value};
+
+use crate::types::{Filter, Log, RichHeader};
 
 /// Subscription result.
 #[derive(Clone, Debug, Eq, PartialEq)]

@@ -1,11 +1,14 @@
 use std::{collections::BTreeMap, str::FromStr};
 
+use hex_literal::hex;
 use serde::{Deserialize, Serialize};
 // Substrate
 use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{ecdsa, storage::Storage, Pair, Public, H160, U256};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
+#[allow(unused_imports)]
+use sp_core::ecdsa;
+use sp_core::{storage::Storage, Pair, Public, H160, U256};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
@@ -49,9 +52,12 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 		.public()
 }
 
+#[allow(dead_code)]
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
+/// For use with `AccountId32`, `dead_code` if `AccountId20`.
+#[allow(dead_code)]
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
@@ -84,14 +90,16 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 			DevGenesisExt {
 				genesis_config: testnet_genesis(
 					wasm_binary,
-					// Sudo account
-					get_account_id_from_seed::<ecdsa::Public>("Alice"),
+					// Sudo account (Alith)
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 					// Pre-funded accounts
 					vec![
-						get_account_id_from_seed::<ecdsa::Public>("Alice"),
-						get_account_id_from_seed::<ecdsa::Public>("Bob"),
-						get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
-						get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
+						AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
+						AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
+						AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
+						AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
+						AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
+						AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
 					],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
@@ -129,22 +137,16 @@ pub fn local_testnet_config() -> ChainSpec {
 			testnet_genesis(
 				wasm_binary,
 				// Initial PoA authorities
-				// Sudo account
-				get_account_id_from_seed::<ecdsa::Public>("Alice"),
+				// Sudo account (Alith)
+				AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 				// Pre-funded accounts
 				vec![
-					get_account_id_from_seed::<ecdsa::Public>("Alice"),
-					get_account_id_from_seed::<ecdsa::Public>("Bob"),
-					get_account_id_from_seed::<ecdsa::Public>("Charlie"),
-					get_account_id_from_seed::<ecdsa::Public>("Dave"),
-					get_account_id_from_seed::<ecdsa::Public>("Eve"),
-					get_account_id_from_seed::<ecdsa::Public>("Ferdie"),
-					get_account_id_from_seed::<ecdsa::Public>("Alice//stash"),
-					get_account_id_from_seed::<ecdsa::Public>("Bob//stash"),
-					get_account_id_from_seed::<ecdsa::Public>("Charlie//stash"),
-					get_account_id_from_seed::<ecdsa::Public>("Dave//stash"),
-					get_account_id_from_seed::<ecdsa::Public>("Eve//stash"),
-					get_account_id_from_seed::<ecdsa::Public>("Ferdie//stash"),
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
+					AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
+					AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
+					AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
+					AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
+					AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
 				],
 				vec![
 					authority_keys_from_seed("Alice"),

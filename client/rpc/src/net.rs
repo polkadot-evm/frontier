@@ -18,10 +18,10 @@
 
 use std::sync::Arc;
 
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
-use sc_network::NetworkService;
-use sc_network_common::{service::NetworkPeers, ExHashT};
+use sc_network::{NetworkPeers, NetworkService};
+use sc_network_common::ExHashT;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -59,7 +59,7 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + 'static,
 {
-	fn version(&self) -> Result<String> {
+	fn version(&self) -> RpcResult<String> {
 		let hash = self.client.info().best_hash;
 		Ok(self
 			.client
@@ -69,7 +69,7 @@ where
 			.to_string())
 	}
 
-	fn peer_count(&self) -> Result<PeerCount> {
+	fn peer_count(&self) -> RpcResult<PeerCount> {
 		let peer_count = self.network.sync_num_connected();
 		Ok(match self.peer_count_as_hex {
 			true => PeerCount::String(format!("0x{:x}", peer_count)),
@@ -77,7 +77,7 @@ where
 		})
 	}
 
-	fn is_listening(&self) -> Result<bool> {
+	fn is_listening(&self) -> RpcResult<bool> {
 		Ok(true)
 	}
 }

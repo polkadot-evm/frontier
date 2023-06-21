@@ -139,7 +139,7 @@ parameter_types! {
 	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
 	pub const BlockGasLimit: U256 = U256::MAX;
-	pub const WeightPerGas: Weight = Weight::from_ref_time(20_000);
+	pub const WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
 pub struct HashedAddressMapping;
@@ -170,6 +170,8 @@ impl pallet_evm::Config for Test {
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
 	type FreeCalls = ();
+	type Timestamp = Timestamp;
+	type WeightInfo = ();
 }
 
 parameter_types! {
