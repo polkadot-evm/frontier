@@ -498,7 +498,7 @@ impl<T: Config> Pallet<T> {
 		// This check should be done on the transaction validation (here) **and**
 		// on trnasaction execution, otherwise a contract tx will be included in
 		// the mempool and pollute the mempool forever.
-		if !pallet_evm::AccountCodes::<T>::get(&origin).is_empty() {
+		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
 			return Err(InvalidTransaction::BadSigner.into());
 		}
 
