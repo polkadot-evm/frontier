@@ -95,4 +95,3 @@ runtime-benchmarks = [
 	"sc-service/runtime-benchmarks",
 	"frontier-template-runtime/runtime-benchmarks",
 ]
-evm-with-weight-limit = ["frontier-template-runtime/evm-with-weight-limit"]

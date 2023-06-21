@@ -16,6 +16,3 @@ serde_json = { workspace = true }
 sp-core = { workspace = true, features = ["default"] }
 # Frontier
 fp-evm = { workspace = true, features = ["default"] }
-
-[features]
-evm-with-weight-limit = ["evm/with-substrate"]

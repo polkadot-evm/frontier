@@ -186,7 +186,6 @@ impl PrecompileHandle for MockHandle {
 		Ok(())
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_cost(
 		&mut self,
 		_ref_time: Option<u64>,
@@ -195,7 +194,6 @@ impl PrecompileHandle for MockHandle {
 		Ok(())
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
 
 	fn remaining_gas(&self) -> u64 {

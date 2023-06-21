@@ -554,7 +554,6 @@ fn validated_transaction_apply_zero_gas_price_works() {
 	});
 }
 
-#[cfg(feature = "evm-with-weight-limit")]
 #[test]
 fn proof_size_weight_limit_validation_works() {
 	let (pairs, mut ext) = new_test_ext(1);

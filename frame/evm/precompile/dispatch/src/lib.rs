@@ -81,7 +81,6 @@ where
 			return Err(err);
 		}
 
-		#[cfg(feature = "evm-with-weight-limit")]
 		handle
 			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
 
@@ -92,7 +91,6 @@ where
 					let cost = T::GasWeightMapping::weight_to_gas(actual_weight);
 					handle.record_cost(cost)?;
 
-					#[cfg(feature = "evm-with-weight-limit")]
 					handle.refund_external_cost(
 						Some(
 							info.weight

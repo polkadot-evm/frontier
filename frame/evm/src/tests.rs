@@ -26,7 +26,6 @@ use frame_support::{
 };
 use std::{collections::BTreeMap, str::FromStr};
 
-#[cfg(feature = "evm-with-weight-limit")]
 mod proof_size_test {
 	use super::*;
 	use fp_evm::{

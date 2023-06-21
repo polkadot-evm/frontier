@@ -479,7 +479,6 @@ fn validated_transaction_apply_zero_gas_price_works() {
 	});
 }
 
-#[cfg(feature = "evm-with-weight-limit")]
 #[test]
 fn proof_size_weight_limit_validation_works() {
 	use pallet_evm::GasWeightMapping;

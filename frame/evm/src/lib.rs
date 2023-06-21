@@ -751,18 +751,11 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 					.base_extrinsic,
 			);
 		}
-		#[cfg(not(feature = "evm-with-weight-limit"))]
-		{
-			*weight.proof_size_mut() = 0;
-		}
-		#[cfg(feature = "evm-with-weight-limit")]
-		{
-			// Apply a gas to proof size ratio based on BlockGasLimit
-			let ratio = T::GasLimitPovSizeRatio::get();
-			if ratio > 0 {
-				let proof_size = gas.saturating_div(ratio);
-				*weight.proof_size_mut() = proof_size;
-			}
+		// Apply a gas to proof size ratio based on BlockGasLimit
+		let ratio = T::GasLimitPovSizeRatio::get();
+		if ratio > 0 {
+			let proof_size = gas.saturating_div(ratio);
+			*weight.proof_size_mut() = proof_size;
 		}
 
 		weight

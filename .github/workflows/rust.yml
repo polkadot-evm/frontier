@@ -29,8 +29,6 @@ jobs:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
       run: cargo test --locked --verbose --all
-    - name: Run tests (evm-with-weight-limit)
-      run: cargo test --locked --verbose --all --features evm-with-weight-limit
 
   integration:
     name: 'Run integration tests'
@@ -93,4 +91,4 @@ jobs:
     - name: Rustfmt
       run: cargo fmt --all -- --check
     - name: Clippy
-      run: cargo clippy --all --features runtime-benchmarks,try-runtime,evm-with-weight-limit -- -D warnings
+      run: cargo clippy --all --features runtime-benchmarks,try-runtime -- -D warnings

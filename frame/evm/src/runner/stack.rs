@@ -18,31 +18,19 @@
 //! EVM stack-based runner.
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping, BalanceOf,
 	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
 	Pallet, RunnerError, Weight,
 };
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
-	ExitError, ExitReason, Transfer,
+	gasometer::{GasCost, StorageTarget},
+	ExitError, ExitReason, Opcode, Transfer,
 };
 use fp_evm::{
 	CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet, Vicinity,
-	WeightInfo,
-};
-
-#[cfg(feature = "evm-with-weight-limit")]
-use crate::AccountCodesMetadata;
-
-#[cfg(feature = "evm-with-weight-limit")]
-pub use evm::{
-	gasometer::{GasCost, StorageTarget},
-	Opcode,
-};
-#[cfg(feature = "evm-with-weight-limit")]
-pub use fp_evm::{
-	AccessedStorage, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+	WeightInfo, AccessedStorage, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
 	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
 
@@ -780,7 +768,6 @@ where
 		}
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_operation(&mut self, op: evm::ExternalOperation) -> Result<(), ExitError> {
 		let size_limit: u64 = self
 			.metadata()
@@ -1007,7 +994,6 @@ where
 		<Pallet<T>>::account_code_metadata(address).hash
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_dynamic_opcode_cost(
 		&mut self,
 		opcode: Opcode,
@@ -1172,7 +1158,6 @@ where
 		Ok(())
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn record_external_cost(
 		&mut self,
 		ref_time: Option<u64>,
@@ -1194,7 +1179,6 @@ where
 		Ok(())
 	}
 
-	#[cfg(feature = "evm-with-weight-limit")]
 	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
 		if let Some(mut weight_info) = self.weight_info {
 			if let Some(amount) = ref_time {

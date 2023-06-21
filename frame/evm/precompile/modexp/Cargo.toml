@@ -24,4 +24,3 @@ std = [
 	# Frontier
 	"fp-evm/std",
 ]
-evm-with-weight-limit = ["pallet-evm-test-vector-support/evm-with-weight-limit"]
