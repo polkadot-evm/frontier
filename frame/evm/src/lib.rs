@@ -66,7 +66,7 @@ pub mod runner;
 mod tests;
 
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo, DispatchErrorWithPostInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
 		OnUnbalanced, SignedImbalance, WithdrawReasons,
@@ -75,10 +75,10 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
-use sp_core::{Hasher, H160, H256, U256};
+use sp_core::{Hasher, H160, H256, U256, RuntimeDebug};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32, DispatchErrorWithPostInfo,
+	AccountId32
 };
 use sp_std::{cmp::min, vec::Vec};
 
@@ -89,9 +89,9 @@ use fp_account::AccountId20;
 #[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, EvmFreeCall, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	Account, CallInfo, CreateInfo, EvmFreeCall, ExecutionInfo, FeeCalculator,
+	InvalidEvmTransactionError, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
+	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
 };
 
 pub use self::{
@@ -209,10 +209,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			let is_transactional = true;
-			let validate = true;
-			let is_free = T::FreeCalls::can_send_free_call(&source, &target, &input[..]);
-			let info = match T::Runner::call(
+			match Self::do_call(
 				source,
 				target,
 				input,
@@ -222,45 +219,11 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
-				is_transactional,
-				validate,
-				is_free,
-				T::config(),
+				true,
 			) {
-				Ok(info) => info,
-				Err(e) => {
-					if is_free {
-						T::FreeCalls::on_sent_free_call(&source);
-					}
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
-
-			match info.exit_reason {
-				ExitReason::Succeed(_) => {
-					Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
-				}
-				_ => {
-					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
-				}
-			};
-
-			if is_free {
-				T::FreeCalls::on_sent_free_call(&source);
+				Ok(result) => Ok(result.info),
+				Err(e) => Err(e)
 			}
-			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
-				pays_fee: Pays::No,
-			})
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
@@ -767,6 +730,76 @@ impl<T: Config> Pallet<T> {
 
 		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
 	}
+
+	/// Perform the EVM call
+	fn do_call(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
+		let validate = true;
+		let is_free = T::FreeCalls::can_send_free_call(&source, &target, &input[..]);
+		let info = match T::Runner::call(
+			source,
+			target,
+			input,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			nonce,
+			access_list,
+			is_transactional,
+			validate,
+			is_free,
+			T::config(),
+		) {
+			Ok(info) => info,
+			Err(e) => {
+				if is_free {
+					T::FreeCalls::on_sent_free_call(&source);
+				}
+				return Err(DispatchErrorWithPostInfo {
+					post_info: PostDispatchInfo {
+						actual_weight: Some(e.weight),
+						pays_fee: Pays::Yes,
+					},
+					error: e.error.into(),
+				});
+			}
+		};
+
+		match info.exit_reason {
+			ExitReason::Succeed(_) => {
+				Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
+			}
+			_ => {
+				Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
+			}
+		};
+
+		if is_free {
+			T::FreeCalls::on_sent_free_call(&source);
+		}
+		Ok(PostDispatchInfoWithValue { 
+			info: PostDispatchInfo { 
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+					true,
+				)), 
+				pays_fee: Pays::No,
+			}, 
+			value: info.value, 
+			exit_reason: info.exit_reason,
+		})
+	}
 }
 
 /// Handle withdrawing, refunding and depositing of transaction fees.
@@ -943,4 +976,46 @@ impl<T> OnCreate<T> for Tuple {
 			Tuple::on_create(owner, contract);
 		)*)
 	}
+}
+
+/// Allows EVM calls to be made from within runtime
+/// NOTE: Treat very carefully! Authorization checks should be done before using.
+pub trait EvmCall {
+	fn call(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		gas_limit: u64,
+		is_transactional: bool
+	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo>;
+}
+
+impl<T: Config> EvmCall for Pallet<T> {
+	fn call(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		gas_limit: u64,
+		is_transactional: bool,
+	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
+		Self::do_call(
+			source,
+			target,
+			input,
+			U256::zero(),
+			gas_limit,
+			Some(T::FeeCalculator::min_gas_price().0),
+			None,
+			None,
+			vec![],
+            is_transactional,
+		)
+	}
+}
+
+#[derive(RuntimeDebug)]
+pub struct PostDispatchInfoWithValue {
+	pub info: PostDispatchInfo,
+	pub value: Vec<u8>,
+	pub exit_reason: ExitReason,
 }
