@@ -1145,7 +1145,7 @@
 			</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
 			</span>{
 				<span class="prelude-val">Some</span>(hash) =&gt; hash,
-				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(Vec::new()),
+				<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="kw">crate</span>::err(-<span class="number">32000</span>, <span class="string">&quot;unknown block&quot;</span>, <span class="prelude-val">None</span>)),
 			};
 			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
