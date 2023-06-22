@@ -66,7 +66,7 @@ pub mod runner;
 mod tests;
 
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo, DispatchErrorWithPostInfo},
+	dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
 		OnUnbalanced, SignedImbalance, WithdrawReasons,
@@ -75,10 +75,10 @@ use frame_support::{
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
-use sp_core::{Hasher, H160, H256, U256, RuntimeDebug};
+use sp_core::{Hasher, RuntimeDebug, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32
+	AccountId32,
 };
 use sp_std::{cmp::min, vec::Vec};
 
@@ -222,7 +222,7 @@ pub mod pallet {
 				true,
 			) {
 				Ok(result) => Ok(result.info),
-				Err(e) => Err(e)
+				Err(e) => Err(e),
 			}
 		}
 
@@ -788,15 +788,15 @@ impl<T: Config> Pallet<T> {
 		if is_free {
 			T::FreeCalls::on_sent_free_call(&source);
 		}
-		Ok(PostDispatchInfoWithValue { 
-			info: PostDispatchInfo { 
+		Ok(PostDispatchInfoWithValue {
+			info: PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
 					info.used_gas.unique_saturated_into(),
 					true,
-				)), 
+				)),
 				pays_fee: Pays::No,
-			}, 
-			value: info.value, 
+			},
+			value: info.value,
 			exit_reason: info.exit_reason,
 		})
 	}
@@ -986,7 +986,7 @@ pub trait EvmCall {
 		target: H160,
 		input: Vec<u8>,
 		gas_limit: u64,
-		is_transactional: bool
+		is_transactional: bool,
 	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo>;
 }
 
@@ -1008,7 +1008,7 @@ impl<T: Config> EvmCall for Pallet<T> {
 			None,
 			None,
 			vec![],
-            is_transactional,
+			is_transactional,
 		)
 	}
 }
