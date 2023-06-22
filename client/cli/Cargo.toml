@@ -31,9 +31,10 @@ scale-codec = { package = "parity-scale-codec", workspace = true }
 tempfile = "3.3.0"
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true }
+sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 # Frontier
+fc-db = { workspace = true, features = ["rocksdb"] }
 frontier-template-runtime = { workspace = true, features = ["default"] }

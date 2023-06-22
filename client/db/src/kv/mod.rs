@@ -114,10 +114,12 @@ impl<Block: BlockT> Backend<Block> {
 			client,
 			&DatabaseSettings {
 				source: match database {
+					#[cfg(feature = "rocksdb")]
 					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
 						path: frontier_database_dir(db_config_dir, "db"),
 						cache_size: 0,
 					},
+					#[cfg(feature = "parity-db")]
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 						path: frontier_database_dir(db_config_dir, "paritydb"),
 					},

@@ -61,7 +61,7 @@ sqlx = "0.7.0-alpha.3"
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -75,7 +75,7 @@ sc-network-common = { version = "0.10.0-dev", git = "https://github.com/parityte
 sc-network-sync = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }

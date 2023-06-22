@@ -19,12 +19,12 @@ log = "0.4.17"
 parity-db = { workspace = true, optional = true }
 parking_lot = "0.12.1"
 scale-codec = { package = "parity-scale-codec", workspace = true }
-smallvec = "1.10"
+smallvec = { version = "1.10", optional = true }
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
 tokio = { version = "1.19", features = ["macros", "sync"] }
 # Substrate
 sc-client-api = { workspace = true }
-sc-client-db = { workspace = true, features = ["rocksdb"] }
+sc-client-db = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-core = { workspace = true }
@@ -38,7 +38,13 @@ fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
 
 [features]
-default = ["kvdb-rocksdb", "parity-db"]
+default = ["parity-db"]
+parity-db = ["dep:parity-db"]
+rocksdb = [
+	"kvdb-rocksdb",
+	"sc-client-db/rocksdb",
+	"smallvec",
+]
 
 [dev-dependencies]
 maplit = "1.0.2"
