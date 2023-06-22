@@ -994,7 +994,6 @@ where
 		Ok(())
 	}
 
-
 	fn record_external_dynamic_opcode_cost(
 		&mut self,
 		opcode: Opcode,
