@@ -578,6 +578,15 @@
 <a href="#578" id="578">578</a>
 <a href="#579" id="579">579</a>
 <a href="#580" id="580">580</a>
+<a href="#581" id="581">581</a>
+<a href="#582" id="582">582</a>
+<a href="#583" id="583">583</a>
+<a href="#584" id="584">584</a>
+<a href="#585" id="585">585</a>
+<a href="#586" id="586">586</a>
+<a href="#587" id="587">587</a>
+<a href="#588" id="588">588</a>
+<a href="#589" id="589">589</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -984,17 +993,26 @@
 	hash: <span class="prelude-ty">Option</span>&lt;H256&gt;,
 	full_transactions: bool,
 	base_fee: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	is_pending: bool,
 ) -&gt; RichBlock {
+	<span class="kw">let </span>(hash, miner, nonce, total_difficulty) = <span class="kw">if </span>!is_pending {
+		(
+			<span class="prelude-val">Some</span>(hash.unwrap_or_else(|| H256::from(keccak_256(<span class="kw-2">&amp;</span>rlp::encode(<span class="kw-2">&amp;</span>block.header))))),
+			<span class="prelude-val">Some</span>(block.header.beneficiary),
+			<span class="prelude-val">Some</span>(block.header.nonce),
+			<span class="prelude-val">Some</span>(U256::zero()),
+		)
+	} <span class="kw">else </span>{
+		(<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)
+	};
 	Rich {
 		inner: Block {
 			header: Header {
-				hash: <span class="prelude-val">Some</span>(
-					hash.unwrap_or_else(|| H256::from(keccak_256(<span class="kw-2">&amp;</span>rlp::encode(<span class="kw-2">&amp;</span>block.header)))),
-				),
+				hash,
 				parent_hash: block.header.parent_hash,
 				uncles_hash: block.header.ommers_hash,
 				author: block.header.beneficiary,
-				miner: block.header.beneficiary,
+				miner,
 				state_root: block.header.state_root,
 				transactions_root: block.header.transactions_root,
 				receipts_root: block.header.receipts_root,
@@ -1005,10 +1023,10 @@
 				logs_bloom: block.header.logs_bloom,
 				timestamp: U256::from(block.header.timestamp / <span class="number">1000</span>),
 				difficulty: block.header.difficulty,
-				nonce: <span class="prelude-val">Some</span>(block.header.nonce),
+				nonce,
 				size: <span class="prelude-val">Some</span>(U256::from(rlp::encode(<span class="kw-2">&amp;</span>block.header).len() <span class="kw">as </span>u32)),
 			},
-			total_difficulty: U256::zero(),
+			total_difficulty,
 			uncles: <span class="macro">vec!</span>[],
 			transactions: {
 				<span class="kw">if </span>full_transactions {

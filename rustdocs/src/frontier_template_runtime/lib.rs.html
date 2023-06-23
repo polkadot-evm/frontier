@@ -899,6 +899,21 @@
 <a href="#899" id="899">899</a>
 <a href="#900" id="900">900</a>
 <a href="#901" id="901">901</a>
+<a href="#902" id="902">902</a>
+<a href="#903" id="903">903</a>
+<a href="#904" id="904">904</a>
+<a href="#905" id="905">905</a>
+<a href="#906" id="906">906</a>
+<a href="#907" id="907">907</a>
+<a href="#908" id="908">908</a>
+<a href="#909" id="909">909</a>
+<a href="#910" id="910">910</a>
+<a href="#911" id="911">911</a>
+<a href="#912" id="912">912</a>
+<a href="#913" id="913">913</a>
+<a href="#914" id="914">914</a>
+<a href="#915" id="915">915</a>
+<a href="#916" id="916">916</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
@@ -936,7 +951,7 @@
 </span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, OnTimestampSet},
+	traits::{ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
 <span class="kw">use </span>pallet_grandpa::{
@@ -1669,6 +1684,21 @@
 		}
 
 		<span class="kw">fn </span>gas_limit_multiplier_support() {}
+
+		<span class="kw">fn </span>pending_block(
+			xts: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
+		) -&gt; (<span class="prelude-ty">Option</span>&lt;pallet_ethereum::Block&gt;, <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;) {
+			<span class="kw">for </span>ext <span class="kw">in </span>xts.into_iter() {
+				<span class="kw">let _ </span>= Executive::apply_extrinsic(ext);
+			}
+
+			Ethereum::on_finalize(System::block_number() + <span class="number">1</span>);
+
+			(
+				pallet_ethereum::CurrentBlock::&lt;Runtime&gt;::get(),
+				pallet_ethereum::CurrentTransactionStatuses::&lt;Runtime&gt;::get()
+			)
+		}
 	}
 
 	<span class="kw">impl </span>fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt; <span class="kw">for </span>Runtime {

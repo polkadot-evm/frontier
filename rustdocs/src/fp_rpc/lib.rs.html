@@ -256,6 +256,10 @@
 <a href="#256" id="256">256</a>
 <a href="#257" id="257">257</a>
 <a href="#258" id="258">258</a>
+<a href="#259" id="259">259</a>
+<a href="#260" id="260">260</a>
+<a href="#261" id="261">261</a>
+<a href="#262" id="262">262</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -490,6 +494,10 @@
 		<span class="doccomment">/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
 		/// is supported.
 		</span><span class="kw">fn </span>gas_limit_multiplier_support();
+		<span class="doccomment">/// Return the pending block.
+		</span><span class="kw">fn </span>pending_block(
+			xts: Vec&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;,
+		) -&gt; (<span class="prelude-ty">Option</span>&lt;ethereum::BlockV2&gt;, <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;);
 	}
 
 	<span class="attr">#[api_version(<span class="number">2</span>)]
