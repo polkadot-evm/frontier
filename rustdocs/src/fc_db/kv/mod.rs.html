@@ -357,6 +357,8 @@
 <a href="#357" id="357">357</a>
 <a href="#358" id="358">358</a>
 <a href="#359" id="359">359</a>
+<a href="#360" id="360">360</a>
+<a href="#361" id="361">361</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -667,13 +669,15 @@
 
 		<span class="kw">let </span>substrate_hashes = <span class="kw">match </span><span class="self">self</span>.block_hash(<span class="kw-2">&amp;</span>commitment.ethereum_block_hash) {
 			<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw-2">mut </span>data)) =&gt; {
-				data.push(commitment.block_hash);
-				<span class="macro">log::warn!</span>(
-					target: <span class="string">&quot;fc-db&quot;</span>,
-					<span class="string">&quot;Possible equivocation at ethereum block hash {} {:?}&quot;</span>,
-					<span class="kw-2">&amp;</span>commitment.ethereum_block_hash,
-					<span class="kw-2">&amp;</span>data
-				);
+				<span class="kw">if </span>!data.contains(<span class="kw-2">&amp;</span>commitment.block_hash) {
+					data.push(commitment.block_hash);
+					<span class="macro">log::warn!</span>(
+						target: <span class="string">&quot;fc-db&quot;</span>,
+						<span class="string">&quot;Possible equivocation at ethereum block hash {} {:?}&quot;</span>,
+						<span class="kw-2">&amp;</span>commitment.ethereum_block_hash,
+						<span class="kw-2">&amp;</span>data
+					);
+				}
 				data
 			}
 			<span class="kw">_ </span>=&gt; <span class="macro">vec!</span>[commitment.block_hash],
