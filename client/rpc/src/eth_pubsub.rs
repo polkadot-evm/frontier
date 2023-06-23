@@ -107,7 +107,7 @@ impl EthSubscriptionResult {
 				parent_hash: block.header.parent_hash,
 				uncles_hash: block.header.ommers_hash,
 				author: block.header.beneficiary,
-				miner: block.header.beneficiary,
+				miner: Some(block.header.beneficiary),
 				state_root: block.header.state_root,
 				transactions_root: block.header.transactions_root,
 				receipts_root: block.header.receipts_root,
