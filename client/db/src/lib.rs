@@ -25,12 +25,15 @@ use sp_core::H256;
 use sp_runtime::traits::Block as BlockT;
 
 pub mod kv;
-pub mod sql;
 use kv::{columns, static_keys};
+
+#[cfg(feature = "sql")]
+pub mod sql;
 
 #[derive(Clone)]
 pub enum Backend<Block: BlockT> {
 	KeyValue(kv::Backend<Block>),
+	#[cfg(feature = "sql")]
 	Sql(sql::Backend<Block>),
 }
 

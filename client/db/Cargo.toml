@@ -12,33 +12,45 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = "0.1"
-ethereum = { workspace = true, features = ["with-codec"] }
-futures = "0.3.25"
+ethereum = { workspace = true, features = ["with-codec"], optional = true }
+futures = { version = "0.3.25", optional = true }
 kvdb-rocksdb = { workspace = true, optional = true }
 log = "0.4.17"
 parity-db = { workspace = true, optional = true }
 parking_lot = "0.12.1"
 scale-codec = { package = "parity-scale-codec", workspace = true }
 smallvec = { version = "1.10", optional = true }
-sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
-tokio = { version = "1.19", features = ["macros", "sync"] }
+sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"], optional = true }
+tokio = { version = "1.19", features = ["macros", "sync"], optional = true }
 # Substrate
-sc-client-api = { workspace = true }
+sc-client-api = { workspace = true, optional = true }
 sc-client-db = { workspace = true }
-sp-api = { workspace = true }
+sp-api = { workspace = true, optional = true }
 sp-blockchain = { workspace = true }
 sp-core = { workspace = true }
 sp-database = { workspace = true }
 sp-runtime = { workspace = true }
-sp-storage = { workspace = true }
+sp-storage = { workspace = true, optional = true }
 # Frontier
-fc-storage = { workspace = true }
-fp-consensus = { workspace = true, features = ["default"] }
-fp-rpc = { workspace = true, features = ["default"] }
+fc-storage = { workspace = true, optional = true }
+fp-consensus = { workspace = true, features = ["default"], optional = true }
+fp-rpc = { workspace = true, features = ["default"], optional = true }
 fp-storage = { workspace = true, features = ["default"] }
 
 [features]
 default = ["parity-db"]
+sql = [
+	"ethereum",
+	"futures",
+	"sqlx",
+	"tokio",
+	"sc-client-api",
+	"sp-api",
+	"sp-storage",
+	"fc-storage",
+	"fp-consensus",
+	"fp-rpc",
+]
 parity-db = ["dep:parity-db"]
 rocksdb = [
 	"kvdb-rocksdb",
@@ -47,6 +59,7 @@ rocksdb = [
 ]
 
 [dev-dependencies]
+futures = { version = "0.3.25" }
 maplit = "1.0.2"
 tempfile = "3.3.0"
 # Substrate
