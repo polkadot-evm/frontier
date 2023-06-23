@@ -2028,61 +2028,6 @@
 		}
 	}
 
-	<span class="kw">fn </span>record_external_operation(<span class="kw-2">&amp;mut </span><span class="self">self</span>, op: evm::ExternalOperation) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
-		<span class="kw">let </span>size_limit: u64 = <span class="self">self
-			</span>.metadata()
-			.gasometer()
-			.config()
-			.create_contract_limit
-			.unwrap_or_default() <span class="kw">as </span>u64;
-
-		<span class="kw">let </span>(weight_info, recorded) = <span class="self">self</span>.info_mut();
-
-		<span class="kw">if let </span><span class="prelude-val">Some</span>(weight_info) = weight_info {
-			<span class="kw">match </span>op {
-				evm::ExternalOperation::AccountBasicRead =&gt; {
-					weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)<span class="question-mark">?
-				</span>}
-				evm::ExternalOperation::AddressCodeRead(address) =&gt; {
-					<span class="kw">let </span>maybe_record = !recorded.account_codes.contains(<span class="kw-2">&amp;</span>address);
-					<span class="comment">// Skip if the address has been already recorded this block
-					</span><span class="kw">if </span>maybe_record {
-						<span class="comment">// First we record account emptiness check.
-						// Transfers to EOAs with standard 21_000 gas limit are able to
-						// pay for this pov size.
-						</span>weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)<span class="question-mark">?</span>;
-
-						<span class="kw">if </span>&lt;AccountCodes&lt;T&gt;&gt;::decode_len(address).unwrap_or(<span class="number">0</span>) == <span class="number">0 </span>{
-							<span class="kw">return </span><span class="prelude-val">Ok</span>(());
-						}
-						<span class="comment">// Try to record fixed sized `AccountCodesMetadata` read
-						// Tentatively 16 + 20 + 40
-						</span>weight_info
-							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)<span class="question-mark">?</span>;
-						<span class="kw">if let </span><span class="prelude-val">Some</span>(meta) = &lt;AccountCodesMetadata&lt;T&gt;&gt;::get(address) {
-							weight_info.try_record_proof_size_or_fail(meta.size)<span class="question-mark">?</span>;
-						} <span class="kw">else </span>{
-							<span class="comment">// If it does not exist, try to record `create_contract_limit` first.
-							</span>weight_info.try_record_proof_size_or_fail(size_limit)<span class="question-mark">?</span>;
-							<span class="kw">let </span>meta = Pallet::&lt;T&gt;::account_code_metadata(address);
-							<span class="kw">let </span>actual_size = meta.size;
-							<span class="comment">// Refund if applies
-							</span>weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-						}
-						recorded.account_codes.push(address);
-					}
-				}
-				evm::ExternalOperation::IsEmpty =&gt; {
-					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)<span class="question-mark">?
-				</span>}
-				evm::ExternalOperation::Write =&gt; {
-					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)<span class="question-mark">?
-				</span>}
-			};
-		}
-		<span class="prelude-val">Ok</span>(())
-	}
-
 	<span class="kw">fn </span>code(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; Vec&lt;u8&gt; {
 		&lt;AccountCodes&lt;T&gt;&gt;::get(address)
 	}
@@ -2252,6 +2197,61 @@
 
 	<span class="kw">fn </span>code_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160) -&gt; H256 {
 		&lt;Pallet&lt;T&gt;&gt;::account_code_metadata(address).hash
+	}
+
+	<span class="kw">fn </span>record_external_operation(<span class="kw-2">&amp;mut </span><span class="self">self</span>, op: evm::ExternalOperation) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
+		<span class="kw">let </span>size_limit: u64 = <span class="self">self
+			</span>.metadata()
+			.gasometer()
+			.config()
+			.create_contract_limit
+			.unwrap_or_default() <span class="kw">as </span>u64;
+
+		<span class="kw">let </span>(weight_info, recorded) = <span class="self">self</span>.info_mut();
+
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(weight_info) = weight_info {
+			<span class="kw">match </span>op {
+				evm::ExternalOperation::AccountBasicRead =&gt; {
+					weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)<span class="question-mark">?
+				</span>}
+				evm::ExternalOperation::AddressCodeRead(address) =&gt; {
+					<span class="kw">let </span>maybe_record = !recorded.account_codes.contains(<span class="kw-2">&amp;</span>address);
+					<span class="comment">// Skip if the address has been already recorded this block
+					</span><span class="kw">if </span>maybe_record {
+						<span class="comment">// First we record account emptiness check.
+						// Transfers to EOAs with standard 21_000 gas limit are able to
+						// pay for this pov size.
+						</span>weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)<span class="question-mark">?</span>;
+
+						<span class="kw">if </span>&lt;AccountCodes&lt;T&gt;&gt;::decode_len(address).unwrap_or(<span class="number">0</span>) == <span class="number">0 </span>{
+							<span class="kw">return </span><span class="prelude-val">Ok</span>(());
+						}
+						<span class="comment">// Try to record fixed sized `AccountCodesMetadata` read
+						// Tentatively 16 + 20 + 40
+						</span>weight_info
+							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)<span class="question-mark">?</span>;
+						<span class="kw">if let </span><span class="prelude-val">Some</span>(meta) = &lt;AccountCodesMetadata&lt;T&gt;&gt;::get(address) {
+							weight_info.try_record_proof_size_or_fail(meta.size)<span class="question-mark">?</span>;
+						} <span class="kw">else </span>{
+							<span class="comment">// If it does not exist, try to record `create_contract_limit` first.
+							</span>weight_info.try_record_proof_size_or_fail(size_limit)<span class="question-mark">?</span>;
+							<span class="kw">let </span>meta = Pallet::&lt;T&gt;::account_code_metadata(address);
+							<span class="kw">let </span>actual_size = meta.size;
+							<span class="comment">// Refund if applies
+							</span>weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+						}
+						recorded.account_codes.push(address);
+					}
+				}
+				evm::ExternalOperation::IsEmpty =&gt; {
+					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)<span class="question-mark">?
+				</span>}
+				evm::ExternalOperation::Write =&gt; {
+					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)<span class="question-mark">?
+				</span>}
+			};
+		}
+		<span class="prelude-val">Ok</span>(())
 	}
 
 	<span class="kw">fn </span>record_external_dynamic_opcode_cost(
