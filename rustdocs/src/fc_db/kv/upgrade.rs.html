@@ -522,14 +522,6 @@
 <a href="#522" id="522">522</a>
 <a href="#523" id="523">523</a>
 <a href="#524" id="524">524</a>
-<a href="#525" id="525">525</a>
-<a href="#526" id="526">526</a>
-<a href="#527" id="527">527</a>
-<a href="#528" id="528">528</a>
-<a href="#529" id="529">529</a>
-<a href="#530" id="530">530</a>
-<a href="#531" id="531">531</a>
-<a href="#532" id="532">532</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -632,11 +624,13 @@
 	<span class="kw">match </span>db_version {
 		<span class="number">0 </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(UpgradeError::UnsupportedVersion(db_version)),
 		<span class="number">1 </span>=&gt; {
-			<span class="kw">let </span>summary: UpgradeVersion1To2Summary = <span class="kw">match </span>source {
-				<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-				</span>DatabaseSource::ParityDb { .. } =&gt; migrate_1_to_2_parity_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?</span>,
-				<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
-				</span>DatabaseSource::RocksDb { .. } =&gt; migrate_1_to_2_rocks_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?</span>,
+			<span class="kw">let </span>summary = <span class="kw">match </span>source {
+				DatabaseSource::ParityDb { .. } =&gt; {
+					migrate_1_to_2_parity_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?
+				</span>}
+				DatabaseSource::RocksDb { .. } =&gt; {
+					migrate_1_to_2_rocks_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?
+				</span>}
 				<span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;DatabaseSource required for upgrade ParityDb | RocksDb&quot;</span>),
 			};
 			<span class="kw">if </span>!summary.error.is_empty() {
@@ -695,7 +689,6 @@
 <span class="doccomment">/// Migration from version1 to version2:
 /// - The format of the Ethereum&lt;&gt;Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec&lt;SubstrateHash&gt;) relationship.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_rocks_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
@@ -777,8 +770,7 @@
 	<span class="prelude-val">Ok</span>(res)
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
 ) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt; {
@@ -865,7 +857,6 @@
 		sync::Arc,
 	};
 
-	<span class="kw">use </span><span class="kw">crate</span>::kv::DatabaseSettings;
 	<span class="kw">use </span>scale_codec::Encode;
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>sp_core::H256;
@@ -885,29 +876,23 @@
 		<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">crate</span>::kv::Backend::&lt;Block&gt;::new(client, setting)<span class="question-mark">?</span>))
 	}
 
-	<span class="attr">#[cfg_attr(not(any(feature = <span class="string">&quot;rocksdb&quot;</span>, feature = <span class="string">&quot;parity-db&quot;</span>)), ignore)]
-	#[test]
+	<span class="attr">#[test]
 	</span><span class="kw">fn </span>upgrade_1_to_2_works() {
-		<span class="kw">let </span>settings: Vec&lt;DatabaseSettings&gt; = <span class="macro">vec!</span>[
+		<span class="kw">let </span>tmp_1 = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp_2 = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+
+		<span class="kw">let </span>settings = <span class="macro">vec!</span>[
 			<span class="comment">// Rocks db
-			</span><span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
 			</span><span class="kw">crate</span>::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
-					path: tempdir()
-						.expect(<span class="string">&quot;create a temporary directory&quot;</span>)
-						.path()
-						.to_owned(),
+					path: tmp_1.path().to_owned(),
 					cache_size: <span class="number">0</span>,
 				},
 			},
 			<span class="comment">// Parity db
-			</span><span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
 			</span><span class="kw">crate</span>::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::ParityDb {
-					path: tempdir()
-						.expect(<span class="string">&quot;create a temporary directory&quot;</span>)
-						.path()
-						.to_owned(),
+					path: tmp_2.path().to_owned(),
 				},
 			},
 		];
@@ -1034,8 +1019,7 @@
 		}
 	}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
-	#[test]
+	<span class="attr">#[test]
 	</span><span class="kw">fn </span>create_db_with_current_version_works() {
 		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
 

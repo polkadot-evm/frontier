@@ -146,10 +146,10 @@
 	config: <span class="kw-2">&amp;</span>DatabaseSettings,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="kw">let </span>db: Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span>config.source {
-		<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-		</span>DatabaseSource::ParityDb { path } =&gt; open_parity_db::&lt;Block, C&gt;(client, path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?</span>,
-		<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
-		</span>DatabaseSource::RocksDb { path, .. } =&gt; {
+		DatabaseSource::ParityDb { path } =&gt; {
+			open_parity_db::&lt;Block, C&gt;(client, path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
+		</span>}
+		DatabaseSource::RocksDb { path, .. } =&gt; {
 			open_kvdb_rocksdb::&lt;Block, C&gt;(client, path, <span class="bool-val">true</span>, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
 		</span>}
 		DatabaseSource::Auto {
@@ -168,7 +168,7 @@
 	<span class="prelude-val">Ok</span>(db)
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">&quot;kvdb-rocksdb&quot;</span>)]
 </span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	path: <span class="kw-2">&amp;</span>Path,
@@ -192,7 +192,7 @@
 	<span class="kw">return </span><span class="prelude-val">Ok</span>(sp_database::as_database(db));
 }
 
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;rocksdb&quot;</span>))]
+<span class="attr">#[cfg(not(feature = <span class="string">&quot;kvdb-rocksdb&quot;</span>))]
 </span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	_client: Arc&lt;C&gt;,
 	_path: <span class="kw-2">&amp;</span>Path,
