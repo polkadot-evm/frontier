@@ -16,20 +16,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#![deny(unused_crate_dependencies)]
+//! tx pool rpc interface
 
-pub mod types;
+use ethereum_types::U256;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+// Frontier
+use crate::types::*;
 
-mod eth;
-mod eth_pubsub;
-mod net;
-mod txpool;
-mod web3;
+/// TxPool rpc interface
+#[rpc(server)]
+pub trait TxPoolApi {
+	#[method(name = "txpool_content")]
+	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<TxPoolTransaction>>>;
 
-pub use self::{
-	eth::{EthApiServer, EthFilterApiServer},
-	eth_pubsub::EthPubSubApiServer,
-	net::NetApiServer,
-	txpool::TxPoolApiServer,
-	web3::Web3ApiServer,
-};
+	#[method(name = "txpool_inspect")]
+	fn inspect(&self) -> RpcResult<TxPoolResult<TransactionMap<Summary>>>;
+
+	#[method(name = "txpool_status")]
+	fn status(&self) -> RpcResult<TxPoolResult<U256>>;
+}

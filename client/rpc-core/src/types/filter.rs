@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use std::{
-	collections::BTreeMap,
+	collections::{BTreeMap, HashSet},
 	sync::{Arc, Mutex},
 };
 
@@ -460,6 +460,7 @@ pub struct FilterPoolItem {
 	pub last_poll: BlockNumber,
 	pub filter_type: FilterType,
 	pub at_block: u64,
+	pub pending_transaction_hashes: HashSet<H256>,
 }
 
 /// On-memory stored filters created through the `eth_newFilter` RPC.

@@ -40,6 +40,12 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct TxPoolResponse {
+	pub ready: Vec<ethereum::TransactionV2>,
+	pub future: Vec<ethereum::TransactionV2>,
+}
+
 pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
 	fn is_enabled() -> bool;
 
