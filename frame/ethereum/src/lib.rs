@@ -353,7 +353,8 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	fn transaction_len(transaction: &Transaction) -> u64 {
+	/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+	fn proof_size_base_cost(transaction: &Transaction) -> u64 {
 		transaction
 			.encode()
 			.len()
@@ -488,9 +489,10 @@ impl<T: Config> Pallet<T> {
 				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => {
-					(Some(weight_limit), Some(Self::transaction_len(transaction)))
-				}
+				weight_limit if weight_limit.proof_size() > 0 => (
+					Some(weight_limit),
+					Some(Self::proof_size_base_cost(transaction)),
+				),
 				_ => (None, None),
 			};
 
@@ -772,14 +774,15 @@ impl<T: Config> Pallet<T> {
 		let is_transactional = true;
 		let validate = false;
 
-		let (transaction_len, weight_limit) =
+		let (proof_size_base_cost, weight_limit) =
 			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 				gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => {
-					(Some(Self::transaction_len(transaction)), Some(weight_limit))
-				}
+				weight_limit if weight_limit.proof_size() > 0 => (
+					Some(Self::proof_size_base_cost(transaction)),
+					Some(weight_limit),
+				),
 				_ => (None, None),
 			};
 		match action {
@@ -797,7 +800,7 @@ impl<T: Config> Pallet<T> {
 					is_transactional,
 					validate,
 					weight_limit,
-					transaction_len,
+					proof_size_base_cost,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -827,7 +830,7 @@ impl<T: Config> Pallet<T> {
 					is_transactional,
 					validate,
 					weight_limit,
-					transaction_len,
+					proof_size_base_cost,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -865,9 +868,10 @@ impl<T: Config> Pallet<T> {
 				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => {
-					(Some(weight_limit), Some(Self::transaction_len(transaction)))
-				}
+				weight_limit if weight_limit.proof_size() > 0 => (
+					Some(weight_limit),
+					Some(Self::proof_size_base_cost(transaction)),
+				),
 				_ => (None, None),
 			};
 
