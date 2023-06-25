@@ -352,8 +352,8 @@
 <span class="doccomment">/// A set of APIs that ethereum-compatible runtimes must implement.
 </span><span class="kw">pub trait </span>EthCompatRuntimeApiCollection:
 	sp_api::ApiExt&lt;Block&gt;
-	+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
 	+ fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;
+	+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
 <span class="kw">where
 	</span>&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
 {
@@ -362,8 +362,8 @@
 <span class="kw">impl</span>&lt;Api&gt; EthCompatRuntimeApiCollection <span class="kw">for </span>Api
 <span class="kw">where
 	</span>Api: sp_api::ApiExt&lt;Block&gt;
-		+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
-		+ fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;,
+		+ fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;
+		+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
 	&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
 {
 }

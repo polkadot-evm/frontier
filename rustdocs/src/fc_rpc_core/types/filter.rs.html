@@ -735,6 +735,7 @@
 <a href="#735" id="735">735</a>
 <a href="#736" id="736">736</a>
 <a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -754,7 +755,7 @@
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
 </span><span class="kw">use </span>std::{
-	collections::BTreeMap,
+	collections::{BTreeMap, HashSet},
 	sync::{Arc, Mutex},
 };
 
@@ -1197,6 +1198,7 @@
 	<span class="kw">pub </span>last_poll: BlockNumber,
 	<span class="kw">pub </span>filter_type: FilterType,
 	<span class="kw">pub </span>at_block: u64,
+	<span class="kw">pub </span>pending_transaction_hashes: HashSet&lt;H256&gt;,
 }
 
 <span class="doccomment">/// On-memory stored filters created through the `eth_newFilter` RPC.

@@ -741,6 +741,53 @@
 <a href="#741" id="741">741</a>
 <a href="#742" id="742">742</a>
 <a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
+<a href="#759" id="759">759</a>
+<a href="#760" id="760">760</a>
+<a href="#761" id="761">761</a>
+<a href="#762" id="762">762</a>
+<a href="#763" id="763">763</a>
+<a href="#764" id="764">764</a>
+<a href="#765" id="765">765</a>
+<a href="#766" id="766">766</a>
+<a href="#767" id="767">767</a>
+<a href="#768" id="768">768</a>
+<a href="#769" id="769">769</a>
+<a href="#770" id="770">770</a>
+<a href="#771" id="771">771</a>
+<a href="#772" id="772">772</a>
+<a href="#773" id="773">773</a>
+<a href="#774" id="774">774</a>
+<a href="#775" id="775">775</a>
+<a href="#776" id="776">776</a>
+<a href="#777" id="777">777</a>
+<a href="#778" id="778">778</a>
+<a href="#779" id="779">779</a>
+<a href="#780" id="780">780</a>
+<a href="#781" id="781">781</a>
+<a href="#782" id="782">782</a>
+<a href="#783" id="783">783</a>
+<a href="#784" id="784">784</a>
+<a href="#785" id="785">785</a>
+<a href="#786" id="786">786</a>
+<a href="#787" id="787">787</a>
+<a href="#788" id="788">788</a>
+<a href="#789" id="789">789</a>
+<a href="#790" id="790">790</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -759,13 +806,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>std::{marker::PhantomData, sync::Arc, time};
+</span><span class="kw">use </span>std::{collections::HashSet, marker::PhantomData, sync::Arc, time};
 
 <span class="kw">use </span>ethereum::BlockV2 <span class="kw">as </span>EthereumBlock;
 <span class="kw">use </span>ethereum_types::{H256, U256};
 <span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
+<span class="kw">use </span>sc_transaction_pool::ChainApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
@@ -774,14 +822,14 @@
 	traits::{Block <span class="kw">as </span>BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthFilterApiServer};
+</span><span class="kw">use crate</span>::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
+<span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthFilterApiServer};
 <span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-<span class="kw">use crate</span>::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
-
-<span class="kw">pub struct </span>EthFilter&lt;B: BlockT, C, BE&gt; {
+<span class="kw">pub struct </span>EthFilter&lt;A: ChainApi, B: BlockT, C, BE&gt; {
 	client: Arc&lt;C&gt;,
 	backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
+	tx_pool: TxPool&lt;A, B, C&gt;,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -789,10 +837,11 @@
 	_marker: PhantomData&lt;BE&gt;,
 }
 
-<span class="kw">impl</span>&lt;B: BlockT, C, BE&gt; EthFilter&lt;B, C, BE&gt; {
+<span class="kw">impl</span>&lt;A: ChainApi, B: BlockT, C, BE&gt; EthFilter&lt;A, B, C, BE&gt; {
 	<span class="kw">pub fn </span>new(
 		client: Arc&lt;C&gt;,
 		backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
+		tx_pool: TxPool&lt;A, B, C&gt;,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -801,6 +850,7 @@
 		<span class="self">Self </span>{
 			client,
 			backend,
+			tx_pool,
 			filter_pool,
 			max_stored_filters,
 			max_past_logs,
@@ -810,10 +860,12 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;B, C, BE&gt; EthFilter&lt;B, C, BE&gt;
+<span class="kw">impl</span>&lt;A, B, C, BE&gt; EthFilter&lt;A, B, C, BE&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt;,
-	C: HeaderBackend&lt;B&gt;,
+	</span>A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	B: BlockT&lt;Hash = H256&gt;,
+	C: HeaderBackend&lt;B&gt; + ProvideRuntimeApi&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 {
 	<span class="kw">fn </span>create_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter_type: FilterType) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>block_number =
@@ -833,6 +885,16 @@
 				<span class="prelude-val">Some</span>((k, <span class="kw">_</span>)) =&gt; <span class="kw-2">*</span>k,
 				<span class="prelude-val">None </span>=&gt; U256::zero(),
 			};
+			<span class="kw">let </span>pending_transaction_hashes = <span class="kw">if let </span>FilterType::PendingTransaction = filter_type {
+				<span class="self">self</span>.tx_pool
+					.tx_pool_response()<span class="question-mark">?
+					</span>.ready
+					.into_iter()
+					.map(|tx| tx.hash())
+					.collect()
+			} <span class="kw">else </span>{
+				HashSet::new()
+			};
 			<span class="comment">// Assume `max_stored_filters` is always &lt; U256::max.
 			</span><span class="kw">let </span>key = last_key.checked_add(U256::one()).unwrap();
 			locked.insert(
@@ -841,6 +903,7 @@
 					last_poll: BlockNumber::Num(block_number),
 					filter_type,
 					at_block: block_number,
+					pending_transaction_hashes,
 				},
 			);
 			<span class="prelude-val">Ok</span>(key)
@@ -852,12 +915,12 @@
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl</span>&lt;B, C, BE&gt; EthFilterApiServer <span class="kw">for </span>EthFilter&lt;B, C, BE&gt;
+</span><span class="kw">impl</span>&lt;A, B, C, BE&gt; EthFilterApiServer <span class="kw">for </span>EthFilter&lt;A, B, C, BE&gt;
 <span class="kw">where
-	</span>B: BlockT&lt;Hash = H256&gt;,
-	C: ProvideRuntimeApi&lt;B&gt;,
+	</span>A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	B: BlockT&lt;Hash = H256&gt;,
+	C: HeaderBackend&lt;B&gt; + ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
-	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">fn </span>new_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;U256&gt; {
@@ -869,7 +932,7 @@
 	}
 
 	<span class="kw">fn </span>new_pending_transaction_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
-		<span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;Method not available.&quot;</span>))
+		<span class="self">self</span>.create_filter(FilterType::PendingTransaction)
 	}
 
 	<span class="kw">async fn </span>filter_changes(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;FilterChanges&gt; {
@@ -885,6 +948,9 @@
 			Block {
 				last: u64,
 				next: u64,
+			},
+			PendingTransaction {
+				new_hashes: Vec&lt;H256&gt;,
 			},
 			Log {
 				filter: Filter,
@@ -914,10 +980,39 @@
 								last_poll: BlockNumber::Num(next),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
+								pending_transaction_hashes: HashSet::new(),
 							},
 						);
 
 						FuturePath::&lt;B&gt;::Block { last, next }
+					}
+					FilterType::PendingTransaction =&gt; {
+						<span class="kw">let </span>previous_hashes = pool_item.pending_transaction_hashes;
+						<span class="kw">let </span>current_hashes: HashSet&lt;H256&gt; = <span class="self">self
+							</span>.tx_pool
+							.tx_pool_response()<span class="question-mark">?
+							</span>.ready
+							.into_iter()
+							.map(|tx| tx.hash())
+							.collect();
+
+						<span class="comment">// Update filter `last_poll`.
+						</span>locked.insert(
+							key,
+							FilterPoolItem {
+								last_poll: BlockNumber::Num(block_number + <span class="number">1</span>),
+								filter_type: pool_item.filter_type.clone(),
+								at_block: pool_item.at_block,
+								pending_transaction_hashes: current_hashes.clone(),
+							},
+						);
+
+						<span class="kw">let </span>mew_hashes = current_hashes
+							.difference(<span class="kw-2">&amp;</span>previous_hashes)
+							.collect::&lt;HashSet&lt;<span class="kw-2">&amp;</span>H256&gt;&gt;();
+						FuturePath::PendingTransaction {
+							new_hashes: mew_hashes.into_iter().copied().collect(),
+						}
 					}
 					<span class="comment">// For each event since last poll, get a vector of ethereum logs.
 					</span>FilterType::Log(filter) =&gt; {
@@ -928,6 +1023,7 @@
 								last_poll: BlockNumber::Num(block_number + <span class="number">1</span>),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
+								pending_transaction_hashes: HashSet::new(),
 							},
 						);
 
@@ -965,8 +1061,6 @@
 							current_number,
 						}
 					}
-					<span class="comment">// Should never reach here.
-					</span><span class="kw">_ </span>=&gt; FuturePath::Error(internal_err(<span class="string">&quot;Method not available.&quot;</span>)),
 				}
 			} <span class="kw">else </span>{
 				FuturePath::Error(internal_err(<span class="macro">format!</span>(<span class="string">&quot;Filter id {:?} does not exist.&quot;</span>, key)))
@@ -1000,6 +1094,7 @@
 				}
 				<span class="prelude-val">Ok</span>(FilterChanges::Hashes(ethereum_hashes))
 			}
+			FuturePath::PendingTransaction { new_hashes } =&gt; <span class="prelude-val">Ok</span>(FilterChanges::Hashes(new_hashes)),
 			FuturePath::Log {
 				filter,
 				from_number,
@@ -1215,9 +1310,8 @@
 ) -&gt; RpcResult&lt;()&gt;
 <span class="kw">where
 	</span>B: BlockT&lt;Hash = H256&gt;,
-	C: ProvideRuntimeApi&lt;B&gt;,
+	C: HeaderBackend&lt;B&gt; + ProvideRuntimeApi&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
-	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use </span>std::time::Instant;

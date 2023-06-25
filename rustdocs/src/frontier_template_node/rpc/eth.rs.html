@@ -198,6 +198,9 @@
 <a href="#198" id="198">198</a>
 <a href="#199" id="199">199</a>
 <a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, sync::Arc};
 
 <span class="kw">use </span>jsonrpsee::RpcModule;
@@ -217,7 +220,7 @@
 <span class="kw">use </span>sp_core::H256;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
-</span><span class="kw">pub use </span>fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle, StorageOverride};
+</span><span class="kw">pub use </span>fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle, StorageOverride, TxPool};
 <span class="kw">pub use </span>fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 <span class="kw">pub use </span>fc_storage::overrides_handle;
 <span class="kw">use </span>fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
@@ -299,7 +302,7 @@
 <span class="kw">where
 	</span>B: BlockT&lt;Hash = sp_core::H256&gt;,
 	C: CallApiAt&lt;B&gt; + ProvideRuntimeApi&lt;B&gt;,
-	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt; + ConvertTransactionRuntimeApi&lt;B&gt;,
+	C::Api: BlockBuilderApi&lt;B&gt; + ConvertTransactionRuntimeApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
 	C: BlockchainEvents&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	C: HeaderBackend&lt;B&gt; + HeaderMetadata&lt;B, Error = BlockChainError&gt; + StorageProvider&lt;B, BE&gt;,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
@@ -309,7 +312,7 @@
 {
 	<span class="kw">use </span>fc_rpc::{
 		Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer, EthPubSub,
-		EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
+		EthPubSubApiServer, EthSigner, Net, NetApiServer, TxPoolApiServer, Web3, Web3ApiServer,
 	};
 
 	<span class="kw">let </span>EthDeps {
@@ -341,7 +344,7 @@
 		Eth::new(
 			client.clone(),
 			pool.clone(),
-			graph,
+			graph.clone(),
 			converter,
 			sync.clone(),
 			signers,
@@ -358,11 +361,13 @@
 		.into_rpc(),
 	)<span class="question-mark">?</span>;
 
+	<span class="kw">let </span>tx_pool = TxPool::new(client.clone(), graph);
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(filter_pool) = filter_pool {
 		io.merge(
 			EthFilter::new(
 				client.clone(),
 				frontier_backend,
+				tx_pool.clone(),
 				filter_pool,
 				<span class="number">500_usize</span>, <span class="comment">// max stored filters
 				</span>max_past_logs,
@@ -395,6 +400,7 @@
 	)<span class="question-mark">?</span>;
 
 	io.merge(Web3::new(client).into_rpc())<span class="question-mark">?</span>;
+	io.merge(tx_pool.into_rpc())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(io)
 }

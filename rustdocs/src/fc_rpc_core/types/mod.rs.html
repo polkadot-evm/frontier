@@ -57,6 +57,8 @@
 <a href="#57" id="57">57</a>
 <a href="#58" id="58">58</a>
 <a href="#59" id="59">59</a>
+<a href="#60" id="60">60</a>
+<a href="#61" id="61">61</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -90,6 +92,7 @@
 <span class="kw">mod </span>sync;
 <span class="kw">mod </span>transaction;
 <span class="kw">mod </span>transaction_request;
+<span class="kw">mod </span>txpool;
 <span class="kw">mod </span>work;
 
 <span class="kw">pub mod </span>pubsub;
@@ -114,6 +117,7 @@
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
 	transaction_request::{TransactionMessage, TransactionRequest},
+	txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	work::Work,
 };
 </code></pre></div>
