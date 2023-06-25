@@ -347,18 +347,18 @@
 <span class="kw">impl </span>WeightInfo {
 	<span class="kw">pub fn </span>new_from_weight_limit(
 		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
-		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;<span class="self">Self</span>&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
-		<span class="prelude-val">Ok</span>(<span class="kw">match </span>(weight_limit, transaction_len) {
+		<span class="prelude-val">Ok</span>(<span class="kw">match </span>(weight_limit, proof_size_base_cost) {
 			(<span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
-			(<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">Some</span>(transaction_len))
-				<span class="kw">if </span>weight_limit.proof_size() &gt;= transaction_len =&gt;
+			(<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">Some</span>(proof_size_base_cost))
+				<span class="kw">if </span>weight_limit.proof_size() &gt;= proof_size_base_cost =&gt;
 			{
 				<span class="prelude-val">Some</span>(WeightInfo {
 					ref_time_limit: <span class="prelude-val">Some</span>(weight_limit.ref_time()),
 					proof_size_limit: <span class="prelude-val">Some</span>(weight_limit.proof_size()),
 					ref_time_usage: <span class="prelude-val">Some</span>(<span class="number">0u64</span>),
-					proof_size_usage: <span class="prelude-val">Some</span>(transaction_len),
+					proof_size_usage: <span class="prelude-val">Some</span>(proof_size_base_cost),
 				})
 			}
 			(<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">None</span>) =&gt; <span class="prelude-val">Some</span>(WeightInfo {

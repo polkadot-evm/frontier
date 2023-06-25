@@ -142,7 +142,7 @@
 		access_list: Vec&lt;(H160, Vec&lt;H256&gt;)&gt;,
 		is_transactional: bool,
 		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
-		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		evm_config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
@@ -159,7 +159,7 @@
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
-		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CallInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
@@ -175,7 +175,7 @@
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
-		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 
@@ -192,7 +192,7 @@
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
-		transaction_len: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		config: <span class="kw-2">&amp;</span>evm::Config,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;CreateInfo, RunnerError&lt;<span class="self">Self</span>::Error&gt;&gt;;
 }

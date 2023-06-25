@@ -1022,6 +1022,10 @@
 <a href="#1022" id="1022">1022</a>
 <a href="#1023" id="1023">1023</a>
 <a href="#1024" id="1024">1024</a>
+<a href="#1025" id="1025">1025</a>
+<a href="#1026" id="1026">1026</a>
+<a href="#1027" id="1027">1027</a>
+<a href="#1028" id="1028">1028</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1377,7 +1381,8 @@
 }
 
 <span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-	<span class="kw">fn </span>transaction_len(transaction: <span class="kw-2">&amp;</span>Transaction) -&gt; u64 {
+	<span class="doccomment">/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+	</span><span class="kw">fn </span>proof_size_base_cost(transaction: <span class="kw-2">&amp;</span>Transaction) -&gt; u64 {
 		transaction
 			.encode()
 			.len()
@@ -1512,9 +1517,10 @@
 				transaction_data.gas_limit.unique_saturated_into(),
 				<span class="bool-val">true</span>,
 			) {
-				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; {
-					(<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">Some</span>(<span class="self">Self</span>::transaction_len(transaction)))
-				}
+				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
+					<span class="prelude-val">Some</span>(weight_limit),
+					<span class="prelude-val">Some</span>(<span class="self">Self</span>::proof_size_base_cost(transaction)),
+				),
 				<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
 			};
 
@@ -1796,14 +1802,15 @@
 		<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
 		<span class="kw">let </span>validate = <span class="bool-val">false</span>;
 
-		<span class="kw">let </span>(transaction_len, weight_limit) =
+		<span class="kw">let </span>(proof_size_base_cost, weight_limit) =
 			<span class="kw">match </span>&lt;T <span class="kw">as </span>pallet_evm::Config&gt;::GasWeightMapping::gas_to_weight(
 				gas_limit.unique_saturated_into(),
 				<span class="bool-val">true</span>,
 			) {
-				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; {
-					(<span class="prelude-val">Some</span>(<span class="self">Self</span>::transaction_len(transaction)), <span class="prelude-val">Some</span>(weight_limit))
-				}
+				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
+					<span class="prelude-val">Some</span>(<span class="self">Self</span>::proof_size_base_cost(transaction)),
+					<span class="prelude-val">Some</span>(weight_limit),
+				),
 				<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
 			};
 		<span class="kw">match </span>action {
@@ -1821,7 +1828,7 @@
 					is_transactional,
 					validate,
 					weight_limit,
-					transaction_len,
+					proof_size_base_cost,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					<span class="prelude-val">Ok</span>(res) =&gt; res,
@@ -1851,7 +1858,7 @@
 					is_transactional,
 					validate,
 					weight_limit,
-					transaction_len,
+					proof_size_base_cost,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					<span class="prelude-val">Ok</span>(res) =&gt; res,
@@ -1889,9 +1896,10 @@
 				transaction_data.gas_limit.unique_saturated_into(),
 				<span class="bool-val">true</span>,
 			) {
-				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; {
-					(<span class="prelude-val">Some</span>(weight_limit), <span class="prelude-val">Some</span>(<span class="self">Self</span>::transaction_len(transaction)))
-				}
+				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
+					<span class="prelude-val">Some</span>(weight_limit),
+					<span class="prelude-val">Some</span>(<span class="self">Self</span>::proof_size_base_cost(transaction)),
+				),
 				<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
 			};
 
