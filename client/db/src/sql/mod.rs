@@ -16,20 +16,10 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use fc_storage::OverrideHandle;
-use fp_consensus::{FindLogError, Hashes, Log as ConsensusLog, PostLog, PreLog};
-use fp_rpc::EthereumRuntimeRPCApi;
-use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+use std::{cmp::Ordering, collections::HashSet, num::NonZeroU32, str::FromStr, sync::Arc};
+
 use futures::TryStreamExt;
-use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
 use scale_codec::{Decode, Encode};
-use sp_api::{ApiExt, ProvideRuntimeApi};
-use sp_blockchain::HeaderBackend;
-use sp_core::{H160, H256};
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
-};
 use sqlx::{
 	query::Query,
 	sqlite::{
@@ -37,11 +27,22 @@ use sqlx::{
 	},
 	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
-use std::num::NonZeroU32;
+// Substrate
+use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
+use sp_api::{ApiExt, ProvideRuntimeApi};
+use sp_blockchain::HeaderBackend;
+use sp_core::{H160, H256};
+use sp_runtime::{
+	generic::BlockId,
+	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
+};
+// Frontier
+use fc_storage::OverrideHandle;
+use fp_consensus::{FindLogError, Hashes, Log as ConsensusLog, PostLog, PreLog};
+use fp_rpc::EthereumRuntimeRPCApi;
+use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
-use std::{cmp::Ordering, collections::HashSet, str::FromStr, sync::Arc};
-
-use crate::FilteredLog;
+use crate::{BackendReader, FilteredLog};
 
 /// Maximum number to topics allowed to be filtered upon
 const MAX_TOPIC_COUNT: u16 = 4;
@@ -135,11 +136,7 @@ where
 	fn connect_options(config: &BackendConfig) -> Result<SqliteConnectOptions, Error> {
 		match config {
 			BackendConfig::Sqlite(config) => {
-				log::info!(
-					target: "frontier-sql",
-					"📑 Connection configuration: {:?}",
-					config,
-				);
+				log::info!(target: "frontier-sql", "📑 Connection configuration: {config:?}");
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
 					.create_if_missing(config.create_if_missing)
 					// https://www.sqlite.org/pragma.html#pragma_busy_timeout
@@ -225,12 +222,7 @@ where
 				)
 				.expect("runtime api reachable");
 
-			log::debug!(
-				target: "frontier-sql",
-				"Index genesis block, has_api={}, hash={:?}",
-				has_api,
-				substrate_genesis_hash,
-			);
+			log::debug!(target: "frontier-sql", "Index genesis block, has_api={has_api}, hash={substrate_genesis_hash:?}");
 
 			if has_api {
 				// The chain has frontier support from genesis.
@@ -282,11 +274,7 @@ where
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
-		log::trace!(
-			target: "frontier-sql",
-			"🛠️  [Metadata] Retrieving digest data for block {:?}",
-			hash,
-		);
+		log::trace!(target: "frontier-sql", "🛠️  [Metadata] Retrieving digest data for block {hash:?}");
 		if let Ok(Some(header)) = client.header(hash) {
 			match fp_consensus::find_log(header.digest()) {
 				Ok(log) => {
@@ -326,32 +314,24 @@ where
 					let header_number = *header.number();
 					let block_number =
 						UniqueSaturatedInto::<u32>::unique_saturated_into(header_number) as i32;
-					let is_canon =
-						match client.hash(header_number) {
-							Ok(Some(inner_hash)) => (inner_hash == hash) as i32,
-							Ok(None) => {
-								log::debug!(
-									target: "frontier-sql",
-									"[Metadata] Missing header for block #{} ({:?})",
-									block_number, hash,
-								);
-								0
-							}
-							Err(err) => {
-								log::debug!(
-								"[Metadata] Failed to retrieve header for block #{} ({:?}): {:?}",
-								block_number, hash, err,
+					let is_canon = match client.hash(header_number) {
+						Ok(Some(inner_hash)) => (inner_hash == hash) as i32,
+						Ok(None) => {
+							log::debug!(target: "frontier-sql", "[Metadata] Missing header for block #{block_number} ({hash:?})");
+							0
+						}
+						Err(err) => {
+							log::debug!(
+								target: "frontier-sql",
+								"[Metadata] Failed to retrieve header for block #{block_number} ({hash:?}): {err:?}",
 							);
-								0
-							}
-						};
+							0
+						}
+					};
 
 					log::trace!(
 						target: "frontier-sql",
-						"[Metadata] Prepared block metadata for #{} ({:?}) canon={}",
-						block_number,
-						hash,
-						is_canon,
+						"[Metadata] Prepared block metadata for #{block_number} ({hash:?}) canon={is_canon}",
 					);
 					Ok(BlockMetadata {
 						substrate_block_hash: hash,
@@ -435,10 +415,7 @@ where
 			let ethereum_transaction_index = i as i32;
 			log::trace!(
 				target: "frontier-sql",
-				"[Metadata] Inserting TX for block #{} - {:?} index {}",
-				block_number,
-				transaction_hash,
-				ethereum_transaction_index,
+				"[Metadata] Inserting TX for block #{block_number} - {transaction_hash:?} index {ethereum_transaction_index}",
 			);
 			let _ = sqlx::query(
 				"INSERT OR IGNORE INTO transactions(
@@ -461,10 +438,7 @@ where
 			.execute(&mut *tx)
 			.await?;
 
-		log::debug!(
-			target: "frontier-sql",
-			"[Metadata] Ready to commit",
-		);
+		log::debug!(target: "frontier-sql", "[Metadata] Ready to commit");
 		tx.commit().await
 	}
 
@@ -539,18 +513,11 @@ where
 		}
 		.await
 		.map_err(|e| {
-			log::error!(
-				target: "frontier-sql",
-				"{}",
-				e
-			)
+			log::error!(target: "frontier-sql", "{e}");
 		});
 		// https://www.sqlite.org/pragma.html#pragma_optimize
 		let _ = sqlx::query("PRAGMA optimize").execute(&pool).await;
-		log::debug!(
-			target: "frontier-sql",
-			"Batch commited"
-		);
+		log::debug!(target: "frontier-sql", "Batch committed");
 	}
 
 	fn get_logs<Client, BE>(
@@ -600,9 +567,7 @@ where
 		}
 		log::debug!(
 			target: "frontier-sql",
-			"Ready to commit {} logs from {} transactions",
-			log_count,
-			transaction_count
+			"Ready to commit {log_count} logs from {transaction_count} transactions"
 		);
 		logs
 	}
@@ -692,11 +657,7 @@ where
 				}
 			}
 			Err(err) => {
-				log::debug!(
-					target: "frontier-sql",
-					"Failed retrieving missing block {:?}",
-					err
-				);
+				log::debug!(target: "frontier-sql", "Failed retrieving missing block {err:?}");
 			}
 		}
 
@@ -725,11 +686,7 @@ where
 				}
 			}
 			Err(err) => {
-				log::debug!(
-					target: "frontier-sql",
-					"Failed retrieving missing block {:?}",
-					err
-				);
+				log::debug!(target: "frontier-sql", "Failed retrieving missing block {err:?}");
 			}
 		}
 
@@ -847,7 +804,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> {
+impl<Block: BlockT<Hash = H256>> BackendReader<Block> for Backend<Block> {
 	async fn block_hash(
 		&self,
 		ethereum_block_hash: &H256,
@@ -868,6 +825,7 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 				});
 		Ok(res)
 	}
+
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
@@ -943,19 +901,10 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			.await
 			.map_err(|err| format!("{:?}", err))?
 			.set_progress_handler(self.num_ops_timeout, move || {
-				log::debug!(
-					target: "frontier-sql",
-					"Sqlite progress_handler triggered for {}",
-					log_key2,
-				);
+				log::debug!(target: "frontier-sql", "Sqlite progress_handler triggered for {log_key2}");
 				false
 			});
-		log::debug!(
-			target: "frontier-sql",
-			"Query: {:?} - {}",
-			sql,
-			log_key,
-		);
+		log::debug!(target: "frontier-sql", "Query: {sql:?} - {log_key}");
 
 		let mut out: Vec<FilteredLog> = vec![];
 		let mut rows = query.fetch(&mut *conn);
@@ -1000,20 +949,11 @@ impl<Block: BlockT<Hash = H256>> crate::BackendReader<Block> for Backend<Block> 
 			.remove_progress_handler();
 
 		if let Some(err) = maybe_err {
-			log::error!(
-				target: "frontier-sql",
-				"Failed to query sql db: {:?} - {}",
-				err,
-				log_key,
-			);
+			log::error!(target: "frontier-sql", "Failed to query sql db: {err:?} - {log_key}");
 			return Err("Failed to query sql db with statement".to_string());
 		}
 
-		log::info!(
-			target: "frontier-sql",
-			"FILTER remove handler - {}",
-			log_key,
-		);
+		log::info!(target: "frontier-sql", "FILTER remove handler - {log_key}");
 		Ok(out)
 	}
 
@@ -1095,24 +1035,26 @@ LIMIT 10001",
 
 #[cfg(test)]
 mod test {
-	use super::FilteredLog;
+	use super::*;
 
-	use crate::BackendReader;
-	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
-	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+	use std::{collections::BTreeMap, path::Path};
+
 	use maplit::hashset;
 	use scale_codec::Encode;
+	use sqlx::{sqlite::SqliteRow, QueryBuilder, Row, SqlitePool};
+	use tempfile::tempdir;
+	// Substrate
 	use sp_core::{H160, H256};
 	use sp_runtime::{
 		generic::{Block, Header},
 		traits::BlakeTwo256,
 	};
-	use sqlx::{sqlite::SqliteRow, QueryBuilder, Row, SqlitePool};
-	use std::{collections::BTreeMap, path::Path, sync::Arc};
 	use substrate_test_runtime_client::{
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
-	use tempfile::tempdir;
+	// Frontier
+	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;

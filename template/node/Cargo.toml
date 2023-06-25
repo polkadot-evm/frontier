@@ -38,7 +38,7 @@ sc-network-common = { workspace = true }
 sc-network-sync = { workspace = true }
 sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
-sc-service = { workspace = true }
+sc-service = { workspace = true, features = ["default"] }
 sc-telemetry = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }

@@ -17,6 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 #![deny(unused_crate_dependencies)]
+#![allow(clippy::too_many_arguments)]
 
 pub mod kv;
 pub mod sql;

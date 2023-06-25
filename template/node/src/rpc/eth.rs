@@ -146,7 +146,7 @@ where
 			graph.clone(),
 			converter,
 			sync.clone(),
-			vec![],
+			signers,
 			overrides.clone(),
 			frontier_backend.clone(),
 			is_authority,

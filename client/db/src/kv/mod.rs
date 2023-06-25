@@ -36,8 +36,9 @@ use sp_core::H256;
 pub use sp_database::Database;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
-use crate::TransactionMetadata;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
+
+use crate::TransactionMetadata;
 
 const DB_HASH_LEN: usize = 32;
 /// Hash type that this backend uses for the database.
@@ -113,10 +114,12 @@ impl<Block: BlockT> Backend<Block> {
 			client,
 			&DatabaseSettings {
 				source: match database {
+					#[cfg(feature = "rocksdb")]
 					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
 						path: frontier_database_dir(db_config_dir, "db"),
 						cache_size: 0,
 					},
+					#[cfg(feature = "parity-db")]
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 						path: frontier_database_dir(db_config_dir, "paritydb"),
 					},
@@ -307,13 +310,15 @@ impl<Block: BlockT> MappingDb<Block> {
 
 		let substrate_hashes = match self.block_hash(&commitment.ethereum_block_hash) {
 			Ok(Some(mut data)) => {
-				data.push(commitment.block_hash);
-				log::warn!(
-					target: "fc-db",
-					"Possible equivocation at ethereum block hash {} {:?}",
-					&commitment.ethereum_block_hash,
-					&data
-				);
+				if !data.contains(&commitment.block_hash) {
+					data.push(commitment.block_hash);
+					log::warn!(
+						target: "fc-db",
+						"Possible equivocation at ethereum block hash {} {:?}",
+						&commitment.ethereum_block_hash,
+						&data
+					);
+				}
 				data
 			}
 			_ => vec![commitment.block_hash],
