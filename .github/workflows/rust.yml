@@ -49,7 +49,7 @@ jobs:
     - name: Build client
       run: |
         cd template/node
-        cargo build --release --locked --verbose --features rpc-binary-search-estimate,txpool
+        cargo build --release --locked --verbose --features rpc-binary-search-estimate
     - name: Use Node.js 18
       uses: actions/setup-node@v3
       with:
@@ -91,4 +91,4 @@ jobs:
     - name: Rustfmt
       run: cargo fmt --all -- --check
     - name: Clippy
-      run: cargo clippy --all --features runtime-benchmarks,try-runtime,txpool -- -D warnings
+      run: cargo clippy --all --features runtime-benchmarks,try-runtime -- -D warnings
