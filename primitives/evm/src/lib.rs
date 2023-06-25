@@ -84,18 +84,18 @@ pub struct WeightInfo {
 impl WeightInfo {
 	pub fn new_from_weight_limit(
 		weight_limit: Option<Weight>,
-		transaction_len: Option<u64>,
+		proof_size_base_cost: Option<u64>,
 	) -> Result<Option<Self>, &'static str> {
-		Ok(match (weight_limit, transaction_len) {
+		Ok(match (weight_limit, proof_size_base_cost) {
 			(None, _) => None,
-			(Some(weight_limit), Some(transaction_len))
-				if weight_limit.proof_size() >= transaction_len =>
+			(Some(weight_limit), Some(proof_size_base_cost))
+				if weight_limit.proof_size() >= proof_size_base_cost =>
 			{
 				Some(WeightInfo {
 					ref_time_limit: Some(weight_limit.ref_time()),
 					proof_size_limit: Some(weight_limit.proof_size()),
 					ref_time_usage: Some(0u64),
-					proof_size_usage: Some(transaction_len),
+					proof_size_usage: Some(proof_size_base_cost),
 				})
 			}
 			(Some(weight_limit), None) => Some(WeightInfo {
