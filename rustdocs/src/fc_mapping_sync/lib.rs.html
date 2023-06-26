@@ -38,6 +38,7 @@
 <a href="#38" id="38">38</a>
 <a href="#39" id="39">39</a>
 <a href="#40" id="40">40</a>
+<a href="#41" id="41">41</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -60,7 +61,8 @@
 #![allow(clippy::too_many_arguments)]
 
 </span><span class="kw">pub mod </span>kv;
-<span class="kw">pub mod </span>sql;
+<span class="attr">#[cfg(feature = <span class="string">&quot;sql&quot;</span>)]
+</span><span class="kw">pub mod </span>sql;
 
 <span class="kw">use </span>sp_api::BlockT;
 

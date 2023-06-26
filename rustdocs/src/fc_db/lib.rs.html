@@ -73,6 +73,9 @@
 <a href="#73" id="73">73</a>
 <a href="#74" id="74">74</a>
 <a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -100,13 +103,16 @@
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
 <span class="kw">pub mod </span>kv;
-<span class="kw">pub mod </span>sql;
 <span class="kw">use </span>kv::{columns, static_keys};
+
+<span class="attr">#[cfg(feature = <span class="string">&quot;sql&quot;</span>)]
+</span><span class="kw">pub mod </span>sql;
 
 <span class="attr">#[derive(Clone)]
 </span><span class="kw">pub enum </span>Backend&lt;Block: BlockT&gt; {
 	KeyValue(kv::Backend&lt;Block&gt;),
-	Sql(sql::Backend&lt;Block&gt;),
+	<span class="attr">#[cfg(feature = <span class="string">&quot;sql&quot;</span>)]
+	</span>Sql(sql::Backend&lt;Block&gt;),
 }
 
 <span class="attr">#[derive(Clone, Encode, Debug, Decode, Eq, PartialEq)]
