@@ -221,6 +221,21 @@
 <a href="#221" id="221">221</a>
 <a href="#222" id="222">222</a>
 <a href="#223" id="223">223</a>
+<a href="#224" id="224">224</a>
+<a href="#225" id="225">225</a>
+<a href="#226" id="226">226</a>
+<a href="#227" id="227">227</a>
+<a href="#228" id="228">228</a>
+<a href="#229" id="229">229</a>
+<a href="#230" id="230">230</a>
+<a href="#231" id="231">231</a>
+<a href="#232" id="232">232</a>
+<a href="#233" id="233">233</a>
+<a href="#234" id="234">234</a>
+<a href="#235" id="235">235</a>
+<a href="#236" id="236">236</a>
+<a href="#237" id="237">237</a>
+<a href="#238" id="238">238</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -243,8 +258,9 @@
 </span><span class="kw">use </span>scale_codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sp_core::{ecdsa, H160, H256};
+</span><span class="kw">use </span>sp_core::{ecdsa, RuntimeDebug, H160, H256};
 <span class="kw">use </span>sp_io::hashing::keccak_256;
+<span class="kw">use </span>sp_runtime_interface::pass_by::PassByInner;
 
 <span class="doccomment">/// A fully Ethereum-compatible `AccountId`.
 /// Conforms to H160 address and ECDSA key standards.
@@ -337,7 +353,7 @@
 }
 
 <span class="attr">#[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_core::RuntimeDebug, TypeInfo)]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 </span><span class="kw">pub struct </span>EthereumSignature(ecdsa::Signature);
 
 <span class="kw">impl </span>sp_runtime::traits::Verify <span class="kw">for </span>EthereumSignature {
@@ -368,7 +384,21 @@
 	}
 }
 
-<span class="kw">pub struct </span>EthereumSigner([u8; <span class="number">20</span>]);
+<span class="attr">#[derive(
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Clone,
+	Copy,
+	Encode,
+	Decode,
+	PassByInner,
+	MaxEncodedLen,
+	RuntimeDebug,
+	TypeInfo
+)]
+</span><span class="kw">pub struct </span>EthereumSigner([u8; <span class="number">20</span>]);
 
 <span class="kw">impl </span>From&lt;[u8; <span class="number">20</span>]&gt; <span class="kw">for </span>EthereumSigner {
 	<span class="kw">fn </span>from(x: [u8; <span class="number">20</span>]) -&gt; <span class="self">Self </span>{
