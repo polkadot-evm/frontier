@@ -15,20 +15,27 @@ futures = "0.3.25"
 futures-timer = "3.0.2"
 log = "0.4.17"
 parking_lot = "0.12.1"
-tokio = { version = "1.19", features = ["macros", "sync"] }
+tokio = { version = "1.19", features = ["macros", "sync"], optional = true }
 # Substrate
 sc-client-api = { workspace = true }
 sc-utils = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true, features = ["default"] }
-sp-core = { workspace = true }
+sp-core = { workspace = true, optional = true }
 sp-runtime = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
+
+[features]
+sql = [
+	"tokio",
+	"sp-core",
+	"fc-db/sql",
+]
 
 [dev-dependencies]
 ethereum = { workspace = true }
