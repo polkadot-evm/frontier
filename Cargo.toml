@@ -94,6 +94,7 @@ sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", br
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime-interface = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-state-machine = { version = "0.13.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
