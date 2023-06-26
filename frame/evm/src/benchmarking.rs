@@ -112,6 +112,7 @@ benchmarks! {
 
 		let is_transactional = true;
 		let validate = true;
+		let is_free = false;
 		let call_runner_results = T::Runner::call(
 			caller,
 			contract_address,
@@ -124,6 +125,7 @@ benchmarks! {
 			Vec::new(),
 			is_transactional,
 			validate,
+			is_free,
 			T::config(),
 		);
 		assert!(call_runner_results.is_ok(), "call() failed");
