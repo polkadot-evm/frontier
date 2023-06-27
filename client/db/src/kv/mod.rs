@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "parity-db")]
 mod parity_db_adapter;
 mod upgrade;
 mod utils;
@@ -119,7 +118,6 @@ impl<Block: BlockT> Backend<Block> {
 						path: frontier_database_dir(db_config_dir, "db"),
 						cache_size: 0,
 					},
-					#[cfg(feature = "parity-db")]
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
 						path: frontier_database_dir(db_config_dir, "paritydb"),
 					},

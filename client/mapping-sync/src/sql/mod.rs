@@ -495,7 +495,7 @@ mod test {
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	// Frontier
-	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
 	use fp_storage::{
 		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
 	};

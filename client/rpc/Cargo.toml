@@ -62,9 +62,15 @@ pallet-evm = { workspace = true }
 tempfile = "3.3.0"
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true }
+sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 
 [features]
+default = ["rocksdb"]
+rocksdb = [
+	"sc-service/rocksdb",
+	"fc-db/rocksdb",
+	"fc-mapping-sync/rocksdb",
+]
 rpc-binary-search-estimate = []

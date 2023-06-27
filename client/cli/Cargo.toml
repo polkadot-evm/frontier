@@ -10,14 +10,6 @@ repository = { workspace = true }
 [package.metadata.docs.rs]
 targets = ["x86_64-unknown-linux-gnu"]
 
-[features]
-default = ["rocksdb"]
-rocksdb = [
-	"sc-cli/rocksdb",
-	"fc-db/rocksdb",
-]
-paritydb = ["fc-db/paritydb"]
-
 [dependencies]
 clap = { workspace = true }
 ethereum-types = { workspace = true }
@@ -46,3 +38,10 @@ substrate-test-runtime-client = { workspace = true }
 # Frontier
 fc-db = { workspace = true, features = ["rocksdb"] }
 frontier-template-runtime = { workspace = true, features = ["default"] }
+
+[features]
+default = ["rocksdb"]
+rocksdb = [
+	"sc-cli/rocksdb",
+	"fc-db/rocksdb",
+]

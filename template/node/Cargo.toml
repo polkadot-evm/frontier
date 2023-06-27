@@ -70,8 +70,8 @@ pallet-transaction-payment = { workspace = true }
 # Frontier
 fc-cli = { workspace = true }
 fc-consensus = { workspace = true }
-fc-db = { workspace = true, features = ["sql"] }
-fc-mapping-sync = { workspace = true, features = ["sql"] }
+fc-db = { workspace = true }
+fc-mapping-sync = { workspace = true }
 fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
@@ -79,25 +79,31 @@ fp-account = { workspace = true }
 fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
-frontier-template-runtime = { workspace = true, features = ["default"] }
+frontier-template-runtime = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
 
 [features]
-default = ["rocksdb"]
+default = [
+	"with-rocksdb-weights",
+	"rocksdb",
+	"sql",
+]
 rocksdb = [
 	"sc-cli/rocksdb",
 	"sc-service/rocksdb",
+	"fc-cli/rocksdb",
 	"fc-db/rocksdb",
 	"fc-mapping-sync/rocksdb",
-	"frontier-template-runtime/with-rocksdb-weights",
+	"fc-rpc/rocksdb",
 ]
-paritydb = [
-	"fc-db/paritydb",
-	"fc-mapping-sync/paritydb",
-	"frontier-template-runtime/with-paritydb-weights",
+sql = [
+	"fc-db/sql",
+	"fc-mapping-sync/sql",
 ]
+with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
+with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",

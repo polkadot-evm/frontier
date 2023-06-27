@@ -134,11 +134,11 @@ substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # Frontier Client
-fc-cli = { version = "1.0.0-dev", path = "client/cli" }
+fc-cli = { version = "1.0.0-dev", path = "client/cli", default-features = false }
 fc-consensus = { version = "2.0.0-dev", path = "client/consensus" }
-fc-db = { version = "2.0.0-dev", path = "client/db" }
-fc-mapping-sync = { version = "2.0.0-dev", path = "client/mapping-sync" }
-fc-rpc = { version = "2.0.0-dev", path = "client/rpc" }
+fc-db = { version = "2.0.0-dev", path = "client/db", default-features = false }
+fc-mapping-sync = { version = "2.0.0-dev", path = "client/mapping-sync", default-features = false }
+fc-rpc = { version = "2.0.0-dev", path = "client/rpc", default-features = false }
 fc-rpc-core = { version = "1.1.0-dev", path = "client/rpc-core" }
 fc-storage = { version = "1.0.0-dev", path = "client/storage" }
 # Frontier Primitive
