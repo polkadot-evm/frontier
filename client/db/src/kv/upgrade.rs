@@ -353,7 +353,7 @@ mod tests {
 		Ok(Arc::new(crate::kv::Backend::<Block>::new(client, setting)?))
 	}
 
-	#[cfg_attr(not(any(feature = "rocksdb")), ignore)]
+	#[cfg_attr(not(feature = "rocksdb"), ignore)]
 	#[test]
 	fn upgrade_1_to_2_works() {
 		let settings: Vec<DatabaseSettings> = vec![
