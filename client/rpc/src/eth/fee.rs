@@ -148,7 +148,8 @@ where
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					let elasticity = elasticity as f64 / 1_000_000f64;
-					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
+					let last_fee_per_gas =
+						(last_fee_per_gas.min(&u64::MAX.into()).low_u64()) as f64;
 					if last_gas_used > &0.5 {
 						// Increase base gas
 						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;
