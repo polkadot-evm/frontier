@@ -44,7 +44,7 @@ rocksdb = [
 	"sc-client-db/rocksdb",
 	"smallvec",
 ]
-parity-db = ["dep:parity-db"]
+paritydb = ["dep:parity-db"]
 sql = [
 	"ethereum",
 	"futures",
