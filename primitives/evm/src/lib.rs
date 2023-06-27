@@ -26,21 +26,20 @@ use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "std")]
 use serde::{Deserialize, Serialize};
-use sp_core::{H160, U256};
+use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
 use sp_std::vec::Vec;
 
 pub use evm::{
 	backend::{Basic as Account, Log},
-	executor::stack::IsPrecompileResult,
-	Config, ExitReason,
+	Config, ExitReason, Opcode,
 };
 
 pub use self::{
 	precompile::{
-		Context, ExitError, ExitRevert, ExitSucceed, LinearCostPrecompile, Precompile,
-		PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
-		Transfer,
+		Context, ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, LinearCostPrecompile,
+		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
+		PrecompileSet, Transfer,
 	},
 	validation::{
 		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
@@ -58,6 +57,132 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
+/// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
+pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
+/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
+pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
+/// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
+pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
+/// Fixed trie 32 byte hash.
+pub const WRITE_PROOF_SIZE: u64 = 32;
+/// Account basic proof size + 5 bytes max of `decode_len` call.
+pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+
+pub enum AccessedStorage {
+	AccountCodes(H160),
+	AccountStorages((H160, H256)),
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct WeightInfo {
+	pub ref_time_limit: Option<u64>,
+	pub proof_size_limit: Option<u64>,
+	pub ref_time_usage: Option<u64>,
+	pub proof_size_usage: Option<u64>,
+}
+
+impl WeightInfo {
+	pub fn new_from_weight_limit(
+		weight_limit: Option<Weight>,
+		proof_size_base_cost: Option<u64>,
+	) -> Result<Option<Self>, &'static str> {
+		Ok(match (weight_limit, proof_size_base_cost) {
+			(None, _) => None,
+			(Some(weight_limit), Some(proof_size_base_cost))
+				if weight_limit.proof_size() >= proof_size_base_cost =>
+			{
+				Some(WeightInfo {
+					ref_time_limit: Some(weight_limit.ref_time()),
+					proof_size_limit: Some(weight_limit.proof_size()),
+					ref_time_usage: Some(0u64),
+					proof_size_usage: Some(proof_size_base_cost),
+				})
+			}
+			(Some(weight_limit), None) => Some(WeightInfo {
+				ref_time_limit: Some(weight_limit.ref_time()),
+				proof_size_limit: None,
+				ref_time_usage: Some(0u64),
+				proof_size_usage: None,
+			}),
+			_ => return Err("must provide Some valid weight limit or None"),
+		})
+	}
+	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
+		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
+		if usage > limit {
+			return Err(ExitError::OutOfGas);
+		}
+		Ok(usage)
+	}
+	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
+		if let (Some(ref_time_usage), Some(ref_time_limit)) =
+			(self.ref_time_usage, self.ref_time_limit)
+		{
+			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
+			if ref_time_usage > ref_time_limit {
+				return Err(ExitError::OutOfGas);
+			}
+			self.ref_time_usage = Some(ref_time_usage);
+		}
+		Ok(())
+	}
+	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
+		if let (Some(proof_size_usage), Some(proof_size_limit)) =
+			(self.proof_size_usage, self.proof_size_limit)
+		{
+			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
+			if proof_size_usage > proof_size_limit {
+				return Err(ExitError::OutOfGas);
+			}
+			self.proof_size_usage = Some(proof_size_usage);
+		}
+		Ok(())
+	}
+	pub fn refund_proof_size(&mut self, amount: u64) {
+		if let Some(proof_size_usage) = self.proof_size_usage {
+			let proof_size_usage = proof_size_usage.saturating_sub(amount);
+			self.proof_size_usage = Some(proof_size_usage);
+		}
+	}
+	pub fn refund_ref_time(&mut self, amount: u64) {
+		if let Some(ref_time_usage) = self.ref_time_usage {
+			let ref_time_usage = ref_time_usage.saturating_sub(amount);
+			self.ref_time_usage = Some(ref_time_usage);
+		}
+	}
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct UsedGas {
+	/// The used_gas as returned by the evm gasometer on exit.
+	pub standard: U256,
+	/// The result of applying a gas ratio to the most used
+	/// external metric during the evm execution.
+	pub effective: U256,
+}
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub struct ExecutionInfoV2<T> {
+	pub exit_reason: ExitReason,
+	pub value: T,
+	pub used_gas: UsedGas,
+	pub weight_info: Option<WeightInfo>,
+	pub logs: Vec<Log>,
+}
+
+pub type CallInfo = ExecutionInfoV2<Vec<u8>>;
+pub type CreateInfo = ExecutionInfoV2<H160>;
+
+#[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
+pub enum CallOrCreateInfo {
+	Call(CallInfo),
+	Create(CreateInfo),
+}
+
 #[derive(Clone, Eq, PartialEq, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
 pub struct ExecutionInfo<T> {
@@ -65,16 +190,6 @@ pub struct ExecutionInfo<T> {
 	pub value: T,
 	pub used_gas: U256,
 	pub logs: Vec<Log>,
-}
-
-pub type CallInfo = ExecutionInfo<Vec<u8>>;
-pub type CreateInfo = ExecutionInfo<H160>;
-
-#[derive(Clone, Eq, PartialEq, Encode, Decode)]
-#[cfg_attr(feature = "std", derive(Debug, Serialize, Deserialize))]
-pub enum CallOrCreateInfo {
-	Call(CallInfo),
-	Create(CreateInfo),
 }
 
 /// Account definition used for genesis block construction.
@@ -86,7 +201,7 @@ pub struct GenesisAccount {
 	/// Account balance.
 	pub balance: U256,
 	/// Full account storage.
-	pub storage: std::collections::BTreeMap<sp_core::H256, sp_core::H256>,
+	pub storage: std::collections::BTreeMap<H256, H256>,
 	/// Account code.
 	pub code: Vec<u8>,
 }

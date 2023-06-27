@@ -1046,7 +1046,7 @@ mod test {
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	// Frontier
-	use fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	type OpaqueBlock =

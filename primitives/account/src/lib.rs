@@ -20,8 +20,9 @@
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
-use sp_core::{ecdsa, H160, H256};
+use sp_core::{ecdsa, RuntimeDebug, H160, H256};
 use sp_io::hashing::keccak_256;
+use sp_runtime_interface::pass_by::PassByInner;
 
 /// A fully Ethereum-compatible `AccountId`.
 /// Conforms to H160 address and ECDSA key standards.
@@ -114,7 +115,7 @@ impl From<ecdsa::Public> for AccountId20 {
 }
 
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_core::RuntimeDebug, TypeInfo)]
+#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
 pub struct EthereumSignature(ecdsa::Signature);
 
 impl sp_runtime::traits::Verify for EthereumSignature {
@@ -145,6 +146,20 @@ impl EthereumSignature {
 	}
 }
 
+#[derive(
+	PartialEq,
+	Eq,
+	PartialOrd,
+	Ord,
+	Clone,
+	Copy,
+	Encode,
+	Decode,
+	PassByInner,
+	MaxEncodedLen,
+	RuntimeDebug,
+	TypeInfo
+)]
 pub struct EthereumSigner([u8; 20]);
 
 impl From<[u8; 20]> for EthereumSigner {

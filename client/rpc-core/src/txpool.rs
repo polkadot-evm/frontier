@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -16,26 +16,22 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#![deny(unused_crate_dependencies)]
-#![allow(clippy::too_many_arguments)]
+//! tx pool rpc interface
 
-pub mod kv;
-#[cfg(feature = "sql")]
-pub mod sql;
+use ethereum_types::U256;
+use jsonrpsee::{core::RpcResult, proc_macros::rpc};
+// Frontier
+use crate::types::*;
 
-use sp_api::BlockT;
+/// TxPool rpc interface
+#[rpc(server)]
+pub trait TxPoolApi {
+	#[method(name = "txpool_content")]
+	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<TxPoolTransaction>>>;
 
-#[derive(Copy, Clone, Eq, PartialEq)]
-pub enum SyncStrategy {
-	Normal,
-	Parachain,
-}
+	#[method(name = "txpool_inspect")]
+	fn inspect(&self) -> RpcResult<TxPoolResult<TransactionMap<Summary>>>;
 
-pub type EthereumBlockNotificationSinks<T> =
-	parking_lot::Mutex<Vec<sc_utils::mpsc::TracingUnboundedSender<T>>>;
-
-#[derive(Copy, Clone, Debug, Eq, PartialEq)]
-pub struct EthereumBlockNotification<Block: BlockT> {
-	pub is_new_best: bool,
-	pub hash: Block::Hash,
+	#[method(name = "txpool_status")]
+	fn status(&self) -> RpcResult<TxPoolResult<U256>>;
 }
