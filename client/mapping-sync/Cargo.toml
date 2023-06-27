@@ -32,8 +32,8 @@ fp-rpc = { workspace = true, features = ["default"] }
 
 [features]
 default = ["rocksdb"]
-parity-db = ["fc-db/parity-db"]
 rocksdb = ["fc-db/rocksdb"]
+parity-db = ["fc-db/parity-db"]
 sql = [
 	"tokio",
 	"sp-core",
