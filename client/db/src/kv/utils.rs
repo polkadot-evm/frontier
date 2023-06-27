@@ -83,7 +83,7 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	_create: bool,
 	_source: &DatabaseSource,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
-	Err("Missing feature flags `kvdb-rocksdb`".to_string())
+	Err("Missing feature flags `rocksdb`".to_string())
 }
 
 fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
