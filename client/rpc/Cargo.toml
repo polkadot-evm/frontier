@@ -15,7 +15,7 @@ ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 evm = { workspace = true }
 futures = { workspace = true }
-hex = "0.4.3"
+hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 libsecp256k1 = { workspace = true }
 log = "0.4.17"

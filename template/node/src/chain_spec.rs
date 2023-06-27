@@ -13,7 +13,7 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
 use frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
+	AccountId, Balance, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
@@ -76,6 +76,8 @@ fn properties() -> Properties {
 	properties.insert("ss58Format".into(), SS58Prefix::get().into());
 	properties
 }
+
+const UNITS: Balance = 1_000_000_000_000_000_000;
 
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
@@ -161,6 +163,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		None,
 		// Protocol ID
 		None,
+		// Fork ID
 		None,
 		// Properties
 		None,
@@ -195,11 +198,10 @@ fn testnet_genesis(
 
 		// Monetary
 		balances: BalancesConfig {
-			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, 1_000_000 * UNITS))
 				.collect(),
 		},
 		transaction_payment: Default::default(),

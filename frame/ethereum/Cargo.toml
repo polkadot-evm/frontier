@@ -31,7 +31,7 @@ fp-storage = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
-hex = "0.4.3"
+hex = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 rlp = { workspace = true }
 # Substrate
