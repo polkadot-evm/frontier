@@ -34,6 +34,7 @@ fp-account = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
+hex = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
@@ -45,7 +46,6 @@ std = [
 	"environmental?/std",
 	"evm/std",
 	"evm/with-serde",
-	"hex?/std",
 	"log/std",
 	"rlp/std",
 	"scale-codec/std",
