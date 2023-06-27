@@ -17,7 +17,6 @@
 
 //! Test mock for unit tests and benchmarking
 
-use fp_evm::{IsPrecompileResult, Precompile};
 use frame_support::{
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
@@ -32,8 +31,8 @@ use sp_runtime::{
 use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping, PrecompileHandle,
-	PrecompileResult, PrecompileSet,
+	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
+	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
@@ -130,8 +129,12 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
 	}
 }
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
 parameter_types! {
-	pub BlockGasLimit: U256 = U256::max_value();
+	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
@@ -156,6 +159,7 @@ impl crate::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 }

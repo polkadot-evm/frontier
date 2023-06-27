@@ -22,6 +22,7 @@ use scale_info::TypeInfo;
 // Substrate
 use sp_core::{ecdsa, RuntimeDebug, H160, H256};
 use sp_io::hashing::keccak_256;
+use sp_runtime_interface::pass_by::PassByInner;
 
 /// A fully Ethereum-compatible `AccountId`.
 /// Conforms to H160 address and ECDSA key standards.
@@ -145,6 +146,8 @@ impl EthereumSignature {
 	}
 }
 
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo, PassByInner)]
 pub struct EthereumSigner([u8; 20]);
 
 impl From<[u8; 20]> for EthereumSigner {

@@ -65,8 +65,11 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
+use impl_trait_for_tuples::impl_for_tuples;
+use scale_info::TypeInfo;
+// Substrate
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchResultWithPostInfo, MaxEncodedLen, Pays, PostDispatchInfo},
 	traits::{
 		tokens::{
 			currency::Currency,
@@ -79,24 +82,23 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
-use impl_trait_for_tuples::impl_for_tuples;
-use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
-
+// Frontier
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
+	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
+	InvalidEvmTransactionError, IsPrecompileResult, LinearCostPrecompile, Log, Precompile,
+	PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+	Vicinity,
 };
 
 pub use self::{
@@ -161,6 +163,9 @@ pub mod pallet {
 
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
+
+		/// Gas limit Pov size ratio.
+		type GasLimitPovSizeRatio: Get<u64>;
 
 		/// Get the timestamp for the current block.
 		type Timestamp: Time;
@@ -231,6 +236,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -255,10 +262,18 @@ pub mod pallet {
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -296,6 +311,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -332,10 +349,18 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -374,6 +399,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -410,10 +437,18 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -533,7 +568,17 @@ pub type BalanceOf<T> =
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(
+	Debug,
+	Clone,
+	Copy,
+	Eq,
+	PartialEq,
+	Encode,
+	Decode,
+	TypeInfo,
+	MaxEncodedLen
+)]
 pub struct CodeMetadata {
 	pub size: u64,
 	pub hash: H256,
@@ -710,6 +755,13 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 					.base_extrinsic,
 			);
 		}
+		// Apply a gas to proof size ratio based on BlockGasLimit
+		let ratio = T::GasLimitPovSizeRatio::get();
+		if ratio > 0 {
+			let proof_size = gas.saturating_div(ratio);
+			*weight.proof_size_mut() = proof_size;
+		}
+
 		weight
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {

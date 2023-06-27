@@ -24,6 +24,7 @@ prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
+serde = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 
 # Substrate

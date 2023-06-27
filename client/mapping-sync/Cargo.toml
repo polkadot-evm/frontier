@@ -15,20 +15,30 @@ futures = { workspace = true }
 futures-timer = "3.0.2"
 log = { workspace = true }
 parking_lot = { workspace = true }
-tokio = { workspace = true, features = ["macros", "sync"] }
+tokio = { workspace = true, features = ["macros", "sync"], optional = true }
 # Substrate
 sc-client-api = { workspace = true }
 sc-utils = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true, features = ["default"] }
-sp-core = { workspace = true }
+sp-core = { workspace = true, optional = true }
 sp-runtime = { workspace = true }
 # Frontier
-fc-db = { workspace = true }
+fc-db = { workspace = true, default-features = false }
 fc-storage = { workspace = true }
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
+
+[features]
+default = ["rocksdb"]
+parity-db = ["fc-db/parity-db"]
+rocksdb = ["fc-db/rocksdb"]
+sql = [
+	"tokio",
+	"sp-core",
+	"fc-db/sql",
+]
 
 [dev-dependencies]
 ethereum = { workspace = true }
