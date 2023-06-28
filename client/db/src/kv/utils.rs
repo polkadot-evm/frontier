@@ -47,7 +47,7 @@ pub fn open_database<Block: BlockT, C: HeaderBackend<Block>>(
 		DatabaseSource::ParityDb { path } => {
 			open_parity_db::<Block, C>(client, path, &config.source)?
 		}
-		_ => return Err("Supported db sources: `rocksdb` | `paritydb` | `auto`".to_string()),
+		_ => return Err("Supported db sources: `auto` | `rocksdb` | `paritydb`".to_string()),
 	};
 	Ok(db)
 }

@@ -146,7 +146,7 @@ impl EthereumSignature {
 	}
 }
 
-#[derive(PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo, PassByInner)]
 pub struct EthereumSigner([u8; 20]);
 

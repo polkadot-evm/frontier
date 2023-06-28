@@ -665,7 +665,7 @@ impl<'config> SubstrateStackSubstate<'config> {
 
 #[derive(Default, Clone, Eq, PartialEq)]
 pub struct Recorded {
-	account_codes: sp_std::vec::Vec<H160>,
+	account_codes: Vec<H160>,
 	account_storages: BTreeMap<(H160, H256), bool>,
 }
 
@@ -725,10 +725,6 @@ where
 		self.vicinity.origin
 	}
 
-	fn block_randomness(&self) -> Option<H256> {
-		None
-	}
-
 	fn block_hash(&self, number: U256) -> H256 {
 		if number > U256::from(u32::MAX) {
 			H256::default()
@@ -755,8 +751,17 @@ where
 		U256::zero()
 	}
 
+	fn block_randomness(&self) -> Option<H256> {
+		None
+	}
+
 	fn block_gas_limit(&self) -> U256 {
 		T::BlockGasLimit::get()
+	}
+
+	fn block_base_fee_per_gas(&self) -> U256 {
+		let (base_fee, _) = T::FeeCalculator::min_gas_price();
+		base_fee
 	}
 
 	fn chain_id(&self) -> U256 {
@@ -791,11 +796,6 @@ where
 				.cloned()
 				.unwrap_or_else(|| self.storage(address, index)),
 		)
-	}
-
-	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
-		let (base_fee, _) = T::FeeCalculator::min_gas_price();
-		base_fee
 	}
 }
 

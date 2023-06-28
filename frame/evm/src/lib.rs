@@ -65,6 +65,9 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
+pub use evm::{
+	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+};
 use impl_trait_for_tuples::impl_for_tuples;
 use scale_info::TypeInfo;
 // Substrate
@@ -89,9 +92,6 @@ use sp_runtime::{
 };
 use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
-pub use evm::{
-	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
-};
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{

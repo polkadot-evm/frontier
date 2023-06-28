@@ -38,7 +38,7 @@ fp-rpc = { workspace = true, features = ["default"], optional = true }
 fp-storage = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
-futures = { version = "0.3.25" }
+futures = { workspace = true }
 maplit = "1.0.2"
 tempfile = "3.3.0"
 # Substrate
