@@ -40,6 +40,12 @@ pub struct TransactionStatus {
 	pub logs_bloom: Bloom,
 }
 
+#[derive(Eq, PartialEq, Clone, Encode, Decode, sp_runtime::RuntimeDebug)]
+pub struct TxPoolResponse {
+	pub ready: Vec<ethereum::TransactionV2>,
+	pub future: Vec<ethereum::TransactionV2>,
+}
+
 pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
 	fn is_enabled() -> bool;
 
@@ -79,7 +85,7 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
-	#[api_version(4)]
+	#[api_version(5)]
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
@@ -104,7 +110,7 @@ sp_api::decl_runtime_apis! {
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
 		#[changed_in(4)]
 		fn call(
 			from: H160,
@@ -116,7 +122,8 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
+		#[changed_in(5)]
 		fn call(
 			from: H160,
 			to: H160,
@@ -128,7 +135,19 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
-		) -> Result<fp_evm::CallInfo, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
+		fn call(
+			from: H160,
+			to: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+			access_list: Option<Vec<(H160, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
 		/// Returns a frame_ethereum::create response.
 		#[changed_in(2)]
 		fn create(
@@ -139,7 +158,7 @@ sp_api::decl_runtime_apis! {
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-		) -> Result<fp_evm::CreateInfo, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<H160>, sp_runtime::DispatchError>;
 		#[changed_in(4)]
 		fn create(
 			from: H160,
@@ -150,7 +169,8 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-		) -> Result<fp_evm::CreateInfo, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<H160>, sp_runtime::DispatchError>;
+		#[changed_in(5)]
 		fn create(
 			from: H160,
 			data: Vec<u8>,
@@ -161,7 +181,18 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
-		) -> Result<fp_evm::CreateInfo, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<H160>, sp_runtime::DispatchError>;
+		fn create(
+			from: H160,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+			access_list: Option<Vec<(H160, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<H160>, sp_runtime::DispatchError>;
 		/// Return the current block. Legacy.
 		#[changed_in(2)]
 		fn current_block() -> Option<ethereum::BlockV0>;
@@ -207,6 +238,10 @@ sp_api::decl_runtime_apis! {
 		/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
 		/// is supported.
 		fn gas_limit_multiplier_support();
+		/// Return the pending block.
+		fn pending_block(
+			xts: Vec<<Block as BlockT>::Extrinsic>,
+		) -> (Option<ethereum::BlockV2>, Option<Vec<TransactionStatus>>);
 	}
 
 	#[api_version(2)]

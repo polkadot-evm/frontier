@@ -37,18 +37,13 @@ pub fn db_config_dir(config: &Configuration) -> PathBuf {
 }
 
 /// Avalailable frontier backend types.
-#[derive(Debug, Copy, Clone, clap::ValueEnum)]
+#[derive(Debug, Copy, Clone, Default, clap::ValueEnum)]
 pub enum BackendType {
 	/// Either RocksDb or ParityDb as per inherited from the global backend settings.
+	#[default]
 	KeyValue,
 	/// Sql database with custom log indexing.
 	Sql,
-}
-
-impl Default for BackendType {
-	fn default() -> BackendType {
-		BackendType::KeyValue
-	}
 }
 
 /// The ethereum-compatibility configuration used to run a node.
@@ -123,8 +118,8 @@ pub fn new_frontier_partial(
 /// A set of APIs that ethereum-compatible runtimes must implement.
 pub trait EthCompatRuntimeApiCollection:
 	sp_api::ApiExt<Block>
-	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 	+ fp_rpc::ConvertTransactionRuntimeApi<Block>
+	+ fp_rpc::EthereumRuntimeRPCApi<Block>
 where
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
@@ -133,8 +128,8 @@ where
 impl<Api> EthCompatRuntimeApiCollection for Api
 where
 	Api: sp_api::ApiExt<Block>
-		+ fp_rpc::EthereumRuntimeRPCApi<Block>
-		+ fp_rpc::ConvertTransactionRuntimeApi<Block>,
+		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
+		+ fp_rpc::EthereumRuntimeRPCApi<Block>,
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }

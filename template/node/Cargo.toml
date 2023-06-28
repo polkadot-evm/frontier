@@ -14,11 +14,11 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = { workspace = true }
-clap = { version = "4.1", features = ["derive", "deprecated"] }
-futures = "0.3.25"
+clap = { workspace = true }
+futures = { workspace = true }
 hex-literal = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
-log = "0.4.17"
+log = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 serde = { workspace = true }
 
@@ -80,13 +80,29 @@ fp-account = { workspace = true }
 fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
-frontier-template-runtime = { workspace = true, features = ["default"] }
+frontier-template-runtime = { workspace = true, features = ["std"] }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
 
 [features]
-default = ["with-rocksdb-weights"]
+default = [
+	"with-rocksdb-weights",
+	"rocksdb",
+	"sql",
+]
+rocksdb = [
+	"sc-cli/rocksdb",
+	"sc-service/rocksdb",
+	"fc-cli/rocksdb",
+	"fc-db/rocksdb",
+	"fc-mapping-sync/rocksdb",
+	"fc-rpc/rocksdb",
+]
+sql = [
+	"fc-db/sql",
+	"fc-mapping-sync/sql",
+]
 with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
 with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]

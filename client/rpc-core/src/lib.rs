@@ -23,11 +23,13 @@ pub mod types;
 mod eth;
 mod eth_pubsub;
 mod net;
+mod txpool;
 mod web3;
 
 pub use self::{
 	eth::{EthApiServer, EthFilterApiServer},
 	eth_pubsub::EthPubSubApiServer,
 	net::NetApiServer,
+	txpool::TxPoolApiServer,
 	web3::Web3ApiServer,
 };

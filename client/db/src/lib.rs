@@ -23,10 +23,12 @@ pub use sc_client_db::DatabaseSource;
 use sp_runtime::traits::Block as BlockT;
 
 pub mod kv;
+#[cfg(feature = "sql")]
 pub mod sql;
 
 #[derive(Clone)]
 pub enum Backend<Block: BlockT> {
 	KeyValue(kv::Backend<Block>),
+	#[cfg(feature = "sql")]
 	Sql(sql::Backend<Block>),
 }

@@ -30,6 +30,7 @@ mod eth;
 mod eth_pubsub;
 mod net;
 mod signer;
+mod txpool;
 mod web3;
 
 pub use self::{
@@ -37,11 +38,14 @@ pub use self::{
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
+	txpool::TxPool,
 	web3::Web3,
 };
+
 pub use ethereum::TransactionV2 as EthereumTransaction;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, TxPoolApiServer,
+	Web3ApiServer,
 };
 pub use fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,

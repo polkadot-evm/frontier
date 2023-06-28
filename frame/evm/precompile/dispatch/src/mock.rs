@@ -96,15 +96,19 @@ parameter_types! {
 	pub const ExistentialDeposit: u64 = 0;
 }
 impl pallet_balances::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
 	type Balance = u64;
 	type DustRemoval = ();
-	type RuntimeEvent = RuntimeEvent;
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type WeightInfo = ();
+	type ReserveIdentifier = ();
+	type HoldIdentifier = ();
+	type FreezeIdentifier = ();
 	type MaxLocks = ();
 	type MaxReserves = ();
-	type ReserveIdentifier = ();
+	type MaxHolds = ();
+	type MaxFreezes = ();
 }
 
 parameter_types! {
@@ -159,6 +163,7 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type GasLimitPovSizeRatio = ();
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 }
@@ -184,6 +189,16 @@ impl PrecompileHandle for MockHandle {
 	fn record_cost(&mut self, _: u64) -> Result<(), ExitError> {
 		Ok(())
 	}
+
+	fn record_external_cost(
+		&mut self,
+		_ref_time: Option<u64>,
+		_proof_size: Option<u64>,
+	) -> Result<(), ExitError> {
+		Ok(())
+	}
+
+	fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
 
 	fn remaining_gas(&self) -> u64 {
 		unimplemented!()
