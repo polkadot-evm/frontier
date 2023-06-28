@@ -1258,6 +1258,30 @@
 <a href="#1258" id="1258">1258</a>
 <a href="#1259" id="1259">1259</a>
 <a href="#1260" id="1260">1260</a>
+<a href="#1261" id="1261">1261</a>
+<a href="#1262" id="1262">1262</a>
+<a href="#1263" id="1263">1263</a>
+<a href="#1264" id="1264">1264</a>
+<a href="#1265" id="1265">1265</a>
+<a href="#1266" id="1266">1266</a>
+<a href="#1267" id="1267">1267</a>
+<a href="#1268" id="1268">1268</a>
+<a href="#1269" id="1269">1269</a>
+<a href="#1270" id="1270">1270</a>
+<a href="#1271" id="1271">1271</a>
+<a href="#1272" id="1272">1272</a>
+<a href="#1273" id="1273">1273</a>
+<a href="#1274" id="1274">1274</a>
+<a href="#1275" id="1275">1275</a>
+<a href="#1276" id="1276">1276</a>
+<a href="#1277" id="1277">1277</a>
+<a href="#1278" id="1278">1278</a>
+<a href="#1279" id="1279">1279</a>
+<a href="#1280" id="1280">1280</a>
+<a href="#1281" id="1281">1281</a>
+<a href="#1282" id="1282">1282</a>
+<a href="#1283" id="1283">1283</a>
+<a href="#1284" id="1284">1284</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1277,24 +1301,20 @@
 
 </span><span class="doccomment">//! EVM stack-based runner.
 
-</span><span class="kw">use crate</span>::{
-	runner::Runner <span class="kw">as </span>RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError, Weight,
-};
-<span class="kw">use </span>evm::{
+</span><span class="kw">use </span>evm::{
 	backend::Backend <span class="kw">as </span>BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState <span class="kw">as </span>StackStateT, StackSubstateMetadata},
 	gasometer::{GasCost, StorageTarget},
 	ExitError, ExitReason, Opcode, Transfer,
 };
-<span class="kw">use </span>fp_evm::{
-	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
-	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+<span class="comment">// Substrate
+</span><span class="kw">use </span>frame_support::{
+	traits::{
+		tokens::{currency::Currency, ExistenceRequirement},
+		Get, Time,
+	},
+	weights::Weight,
 };
-
-<span class="kw">use </span>frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
 <span class="kw">use </span>sp_core::{H160, H256, U256};
 <span class="kw">use </span>sp_runtime::traits::UniqueSaturatedInto;
 <span class="kw">use </span>sp_std::{
@@ -1303,6 +1323,18 @@
 	marker::PhantomData,
 	mem,
 	vec::Vec,
+};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_evm::{
+	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
+	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+};
+
+<span class="kw">use crate</span>::{
+	runner::Runner <span class="kw">as </span>RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
+	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
+	OnCreate, Pallet, RunnerError,
 };
 
 <span class="attr">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
@@ -1917,7 +1949,7 @@
 
 <span class="attr">#[derive(Default, Clone, Eq, PartialEq)]
 </span><span class="kw">pub struct </span>Recorded {
-	account_codes: sp_std::vec::Vec&lt;H160&gt;,
+	account_codes: Vec&lt;H160&gt;,
 	account_storages: BTreeMap&lt;(H160, H256), bool&gt;,
 }
 
@@ -1977,10 +2009,6 @@
 		<span class="self">self</span>.vicinity.origin
 	}
 
-	<span class="kw">fn </span>block_randomness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
-		<span class="prelude-val">None
-	</span>}
-
 	<span class="kw">fn </span>block_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, number: U256) -&gt; H256 {
 		<span class="kw">if </span>number &gt; U256::from(u32::MAX) {
 			H256::default()
@@ -2007,8 +2035,17 @@
 		U256::zero()
 	}
 
+	<span class="kw">fn </span>block_randomness(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
+		<span class="prelude-val">None
+	</span>}
+
 	<span class="kw">fn </span>block_gas_limit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
 		T::BlockGasLimit::get()
+	}
+
+	<span class="kw">fn </span>block_base_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
+		<span class="kw">let </span>(base_fee, <span class="kw">_</span>) = T::FeeCalculator::min_gas_price();
+		base_fee
 	}
 
 	<span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; U256 {
@@ -2043,11 +2080,6 @@
 				.cloned()
 				.unwrap_or_else(|| <span class="self">self</span>.storage(address, index)),
 		)
-	}
-
-	<span class="kw">fn </span>block_base_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sp_core::U256 {
-		<span class="kw">let </span>(base_fee, <span class="kw">_</span>) = T::FeeCalculator::min_gas_price();
-		base_fee
 	}
 }
 
@@ -2455,9 +2487,25 @@
 #[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
-	<span class="kw">use </span><span class="kw">crate</span>::mock::Test;
+	<span class="kw">use </span><span class="kw">crate</span>::mock::{MockPrecompileSet, Test};
 	<span class="kw">use </span>evm::ExitSucceed;
-	<span class="kw">use </span>std::assert_matches::assert_matches;
+
+	<span class="macro">macro_rules! </span>assert_matches {
+		( <span class="macro-nonterminal">$left</span>:expr, $(|)<span class="question-mark">? </span>$( <span class="macro-nonterminal">$pattern</span>:pat_param )|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard</span>: expr )<span class="question-mark">? </span>$(,)<span class="question-mark">? </span>) =&gt; {
+			<span class="kw">match </span><span class="macro-nonterminal">$left </span>{
+				$( <span class="macro-nonterminal">$pattern </span>)|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard </span>)<span class="question-mark">? </span>=&gt; {}
+				<span class="kw-2">ref </span>left_val =&gt; <span class="macro">panic!</span>(<span class="string">&quot;assertion failed: `{:?}` does not match `{}`&quot;</span>,
+					left_val, <span class="macro">stringify!</span>($(<span class="macro-nonterminal">$pattern</span>)|+ $(<span class="kw">if </span><span class="macro-nonterminal">$guard</span>)<span class="question-mark">?</span>))
+			}
+		};
+		( <span class="macro-nonterminal">$left</span>:expr, $(|)<span class="question-mark">? </span>$( <span class="macro-nonterminal">$pattern</span>:pat_param )|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard</span>: expr )<span class="question-mark">?</span>, $(<span class="macro-nonterminal">$arg</span>:tt)+ ) =&gt; {
+			<span class="kw">match </span><span class="macro-nonterminal">$left </span>{
+				$( <span class="macro-nonterminal">$pattern </span>)|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard </span>)<span class="question-mark">? </span>=&gt; {}
+				<span class="kw-2">ref </span>left_val =&gt; <span class="macro">panic!</span>(<span class="string">&quot;assertion failed: `{:?}` does not match `{}`&quot;</span>,
+					left_val, <span class="macro">stringify!</span>($(<span class="macro-nonterminal">$pattern</span>)|+ $(<span class="kw">if </span><span class="macro-nonterminal">$guard</span>)<span class="question-mark">?</span>))
+			}
+		};
+	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_evm_reentrancy() {
@@ -2471,7 +2519,7 @@
 			<span class="prelude-val">None</span>,
 			<span class="prelude-val">None</span>,
 			<span class="kw-2">&amp;</span>config,
-			<span class="kw-2">&amp;</span>(),
+			<span class="kw-2">&amp;</span>MockPrecompileSet,
 			<span class="bool-val">false</span>,
 			|<span class="kw">_</span>| {
 				<span class="kw">let </span>res = Runner::&lt;Test&gt;::execute(
@@ -2481,7 +2529,7 @@
 					<span class="prelude-val">None</span>,
 					<span class="prelude-val">None</span>,
 					<span class="kw-2">&amp;</span>config,
-					<span class="kw-2">&amp;</span>(),
+					<span class="kw-2">&amp;</span>MockPrecompileSet,
 					<span class="bool-val">false</span>,
 					|<span class="kw">_</span>| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
@@ -2511,7 +2559,7 @@
 			<span class="prelude-val">None</span>,
 			<span class="prelude-val">None</span>,
 			<span class="kw-2">&amp;</span>config,
-			<span class="kw-2">&amp;</span>(),
+			<span class="kw-2">&amp;</span>MockPrecompileSet,
 			<span class="bool-val">false</span>,
 			|<span class="kw">_</span>| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);

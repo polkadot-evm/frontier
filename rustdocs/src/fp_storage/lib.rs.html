@@ -100,7 +100,7 @@
 <span class="kw">pub const </span>BASE_FEE_ELASTICITY: <span class="kw-2">&amp;</span>[u8] = <span class="string">b&quot;Elasticity&quot;</span>;
 
 <span class="doccomment">/// The schema version for Pallet Ethereum&#39;s storage
-</span><span class="attr">#[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+</span><span class="attr">#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode)]
 #[cfg_attr(feature = <span class="string">&quot;std&quot;</span>, derive(serde::Serialize, serde::Deserialize))]
 </span><span class="kw">pub enum </span>EthereumStorageSchema {
 	Undefined,

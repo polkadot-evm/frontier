@@ -66,26 +66,16 @@
 <a href="#66" id="66">66</a>
 <a href="#67" id="67">67</a>
 <a href="#68" id="68">68</a>
-<a href="#69" id="69">69</a>
-<a href="#70" id="70">70</a>
-<a href="#71" id="71">71</a>
-<a href="#72" id="72">72</a>
-<a href="#73" id="73">73</a>
 </pre><pre class="rust"><code><span class="kw">use </span><span class="kw">crate</span>::service::EthConfiguration;
 
 <span class="doccomment">/// Available Sealing methods.
-</span><span class="attr">#[derive(Debug, Copy, Clone, clap::ValueEnum)]
+</span><span class="attr">#[derive(Copy, Clone, Debug, Default, clap::ValueEnum)]
 </span><span class="kw">pub enum </span>Sealing {
-	<span class="comment">// Seal using rpc method.
+	<span class="doccomment">/// Seal using rpc method.
+	</span><span class="attr">#[default]
 	</span>Manual,
-	<span class="comment">// Seal when transaction is executed.
+	<span class="doccomment">/// Seal when transaction is executed.
 	</span>Instant,
-}
-
-<span class="kw">impl </span>Default <span class="kw">for </span>Sealing {
-	<span class="kw">fn </span>default() -&gt; Sealing {
-		Sealing::Manual
-	}
 }
 
 <span class="attr">#[derive(Debug, clap::Parser)]

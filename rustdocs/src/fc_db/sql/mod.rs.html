@@ -1845,13 +1845,6 @@
 <a href="#1845" id="1845">1845</a>
 <a href="#1846" id="1846">1846</a>
 <a href="#1847" id="1847">1847</a>
-<a href="#1848" id="1848">1848</a>
-<a href="#1849" id="1849">1849</a>
-<a href="#1850" id="1850">1850</a>
-<a href="#1851" id="1851">1851</a>
-<a href="#1852" id="1852">1852</a>
-<a href="#1853" id="1853">1853</a>
-<a href="#1854" id="1854">1854</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -2157,8 +2150,8 @@
 								}
 								<span class="prelude-val">None </span>=&gt; {
 									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-									<span class="string">&quot;Missing ethereum block for hash mismatch {expect_eth_block_hash:?}&quot;
-								</span>)))
+										<span class="string">&quot;Missing ethereum block for hash mismatch {expect_eth_block_hash:?}&quot;
+									</span>)))
 								}
 							}
 						}
@@ -2195,24 +2188,17 @@
 						is_canon,
 					})
 				}
-				<span class="prelude-val">Err</span>(FindLogError::NotFound) =&gt; {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-						<span class="string">&quot;[Metadata] No logs found for hash {:?}&quot;</span>,
-						hash
-					)))
-				}
-				<span class="prelude-val">Err</span>(FindLogError::MultipleLogs) =&gt; {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-						<span class="string">&quot;[Metadata] Multiple logs found for hash {:?}&quot;</span>,
-						hash
-					)))
-				}
+				<span class="prelude-val">Err</span>(FindLogError::NotFound) =&gt; <span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
+					<span class="string">&quot;[Metadata] No logs found for hash {hash:?}&quot;</span>,
+				))),
+				<span class="prelude-val">Err</span>(FindLogError::MultipleLogs) =&gt; <span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
+					<span class="string">&quot;[Metadata] Multiple logs found for hash {hash:?}&quot;</span>,
+				))),
 			}
 		} <span class="kw">else </span>{
-			<span class="kw">return </span><span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-				<span class="string">&quot;[Metadata] Failed retrieving header for hash {:?}&quot;</span>,
-				hash
-			)));
+			<span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
+				<span class="string">&quot;[Metadata] Failed retrieving header for hash {hash:?}&quot;
+			</span>)))
 		}
 	}
 
@@ -2907,7 +2893,7 @@ LIMIT 10001&quot;</span>,
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	<span class="comment">// Frontier
-	</span><span class="kw">use </span>fc_rpc::{OverrideHandle, SchemaV3Override, StorageOverride};
+	</span><span class="kw">use </span>fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
 	<span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	<span class="kw">type </span>OpaqueBlock =

@@ -450,7 +450,6 @@
 <a href="#450" id="450">450</a>
 <a href="#451" id="451">451</a>
 <a href="#452" id="452">452</a>
-<a href="#453" id="453">453</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -778,7 +777,6 @@
 			</span><span class="kw">let </span>reward_percentiles: Vec&lt;f64&gt; = {
 				<span class="kw">let </span><span class="kw-2">mut </span>percentile: f64 = <span class="number">0.0</span>;
 				(<span class="number">0</span>..<span class="number">201</span>)
-					.into_iter()
 					.map(|<span class="kw">_</span>| {
 						<span class="kw">let </span>val = percentile;
 						percentile += <span class="number">0.5</span>;
@@ -817,13 +815,13 @@
 							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) =&gt; used_gas(d.used_gas, <span class="kw-2">&amp;mut </span>previous_cumulative_gas),
 						},
 						effective_reward: <span class="kw">match </span>block.transactions.get(i) {
-							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>ethereum::TransactionV2::Legacy(<span class="kw-2">ref </span>t)) =&gt; {
+							<span class="prelude-val">Some</span>(ethereum::TransactionV2::Legacy(t)) =&gt; {
 								t.gas_price.saturating_sub(base_fee).as_u64()
 							}
-							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>ethereum::TransactionV2::EIP2930(<span class="kw-2">ref </span>t)) =&gt; {
+							<span class="prelude-val">Some</span>(ethereum::TransactionV2::EIP2930(t)) =&gt; {
 								t.gas_price.saturating_sub(base_fee).as_u64()
 							}
-							<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>ethereum::TransactionV2::EIP1559(<span class="kw-2">ref </span>t)) =&gt; t
+							<span class="prelude-val">Some</span>(ethereum::TransactionV2::EIP1559(t)) =&gt; t
 								.max_priority_fee_per_gas
 								.min(t.max_fee_per_gas.saturating_sub(base_fee))
 								.as_u64(),

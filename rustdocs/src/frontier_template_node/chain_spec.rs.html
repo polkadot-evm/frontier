@@ -267,6 +267,8 @@
 <a href="#267" id="267">267</a>
 <a href="#268" id="268">268</a>
 <a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
 </pre><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, str::FromStr};
 
 <span class="kw">use </span>hex_literal::hex;
@@ -282,7 +284,7 @@
 <span class="kw">use </span>sp_state_machine::BasicExternalities;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
+	AccountId, Balance, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 <span class="comment">// The URL for the telemetry server.
@@ -345,6 +347,8 @@
 	properties.insert(<span class="string">&quot;ss58Format&quot;</span>.into(), SS58Prefix::get().into());
 	properties
 }
+
+<span class="kw">const </span>UNITS: Balance = <span class="number">1_000_000_000_000_000_000</span>;
 
 <span class="kw">pub fn </span>development_config(enable_manual_seal: <span class="prelude-ty">Option</span>&lt;bool&gt;) -&gt; DevChainSpec {
 	<span class="kw">let </span>wasm_binary = WASM_BINARY.expect(<span class="string">&quot;WASM not available&quot;</span>);
@@ -430,7 +434,8 @@
 		</span><span class="prelude-val">None</span>,
 		<span class="comment">// Protocol ID
 		</span><span class="prelude-val">None</span>,
-		<span class="prelude-val">None</span>,
+		<span class="comment">// Fork ID
+		</span><span class="prelude-val">None</span>,
 		<span class="comment">// Properties
 		</span><span class="prelude-val">None</span>,
 		<span class="comment">// Extensions
@@ -464,11 +469,10 @@
 
 		<span class="comment">// Monetary
 		</span>balances: BalancesConfig {
-			<span class="comment">// Configure endowed accounts with initial balance of 1 &lt;&lt; 60.
-			</span>balances: endowed_accounts
+			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, <span class="number">1 </span>&lt;&lt; <span class="number">60</span>))
+				.map(|k| (k, <span class="number">1_000_000 </span>* UNITS))
 				.collect(),
 		},
 		transaction_payment: Default::default(),

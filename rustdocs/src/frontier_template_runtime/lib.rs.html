@@ -914,6 +914,16 @@
 <a href="#914" id="914">914</a>
 <a href="#915" id="915">915</a>
 <a href="#916" id="916">916</a>
+<a href="#917" id="917">917</a>
+<a href="#918" id="918">918</a>
+<a href="#919" id="919">919</a>
+<a href="#920" id="920">920</a>
+<a href="#921" id="921">921</a>
+<a href="#922" id="922">922</a>
+<a href="#923" id="923">923</a>
+<a href="#924" id="924">924</a>
+<a href="#925" id="925">925</a>
+<a href="#926" id="926">926</a>
 </pre><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
@@ -1179,17 +1189,19 @@
 }
 
 <span class="kw">impl </span>pallet_balances::Config <span class="kw">for </span>Runtime {
-	<span class="doccomment">/// The type for recording an account&#39;s balance.
-	</span><span class="kw">type </span>Balance = Balance;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>Balance = Balance;
 	<span class="kw">type </span>DustRemoval = ();
-	<span class="doccomment">/// The ubiquitous event type.
-	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
 	<span class="kw">type </span>AccountStore = System;
-	<span class="kw">type </span>WeightInfo = pallet_balances::weights::SubstrateWeight&lt;Runtime&gt;;
+	<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">8</span>];
+	<span class="kw">type </span>HoldIdentifier = ();
+	<span class="kw">type </span>FreezeIdentifier = ();
 	<span class="kw">type </span>MaxLocks = MaxLocks;
 	<span class="kw">type </span>MaxReserves = ();
-	<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">8</span>];
+	<span class="kw">type </span>MaxHolds = ();
+	<span class="kw">type </span>MaxFreezes = ();
 }
 
 <span class="macro">parameter_types! </span>{
@@ -1479,6 +1491,14 @@
 	<span class="kw">impl </span>sp_api::Metadata&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>metadata() -&gt; OpaqueMetadata {
 			OpaqueMetadata::new(Runtime::metadata().into())
+		}
+
+		<span class="kw">fn </span>metadata_at_version(version: u32) -&gt; <span class="prelude-ty">Option</span>&lt;OpaqueMetadata&gt; {
+			Runtime::metadata_at_version(version)
+		}
+
+		<span class="kw">fn </span>metadata_versions() -&gt; Vec&lt;u32&gt; {
+			Runtime::metadata_versions()
 		}
 	}
 

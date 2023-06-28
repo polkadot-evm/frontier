@@ -106,15 +106,6 @@
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
-<a href="#112" id="112">112</a>
-<a href="#113" id="113">113</a>
-<a href="#114" id="114">114</a>
-<a href="#115" id="115">115</a>
-<a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -146,12 +137,6 @@
 	config: <span class="kw-2">&amp;</span>DatabaseSettings,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
 	<span class="kw">let </span>db: Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt; = <span class="kw">match </span><span class="kw-2">&amp;</span>config.source {
-		<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-		</span>DatabaseSource::ParityDb { path } =&gt; open_parity_db::&lt;Block, C&gt;(client, path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?</span>,
-		<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
-		</span>DatabaseSource::RocksDb { path, .. } =&gt; {
-			open_kvdb_rocksdb::&lt;Block, C&gt;(client, path, <span class="bool-val">true</span>, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
-		</span>}
 		DatabaseSource::Auto {
 			paritydb_path,
 			rocksdb_path,
@@ -163,7 +148,14 @@
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; open_parity_db::&lt;Block, C&gt;(client, paritydb_path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?</span>,
 			}
 		}
-		<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.to_string()),
+		<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+		</span>DatabaseSource::RocksDb { path, .. } =&gt; {
+			open_kvdb_rocksdb::&lt;Block, C&gt;(client, path, <span class="bool-val">true</span>, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
+		</span>}
+		DatabaseSource::ParityDb { path } =&gt; {
+			open_parity_db::&lt;Block, C&gt;(client, path, <span class="kw-2">&amp;</span>config.source)<span class="question-mark">?
+		</span>}
+		<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Supported db sources: `auto` | `rocksdb` | `paritydb`&quot;</span>.to_string()),
 	};
 	<span class="prelude-val">Ok</span>(db)
 }
@@ -199,11 +191,10 @@
 	_create: bool,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
 ) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
-	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `kvdb-rocksdb`&quot;</span>.to_string())
+	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `rocksdb`&quot;</span>.to_string())
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
+<span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	path: <span class="kw-2">&amp;</span>Path,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
@@ -222,15 +213,6 @@
 	</span><span class="attr">#[cfg(not(test))]
 	</span><span class="kw">super</span>::upgrade::update_version(path).map_err(|<span class="kw">_</span>| <span class="string">&quot;Cannot update db version&quot;</span>.to_string())<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">super</span>::parity_db_adapter::DbAdapter(db)))
-}
-
-<span class="attr">#[cfg(not(feature = <span class="string">&quot;parity-db&quot;</span>))]
-</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
-	_client: Arc&lt;C&gt;,
-	_path: <span class="kw-2">&amp;</span>Path,
-	_source: <span class="kw-2">&amp;</span>DatabaseSource,
-) -&gt; <span class="prelude-ty">Result</span>&lt;Arc&lt;<span class="kw">dyn </span>Database&lt;DbHash&gt;&gt;, String&gt; {
-	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `parity-db`&quot;</span>.to_string())
 }
 </code></pre></div>
 </section></div></main><div id="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_db" data-themes="" data-resource-suffix="" data-rustdoc-version="1.67.0-nightly (a00f8ba7f 2022-11-15)" data-search-js="search-df80cc3cb87b6482.js" data-settings-js="settings-7873449fa8c00e11.js" data-settings-css="settings-af96d9e2fc13e081.css" ></div></body></html>

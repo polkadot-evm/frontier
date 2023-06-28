@@ -174,6 +174,7 @@
 <a href="#174" id="174">174</a>
 <a href="#175" id="175">175</a>
 <a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -206,12 +207,13 @@
 <span class="kw">use </span>sp_core::hashing::keccak_256;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
-</span><span class="kw">use crate</span>::{internal_err, public_key};
-<span class="kw">use </span>fc_rpc_core::{
+</span><span class="kw">use </span>fc_rpc_core::{
 	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	TxPoolApiServer,
 };
 <span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TxPoolResponse};
+
+<span class="kw">use crate</span>::{internal_err, public_key};
 
 <span class="kw">pub struct </span>TxPool&lt;A: ChainApi, B, C&gt; {
 	client: Arc&lt;C&gt;,

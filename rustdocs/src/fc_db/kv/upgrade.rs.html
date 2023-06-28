@@ -529,7 +529,6 @@
 <a href="#529" id="529">529</a>
 <a href="#530" id="530">530</a>
 <a href="#531" id="531">531</a>
-<a href="#532" id="532">532</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -633,8 +632,9 @@
 		<span class="number">0 </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(UpgradeError::UnsupportedVersion(db_version)),
 		<span class="number">1 </span>=&gt; {
 			<span class="kw">let </span>summary: UpgradeVersion1To2Summary = <span class="kw">match </span>source {
-				<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-				</span>DatabaseSource::ParityDb { .. } =&gt; migrate_1_to_2_parity_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?</span>,
+				DatabaseSource::ParityDb { .. } =&gt; {
+					migrate_1_to_2_parity_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?
+				</span>}
 				<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
 				</span>DatabaseSource::RocksDb { .. } =&gt; migrate_1_to_2_rocks_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?</span>,
 				<span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;DatabaseSource required for upgrade ParityDb | RocksDb&quot;</span>),
@@ -777,8 +777,7 @@
 	<span class="prelude-val">Ok</span>(res)
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
-</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
+<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
 ) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt; {
@@ -885,7 +884,7 @@
 		<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">crate</span>::kv::Backend::&lt;Block&gt;::new(client, setting)<span class="question-mark">?</span>))
 	}
 
-	<span class="attr">#[cfg_attr(not(any(feature = <span class="string">&quot;rocksdb&quot;</span>, feature = <span class="string">&quot;parity-db&quot;</span>)), ignore)]
+	<span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;rocksdb&quot;</span>), ignore)]
 	#[test]
 	</span><span class="kw">fn </span>upgrade_1_to_2_works() {
 		<span class="kw">let </span>settings: Vec&lt;DatabaseSettings&gt; = <span class="macro">vec!</span>[
@@ -901,7 +900,6 @@
 				},
 			},
 			<span class="comment">// Parity db
-			</span><span class="attr">#[cfg(feature = <span class="string">&quot;parity-db&quot;</span>)]
 			</span><span class="kw">crate</span>::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::ParityDb {
 					path: tempdir()

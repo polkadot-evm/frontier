@@ -265,6 +265,7 @@
 <a href="#265" id="265">265</a>
 <a href="#266" id="266">266</a>
 <a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
 </pre><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -286,6 +287,7 @@
 #![deny(unused_crate_dependencies)]
 
 </span><span class="kw">extern crate </span>alloc;
+
 <span class="kw">use </span>alloc::vec::Vec;
 <span class="kw">use </span>curve25519_dalek::{
 	ristretto::{CompressedRistretto, RistrettoPoint},
@@ -321,7 +323,7 @@
 		<span class="kw">while </span>!temp_buf.is_empty() {
 			<span class="kw">let </span><span class="kw-2">mut </span>buf = [<span class="number">0</span>; <span class="number">32</span>];
 			buf.copy_from_slice(<span class="kw-2">&amp;</span>temp_buf[<span class="number">0</span>..<span class="number">32</span>]);
-			<span class="kw">let </span>point = CompressedRistretto::from_slice(<span class="kw-2">&amp;</span>buf);
+			<span class="kw">let </span>point = CompressedRistretto(buf);
 			points.push(point);
 			temp_buf = <span class="kw-2">&amp;</span>temp_buf[<span class="number">32</span>..];
 		}
@@ -361,7 +363,7 @@
 		<span class="comment">// second 32 bytes is for the compressed ristretto point bytes
 		</span><span class="kw">let </span><span class="kw-2">mut </span>pt_buf = [<span class="number">0</span>; <span class="number">32</span>];
 		pt_buf.copy_from_slice(<span class="kw-2">&amp;</span>input[<span class="number">32</span>..<span class="number">64</span>]);
-		<span class="kw">let </span>point: RistrettoPoint = CompressedRistretto::from_slice(<span class="kw-2">&amp;</span>pt_buf)
+		<span class="kw">let </span>point = CompressedRistretto(pt_buf)
 			.decompress()
 			.unwrap_or_else(RistrettoPoint::identity);
 

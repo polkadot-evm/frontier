@@ -708,11 +708,6 @@
 <a href="#708" id="708">708</a>
 <a href="#709" id="709">709</a>
 <a href="#710" id="710">710</a>
-<a href="#711" id="711">711</a>
-<a href="#712" id="712">712</a>
-<a href="#713" id="713">713</a>
-<a href="#714" id="714">714</a>
-<a href="#715" id="715">715</a>
 </pre><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span>std::{cell::RefCell, path::Path, sync::Arc, time::Duration};
@@ -722,7 +717,7 @@
 </span><span class="kw">use </span>prometheus_endpoint::Registry;
 <span class="kw">use </span>sc_client_api::{BlockBackend, StateBackendFor};
 <span class="kw">use </span>sc_consensus::BasicQueue;
-<span class="kw">use </span>sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch};
+<span class="kw">use </span>sc_executor::NativeExecutionDispatch;
 <span class="kw">use </span>sc_network_common::sync::warp::WarpSyncParams;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
@@ -809,12 +804,7 @@
 		})
 		.transpose()<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>executor = NativeElseWasmExecutor::&lt;Executor&gt;::new(
-		config.wasm_method,
-		config.default_heap_pages,
-		config.max_runtime_instances,
-		config.runtime_cache_size,
-	);
+	<span class="kw">let </span>executor = sc_service::new_native_or_wasm_executor(config);
 
 	<span class="kw">let </span>(client, backend, keystore_container, task_manager) =
 		sc_service::new_full_parts::&lt;Block, RuntimeApi, <span class="kw">_</span>&gt;(
@@ -1153,7 +1143,7 @@
 		client: client.clone(),
 		backend: backend.clone(),
 		task_manager: <span class="kw-2">&amp;mut </span>task_manager,
-		keystore: keystore_container.sync_keystore(),
+		keystore: keystore_container.keystore(),
 		transaction_pool: transaction_pool.clone(),
 		rpc_builder,
 		network: network.clone(),
@@ -1230,7 +1220,7 @@
 				create_inherent_data_providers,
 				force_authoring,
 				backoff_authoring_blocks: <span class="prelude-ty">Option</span>::&lt;()&gt;::None,
-				keystore: keystore_container.sync_keystore(),
+				keystore: keystore_container.keystore(),
 				block_proposal_slot_portion: sc_consensus_aura::SlotProportion::new(<span class="number">2f32 </span>/ <span class="number">3f32</span>),
 				max_block_proposal_slot_portion: <span class="prelude-val">None</span>,
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
@@ -1248,7 +1238,7 @@
 		<span class="comment">// if the node isn&#39;t actively participating in consensus then it doesn&#39;t
 		// need a keystore, regardless of which protocol we use below.
 		</span><span class="kw">let </span>keystore = <span class="kw">if </span>role.is_authority() {
-			<span class="prelude-val">Some</span>(keystore_container.sync_keystore())
+			<span class="prelude-val">Some</span>(keystore_container.keystore())
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>};
