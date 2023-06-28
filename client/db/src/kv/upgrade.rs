@@ -355,7 +355,7 @@ mod tests {
 	#[cfg_attr(not(feature = "rocksdb"), ignore)]
 	#[test]
 	fn upgrade_1_to_2_works() {
-		let settings: Vec<DatabaseSettings> = vec![
+		let settings: Vec<crate::kv::DatabaseSettings> = vec![
 			// Rocks db
 			#[cfg(feature = "rocksdb")]
 			crate::kv::DatabaseSettings {
