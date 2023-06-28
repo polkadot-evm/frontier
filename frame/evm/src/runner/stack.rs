@@ -17,24 +17,20 @@
 
 //! EVM stack-based runner.
 
-use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError, Weight,
-};
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	gasometer::{GasCost, StorageTarget},
 	ExitError, ExitReason, Opcode, Transfer,
 };
-use fp_evm::{
-	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
-	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+// Substrate
+use frame_support::{
+	traits::{
+		tokens::{currency::Currency, ExistenceRequirement},
+		Get, Time,
+	},
+	weights::Weight,
 };
-
-use frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
@@ -43,6 +39,18 @@ use sp_std::{
 	marker::PhantomData,
 	mem,
 	vec::Vec,
+};
+// Frontier
+use fp_evm::{
+	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
+	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+};
+
+use crate::{
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
+	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
+	OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -657,7 +665,7 @@ impl<'config> SubstrateStackSubstate<'config> {
 
 #[derive(Default, Clone, Eq, PartialEq)]
 pub struct Recorded {
-	account_codes: sp_std::vec::Vec<H160>,
+	account_codes: Vec<H160>,
 	account_storages: BTreeMap<(H160, H256), bool>,
 }
 
@@ -717,10 +725,6 @@ where
 		self.vicinity.origin
 	}
 
-	fn block_randomness(&self) -> Option<H256> {
-		None
-	}
-
 	fn block_hash(&self, number: U256) -> H256 {
 		if number > U256::from(u32::MAX) {
 			H256::default()
@@ -747,8 +751,17 @@ where
 		U256::zero()
 	}
 
+	fn block_randomness(&self) -> Option<H256> {
+		None
+	}
+
 	fn block_gas_limit(&self) -> U256 {
 		T::BlockGasLimit::get()
+	}
+
+	fn block_base_fee_per_gas(&self) -> U256 {
+		let (base_fee, _) = T::FeeCalculator::min_gas_price();
+		base_fee
 	}
 
 	fn chain_id(&self) -> U256 {
@@ -783,11 +796,6 @@ where
 				.cloned()
 				.unwrap_or_else(|| self.storage(address, index)),
 		)
-	}
-
-	fn block_base_fee_per_gas(&self) -> sp_core::U256 {
-		let (base_fee, _) = T::FeeCalculator::min_gas_price();
-		base_fee
 	}
 }
 
@@ -1195,9 +1203,25 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::mock::Test;
+	use crate::mock::{MockPrecompileSet, Test};
 	use evm::ExitSucceed;
-	use std::assert_matches::assert_matches;
+
+	macro_rules! assert_matches {
+		( $left:expr, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )? $(,)? ) => {
+			match $left {
+				$( $pattern )|+ $( if $guard )? => {}
+				ref left_val => panic!("assertion failed: `{:?}` does not match `{}`",
+					left_val, stringify!($($pattern)|+ $(if $guard)?))
+			}
+		};
+		( $left:expr, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $($arg:tt)+ ) => {
+			match $left {
+				$( $pattern )|+ $( if $guard )? => {}
+				ref left_val => panic!("assertion failed: `{:?}` does not match `{}`",
+					left_val, stringify!($($pattern)|+ $(if $guard)?))
+			}
+		};
+	}
 
 	#[test]
 	fn test_evm_reentrancy() {
@@ -1211,7 +1235,7 @@ mod tests {
 			None,
 			None,
 			&config,
-			&(),
+			&MockPrecompileSet,
 			false,
 			|_| {
 				let res = Runner::<Test>::execute(
@@ -1221,7 +1245,7 @@ mod tests {
 					None,
 					None,
 					&config,
-					&(),
+					&MockPrecompileSet,
 					false,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
@@ -1251,7 +1275,7 @@ mod tests {
 			None,
 			None,
 			&config,
-			&(),
+			&MockPrecompileSet,
 			false,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);
