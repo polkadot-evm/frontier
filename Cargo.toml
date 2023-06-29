@@ -39,30 +39,38 @@ edition = "2021"
 repository = "https://github.com/paritytech/frontier/"
 
 [workspace.dependencies]
+async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
+clap = { version = "4.3", features = ["derive", "deprecated"] }
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
-evm = { version = "0.39.0", default-features = false }
-hex-literal = { version = "0.3.4" }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "b7b82c7e1fc57b7449d6dfa6826600de37cc1e65", default-features = false }
+futures = "0.3.28"
+hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+hex-literal = "0.4.1"
 impl-serde = { version = "0.4.0", default-features = false }
 jsonrpsee = "0.16.2"
-kvdb-rocksdb = "0.17.0"
+kvdb-rocksdb = "0.18.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.17", default-features = false }
-parity-db = "0.4.6"
+parity-db = "0.4.8"
+parking_lot = "0.12.1"
 rlp = { version = "0.5", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+sqlx = { version = "0.7.0-alpha.3", default-features = false, features = ["macros"] }
+thiserror = "1.0"
+tokio = "1.28.2"
 # Substrate Client
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-consensus-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -74,7 +82,7 @@ sc-network-common = { version = "0.10.0-dev", git = "https://github.com/parityte
 sc-network-sync = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
@@ -93,6 +101,7 @@ sp-io = { version = "7.0.0", git = "https://github.com/paritytech/substrate", br
 sp-keyring = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-runtime = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-runtime-interface = { version = "7.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-state-machine = { version = "0.13.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-std = { version = "5.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -125,11 +134,11 @@ substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "master" }
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 # Frontier Client
-fc-cli = { version = "1.0.0-dev", path = "client/cli" }
+fc-cli = { version = "1.0.0-dev", path = "client/cli", default-features = false }
 fc-consensus = { version = "2.0.0-dev", path = "client/consensus" }
-fc-db = { version = "2.0.0-dev", path = "client/db" }
-fc-mapping-sync = { version = "2.0.0-dev", path = "client/mapping-sync" }
-fc-rpc = { version = "2.0.0-dev", path = "client/rpc" }
+fc-db = { version = "2.0.0-dev", path = "client/db", default-features = false }
+fc-mapping-sync = { version = "2.0.0-dev", path = "client/mapping-sync", default-features = false }
+fc-rpc = { version = "2.0.0-dev", path = "client/rpc", default-features = false }
 fc-rpc-core = { version = "1.1.0-dev", path = "client/rpc-core" }
 fc-storage = { version = "1.0.0-dev", path = "client/storage" }
 # Frontier Primitive

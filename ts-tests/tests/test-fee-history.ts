@@ -74,7 +74,7 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 		// baseFeePerGas is always the requested block range + 1 (the next derived base fee).
 		expect(result.baseFeePerGas.length).to.be.eq(blockCount + 1);
 		// gasUsedRatio for the requested block range.
-		expect(result.gasUsedRatio).to.be.deep.eq(Array(blockCount).fill(0.03575712));
+		expect(result.gasUsedRatio).to.be.deep.eq(Array(blockCount).fill(0.03576792));
 		// two-dimensional reward list for the requested block range.
 		expect(result.reward.length).to.be.eq(blockCount);
 		// each block has a reward list which's size is the requested percentile list.

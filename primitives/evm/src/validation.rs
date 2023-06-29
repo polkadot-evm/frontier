@@ -17,7 +17,7 @@
 #![allow(clippy::comparison_chain)]
 
 pub use evm::backend::Basic as Account;
-use frame_support::sp_runtime::traits::UniqueSaturatedInto;
+use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
 use sp_core::{H160, H256, U256};
 use sp_std::vec::Vec;
 
@@ -48,6 +48,8 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<InvalidEvmTransactionError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
+	pub weight_limit: Option<Weight>,
+	pub proof_size_base_cost: Option<u64>,
 	_marker: sp_std::marker::PhantomData<E>,
 }
 
@@ -68,10 +70,14 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 	pub fn new(
 		config: CheckEvmTransactionConfig<'config>,
 		transaction: CheckEvmTransactionInput,
+		weight_limit: Option<Weight>,
+		proof_size_base_cost: Option<u64>,
 	) -> Self {
 		CheckEvmTransaction {
 			config,
 			transaction,
+			weight_limit,
+			proof_size_base_cost,
 			_marker: Default::default(),
 		}
 	}
@@ -178,6 +184,17 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 
 	pub fn validate_common(&self) -> Result<&Self, E> {
 		if self.config.is_transactional {
+			// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
+			// Validate the weight limit can afford recording the proof size cost.
+			if let (Some(weight_limit), Some(proof_size_base_cost)) =
+				(self.weight_limit, self.proof_size_base_cost)
+			{
+				let _ = weight_limit
+					.proof_size()
+					.checked_sub(proof_size_base_cost)
+					.ok_or(InvalidEvmTransactionError::GasLimitTooLow)?;
+			}
+
 			// We must ensure a transaction can pay the cost of its data bytes.
 			// If it can't it should not be included in a block.
 			let mut gasometer = evm::gasometer::Gasometer::new(
@@ -227,7 +244,7 @@ mod tests {
 		InvalidChainId,
 	}
 
-	static LONDON_CONFIG: evm::Config = evm::Config::london();
+	static SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
 
 	impl From<InvalidEvmTransactionError> for TestError {
 		fn from(e: InvalidEvmTransactionError) -> Self {
@@ -257,6 +274,8 @@ mod tests {
 		pub max_fee_per_gas: Option<U256>,
 		pub max_priority_fee_per_gas: Option<U256>,
 		pub value: U256,
+		pub weight_limit: Option<Weight>,
+		pub proof_size_base_cost: Option<u64>,
 	}
 
 	impl Default for TestCase {
@@ -273,6 +292,8 @@ mod tests {
 				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				value: U256::from(1u8),
+				weight_limit: None,
+				proof_size_base_cost: None,
 			}
 		}
 	}
@@ -290,10 +311,12 @@ mod tests {
 			max_fee_per_gas,
 			max_priority_fee_per_gas,
 			value,
+			weight_limit,
+			proof_size_base_cost,
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &LONDON_CONFIG,
+				evm_config: &SHANGHAI_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
@@ -311,6 +334,8 @@ mod tests {
 				value,
 				access_list: vec![],
 			},
+			weight_limit,
+			proof_size_base_cost,
 		)
 	}
 
@@ -332,6 +357,16 @@ mod tests {
 			gas_limit: U256::from(1u8),
 			..Default::default()
 		})
+	}
+
+	fn transaction_gas_limit_low_proof_size<'config>(
+		is_transactional: bool,
+	) -> CheckEvmTransaction<'config, TestError> {
+		let mut input = TestCase::default();
+		input.weight_limit = Some(Weight::from_parts(1, 1));
+		input.proof_size_base_cost = Some(2);
+		input.is_transactional = is_transactional;
+		test_env(input)
 	}
 
 	fn transaction_gas_limit_high<'config>() -> CheckEvmTransaction<'config, TestError> {
@@ -507,6 +542,42 @@ mod tests {
 		};
 		let is_transactional = false;
 		let test = transaction_gas_limit_low(is_transactional);
+		// Pool
+		let res = test.validate_in_pool_for(&who);
+		assert!(res.is_ok());
+		// Block
+		let res = test.validate_in_block_for(&who);
+		assert!(res.is_ok());
+	}
+
+	#[test]
+	// Gas limit too low for proof size recording transactional fails in pool and in block.
+	fn validate_in_pool_and_block_transactional_fails_gas_limit_too_low_proof_size() {
+		let who = Account {
+			balance: U256::from(1_000_000u128),
+			nonce: U256::zero(),
+		};
+		let is_transactional = true;
+		let test = transaction_gas_limit_low_proof_size(is_transactional);
+		// Pool
+		let res = test.validate_in_pool_for(&who);
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		// Block
+		let res = test.validate_in_block_for(&who);
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+	}
+
+	#[test]
+	// Gas limit too low non-transactional succeeds in pool and in block.
+	fn validate_in_pool_and_block_non_transactional_succeeds_gas_limit_too_low_proof_size() {
+		let who = Account {
+			balance: U256::from(1_000_000u128),
+			nonce: U256::zero(),
+		};
+		let is_transactional = false;
+		let test = transaction_gas_limit_low_proof_size(is_transactional);
 		// Pool
 		let res = test.validate_in_pool_for(&who);
 		assert!(res.is_ok());

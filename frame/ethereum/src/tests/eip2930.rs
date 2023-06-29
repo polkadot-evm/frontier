@@ -258,7 +258,7 @@ fn transaction_should_generate_correct_gas_used() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
-	let expected_gas = U256::from(893928);
+	let expected_gas = U256::from(894198);
 
 	ext.execute_with(|| {
 		let t = eip2930_erc20_creation_transaction(alice);
@@ -266,7 +266,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
-				assert_eq!(info.used_gas, expected_gas);
+				assert_eq!(info.used_gas.standard, expected_gas);
 			}
 			CallOrCreateInfo::Call(_) => panic!("expected create info"),
 		}
@@ -349,7 +349,7 @@ fn event_extra_data_should_be_handle_properly() {
 			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key, None);
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t));
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t,));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let foo = hex::decode("c2985578").unwrap();
@@ -366,7 +366,7 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key, None);
 
 		// calling foo
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2));
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2,));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
@@ -389,7 +389,7 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key, None);
 
 		// calling bar revert
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3));
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3,));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
@@ -475,5 +475,39 @@ fn validated_transaction_apply_zero_gas_price_works() {
 		assert_eq!(Balances::free_balance(&substrate_alice), 900);
 		// Bob received 100 from Alice.
 		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
+	});
+}
+
+#[test]
+fn proof_size_weight_limit_validation_works() {
+	use pallet_evm::GasWeightMapping;
+
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let mut tx = EIP2930UnsignedTransaction {
+			nonce: U256::from(2),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(alice.address),
+			value: U256::from(1),
+			input: Vec::new(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		tx.gas_limit = U256::from(gas_limit);
+
+		let weight_limit =
+			<Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		// Gas limit cannot afford the extra byte and thus is expected to exhaust.
+		tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
+		let tx = tx.sign(&alice.private_key, None);
+
+		// Execute
+		assert!(
+			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
+		);
 	});
 }

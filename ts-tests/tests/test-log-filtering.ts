@@ -83,4 +83,14 @@ describeWithFrontier("Frontier RPC (Log filtering)", (context) => {
 			expect(request.result.length).to.be.eq(0);
 		}
 	});
+
+	step("EthApi::getLogs - should return `unknown block`.", async function () {
+		let request = await customRequest(context.web3, "eth_getLogs", [
+			{
+				blockHash: "0x1234000000000000000000000000000000000000000000000000000000000000",
+			},
+		]);
+		expect(request.error.message).to.be.equal("unknown block");
+		expect(request.error.code).to.be.equal(-32000);
+	});
 });

@@ -34,7 +34,7 @@ use sp_runtime::{traits::Block as BlockT, DispatchError, SaturatedConversion};
 use sp_state_machine::OverlayedChanges;
 // Frontier
 use fc_rpc_core::types::*;
-use fp_evm::CallInfo;
+use fp_evm::{ExecutionInfo, ExecutionInfoV2};
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
 use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
@@ -73,7 +73,7 @@ where
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn call(
+	pub async fn call(
 		&self,
 		request: CallRequest,
 		number: Option<BlockNumber>,
@@ -106,7 +106,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => {
 				let hash = self
 					.client
@@ -208,7 +210,7 @@ where
 
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 					Ok(Bytes(info.value))
-				} else if api_version == 4 {
+				} else if api_version == 4 || api_version == 5 {
 					// Post-london + access list support
 					let encoded_params = Encode::encode(&(
 						&from.unwrap_or_default(),
@@ -245,23 +247,47 @@ where
 						recorder: &None,
 					};
 
-					let info = self
-						.client
-						.call_api_at(params)
-						.and_then(|r| {
-							Result::map_err(
-								<Result<CallInfo, DispatchError> as Decode>::decode(&mut &r[..]),
-								|error| sp_api::ApiError::FailedToDecodeReturnValue {
-									function: "EthereumRuntimeRPCApi_call",
-									error,
-								},
-							)
-						})
-						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-						.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+					let value = if api_version == 4 {
+						let info = self
+							.client
+							.call_api_at(params)
+							.and_then(|r| {
+								Result::map_err(
+									<Result<ExecutionInfo::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_call",
+										error,
+									},
+								)
+							})
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-					error_on_execution_failure(&info.exit_reason, &info.value)?;
-					Ok(Bytes(info.value))
+						error_on_execution_failure(&info.exit_reason, &info.value)?;
+						info.value
+					} else if api_version == 5 {
+						let info = self
+							.client
+							.call_api_at(params)
+							.and_then(|r| {
+								Result::map_err(
+									<Result<ExecutionInfoV2::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_call",
+										error,
+									},
+								)
+							})
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+						error_on_execution_failure(&info.exit_reason, &info.value)?;
+						info.value
+					} else {
+						unreachable!("invalid version");
+					};
+
+					Ok(Bytes(value))
 				} else {
 					Err(internal_err("failed to retrieve Runtime Api version"))
 				}
@@ -315,6 +341,36 @@ where
 				} else if api_version == 4 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
+					#[allow(deprecated)]
+					let info = api.create_before_version_5(
+						substrate_hash,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+						Some(
+							access_list
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect(),
+						),
+					)
+					.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+					.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+					error_on_execution_failure(&info.exit_reason, &[])?;
+
+					let code = api
+						.account_code_at(substrate_hash, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?;
+					Ok(Bytes(code))
+				} else if api_version == 5 {
+					// Post-london + access list support
+					let access_list = access_list.unwrap_or_default();
 					let info = api
 						.create(
 							substrate_hash,
@@ -365,7 +421,9 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => {
 				let hash = client
 					.expect_block_hash_from_id(&id)
@@ -511,10 +569,10 @@ where
 
 				let (exit_reason, data, used_gas) = match to {
 					Some(to) => {
-						let info = if api_version == 1 {
+						if api_version == 1 {
 							// Legacy pre-london
 							#[allow(deprecated)]
-							api.call_before_version_2(
+							let info = api.call_before_version_2(
 								substrate_hash,
 								from.unwrap_or_default(),
 								to,
@@ -526,11 +584,13 @@ where
 								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+							(info.exit_reason, info.value, info.used_gas)
 						} else if api_version < 4 {
 							// Post-london
 							#[allow(deprecated)]
-							api.call_before_version_4(
+							let info = api.call_before_version_4(
 								substrate_hash,
 								from.unwrap_or_default(),
 								to,
@@ -543,11 +603,14 @@ where
 								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
-						} else {
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+							(info.exit_reason, info.value, info.used_gas)
+						} else if api_version == 4 {
 							// Post-london + access list support
 							let access_list = access_list.unwrap_or_default();
-							api.call(
+							#[allow(deprecated)]
+							let info = api.call_before_version_5(
 								substrate_hash,
 								from.unwrap_or_default(),
 								to,
@@ -566,16 +629,41 @@ where
 								),
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
-						};
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-						(info.exit_reason, info.value, info.used_gas)
+							(info.exit_reason, info.value, info.used_gas)
+						} else {
+							// Post-london + access list support
+							let access_list = access_list.unwrap_or_default();
+							let info = api.call(
+								substrate_hash,
+								from.unwrap_or_default(),
+								to,
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								estimate_mode,
+								Some(
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.storage_keys))
+										.collect(),
+								),
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+							(info.exit_reason, info.value, info.used_gas.effective)
+						}
 					}
 					None => {
-						let info = if api_version == 1 {
+						if api_version == 1 {
 							// Legacy pre-london
 							#[allow(deprecated)]
-							api.create_before_version_2(
+							let info = api.create_before_version_2(
 								substrate_hash,
 								from.unwrap_or_default(),
 								data,
@@ -586,11 +674,13 @@ where
 								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+							(info.exit_reason, Vec::new(), info.used_gas)
 						} else if api_version < 4 {
 							// Post-london
 							#[allow(deprecated)]
-							api.create_before_version_4(
+							let info = api.create_before_version_4(
 								substrate_hash,
 								from.unwrap_or_default(),
 								data,
@@ -602,11 +692,14 @@ where
 								estimate_mode,
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
-						} else {
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+							(info.exit_reason, Vec::new(), info.used_gas)
+						} else if api_version == 4 {
 							// Post-london + access list support
 							let access_list = access_list.unwrap_or_default();
-							api.create(
+							#[allow(deprecated)]
+							let info = api.create_before_version_5(
 								substrate_hash,
 								from.unwrap_or_default(),
 								data,
@@ -624,10 +717,34 @@ where
 								),
 							)
 							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
-							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?
-						};
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
 
-						(info.exit_reason, Vec::new(), info.used_gas)
+							(info.exit_reason, Vec::new(), info.used_gas)
+						} else {
+							// Post-london + access list support
+							let access_list = access_list.unwrap_or_default();
+							let info = api.create(
+								substrate_hash,
+								from.unwrap_or_default(),
+								data,
+								value.unwrap_or_default(),
+								gas_limit,
+								max_fee_per_gas,
+								max_priority_fee_per_gas,
+								nonce,
+								estimate_mode,
+								Some(
+									access_list
+										.into_iter()
+										.map(|item| (item.address, item.storage_keys))
+										.collect(),
+								),
+							)
+							.map_err(|err| internal_err(format!("runtime error: {:?}", err)))?
+							.map_err(|err| internal_err(format!("execution fatal: {:?}", err)))?;
+
+							(info.exit_reason, Vec::new(), info.used_gas.effective)
+						}
 					}
 				};
 				Ok(ExecutableResult {

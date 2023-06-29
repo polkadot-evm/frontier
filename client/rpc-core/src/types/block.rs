@@ -52,7 +52,7 @@ pub struct Block {
 	#[serde(flatten)]
 	pub header: Header,
 	/// Total difficulty
-	pub total_difficulty: U256,
+	pub total_difficulty: Option<U256>,
 	/// Uncles' hashes
 	pub uncles: Vec<H256>,
 	/// Transactions
@@ -78,7 +78,7 @@ pub struct Header {
 	/// Authors address
 	pub author: H160,
 	/// Alias of `author`
-	pub miner: H160,
+	pub miner: Option<H160>,
 	/// State root hash
 	pub state_root: H256,
 	/// Transactions root hash

@@ -14,7 +14,8 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
-hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
+hex = { workspace = true }
+hex-literal = { workspace = true }
 impl-trait-for-tuples = "0.2.2"
 log = { workspace = true }
 rlp = { workspace = true }
@@ -34,7 +35,7 @@ fp-evm = { workspace = true }
 
 [dev-dependencies]
 # Substrate
-pallet-balances = { workspace = true, features = ["default"] }
+pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
 
