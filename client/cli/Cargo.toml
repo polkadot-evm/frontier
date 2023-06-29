@@ -11,7 +11,7 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
-clap = { version = "4.1", features = ["derive", "deprecated"] }
+clap = { workspace = true }
 ethereum-types = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -26,7 +26,7 @@ fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
-futures = "0.3.21"
+futures = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 tempfile = "3.3.0"
 # Substrate
@@ -38,3 +38,10 @@ substrate-test-runtime-client = { workspace = true }
 # Frontier
 fc-db = { workspace = true, features = ["rocksdb"] }
 frontier-template-runtime = { workspace = true, features = ["default"] }
+
+[features]
+default = ["rocksdb"]
+rocksdb = [
+	"sc-cli/rocksdb",
+	"fc-db/rocksdb",
+]

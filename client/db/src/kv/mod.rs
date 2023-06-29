@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#[cfg(feature = "parity-db")]
 mod parity_db_adapter;
 mod upgrade;
 mod utils;
@@ -114,23 +113,22 @@ impl<Block: BlockT> Backend<Block> {
 			client,
 			&DatabaseSettings {
 				source: match database {
-					#[cfg(feature = "rocksdb")]
-					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
-						path: frontier_database_dir(db_config_dir, "db"),
-						cache_size: 0,
-					},
-					#[cfg(feature = "parity-db")]
-					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
-						path: frontier_database_dir(db_config_dir, "paritydb"),
-					},
 					DatabaseSource::Auto { .. } => DatabaseSource::Auto {
 						rocksdb_path: frontier_database_dir(db_config_dir, "db"),
 						paritydb_path: frontier_database_dir(db_config_dir, "paritydb"),
 						cache_size: 0,
 					},
+					#[cfg(feature = "rocksdb")]
+					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
+						path: frontier_database_dir(db_config_dir, "db"),
+						cache_size: 0,
+					},
+					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
+						path: frontier_database_dir(db_config_dir, "paritydb"),
+					},
 					_ => {
 						return Err(
-							"Supported db sources: `rocksdb` | `paritydb` | `auto`".to_string()
+							"Supported db sources: `auto` | `rocksdb` | `paritydb`".to_string()
 						)
 					}
 				},

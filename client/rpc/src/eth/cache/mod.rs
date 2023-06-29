@@ -325,7 +325,6 @@ where
 			let reward_percentiles: Vec<f64> = {
 				let mut percentile: f64 = 0.0;
 				(0..201)
-					.into_iter()
 					.map(|_| {
 						let val = percentile;
 						percentile += 0.5;
@@ -364,13 +363,13 @@ where
 							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
 						},
 						effective_reward: match block.transactions.get(i) {
-							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
+							Some(ethereum::TransactionV2::Legacy(t)) => {
 								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
+							Some(ethereum::TransactionV2::EIP2930(t)) => {
 								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(&ethereum::TransactionV2::EIP1559(ref t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
+							Some(ethereum::TransactionV2::EIP1559(t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
 									t
 										.max_priority_fee_per_gas
 										.min(t.max_fee_per_gas.saturating_sub(base_fee))

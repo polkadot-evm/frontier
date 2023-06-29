@@ -101,8 +101,9 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
 		1 => {
 			let summary: UpgradeVersion1To2Summary = match source {
-				#[cfg(feature = "parity-db")]
-				DatabaseSource::ParityDb { .. } => migrate_1_to_2_parity_db::<Block, C>(client, db_path)?,
+				DatabaseSource::ParityDb { .. } => {
+					migrate_1_to_2_parity_db::<Block, C>(client, db_path)?
+				}
 				#[cfg(feature = "rocksdb")]
 				DatabaseSource::RocksDb { .. } => migrate_1_to_2_rocks_db::<Block, C>(client, db_path)?,
 				_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
@@ -245,7 +246,6 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 	Ok(res)
 }
 
-#[cfg(feature = "parity-db")]
 pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
@@ -353,7 +353,7 @@ mod tests {
 		Ok(Arc::new(crate::kv::Backend::<Block>::new(client, setting)?))
 	}
 
-	#[cfg_attr(not(any(feature = "rocksdb", feature = "parity-db")), ignore)]
+	#[cfg_attr(not(feature = "rocksdb"), ignore)]
 	#[test]
 	fn upgrade_1_to_2_works() {
 		let settings: Vec<DatabaseSettings> = vec![
@@ -369,7 +369,6 @@ mod tests {
 				},
 			},
 			// Parity db
-			#[cfg(feature = "parity-db")]
 			crate::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::ParityDb {
 					path: tempdir()

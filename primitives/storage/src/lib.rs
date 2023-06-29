@@ -42,7 +42,7 @@ pub const BASE_FEE_PER_GAS: &[u8] = b"BaseFeePerGas";
 pub const BASE_FEE_ELASTICITY: &[u8] = b"Elasticity";
 
 /// The schema version for Pallet Ethereum's storage
-#[derive(Clone, Copy, Debug, Encode, Decode, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Encode, Decode)]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
 pub enum EthereumStorageSchema {
 	Undefined,
