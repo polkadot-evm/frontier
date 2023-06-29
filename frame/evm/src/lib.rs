@@ -80,7 +80,7 @@ use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32,
 };
-use sp_std::{cmp::min, vec::Vec};
+use sp_std::{cmp::min, vec, vec::Vec};
 
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -220,6 +220,7 @@ pub mod pallet {
 				nonce,
 				access_list,
 				true,
+				false,
 			) {
 				Ok(result) => Ok(result.info),
 				Err(e) => Err(e),
@@ -743,6 +744,7 @@ impl<T: Config> Pallet<T> {
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
+		omit_fee: bool,
 	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
 		let validate = true;
 		let is_free = T::FreeCalls::can_send_free_call(&source, &target, &input[..]);
@@ -758,7 +760,7 @@ impl<T: Config> Pallet<T> {
 			access_list,
 			is_transactional,
 			validate,
-			is_free,
+			is_free || omit_fee,
 			T::config(),
 		) {
 			Ok(info) => info,
@@ -987,6 +989,7 @@ pub trait EvmCall {
 		input: Vec<u8>,
 		gas_limit: u64,
 		is_transactional: bool,
+		is_free: bool,
 	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo>;
 }
 
@@ -997,18 +1000,21 @@ impl<T: Config> EvmCall for Pallet<T> {
 		input: Vec<u8>,
 		gas_limit: u64,
 		is_transactional: bool,
+		is_free: bool,
 	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
+		let gas_price = if is_free { U256::zero() } else { T::FeeCalculator::min_gas_price().0 };
 		Self::do_call(
 			source,
 			target,
 			input,
 			U256::zero(),
 			gas_limit,
-			Some(T::FeeCalculator::min_gas_price().0),
+			Some(gas_price),
 			None,
 			None,
 			vec![],
 			is_transactional,
+			true,
 		)
 	}
 }
