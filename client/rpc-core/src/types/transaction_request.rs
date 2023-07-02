@@ -18,11 +18,13 @@
 
 //! `TransactionRequest` type
 
+use std::fmt;
+
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 use ethereum_types::{H160, U256};
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Deserializer, de::MapAccess, de::Error};
 
 use crate::types::Bytes;
 
@@ -55,7 +57,7 @@ pub struct TransactionRequest {
 	/// Value of transaction in wei
 	pub value: Option<U256>,
 	/// Additional data sent with transaction
-	#[serde(alias = "input")]
+	#[serde(deserialize_with = "deserialize_data_input")]
 	pub data: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
@@ -118,4 +120,51 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 			_ => None,
 		}
 	}
+}
+
+
+fn deserialize_data_input<'de, D>(deserializer: D) -> Result<Option<Bytes>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(field_identifier, rename_all = "camelCase")]
+    enum Field { Data, Input, Other }
+
+    struct DataInputVisitor;
+
+    impl<'de> serde::de::Visitor<'de> for DataInputVisitor {
+        type Value = Option<Bytes>;
+
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("`data` or `input`")
+        }
+
+        fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
+        where
+            V: MapAccess<'de>,
+        {
+            let mut value = None;
+            while let Some(key) = map.next_key()? {
+                match key {
+                    Field::Data | Field::Input => {
+                        let new_value: Option<Bytes> = map.next_value()?;
+                        match (&value, &new_value) {
+                            (Some(old_value), Some(new_value)) if old_value != new_value => {
+                                return Err(Error::custom("data and input fields are not equal"));
+                            }
+                            _ => (),
+                        }
+                        value = new_value;
+                    }
+                    Field::Other => {
+                        let _: serde::de::IgnoredAny = map.next_value()?;
+                    }
+                }
+            }
+            Ok(value)
+        }
+    }
+
+    deserializer.deserialize_struct("TransactionRequest", &["data", "input"], DataInputVisitor)
 }
