@@ -32,14 +32,15 @@ use sp_runtime::{
 	traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
 // Frontier
-use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
 use fc_rpc_core::{types::*, EthFilterApiServer};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
+use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
+
+pub struct EthFilter<B: BlockT, C, BE, A: ChainApi> {
 	client: Arc<C>,
 	backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
-	tx_pool: TxPool<A, B, C>,
+	tx_pool: TxPool<B, C, A>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -47,11 +48,11 @@ pub struct EthFilter<A: ChainApi, B: BlockT, C, BE> {
 	_marker: PhantomData<BE>,
 }
 
-impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
+impl<B: BlockT, C, BE, A: ChainApi> EthFilter<B, C, BE, A> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
-		tx_pool: TxPool<A, B, C>,
+		tx_pool: TxPool<B, C, A>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -70,12 +71,13 @@ impl<A: ChainApi, B: BlockT, C, BE> EthFilter<A, B, C, BE> {
 	}
 }
 
-impl<A, B, C, BE> EthFilter<A, B, C, BE>
+impl<B, C, BE, A> EthFilter<B, C, BE, A>
 where
-	A: ChainApi<Block = B> + 'static,
-	B: BlockT<Hash = H256>,
-	C: HeaderBackend<B> + ProvideRuntimeApi<B> + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + 'static,
+	A: ChainApi<Block = B> + 'static,
 {
 	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let block_number =
@@ -125,13 +127,14 @@ where
 }
 
 #[async_trait]
-impl<A, B, C, BE> EthFilterApiServer for EthFilter<A, B, C, BE>
+impl<B, C, BE, A> EthFilterApiServer for EthFilter<B, C, BE, A>
 where
-	A: ChainApi<Block = B> + 'static,
-	B: BlockT<Hash = H256>,
-	C: HeaderBackend<B> + ProvideRuntimeApi<B> + StorageProvider<B, BE> + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
+	A: ChainApi<Block = B> + 'static,
 {
 	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
 		self.create_filter(FilterType::Log(filter))
@@ -519,9 +522,10 @@ async fn filter_range_logs_indexed<B, C, BE>(
 	to: NumberFor<B>,
 ) -> RpcResult<()>
 where
-	B: BlockT<Hash = H256>,
-	C: HeaderBackend<B> + ProvideRuntimeApi<B> + StorageProvider<B, BE> + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
 	use std::time::Instant;
@@ -570,7 +574,7 @@ where
 		let timer_post = Instant::now();
 		use std::collections::BTreeMap;
 
-		let mut statuses_cache: BTreeMap<H256, Option<Vec<TransactionStatus>>> = BTreeMap::new();
+		let mut statuses_cache: BTreeMap<B::Hash, Option<Vec<TransactionStatus>>> = BTreeMap::new();
 
 		for log in logs.iter() {
 			let substrate_hash = log.substrate_block_hash;

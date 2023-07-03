@@ -20,7 +20,7 @@
 
 use ethereum_types::U256;
 use jsonrpsee::{core::RpcResult, proc_macros::rpc};
-// Frontier
+
 use crate::types::*;
 
 /// TxPool rpc interface
