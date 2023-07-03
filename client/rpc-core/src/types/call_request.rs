@@ -23,6 +23,7 @@ use ethereum_types::{H160, H256, U256};
 use serde::Deserialize;
 
 use crate::types::Bytes;
+use super::transaction_request::deserialize_data_input;
 
 /// Call request
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
@@ -44,7 +45,7 @@ pub struct CallRequest {
 	/// Value
 	pub value: Option<U256>,
 	/// Data
-	#[serde(alias = "input")]
+	#[serde(deserialize_with = "deserialize_data_input")]
 	pub data: Option<Bytes>,
 	/// Nonce
 	pub nonce: Option<U256>,

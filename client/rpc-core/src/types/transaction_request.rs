@@ -123,7 +123,7 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 }
 
 
-fn deserialize_data_input<'de, D>(deserializer: D) -> Result<Option<Bytes>, D::Error>
+pub(crate) fn deserialize_data_input<'de, D>(deserializer: D) -> Result<Option<Bytes>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -158,7 +158,7 @@ where
                         value = new_value;
                     }
                     Field::Other => {
-                        let _: serde::de::IgnoredAny = map.next_value()?;
+                        let _ = map.next_value()?;
                     }
                 }
             }
