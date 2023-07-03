@@ -947,61 +947,6 @@ where
 		<Pallet<T>>::account_code_metadata(address).hash
 	}
 
-	fn record_external_operation(&mut self, op: evm::ExternalOperation) -> Result<(), ExitError> {
-		let size_limit: u64 = self
-			.metadata()
-			.gasometer()
-			.config()
-			.create_contract_limit
-			.unwrap_or_default() as u64;
-
-		let (weight_info, recorded) = self.info_mut();
-
-		if let Some(weight_info) = weight_info {
-			match op {
-				evm::ExternalOperation::AccountBasicRead => {
-					weight_info.try_record_proof_size_or_fail(ACCOUNT_BASIC_PROOF_SIZE)?
-				}
-				evm::ExternalOperation::AddressCodeRead(address) => {
-					let maybe_record = !recorded.account_codes.contains(&address);
-					// Skip if the address has been already recorded this block
-					if maybe_record {
-						// First we record account emptiness check.
-						// Transfers to EOAs with standard 21_000 gas limit are able to
-						// pay for this pov size.
-						weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
-
-						if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
-							return Ok(());
-						}
-						// Try to record fixed sized `AccountCodesMetadata` read
-						// Tentatively 16 + 20 + 40
-						weight_info
-							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
-						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
-							weight_info.try_record_proof_size_or_fail(meta.size)?;
-						} else {
-							// If it does not exist, try to record `create_contract_limit` first.
-							weight_info.try_record_proof_size_or_fail(size_limit)?;
-							let meta = Pallet::<T>::account_code_metadata(address);
-							let actual_size = meta.size;
-							// Refund if applies
-							weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
-						}
-						recorded.account_codes.push(address);
-					}
-				}
-				evm::ExternalOperation::IsEmpty => {
-					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?
-				}
-				evm::ExternalOperation::Write => {
-					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?
-				}
-			};
-		}
-		Ok(())
-	}
-
 	fn record_external_dynamic_opcode_cost(
 		&mut self,
 		opcode: Opcode,
