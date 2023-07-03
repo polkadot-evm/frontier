@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Curve25519Add",""],["Curve25519ScalarMul",""]]};
+window.SIDEBAR_ITEMS = {"struct":["Curve25519Add","Curve25519ScalarMul"]};

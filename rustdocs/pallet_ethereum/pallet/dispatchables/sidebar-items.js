@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["transact","Transact an Ethereum transaction."]]};
+window.SIDEBAR_ITEMS = {"fn":["transact"]};

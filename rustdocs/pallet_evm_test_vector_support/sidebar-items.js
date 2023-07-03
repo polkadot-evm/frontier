@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["test_precompile_failure_test_vectors",""],["test_precompile_test_vectors","Tests a precompile against the ethereum consensus tests defined in the given file at filepath. The file is expected to be in JSON format and contain an array of test vectors, where each vector can be deserialized into an “EthConsensusTest”."]],"struct":[["MockHandle",""]]};
+window.SIDEBAR_ITEMS = {"fn":["test_precompile_failure_test_vectors","test_precompile_test_vectors"],"struct":["MockHandle"]};

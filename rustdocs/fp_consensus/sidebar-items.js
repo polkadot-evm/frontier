@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["FRONTIER_ENGINE_ID",""]],"enum":[["FindLogError",""],["Log",""],["PostLog",""],["PreLog",""]],"fn":[["ensure_log",""],["find_log",""],["find_post_log",""],["find_pre_log",""]],"struct":[["Hashes",""]]};
+window.SIDEBAR_ITEMS = {"constant":["FRONTIER_ENGINE_ID"],"enum":["FindLogError","Log","PostLog","PreLog"],"fn":["ensure_log","find_log","find_post_log","find_pre_log"],"struct":["Hashes"]};

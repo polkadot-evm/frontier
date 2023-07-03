@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Backend",""],["DatabaseSource","Where to find the database.."]],"mod":[["kv",""],["sql",""]],"struct":[["FilteredLog",""],["TransactionMetadata",""]],"trait":[["BackendReader",""]]};
+window.SIDEBAR_ITEMS = {"enum":["Backend","DatabaseSource"],"mod":["kv","sql"],"struct":["FilteredLog","TransactionMetadata"],"trait":["BackendReader"]};

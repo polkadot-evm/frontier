@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"pallet_ethereum":[["impl&lt;T:&nbsp;<a class=\"trait\" href=\"pallet_ethereum/pallet/trait.Config.html\" title=\"trait pallet_ethereum::pallet::Config\">Config</a>&gt; ValidatedTransaction for <a class=\"struct\" href=\"pallet_ethereum/struct.ValidatedTransaction.html\" title=\"struct pallet_ethereum::ValidatedTransaction\">ValidatedTransaction</a>&lt;T&gt;"]]
+"pallet_ethereum":[["impl&lt;T: <a class=\"trait\" href=\"pallet_ethereum/pallet/trait.Config.html\" title=\"trait pallet_ethereum::pallet::Config\">Config</a>&gt; ValidatedTransaction for <a class=\"struct\" href=\"pallet_ethereum/struct.ValidatedTransaction.html\" title=\"struct pallet_ethereum::ValidatedTransaction\">ValidatedTransaction</a>&lt;T&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

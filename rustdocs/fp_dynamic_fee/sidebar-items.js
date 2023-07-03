@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["INHERENT_IDENTIFIER",""]],"struct":[["InherentDataProvider",""]],"type":[["InherentType",""]]};
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"struct":["InherentDataProvider"],"type":["InherentType"]};

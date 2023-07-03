@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["hotfix_inc_account_sufficients","Increment `sufficients` for existing accounts having a nonzero `nonce` but zero `sufficients`, `consumers` and `providers` value. This state was caused by a previous bug in EVM create account dispatchable."]]};
+window.SIDEBAR_ITEMS = {"fn":["hotfix_inc_account_sufficients"]};

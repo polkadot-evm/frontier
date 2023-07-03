@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["BaseFeePerGas",""],["Elasticity",""]]};
+window.SIDEBAR_ITEMS = {"struct":["BaseFeePerGas","Elasticity"]};

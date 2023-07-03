@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["call","Issue an EVM call operation. This is similar to a message call transaction in Ethereum."],["create","Issue an EVM create operation. This is similar to a contract creation transaction in Ethereum."],["create2","Issue an EVM create2 operation."],["withdraw","Withdraw balance from EVM into currency/balances pallet."]]};
+window.SIDEBAR_ITEMS = {"fn":["call","create","create2","withdraw"]};

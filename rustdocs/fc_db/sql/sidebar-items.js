@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["BackendConfig","Represents the backend configurations."]],"struct":[["Backend",""],["BlockIndexedStatus","Represents the indexed status of a block and if it’s canon or not."],["Log","Represents a log item."],["SqliteBackendConfig","Represents the Sqlite connection options that are used to establish a database connection."]]};
+window.SIDEBAR_ITEMS = {"enum":["BackendConfig"],"struct":["Backend","BlockIndexedStatus","Log","SqliteBackendConfig"]};

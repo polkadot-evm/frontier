@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Modexp",""]]};
+window.SIDEBAR_ITEMS = {"struct":["Modexp"]};

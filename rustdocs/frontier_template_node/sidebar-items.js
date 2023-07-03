@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["main",""]],"mod":[["chain_spec",""],["cli",""],["client",""],["command",""],["eth",""],["rpc","A collection of node-specific RPC methods."],["service","Service and ServiceFactory implementation. Specialized wrapper over substrate service."]]};
+window.SIDEBAR_ITEMS = {"fn":["main"],"mod":["chain_spec","cli","client","command","eth","rpc","service"]};

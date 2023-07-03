@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["Dispatch",""]],"trait":[["DispatchValidateT","Dispatch validation trait."]]};
+window.SIDEBAR_ITEMS = {"struct":["Dispatch"],"trait":["DispatchValidateT"]};

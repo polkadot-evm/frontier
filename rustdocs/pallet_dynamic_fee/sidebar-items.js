@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["INHERENT_IDENTIFIER",""]],"mod":[["pallet","The module that hosts all the FRAME types needed to add this pallet to a runtime."]],"struct":[["InherentDataProvider",""]],"type":[["InherentType",""]]};
+window.SIDEBAR_ITEMS = {"constant":["INHERENT_IDENTIFIER"],"mod":["pallet"],"struct":["InherentDataProvider"],"type":["InherentType"]};

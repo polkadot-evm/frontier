@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["create_full","Instantiate all Full RPC extensions."],["overrides_handle",""]],"mod":[["eth",""]],"struct":[["DefaultEthConfig",""],["FullDeps","Full client dependencies."]]};
+window.SIDEBAR_ITEMS = {"fn":["create_full","overrides_handle"],"mod":["eth"],"struct":["DefaultEthConfig","FullDeps"]};

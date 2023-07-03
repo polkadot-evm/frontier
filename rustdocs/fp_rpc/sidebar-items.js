@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["NoTransactionConverter",""]],"struct":[["TransactionStatus",""],["TxPoolResponse",""]],"trait":[["ConvertTransaction",""],["ConvertTransactionRuntimeApi",""],["EthereumRuntimeRPCApi","API necessary for Ethereum-compatibility layer."],["RuntimeStorageOverride",""]]};
+window.SIDEBAR_ITEMS = {"enum":["NoTransactionConverter"],"struct":["TransactionStatus","TxPoolResponse"],"trait":["ConvertTransaction","ConvertTransactionRuntimeApi","EthereumRuntimeRPCApi","RuntimeStorageOverride"]};

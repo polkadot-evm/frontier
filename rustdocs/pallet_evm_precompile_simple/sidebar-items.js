@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["ECRecover","The ecrecover precompile."],["ECRecoverPublicKey","The ECRecoverPublicKey precompile. Similar to ECRecover, but returns the pubkey (not the corresponding Ethereum address)"],["Identity","The identity precompile."],["Ripemd160","The ripemd precompile."],["Sha256","The sha256 precompile."]]};
+window.SIDEBAR_ITEMS = {"struct":["ECRecover","ECRecoverPublicKey","Identity","Ripemd160","Sha256"]};

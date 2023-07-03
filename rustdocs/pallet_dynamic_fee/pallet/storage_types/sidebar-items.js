@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":[["MinGasPrice",""],["TargetMinGasPrice",""]]};
+window.SIDEBAR_ITEMS = {"struct":["MinGasPrice","TargetMinGasPrice"]};

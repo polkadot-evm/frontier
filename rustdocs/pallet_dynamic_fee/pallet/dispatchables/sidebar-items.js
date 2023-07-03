@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["note_min_gas_price_target","NOTE: This function is an automatically generated, doc only, uncallable stub. designed to document the [`note_min_gas_price_target`][`Call::note_min_gas_price_target`] variant of the pallet [`Call`] enum. You should not attempt to call this function directly."]]};
+window.SIDEBAR_ITEMS = {"fn":["note_min_gas_price_target"]};

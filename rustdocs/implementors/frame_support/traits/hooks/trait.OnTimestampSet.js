@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"frontier_template_runtime":[["impl&lt;T:&nbsp;Config&gt; OnTimestampSet&lt;&lt;T as Config&gt;::Moment&gt; for <a class=\"struct\" href=\"frontier_template_runtime/struct.ConsensusOnTimestampSet.html\" title=\"struct frontier_template_runtime::ConsensusOnTimestampSet\">ConsensusOnTimestampSet</a>&lt;T&gt;"]]
+"frontier_template_runtime":[["impl&lt;T: Config&gt; OnTimestampSet&lt;&lt;T as Config&gt;::Moment&gt; for <a class=\"struct\" href=\"frontier_template_runtime/struct.ConsensusOnTimestampSet.html\" title=\"struct frontier_template_runtime::ConsensusOnTimestampSet\">ConsensusOnTimestampSet</a>&lt;T&gt;"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

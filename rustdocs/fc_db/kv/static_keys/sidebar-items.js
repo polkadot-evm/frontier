@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":[["CURRENT_SYNCING_TIPS",""]]};
+window.SIDEBAR_ITEMS = {"constant":["CURRENT_SYNCING_TIPS"]};

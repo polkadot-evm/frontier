@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":[["Error",""]],"struct":[["FrontierBlockImport",""]]};
+window.SIDEBAR_ITEMS = {"enum":["Error"],"struct":["FrontierBlockImport"]};

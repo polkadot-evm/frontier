@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"fn":[["run","Parse and run command line arguments"]]};
+window.SIDEBAR_ITEMS = {"fn":["run"]};
