@@ -180,7 +180,7 @@ where
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
 	for UncheckedExtrinsic<Address, Call, Signature, Extra>
 {
@@ -192,7 +192,7 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension>
 	serde::Deserialize<'a> for UncheckedExtrinsic<Address, Call, Signature, Extra>
 {

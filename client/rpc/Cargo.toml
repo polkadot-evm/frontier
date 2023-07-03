@@ -18,7 +18,7 @@ futures = { workspace = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 libsecp256k1 = { workspace = true }
-log = "0.4.17"
+log = { workspace = true }
 lru = "0.8.1"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
@@ -62,7 +62,7 @@ pallet-evm = { workspace = true }
 tempfile = "3.3.0"
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true }
+sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 

@@ -857,7 +857,7 @@ impl<Block: BlockT<Hash = H256>> BackendReader<Block> for Backend<Block> {
 		to_block: u64,
 		addresses: Vec<H160>,
 		topics: Vec<Vec<Option<H256>>>,
-	) -> Result<Vec<FilteredLog>, String> {
+	) -> Result<Vec<FilteredLog<Block>>, String> {
 		let mut unique_topics: [HashSet<H256>; 4] = [
 			HashSet::new(),
 			HashSet::new(),
@@ -899,7 +899,7 @@ impl<Block: BlockT<Hash = H256>> BackendReader<Block> for Backend<Block> {
 			});
 		log::debug!(target: "frontier-sql", "Query: {sql:?} - {log_key}");
 
-		let mut out: Vec<FilteredLog> = vec![];
+		let mut out: Vec<FilteredLog<Block>> = vec![];
 		let mut rows = query.fetch(&mut *conn);
 		let maybe_err = loop {
 			match rows.try_next().await {
@@ -1057,7 +1057,7 @@ mod test {
 		pub to_block: u64,
 		pub addresses: Vec<H160>,
 		pub topics: Vec<Vec<Option<H256>>>,
-		pub expected_result: Vec<FilteredLog>,
+		pub expected_result: Vec<FilteredLog<OpaqueBlock>>,
 	}
 
 	#[derive(Debug, Clone)]
@@ -1097,7 +1097,7 @@ mod test {
 		log_3_badc_2_0_bob: Log,
 	}
 
-	impl From<Log> for FilteredLog {
+	impl From<Log> for FilteredLog<OpaqueBlock> {
 		fn from(value: Log) -> Self {
 			Self {
 				substrate_block_hash: value.substrate_block_hash,
@@ -1385,7 +1385,7 @@ mod test {
 	async fn run_test_case(
 		backend: super::Backend<OpaqueBlock>,
 		test_case: &TestFilter,
-	) -> Result<Vec<FilteredLog>, String> {
+	) -> Result<Vec<FilteredLog<OpaqueBlock>>, String> {
 		backend
 			.filter_logs(
 				test_case.from_block,

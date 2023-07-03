@@ -89,7 +89,7 @@ impl<Block: BlockT> crate::BackendReader<Block> for Backend<Block> {
 		_to_block: u64,
 		_addresses: Vec<sp_core::H160>,
 		_topics: Vec<Vec<Option<H256>>>,
-	) -> Result<Vec<crate::FilteredLog>, String> {
+	) -> Result<Vec<crate::FilteredLog<Block>>, String> {
 		Err("KeyValue db does not index logs".into())
 	}
 

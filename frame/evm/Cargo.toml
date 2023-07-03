@@ -14,7 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
-hex = { workspace = true }
+hex = { workspace = true, optional = true }
 hex-literal = { workspace = true }
 impl-trait-for-tuples = "0.2.2"
 log = { workspace = true }
@@ -34,6 +34,7 @@ fp-account = { workspace = true }
 fp-evm = { workspace = true }
 
 [dev-dependencies]
+hex = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
@@ -45,7 +46,6 @@ std = [
 	"environmental?/std",
 	"evm/std",
 	"evm/with-serde",
-	"hex/std",
 	"log/std",
 	"rlp/std",
 	"scale-codec/std",
@@ -63,6 +63,7 @@ std = [
 	"fp-evm/std",
 ]
 runtime-benchmarks = [
+	"hex",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
