@@ -252,8 +252,12 @@ impl<'de> Deserialize<'de> for TransactionRequest {
 
 				match (data.as_ref(), input.as_ref()) {
 					(Some(data), Some(input)) if data != input => {
-						return Err(de::Error::custom("data and input must be equal when both are present"))
+						return Err(de::Error::custom(
+							"data and input must be equal when both are present",
+						))
 					}
+					// Assume that the data field is the input field if the data field is not present
+					// and the input field is present.
 					(None, Some(_)) => data = input.take(),
 					_ => {}
 				}
@@ -297,4 +301,74 @@ impl<'de> Deserialize<'de> for TransactionRequest {
 }
 
 #[cfg(test)]
-mod tests {}
+mod tests {
+	use std::str::FromStr;
+
+	use super::*;
+	use serde_json::json;
+
+	#[test]
+	fn test_deserialize_transaction_request() {
+		let data = json!({
+			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"gasPrice": "0x10",
+			"maxFeePerGas": "0x20",
+			"maxPriorityFeePerGas": "0x30",
+			"gas": "0x40",
+			"value": "0x50",
+			"data": "0x123abc",
+			"input": "0x123abc",
+			"nonce": "0x60",
+			"accessList": [{"address": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b", "storageKeys": []}],
+			"type": "0x70"
+		});
+
+		let tr: TransactionRequest = serde_json::from_value(data).unwrap();
+
+		assert_eq!(
+			tr.from.unwrap(),
+			H160::from_str("0x60be2d1d3665660d22ff9624b7be0551ee1ac91b").unwrap()
+		);
+		assert_eq!(
+			tr.to.unwrap(),
+			H160::from_str("0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b").unwrap()
+		);
+		assert_eq!(tr.gas_price.unwrap(), U256::from(0x10));
+		assert_eq!(tr.max_fee_per_gas.unwrap(), U256::from(0x20));
+		assert_eq!(tr.max_priority_fee_per_gas.unwrap(), U256::from(0x30));
+		assert_eq!(tr.gas.unwrap(), U256::from(0x40));
+		assert_eq!(tr.value.unwrap(), U256::from(0x50));
+		assert_eq!(tr.nonce.unwrap(), U256::from(0x60));
+		assert_eq!(tr.access_list.unwrap().len(), 1);
+		assert_eq!(tr.transaction_type.unwrap(), U256::from(0x70));
+	}
+
+	#[test]
+	fn test_deserialize_transaction_request_data_input_mismatch_error() {
+		let data = json!({
+			"data": "0xabc2",
+			"input": "0xdef1",
+		});
+
+		let result: Result<TransactionRequest, _> = serde_json::from_value(data);
+
+		assert!(result.is_err());
+		assert_eq!(
+			result.unwrap_err().to_string(),
+			"data and input must be equal when both are present"
+		);
+	}
+
+	#[test]
+	fn test_deserialize_transaction_request_data_input_equal() {
+		let data = json!({
+			"data": "0xabc2",
+			"input": "0xabc2",
+		});
+
+		let result: Result<TransactionRequest, _> = serde_json::from_value(data);
+
+		assert!(result.is_ok());
+	}
+}
