@@ -17,18 +17,15 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 //! `TransactionRequest` type
-use std::fmt;
-
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 use ethereum_types::{H160, U256};
-use serde::{
-	de::{self, MapAccess, Visitor},
-	Deserialize, Deserializer, Serialize,
-};
+use serde::{Deserialize, Serialize};
 
 use crate::types::Bytes;
+
+use super::call_request::deserialize_data_or_input;
 
 pub enum TransactionMessage {
 	Legacy(LegacyTransactionMessage),
@@ -37,7 +34,7 @@ pub enum TransactionMessage {
 }
 
 /// Transaction request coming from RPC
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionRequest {
@@ -59,9 +56,8 @@ pub struct TransactionRequest {
 	/// Value of transaction in wei
 	pub value: Option<U256>,
 	/// Additional data sent with transaction
+	#[serde(deserialize_with = "deserialize_data_or_input", flatten)]
 	pub data: Option<Bytes>,
-	/// Input Data
-	pub input: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
 	/// Pre-pay to warm storage access.
@@ -125,190 +121,82 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 	}
 }
 
-impl<'de> Deserialize<'de> for TransactionRequest {
-	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-	where
-		D: Deserializer<'de>,
-	{
-		#[derive(Deserialize)]
-		#[serde(field_identifier, rename_all = "camelCase")]
-		enum Field {
-			From,
-			To,
-			GasPrice,
-			MaxFeePerGas,
-			MaxPriorityFeePerGas,
-			Gas,
-			Value,
-			Data,
-			Input,
-			Nonce,
-			AccessList,
-			Type,
-		}
-
-		struct TransactionRequestVisitor;
-
-		impl<'de> Visitor<'de> for TransactionRequestVisitor {
-			type Value = TransactionRequest;
-
-			fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-				formatter.write_str("struct TransactionRequest")
-			}
-
-			fn visit_map<V>(self, mut map: V) -> Result<TransactionRequest, V::Error>
-			where
-				V: MapAccess<'de>,
-			{
-				let mut from = None;
-				let mut to = None;
-				let mut gas_price = None;
-				let mut max_fee_per_gas = None;
-				let mut max_priority_fee_per_gas = None;
-				let mut gas = None;
-				let mut value = None;
-				let mut data = None;
-				let mut input = None;
-				let mut nonce = None;
-				let mut access_list = None;
-				let mut transaction_type = None;
-
-				while let Some(key) = map.next_key()? {
-					match key {
-						Field::From => {
-							if from.is_some() {
-								return Err(de::Error::duplicate_field("from"));
-							}
-							from = Some(map.next_value()?);
-						}
-						Field::To => {
-							if to.is_some() {
-								return Err(de::Error::duplicate_field("to"));
-							}
-							to = Some(map.next_value()?);
-						}
-						Field::GasPrice => {
-							if gas_price.is_some() {
-								return Err(de::Error::duplicate_field("gasPrice"));
-							}
-							gas_price = Some(map.next_value()?);
-						}
-						Field::MaxFeePerGas => {
-							if max_fee_per_gas.is_some() {
-								return Err(de::Error::duplicate_field("maxFeePerGas"));
-							}
-							max_fee_per_gas = Some(map.next_value()?);
-						}
-						Field::MaxPriorityFeePerGas => {
-							if max_priority_fee_per_gas.is_some() {
-								return Err(de::Error::duplicate_field("maxPriorityFeePerGas"));
-							}
-							max_priority_fee_per_gas = Some(map.next_value()?);
-						}
-						Field::Gas => {
-							if gas.is_some() {
-								return Err(de::Error::duplicate_field("gas"));
-							}
-							gas = Some(map.next_value()?);
-						}
-						Field::Value => {
-							if value.is_some() {
-								return Err(de::Error::duplicate_field("value"));
-							}
-							value = Some(map.next_value()?);
-						}
-						Field::Data => {
-							if data.is_some() {
-								return Err(de::Error::duplicate_field("data"));
-							}
-							data = Some(map.next_value()?);
-						}
-						Field::Input => {
-							if input.is_some() {
-								return Err(de::Error::duplicate_field("input"));
-							}
-							input = Some(map.next_value()?);
-						}
-						Field::Nonce => {
-							if nonce.is_some() {
-								return Err(de::Error::duplicate_field("nonce"));
-							}
-							nonce = Some(map.next_value()?);
-						}
-						Field::AccessList => {
-							if access_list.is_some() {
-								return Err(de::Error::duplicate_field("accessList"));
-							}
-							access_list = Some(map.next_value()?);
-						}
-						Field::Type => {
-							if transaction_type.is_some() {
-								return Err(de::Error::duplicate_field("type"));
-							}
-							transaction_type = Some(map.next_value()?);
-						}
-					}
-				}
-
-				match (data.as_ref(), input.as_ref()) {
-					(Some(data), Some(input)) if data != input => {
-						return Err(de::Error::custom(
-							"data and input must be equal when both are present",
-						))
-					}
-					// Assume that the data field is the input field if the data field is not present
-					// and the input field is present.
-					(None, Some(_)) => data = input.take(),
-					_ => {}
-				}
-
-				Ok(TransactionRequest {
-					from,
-					to,
-					gas_price,
-					max_fee_per_gas,
-					max_priority_fee_per_gas,
-					gas,
-					value,
-					data,
-					input,
-					nonce,
-					access_list,
-					transaction_type,
-				})
-			}
-		}
-
-		deserializer.deserialize_struct(
-			"TransactionRequest",
-			&[
-				"from",
-				"to",
-				"gasPrice",
-				"maxFeePerGas",
-				"maxPriorityFeePerGas",
-				"gas",
-				"value",
-				"data",
-				"input",
-				"nonce",
-				"accessList",
-				"type",
-			],
-			TransactionRequestVisitor,
-		)
-	}
-}
 
 #[cfg(test)]
 mod tests {
-	use std::str::FromStr;
 
 	use super::*;
 	use serde_json::json;
 
 	#[test]
-	fn test_deserialize_transaction_request() {
+	fn test_deserialize_with_only_input() {
+		let data = json!({
+			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"gasPrice": "0x10",
+			"maxFeePerGas": "0x20",
+			"maxPriorityFeePerGas": "0x30",
+			"gas": "0x40",
+			"value": "0x50",
+			"input": "0x123abc",
+			"nonce": "0x60",
+			"accessList": [{"address": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b", "storageKeys": []}],
+			"type": "0x70"
+		});
+
+		let request: Result<TransactionRequest, _> = serde_json::from_value(data);
+		assert!(request.is_ok());
+
+		let request = request.unwrap();
+		assert_eq!(request.data, Some(Bytes::from(vec![0x12, 0x3a, 0xbc])));
+	}
+
+	#[test]
+	fn test_deserialize_with_only_data() {
+		let data = json!({
+			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"gasPrice": "0x10",
+			"maxFeePerGas": "0x20",
+			"maxPriorityFeePerGas": "0x30",
+			"gas": "0x40",
+			"value": "0x50",
+			"data": "0x123abc",
+			"nonce": "0x60",
+			"accessList": [{"address": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b", "storageKeys": []}],
+			"type": "0x70"
+		});
+
+		let request: Result<TransactionRequest, _> = serde_json::from_value(data);
+		assert!(request.is_ok());
+
+		let request = request.unwrap();
+		assert_eq!(request.data, Some(Bytes::from(vec![0x12, 0x3a, 0xbc])));
+	}
+
+	#[test]
+	fn test_deserialize_with_data_and_input_mismatch() {
+		let data = json!({
+			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"gasPrice": "0x10",
+			"maxFeePerGas": "0x20",
+			"maxPriorityFeePerGas": "0x30",
+			"gas": "0x40",
+			"value": "0x50",
+			"data": "0x123abc",
+			"input": "0x456def",
+			"nonce": "0x60",
+			"accessList": [{"address": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b", "storageKeys": []}],
+			"type": "0x70"
+		});
+
+		let request: Result<TransactionRequest, _> = serde_json::from_value(data);
+		assert!(request.is_err());
+	}
+
+	#[test]
+	fn test_deserialize_with_data_and_input_equal() {
 		let data = json!({
 			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
 			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
@@ -324,51 +212,10 @@ mod tests {
 			"type": "0x70"
 		});
 
-		let tr: TransactionRequest = serde_json::from_value(data).unwrap();
+		let request: Result<TransactionRequest, _> = serde_json::from_value(data);
+		assert!(request.is_ok());
 
-		assert_eq!(
-			tr.from.unwrap(),
-			H160::from_str("0x60be2d1d3665660d22ff9624b7be0551ee1ac91b").unwrap()
-		);
-		assert_eq!(
-			tr.to.unwrap(),
-			H160::from_str("0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b").unwrap()
-		);
-		assert_eq!(tr.gas_price.unwrap(), U256::from(0x10));
-		assert_eq!(tr.max_fee_per_gas.unwrap(), U256::from(0x20));
-		assert_eq!(tr.max_priority_fee_per_gas.unwrap(), U256::from(0x30));
-		assert_eq!(tr.gas.unwrap(), U256::from(0x40));
-		assert_eq!(tr.value.unwrap(), U256::from(0x50));
-		assert_eq!(tr.nonce.unwrap(), U256::from(0x60));
-		assert_eq!(tr.access_list.unwrap().len(), 1);
-		assert_eq!(tr.transaction_type.unwrap(), U256::from(0x70));
-	}
-
-	#[test]
-	fn test_deserialize_transaction_request_data_input_mismatch_error() {
-		let data = json!({
-			"data": "0xabc2",
-			"input": "0xdef1",
-		});
-
-		let result: Result<TransactionRequest, _> = serde_json::from_value(data);
-
-		assert!(result.is_err());
-		assert_eq!(
-			result.unwrap_err().to_string(),
-			"data and input must be equal when both are present"
-		);
-	}
-
-	#[test]
-	fn test_deserialize_transaction_request_data_input_equal() {
-		let data = json!({
-			"data": "0xabc2",
-			"input": "0xabc2",
-		});
-
-		let result: Result<TransactionRequest, _> = serde_json::from_value(data);
-
-		assert!(result.is_ok());
+		let request = request.unwrap();
+		assert_eq!(request.data, Some(Bytes::from(vec![0x12, 0x3a, 0xbc])));
 	}
 }
