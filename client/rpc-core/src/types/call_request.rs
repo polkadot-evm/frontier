@@ -30,15 +30,21 @@ pub(crate) struct CallOrInputData {
 	input: Option<Bytes>,
 }
 
-pub(crate) fn deserialize_data_or_input<'d, D: Deserializer<'d>>(d: D) -> Result<Option<Bytes>, D::Error> {
-    let CallOrInputData { data, input } = CallOrInputData::deserialize(d)?;
+pub(crate) fn deserialize_data_or_input<'d, D: Deserializer<'d>>(
+	d: D,
+) -> Result<Option<Bytes>, D::Error> {
+	let CallOrInputData { data, input } = CallOrInputData::deserialize(d)?;
 	match (&data, &input) {
-		(Some(data), Some(input)) => if data == input {
-			Ok(Some(data.clone()))
-		} else {
-			Err(D::Error::custom("Ambiguous value for `data` and `input`".to_string()))
-		},
-		(_, _) => Ok(data.or(input))
+		(Some(data), Some(input)) => {
+			if data == input {
+				Ok(Some(data.clone()))
+			} else {
+				Err(D::Error::custom(
+					"Ambiguous value for `data` and `input`".to_string(),
+				))
+			}
+		}
+		(_, _) => Ok(data.or(input)),
 	}
 }
 

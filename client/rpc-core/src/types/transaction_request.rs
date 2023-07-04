@@ -121,7 +121,6 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 	}
 }
 
-
 #[cfg(test)]
 mod tests {
 
