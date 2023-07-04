@@ -20,7 +20,10 @@ use std::collections::BTreeMap;
 
 use ethereum::AccessListItem;
 use ethereum_types::{H160, H256, U256};
-use serde::{de::{Visitor, MapAccess, self}, Deserialize, Deserializer};
+use serde::{
+	de::{self, MapAccess, Visitor},
+	Deserialize, Deserializer,
+};
 
 use crate::types::Bytes;
 
@@ -199,7 +202,9 @@ impl<'de> Deserialize<'de> for CallRequest {
 
 				match (data.as_ref(), input.as_ref()) {
 					(Some(data), Some(input)) if data != input => {
-						return Err(de::Error::custom("data and input must be equal when both are present"))
+						return Err(de::Error::custom(
+							"data and input must be equal when both are present",
+						))
 					}
 					// Assume that the data field is the input field if the data field is not present
 					// and the input field is present.
