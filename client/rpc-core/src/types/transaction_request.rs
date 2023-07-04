@@ -17,14 +17,16 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 //! `TransactionRequest` type
-
 use std::fmt;
 
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 use ethereum_types::{H160, U256};
-use serde::{Deserialize, Serialize, Deserializer, de::MapAccess, de::Error};
+use serde::{
+	de::{self, MapAccess, Visitor},
+	Deserialize, Deserializer, Serialize,
+};
 
 use crate::types::Bytes;
 
@@ -35,7 +37,7 @@ pub enum TransactionMessage {
 }
 
 /// Transaction request coming from RPC
-#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct TransactionRequest {
@@ -57,8 +59,9 @@ pub struct TransactionRequest {
 	/// Value of transaction in wei
 	pub value: Option<U256>,
 	/// Additional data sent with transaction
-	#[serde(deserialize_with = "deserialize_data_input")]
 	pub data: Option<Bytes>,
+	/// Input Data
+	pub input: Option<Bytes>,
 	/// Transaction's nonce
 	pub nonce: Option<U256>,
 	/// Pre-pay to warm storage access.
@@ -122,49 +125,176 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 	}
 }
 
+impl<'de> Deserialize<'de> for TransactionRequest {
+	fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		#[derive(Deserialize)]
+		#[serde(field_identifier, rename_all = "camelCase")]
+		enum Field {
+			From,
+			To,
+			GasPrice,
+			MaxFeePerGas,
+			MaxPriorityFeePerGas,
+			Gas,
+			Value,
+			Data,
+			Input,
+			Nonce,
+			AccessList,
+			Type,
+		}
 
-pub(crate) fn deserialize_data_input<'de, D>(deserializer: D) -> Result<Option<Bytes>, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    #[serde(field_identifier, rename_all = "camelCase")]
-    enum Field { Data, Input, Other }
+		struct TransactionRequestVisitor;
 
-    struct DataInputVisitor;
+		impl<'de> Visitor<'de> for TransactionRequestVisitor {
+			type Value = TransactionRequest;
 
-    impl<'de> serde::de::Visitor<'de> for DataInputVisitor {
-        type Value = Option<Bytes>;
+			fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+				formatter.write_str("struct TransactionRequest")
+			}
 
-        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-            formatter.write_str("`data` or `input`")
-        }
+			fn visit_map<V>(self, mut map: V) -> Result<TransactionRequest, V::Error>
+			where
+				V: MapAccess<'de>,
+			{
+				let mut from = None;
+				let mut to = None;
+				let mut gas_price = None;
+				let mut max_fee_per_gas = None;
+				let mut max_priority_fee_per_gas = None;
+				let mut gas = None;
+				let mut value = None;
+				let mut data = None;
+				let mut input = None;
+				let mut nonce = None;
+				let mut access_list = None;
+				let mut transaction_type = None;
 
-        fn visit_map<V>(self, mut map: V) -> Result<Self::Value, V::Error>
-        where
-            V: MapAccess<'de>,
-        {
-            let mut value = None;
-            while let Some(key) = map.next_key()? {
-                match key {
-                    Field::Data | Field::Input => {
-                        let new_value: Option<Bytes> = map.next_value()?;
-                        match (&value, &new_value) {
-                            (Some(old_value), Some(new_value)) if old_value != new_value => {
-                                return Err(Error::custom("data and input fields are not equal"));
-                            }
-                            _ => (),
-                        }
-                        value = new_value;
-                    }
-                    Field::Other => {
-                        let _ = map.next_value()?;
-                    }
-                }
-            }
-            Ok(value)
-        }
-    }
+				while let Some(key) = map.next_key()? {
+					match key {
+						Field::From => {
+							if from.is_some() {
+								return Err(de::Error::duplicate_field("from"));
+							}
+							from = Some(map.next_value()?);
+						}
+						Field::To => {
+							if to.is_some() {
+								return Err(de::Error::duplicate_field("to"));
+							}
+							to = Some(map.next_value()?);
+						}
+						Field::GasPrice => {
+							if gas_price.is_some() {
+								return Err(de::Error::duplicate_field("gasPrice"));
+							}
+							gas_price = Some(map.next_value()?);
+						}
+						Field::MaxFeePerGas => {
+							if max_fee_per_gas.is_some() {
+								return Err(de::Error::duplicate_field("maxFeePerGas"));
+							}
+							max_fee_per_gas = Some(map.next_value()?);
+						}
+						Field::MaxPriorityFeePerGas => {
+							if max_priority_fee_per_gas.is_some() {
+								return Err(de::Error::duplicate_field("maxPriorityFeePerGas"));
+							}
+							max_priority_fee_per_gas = Some(map.next_value()?);
+						}
+						Field::Gas => {
+							if gas.is_some() {
+								return Err(de::Error::duplicate_field("gas"));
+							}
+							gas = Some(map.next_value()?);
+						}
+						Field::Value => {
+							if value.is_some() {
+								return Err(de::Error::duplicate_field("value"));
+							}
+							value = Some(map.next_value()?);
+						}
+						Field::Data => {
+							if data.is_some() {
+								return Err(de::Error::duplicate_field("data"));
+							}
+							data = Some(map.next_value()?);
+						}
+						Field::Input => {
+							if input.is_some() {
+								return Err(de::Error::duplicate_field("input"));
+							}
+							input = Some(map.next_value()?);
+						}
+						Field::Nonce => {
+							if nonce.is_some() {
+								return Err(de::Error::duplicate_field("nonce"));
+							}
+							nonce = Some(map.next_value()?);
+						}
+						Field::AccessList => {
+							if access_list.is_some() {
+								return Err(de::Error::duplicate_field("accessList"));
+							}
+							access_list = Some(map.next_value()?);
+						}
+						Field::Type => {
+							if transaction_type.is_some() {
+								return Err(de::Error::duplicate_field("type"));
+							}
+							transaction_type = Some(map.next_value()?);
+						}
+					}
+				}
 
-    deserializer.deserialize_struct("TransactionRequest", &["data", "input"], DataInputVisitor)
+				match (data.as_ref(), input.as_ref()) {
+					(Some(data), Some(input)) if data != input => {
+						return Err(de::Error::custom("data and input must be equal when both are present"))
+					}
+					(None, Some(_)) => data = input.take(),
+					_ => {}
+				}
+
+				Ok(TransactionRequest {
+					from,
+					to,
+					gas_price,
+					max_fee_per_gas,
+					max_priority_fee_per_gas,
+					gas,
+					value,
+					data,
+					input,
+					nonce,
+					access_list,
+					transaction_type,
+				})
+			}
+		}
+
+		deserializer.deserialize_struct(
+			"TransactionRequest",
+			&[
+				"from",
+				"to",
+				"gasPrice",
+				"maxFeePerGas",
+				"maxPriorityFeePerGas",
+				"gas",
+				"value",
+				"data",
+				"input",
+				"nonce",
+				"accessList",
+				"type",
+			],
+			TransactionRequestVisitor,
+		)
+	}
 }
+
+#[cfg(test)]
+mod tests {}
