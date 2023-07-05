@@ -18,35 +18,10 @@
 
 use std::collections::BTreeMap;
 
+use crate::types::{deserialize_data_or_input, Bytes};
 use ethereum::AccessListItem;
 use ethereum_types::{H160, H256, U256};
-use serde::{de::Error, Deserialize, Deserializer};
-
-use crate::types::Bytes;
-
-#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
-pub(crate) struct CallOrInputData {
-	data: Option<Bytes>,
-	input: Option<Bytes>,
-}
-
-pub(crate) fn deserialize_data_or_input<'d, D: Deserializer<'d>>(
-	d: D,
-) -> Result<Option<Bytes>, D::Error> {
-	let CallOrInputData { data, input } = CallOrInputData::deserialize(d)?;
-	match (&data, &input) {
-		(Some(data), Some(input)) => {
-			if data == input {
-				Ok(Some(data.clone()))
-			} else {
-				Err(D::Error::custom(
-					"Ambiguous value for `data` and `input`".to_string(),
-				))
-			}
-		}
-		(_, _) => Ok(data.or(input)),
-	}
-}
+use serde::Deserialize;
 
 /// Call request
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
@@ -100,7 +75,6 @@ pub struct CallStateOverride {
 
 #[cfg(test)]
 mod tests {
-
 	use super::*;
 	use serde_json::json;
 

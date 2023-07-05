@@ -17,15 +17,14 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 //! `TransactionRequest` type
+
 use ethereum::{
 	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
 };
 use ethereum_types::{H160, U256};
 use serde::{Deserialize, Serialize};
 
-use crate::types::Bytes;
-
-use super::call_request::deserialize_data_or_input;
+use crate::types::{deserialize_data_or_input, Bytes};
 
 pub enum TransactionMessage {
 	Legacy(LegacyTransactionMessage),
@@ -123,7 +122,6 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 
 #[cfg(test)]
 mod tests {
-
 	use super::*;
 	use serde_json::json;
 

@@ -35,6 +35,8 @@ mod work;
 
 pub mod pubsub;
 
+use serde::{de::Error, Deserialize, Deserializer};
+
 pub use self::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
@@ -57,3 +59,29 @@ pub use self::{
 	transaction_request::{TransactionMessage, TransactionRequest},
 	work::Work,
 };
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
+pub(crate) struct CallOrInputData {
+	data: Option<Bytes>,
+	input: Option<Bytes>,
+}
+
+/// Function to deserialize `data` and `input`  within `TransactionRequest` and `CallRequest`.
+/// It verifies that if both `data` and `input` are provided, they must be identical.
+pub(crate) fn deserialize_data_or_input<'d, D: Deserializer<'d>>(
+	d: D,
+) -> Result<Option<Bytes>, D::Error> {
+	let CallOrInputData { data, input } = CallOrInputData::deserialize(d)?;
+	match (&data, &input) {
+		(Some(data), Some(input)) => {
+			if data == input {
+				Ok(Some(data.clone()))
+			} else {
+				Err(D::Error::custom(
+					"Ambiguous value for `data` and `input`".to_string(),
+				))
+			}
+		}
+		(_, _) => Ok(data.or(input)),
+	}
+}
