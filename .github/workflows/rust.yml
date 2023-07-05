@@ -20,7 +20,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-11-16
+        toolchain: 1.68.2
         target: wasm32-unknown-unknown
         override: true
     - name: Install protoc
@@ -39,7 +39,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-11-16
+        toolchain: 1.68.2
         target: wasm32-unknown-unknown
         override: true
     - name: Install protoc
@@ -60,6 +60,8 @@ jobs:
       run: cd ts-tests && npm run fmt-check
     - name: Run functional tests
       run: cd ts-tests && npm run build && npm run test
+    - name: Run functional tests (sql)
+      run: cd ts-tests && npm run build && npm run test-sql
 
   lint:
     name: 'Run lints'
@@ -70,7 +72,7 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2022-11-16
+        toolchain: 1.68.2
         target: wasm32-unknown-unknown
         override: true
         components: rustfmt, clippy

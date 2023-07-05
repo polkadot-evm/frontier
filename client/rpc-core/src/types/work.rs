@@ -17,7 +17,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H256, U256};
-
 use serde::{Serialize, Serializer};
 
 /// The result of an `eth_getWork` call: it differs based on an option

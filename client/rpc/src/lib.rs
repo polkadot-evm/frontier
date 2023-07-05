@@ -33,7 +33,7 @@ mod signer;
 mod web3;
 
 pub use self::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthFilter, EthTask},
+	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -51,21 +51,137 @@ pub use fc_storage::{
 pub mod frontier_backend_client {
 	use super::internal_err;
 
-	use ethereum_types::H256;
+	use ethereum_types::{H160, H256, U256};
 	use jsonrpsee::core::RpcResult;
+	use scale_codec::Encode;
 	// Substrate
+	use sc_client_api::{
+		backend::{Backend, StorageProvider},
+		StorageKey,
+	};
 	use sp_blockchain::HeaderBackend;
+	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
 		traits::{Block as BlockT, UniqueSaturatedInto, Zero},
 	};
+	use sp_state_machine::OverlayedChanges;
 	// Frontier
 	use fc_rpc_core::types::BlockNumber;
-	use fp_storage::EthereumStorageSchema;
 
-	pub fn native_block_id<B: BlockT, C>(
+	/// Implements a default runtime storage override.
+	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
+	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
+	/// Uses IdentityAddressMapping for the address.
+	pub struct SystemAccountId20StorageOverride<B, C, BE>(pub std::marker::PhantomData<(B, C, BE)>);
+	impl<B, C, BE> fp_rpc::RuntimeStorageOverride<B, C> for SystemAccountId20StorageOverride<B, C, BE>
+	where
+		B: BlockT,
+		C: StorageProvider<B, BE> + Send + Sync,
+		BE: Backend<B>,
+	{
+		fn is_enabled() -> bool {
+			true
+		}
+
+		fn set_overlayed_changes(
+			client: &C,
+			overlayed_changes: &mut OverlayedChanges,
+			block: B::Hash,
+			_version: u32,
+			address: H160,
+			balance: Option<U256>,
+			nonce: Option<U256>,
+		) {
+			let mut key = [twox_128(b"System"), twox_128(b"Account")]
+				.concat()
+				.to_vec();
+			let account_id = Self::into_account_id_bytes(address);
+			key.extend(blake2_128(&account_id));
+			key.extend(&account_id);
+
+			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
+				let mut new_item = item.0;
+
+				if let Some(nonce) = nonce {
+					new_item.splice(0..4, nonce.low_u32().encode());
+				}
+
+				if let Some(balance) = balance {
+					new_item.splice(16..32, balance.low_u128().encode());
+				}
+
+				overlayed_changes.set_storage(key, Some(new_item));
+			}
+		}
+
+		fn into_account_id_bytes(address: H160) -> Vec<u8> {
+			use pallet_evm::AddressMapping;
+			let address: H160 = pallet_evm::IdentityAddressMapping::into_account_id(address);
+			address.as_ref().to_owned()
+		}
+	}
+
+	/// Implements a runtime storage override.
+	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
+	/// have `nonce: Index` = `u32` for  and `free: Balance` = `u128`.
+	/// USes HashedAddressMapping for the address.
+	pub struct SystemAccountId32StorageOverride<B, C, BE>(pub std::marker::PhantomData<(B, C, BE)>);
+	impl<B, C, BE> fp_rpc::RuntimeStorageOverride<B, C> for SystemAccountId32StorageOverride<B, C, BE>
+	where
+		B: BlockT,
+		C: StorageProvider<B, BE> + Send + Sync,
+		BE: Backend<B>,
+	{
+		fn is_enabled() -> bool {
+			true
+		}
+
+		fn set_overlayed_changes(
+			client: &C,
+			overlayed_changes: &mut OverlayedChanges,
+			block: B::Hash,
+			_version: u32,
+			address: H160,
+			balance: Option<U256>,
+			nonce: Option<U256>,
+		) {
+			let mut key = [twox_128(b"System"), twox_128(b"Account")]
+				.concat()
+				.to_vec();
+			let account_id = Self::into_account_id_bytes(address);
+			key.extend(blake2_128(&account_id));
+			key.extend(&account_id);
+
+			if let Ok(Some(item)) = client.storage(block, &StorageKey(key.clone())) {
+				let mut new_item = item.0;
+
+				if let Some(nonce) = nonce {
+					new_item.splice(0..4, nonce.low_u32().encode());
+				}
+
+				if let Some(balance) = balance {
+					new_item.splice(16..32, balance.low_u128().encode());
+				}
+
+				overlayed_changes.set_storage(key, Some(new_item));
+			}
+		}
+
+		fn into_account_id_bytes(address: H160) -> Vec<u8> {
+			use pallet_evm::AddressMapping;
+			use sp_core::crypto::ByteArray;
+			use sp_runtime::traits::BlakeTwo256;
+
+			pallet_evm::HashedAddressMapping::<BlakeTwo256>::into_account_id(address)
+				.as_slice()
+				.to_owned()
+		}
+	}
+
+	pub async fn native_block_id<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B>,
+		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		number: Option<BlockNumber>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
@@ -74,7 +190,7 @@ pub mod frontier_backend_client {
 	{
 		Ok(match number.unwrap_or(BlockNumber::Latest) {
 			BlockNumber::Hash { hash, .. } => {
-				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash) {
+				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash).await {
 					Some(BlockId::Hash(hash))
 				} else {
 					None
@@ -89,9 +205,9 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	pub fn load_hash<B: BlockT, C>(
+	pub async fn load_hash<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B>,
+		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		hash: H256,
 	) -> RpcResult<Option<B::Hash>>
 	where
@@ -99,8 +215,8 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + 'static,
 	{
 		let substrate_hashes = backend
-			.mapping()
 			.block_hash(&hash)
+			.await
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		if let Some(substrate_hashes) = substrate_hashes {
@@ -111,35 +227,6 @@ pub mod frontier_backend_client {
 			}
 		}
 		Ok(None)
-	}
-
-	pub fn load_cached_schema<B: BlockT, C>(
-		backend: &fc_db::Backend<B>,
-	) -> RpcResult<Option<Vec<(EthereumStorageSchema, H256)>>>
-	where
-		B: BlockT,
-		C: HeaderBackend<B> + 'static,
-	{
-		let cache = backend
-			.meta()
-			.ethereum_schema()
-			.map_err(|err| internal_err(format!("fetch backend failed: {:?}", err)))?;
-		Ok(cache)
-	}
-
-	pub fn write_cached_schema<B: BlockT, C>(
-		backend: &fc_db::Backend<B>,
-		new_cache: Vec<(EthereumStorageSchema, H256)>,
-	) -> RpcResult<()>
-	where
-		B: BlockT,
-		C: HeaderBackend<B> + 'static,
-	{
-		backend
-			.meta()
-			.write_ethereum_schema(new_cache)
-			.map_err(|err| internal_err(format!("write backend failed: {:?}", err)))?;
-		Ok(())
 	}
 
 	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: B::Hash) -> bool
@@ -155,9 +242,9 @@ pub mod frontier_backend_client {
 		false
 	}
 
-	pub fn load_transactions<B: BlockT, C>(
+	pub async fn load_transactions<B: BlockT, C>(
 		client: &C,
-		backend: &fc_db::Backend<B>,
+		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
 		transaction_hash: H256,
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
@@ -166,8 +253,8 @@ pub mod frontier_backend_client {
 		C: HeaderBackend<B> + 'static,
 	{
 		let transaction_metadata = backend
-			.mapping()
 			.transaction_metadata(&transaction_hash)
+			.await
 			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
 
 		transaction_metadata
@@ -263,10 +350,10 @@ mod tests {
 	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::Backend<Block>>, String> {
-		Ok(Arc::new(fc_db::Backend::<Block>::new(
+	) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
+		Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
 			client,
-			&fc_db::DatabaseSettings {
+			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
 					cache_size: 0,
@@ -309,7 +396,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, b1)).unwrap();
 
 		// Map B1
-		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
+		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
 			block_hash: b1_hash,
 			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
@@ -318,11 +405,11 @@ mod tests {
 
 		// Expect B1 to be canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::frontier_backend_client::load_hash(
 				client.as_ref(),
 				backend.as_ref(),
 				ethereum_block_hash
-			)
+			))
 			.unwrap()
 			.unwrap(),
 			b1_hash,
@@ -338,7 +425,7 @@ mod tests {
 		executor::block_on(client.import(BlockOrigin::Own, b2)).unwrap();
 
 		// Map B2 to same ethereum hash
-		let commitment = fc_db::MappingCommitment::<OpaqueBlock> {
+		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
 			block_hash: b2_hash,
 			ethereum_block_hash,
 			ethereum_transaction_hashes: vec![],
@@ -347,11 +434,11 @@ mod tests {
 
 		// Still expect B1 to be canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::frontier_backend_client::load_hash(
 				client.as_ref(),
 				backend.as_ref(),
 				ethereum_block_hash
-			)
+			))
 			.unwrap()
 			.unwrap(),
 			b1_hash,
@@ -367,11 +454,11 @@ mod tests {
 
 		// Expect B2 to be new canon
 		assert_eq!(
-			super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::frontier_backend_client::load_hash(
 				client.as_ref(),
 				backend.as_ref(),
 				ethereum_block_hash
-			)
+			))
 			.unwrap()
 			.unwrap(),
 			b2_hash,

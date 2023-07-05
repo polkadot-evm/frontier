@@ -20,7 +20,7 @@ use std::{marker::PhantomData, sync::Arc, time};
 
 use ethereum::BlockV2 as EthereumBlock;
 use ethereum_types::{H256, U256};
-use jsonrpsee::core::{async_trait, RpcResult as Result};
+use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
@@ -38,7 +38,7 @@ use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal
 
 pub struct EthFilter<B: BlockT, C, BE> {
 	client: Arc<C>,
-	backend: Arc<fc_db::Backend<B>>,
+	backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -49,7 +49,7 @@ pub struct EthFilter<B: BlockT, C, BE> {
 impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
-		backend: Arc<fc_db::Backend<B>>,
+		backend: Arc<dyn fc_db::BackendReader<B> + Send + Sync>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -69,10 +69,10 @@ impl<B: BlockT, C, BE> EthFilter<B, C, BE> {
 
 impl<B, C, BE> EthFilter<B, C, BE>
 where
-	B: BlockT,
+	B: BlockT<Hash = H256>,
 	C: HeaderBackend<B>,
 {
-	fn create_filter(&self, filter_type: FilterType) -> Result<U256> {
+	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let block_number =
 			UniqueSaturatedInto::<u64>::unique_saturated_into(self.client.info().best_number);
 		let pool = self.filter_pool.clone();
@@ -111,25 +111,25 @@ where
 #[async_trait]
 impl<B, C, BE> EthFilterApiServer for EthFilter<B, C, BE>
 where
-	B: BlockT,
+	B: BlockT<Hash = H256>,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
-	fn new_filter(&self, filter: Filter) -> Result<U256> {
+	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
 		self.create_filter(FilterType::Log(filter))
 	}
 
-	fn new_block_filter(&self) -> Result<U256> {
+	fn new_block_filter(&self) -> RpcResult<U256> {
 		self.create_filter(FilterType::Block)
 	}
 
-	fn new_pending_transaction_filter(&self) -> Result<U256> {
+	fn new_pending_transaction_filter(&self) -> RpcResult<U256> {
 		Err(internal_err("Method not available."))
 	}
 
-	async fn filter_changes(&self, index: Index) -> Result<FilterChanges> {
+	async fn filter_changes(&self, index: Index) -> RpcResult<FilterChanges> {
 		// There are multiple branches that needs to return async blocks.
 		// Also, each branch need to (synchronously) do stuff with the pool
 		// (behind a lock), and the lock should be released before entering
@@ -233,6 +233,7 @@ where
 		};
 
 		let client = Arc::clone(&self.client);
+		let backend = Arc::clone(&self.backend);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let max_past_logs = self.max_past_logs;
 
@@ -262,29 +263,43 @@ where
 				current_number,
 			} => {
 				let mut ret: Vec<Log> = Vec::new();
-				let _ = filter_range_logs(
-					client.as_ref(),
-					&block_data_cache,
-					&mut ret,
-					max_past_logs,
-					&filter,
-					from_number,
-					current_number,
-				)
-				.await?;
+				if backend.is_indexed() {
+					let _ = filter_range_logs_indexed(
+						client.as_ref(),
+						backend.as_ref(),
+						&block_data_cache,
+						&mut ret,
+						max_past_logs,
+						&filter,
+						from_number,
+						current_number,
+					)
+					.await?;
+				} else {
+					let _ = filter_range_logs(
+						client.as_ref(),
+						&block_data_cache,
+						&mut ret,
+						max_past_logs,
+						&filter,
+						from_number,
+						current_number,
+					)
+					.await?;
+				}
 
 				Ok(FilterChanges::Logs(ret))
 			}
 		}
 	}
 
-	async fn filter_logs(&self, index: Index) -> Result<Vec<Log>> {
+	async fn filter_logs(&self, index: Index) -> RpcResult<Vec<Log>> {
 		let key = U256::from(index.value());
 		let pool = self.filter_pool.clone();
 
 		// We want to get the filter, while releasing the pool lock outside
 		// of the async block.
-		let filter_result: Result<Filter> = (|| {
+		let filter_result: RpcResult<Filter> = (|| {
 			let pool = pool
 				.lock()
 				.map_err(|_| internal_err("Filter pool is not available."))?;
@@ -303,6 +318,7 @@ where
 		})();
 
 		let client = Arc::clone(&self.client);
+		let backend = Arc::clone(&self.backend);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let max_past_logs = self.max_past_logs;
 
@@ -326,20 +342,34 @@ where
 			.unwrap_or(best_number);
 
 		let mut ret: Vec<Log> = Vec::new();
-		let _ = filter_range_logs(
-			client.as_ref(),
-			&block_data_cache,
-			&mut ret,
-			max_past_logs,
-			&filter,
-			from_number,
-			current_number,
-		)
-		.await?;
+		if backend.is_indexed() {
+			let _ = filter_range_logs_indexed(
+				client.as_ref(),
+				backend.as_ref(),
+				&block_data_cache,
+				&mut ret,
+				max_past_logs,
+				&filter,
+				from_number,
+				current_number,
+			)
+			.await?;
+		} else {
+			let _ = filter_range_logs(
+				client.as_ref(),
+				&block_data_cache,
+				&mut ret,
+				max_past_logs,
+				&filter,
+				from_number,
+				current_number,
+			)
+			.await?;
+		}
 		Ok(ret)
 	}
 
-	fn uninstall_filter(&self, index: Index) -> Result<bool> {
+	fn uninstall_filter(&self, index: Index) -> RpcResult<bool> {
 		let key = U256::from(index.value());
 		let pool = self.filter_pool.clone();
 		// Try to lock.
@@ -355,7 +385,7 @@ where
 		response
 	}
 
-	async fn logs(&self, filter: Filter) -> Result<Vec<Log>> {
+	async fn logs(&self, filter: Filter) -> RpcResult<Vec<Log>> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
@@ -368,6 +398,7 @@ where
 				backend.as_ref(),
 				hash,
 			)
+			.await
 			.map_err(|err| internal_err(format!("{:?}", err)))?
 			{
 				Some(hash) => hash,
@@ -400,19 +431,179 @@ where
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(best_number);
 
-			let _ = filter_range_logs(
-				client.as_ref(),
-				&block_data_cache,
-				&mut ret,
-				max_past_logs,
-				&filter,
-				from_number,
-				current_number,
-			)
-			.await?;
+			if backend.is_indexed() {
+				let _ = filter_range_logs_indexed(
+					client.as_ref(),
+					backend.as_ref(),
+					&block_data_cache,
+					&mut ret,
+					max_past_logs,
+					&filter,
+					from_number,
+					current_number,
+				)
+				.await?;
+			} else {
+				let _ = filter_range_logs(
+					client.as_ref(),
+					&block_data_cache,
+					&mut ret,
+					max_past_logs,
+					&filter,
+					from_number,
+					current_number,
+				)
+				.await?;
+			}
 		}
 		Ok(ret)
 	}
+}
+
+async fn filter_range_logs_indexed<B, C, BE>(
+	_client: &C,
+	backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+	block_data_cache: &EthBlockDataCacheTask<B>,
+	ret: &mut Vec<Log>,
+	max_past_logs: u32,
+	filter: &Filter,
+	from: NumberFor<B>,
+	to: NumberFor<B>,
+) -> RpcResult<()>
+where
+	B: BlockT<Hash = H256>,
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B> + 'static,
+{
+	use std::time::Instant;
+	let timer_start = Instant::now();
+	let timer_prepare = Instant::now();
+
+	// Max request duration of 10 seconds.
+	let max_duration = time::Duration::from_secs(10);
+	let begin_request = time::Instant::now();
+
+	let topics_input = if filter.topics.is_some() {
+		let filtered_params = FilteredParams::new(Some(filter.clone()));
+		Some(filtered_params.flat_topics)
+	} else {
+		None
+	};
+
+	// Normalize filter data
+	let addresses = match &filter.address {
+		Some(VariadicValue::Single(item)) => vec![*item],
+		Some(VariadicValue::Multiple(items)) => items.clone(),
+		_ => vec![],
+	};
+	let topics = topics_input
+		.unwrap_or_default()
+		.iter()
+		.map(|flat| match flat {
+			VariadicValue::Single(item) => vec![*item],
+			VariadicValue::Multiple(items) => items.clone(),
+			_ => vec![],
+		})
+		.collect::<Vec<Vec<Option<H256>>>>();
+
+	let time_prepare = timer_prepare.elapsed().as_millis();
+	let timer_fetch = Instant::now();
+	if let Ok(logs) = backend
+		.filter_logs(
+			UniqueSaturatedInto::<u64>::unique_saturated_into(from),
+			UniqueSaturatedInto::<u64>::unique_saturated_into(to),
+			addresses,
+			topics,
+		)
+		.await
+	{
+		let time_fetch = timer_fetch.elapsed().as_millis();
+		let timer_post = Instant::now();
+		use std::collections::BTreeMap;
+
+		let mut statuses_cache: BTreeMap<H256, Option<Vec<TransactionStatus>>> = BTreeMap::new();
+
+		for log in logs.iter() {
+			let substrate_hash = log.substrate_block_hash;
+
+			let schema = log.ethereum_storage_schema;
+			let ethereum_block_hash = log.ethereum_block_hash;
+			let block_number = log.block_number;
+			let db_transaction_index = log.transaction_index;
+			let db_log_index = log.log_index;
+
+			let statuses = if let Some(statuses) = statuses_cache.get(&log.substrate_block_hash) {
+				statuses.clone()
+			} else {
+				let statuses = block_data_cache
+					.current_transaction_statuses(schema, substrate_hash)
+					.await;
+				statuses_cache.insert(log.substrate_block_hash, statuses.clone());
+				statuses
+			};
+			if let Some(statuses) = statuses {
+				let mut block_log_index: u32 = 0;
+				for status in statuses.iter() {
+					let mut transaction_log_index: u32 = 0;
+					let transaction_hash = status.transaction_hash;
+					let transaction_index = status.transaction_index;
+					for ethereum_log in &status.logs {
+						if transaction_index == db_transaction_index
+							&& transaction_log_index == db_log_index
+						{
+							ret.push(Log {
+								address: ethereum_log.address,
+								topics: ethereum_log.topics.clone(),
+								data: Bytes(ethereum_log.data.clone()),
+								block_hash: Some(ethereum_block_hash),
+								block_number: Some(U256::from(block_number)),
+								transaction_hash: Some(transaction_hash),
+								transaction_index: Some(U256::from(transaction_index)),
+								log_index: Some(U256::from(block_log_index)),
+								transaction_log_index: Some(U256::from(transaction_log_index)),
+								removed: false,
+							});
+						}
+						transaction_log_index += 1;
+						block_log_index += 1;
+					}
+				}
+			}
+			// Check for restrictions
+			if ret.len() as u32 > max_past_logs {
+				return Err(internal_err(format!(
+					"query returned more than {} results",
+					max_past_logs
+				)));
+			}
+			if begin_request.elapsed() > max_duration {
+				return Err(internal_err(format!(
+					"query timeout of {} seconds exceeded",
+					max_duration.as_secs()
+				)));
+			}
+		}
+
+		let time_post = timer_post.elapsed().as_millis();
+
+		log::info!(
+			target: "frontier-sql",
+			"OUTER-TIMER fetch={}, post={}",
+			time_fetch,
+			time_post,
+		);
+	}
+
+	log::info!(
+		target: "frontier-sql",
+		"OUTER-TIMER start={}, prepare={}, all_fetch = {}",
+		timer_start.elapsed().as_millis(),
+		time_prepare,
+		timer_fetch.elapsed().as_millis(),
+	);
+	Ok(())
 }
 
 async fn filter_range_logs<B: BlockT, C, BE>(
@@ -423,7 +614,7 @@ async fn filter_range_logs<B: BlockT, C, BE>(
 	filter: &Filter,
 	from: NumberFor<B>,
 	to: NumberFor<B>,
-) -> Result<()>
+) -> RpcResult<()>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -501,10 +692,9 @@ fn filter_block_logs<'a>(
 	let mut block_log_index: u32 = 0;
 	let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 	for status in transaction_statuses.iter() {
-		let logs = status.logs.clone();
 		let mut transaction_log_index: u32 = 0;
 		let transaction_hash = status.transaction_hash;
-		for ethereum_log in logs {
+		for ethereum_log in &status.logs {
 			let mut log = Log {
 				address: ethereum_log.address,
 				topics: ethereum_log.topics.clone(),

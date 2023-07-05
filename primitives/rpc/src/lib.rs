@@ -26,6 +26,7 @@ use scale_info::TypeInfo;
 // Substrate
 use sp_core::{H160, H256, U256};
 use sp_runtime::{traits::Block as BlockT, Permill, RuntimeDebug};
+use sp_state_machine::OverlayedChanges;
 use sp_std::vec::Vec;
 
 #[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
@@ -37,6 +38,43 @@ pub struct TransactionStatus {
 	pub contract_address: Option<H160>,
 	pub logs: Vec<Log>,
 	pub logs_bloom: Bloom,
+}
+
+pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
+	fn is_enabled() -> bool;
+
+	fn set_overlayed_changes(
+		client: &C,
+		overlayed_changes: &mut OverlayedChanges,
+		block: B::Hash,
+		version: u32,
+		address: H160,
+		balance: Option<U256>,
+		nonce: Option<U256>,
+	);
+
+	fn into_account_id_bytes(address: H160) -> Vec<u8>;
+}
+
+impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
+	fn is_enabled() -> bool {
+		false
+	}
+
+	fn set_overlayed_changes(
+		_client: &C,
+		_overlayed_changes: &mut OverlayedChanges,
+		_block: B::Hash,
+		_version: u32,
+		_address: H160,
+		_balance: Option<U256>,
+		_nonce: Option<U256>,
+	) {
+	}
+
+	fn into_account_id_bytes(_address: H160) -> Vec<u8> {
+		Vec::default()
+	}
 }
 
 sp_api::decl_runtime_apis! {

@@ -16,15 +16,12 @@ ethereum-types = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-
 # Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-pallet-timestamp = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
-
 # Frontier
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
@@ -39,6 +36,7 @@ libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 rlp = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default"] }
+pallet-timestamp = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 # Frontier
 fp-self-contained = { workspace = true, features = ["default"] }
@@ -55,7 +53,6 @@ std = [
 	# Substrate
 	"frame-support/std",
 	"frame-system/std",
-	"pallet-timestamp/std",
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-std/std",
@@ -71,13 +68,11 @@ std = [
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
-	"pallet-timestamp/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
 	"frame-system/try-runtime",
-	"pallet-timestamp/try-runtime",
 	"pallet-evm/try-runtime",
 ]
 forbid-evm-reentrancy = ["pallet-evm/forbid-evm-reentrancy"]

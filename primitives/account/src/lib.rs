@@ -67,7 +67,7 @@ impl std::fmt::Display for AccountId20 {
 
 					acc
 				});
-		write!(f, "{}", checksum)
+		write!(f, "{checksum}")
 	}
 }
 

@@ -16,10 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::types::Bytes;
 use ethereum::{AccessListItem, TransactionV2};
 use ethereum_types::{H160, H256, H512, U256, U64};
 use serde::{ser::SerializeStruct, Serialize, Serializer};
+
+use crate::types::Bytes;
 
 /// Transaction
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]

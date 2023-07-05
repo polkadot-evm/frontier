@@ -42,4 +42,4 @@ any Ethereum transaction into a transaction compatible with this
 module.
 
 The gas configurations are configurable. Right now, a pre-defined
-London hard fork configuration option is provided.
+Shanghai hard fork configuration option is provided.

@@ -17,10 +17,9 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::U256;
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_network_common::ExHashT;
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
@@ -29,9 +28,12 @@ use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	frontier_backend_client, internal_err,
+};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi, EGA> Eth<B, C, P, CT, BE, H, A, EGA>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -39,7 +41,7 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 {
-	pub fn gas_price(&self) -> Result<U256> {
+	pub fn gas_price(&self) -> RpcResult<U256> {
 		let block_hash = self.client.info().best_hash;
 
 		self.client
@@ -48,12 +50,12 @@ where
 			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
 	}
 
-	pub fn fee_history(
+	pub async fn fee_history(
 		&self,
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: Option<Vec<f64>>,
-	) -> Result<FeeHistory> {
+	) -> RpcResult<FeeHistory> {
 		// The max supported range size is 1024 by spec.
 		let range_limit = U256::from(1024);
 		let block_count = if block_count > range_limit {
@@ -62,11 +64,13 @@ where
 			block_count.as_u64()
 		};
 
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		if let Some(id) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(newest_block),
-		) {
+		)
+		.await?
+		{
 			let Ok(number) = self.client.expect_block_number_from_id(&id) else {
 				return Err(internal_err(format!("Failed to retrieve block number at {id}")));
 			};
@@ -175,7 +179,7 @@ where
 		)))
 	}
 
-	pub fn max_priority_fee_per_gas(&self) -> Result<U256> {
+	pub fn max_priority_fee_per_gas(&self) -> RpcResult<U256> {
 		// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51
 		let at_percentile = 60;
 		let block_count = 20;

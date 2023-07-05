@@ -16,10 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use crate::types::Bytes;
+use std::collections::BTreeMap;
+
 use ethereum::AccessListItem;
-use ethereum_types::{H160, U256};
+use ethereum_types::{H160, H256, U256};
 use serde::Deserialize;
+
+use crate::types::Bytes;
 
 /// Call request
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
@@ -41,6 +44,7 @@ pub struct CallRequest {
 	/// Value
 	pub value: Option<U256>,
 	/// Data
+	#[serde(alias = "input")]
 	pub data: Option<Bytes>,
 	/// Nonce
 	pub nonce: Option<U256>,
@@ -49,4 +53,23 @@ pub struct CallRequest {
 	/// EIP-2718 type
 	#[serde(rename = "type")]
 	pub transaction_type: Option<U256>,
+}
+
+// State override
+#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "camelCase")]
+pub struct CallStateOverride {
+	/// Fake balance to set for the account before executing the call.
+	pub balance: Option<U256>,
+	/// Fake nonce to set for the account before executing the call.
+	pub nonce: Option<U256>,
+	/// Fake EVM bytecode to inject into the account before executing the call.
+	pub code: Option<Bytes>,
+	/// Fake key-value mapping to override all slots in the account storage before
+	/// executing the call.
+	pub state: Option<BTreeMap<H256, H256>>,
+	/// Fake key-value mapping to override individual slots in the account storage before
+	/// executing the call.
+	pub state_diff: Option<BTreeMap<H256, H256>>,
 }

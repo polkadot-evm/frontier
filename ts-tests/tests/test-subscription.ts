@@ -40,7 +40,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		let connected = false;
 		let subscriptionId = "";
 		expect(subscriptionId).is.empty;
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				connected = true;
 				subscriptionId = d;
@@ -89,7 +89,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 	step("should get newPendingTransactions stream", async function (done) {
 		subscription = context.web3.eth.subscribe("pendingTransactions", function (error, result) {});
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -97,7 +97,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 
 		const tx = await sendTransaction(context);
 		let data = null;
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("data", function (d: any) {
 				data = d;
 				logsGenerated += 1;
@@ -115,7 +115,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 	step("should subscribe to all logs", async function (done) {
 		subscription = context.web3.eth.subscribe("logs", {}, function (error, result) {});
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -165,7 +165,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -200,7 +200,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -238,7 +238,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		);
 
 		let data = [];
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
 				resolve();
@@ -261,7 +261,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		);
 
 		let data = [];
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
 				resolve();
@@ -285,7 +285,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		);
 
 		let data = [];
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
 				resolve();
@@ -315,7 +315,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		);
 
 		let data = [];
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("data", function (d: any) {
 				data.push(d);
 				resolve();
@@ -336,7 +336,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -375,7 +375,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -417,7 +417,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -463,7 +463,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});
@@ -505,7 +505,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			function (error, result) {}
 		);
 
-		await new Promise((resolve) => {
+		await new Promise<void>((resolve) => {
 			subscription.on("connected", function (d: any) {
 				resolve();
 			});

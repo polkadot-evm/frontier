@@ -18,10 +18,11 @@
 
 //! Pub-Sub types.
 
-use crate::types::{Filter, Log, RichHeader};
 use ethereum_types::H256;
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{from_value, Value};
+
+use crate::types::{Filter, Log, RichHeader};
 
 /// Subscription result.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -83,18 +84,13 @@ pub enum Kind {
 }
 
 /// Subscription kind.
-#[derive(Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Hash)]
 pub enum Params {
 	/// No parameters passed.
+	#[default]
 	None,
 	/// Log parameters.
 	Logs(Filter),
-}
-
-impl Default for Params {
-	fn default() -> Self {
-		Params::None
-	}
 }
 
 impl<'a> Deserialize<'a> for Params {

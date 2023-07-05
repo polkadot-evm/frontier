@@ -20,62 +20,16 @@
 use super::*;
 use crate::mock::*;
 
-use fp_evm::{Context, GenesisAccount};
-use frame_support::{assert_ok, traits::GenesisBuild};
+use fp_evm::Context;
+use frame_support::{assert_err, assert_ok};
 use scale_codec::Encode;
 use sp_core::{H160, U256};
-use std::{collections::BTreeMap, str::FromStr};
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default()
+	frame_system::GenesisConfig::default()
 		.build_storage::<Test>()
-		.unwrap();
-
-	let mut accounts = BTreeMap::new();
-	accounts.insert(
-		H160::from_str("1000000000000000000000000000000000000001").unwrap(),
-		GenesisAccount {
-			nonce: U256::from(1),
-			balance: U256::from(1000000),
-			storage: Default::default(),
-			code: vec![
-				0x00, // STOP
-			],
-		},
-	);
-	accounts.insert(
-		H160::from_str("1000000000000000000000000000000000000002").unwrap(),
-		GenesisAccount {
-			nonce: U256::from(1),
-			balance: U256::from(1000000),
-			storage: Default::default(),
-			code: vec![
-				0xff, // INVALID
-			],
-		},
-	);
-	accounts.insert(
-		H160::default(), // root
-		GenesisAccount {
-			nonce: U256::from(1),
-			balance: U256::max_value(),
-			storage: Default::default(),
-			code: vec![],
-		},
-	);
-
-	pallet_balances::GenesisConfig::<Test> {
-		// Create the block author account with some balance.
-		balances: vec![(
-			H160::from_str("0x1234500000000000000000000000000000000000").unwrap(),
-			12345,
-		)],
-	}
-	.assimilate_storage(&mut t)
-	.expect("Pallet balances storage can be assimilated");
-	GenesisBuild::<Test>::assimilate_storage(&pallet_evm::GenesisConfig { accounts }, &mut t)
-		.unwrap();
-	t.into()
+		.unwrap()
+		.into()
 }
 
 #[test]
@@ -133,5 +87,44 @@ fn decode_limit_ok() {
 		};
 
 		assert_ok!(Dispatch::<Test>::execute(&mut handle));
+	});
+}
+
+#[test]
+fn dispatch_validator_works_well() {
+	new_test_ext().execute_with(|| {
+		let call = RuntimeCall::System(frame_system::Call::remark { remark: Vec::new() });
+		let mut handle = MockHandle {
+			input: call.encode(),
+			context: Context {
+				address: H160::default(),
+				caller: H160::default(),
+				apparent_value: U256::default(),
+			},
+		};
+		assert_ok!(Dispatch::<Test>::execute(&mut handle));
+
+		pub struct MockValidator;
+		impl DispatchValidateT<H160, RuntimeCall> for MockValidator {
+			fn validate_before_dispatch(
+				_origin: &H160,
+				call: &RuntimeCall,
+			) -> Option<PrecompileFailure> {
+				match call {
+					RuntimeCall::System(frame_system::Call::remark { remark: _ }) => {
+						return Some(PrecompileFailure::Error {
+							exit_status: ExitError::Other("This call is not allowed".into()),
+						})
+					}
+					_ => None,
+				}
+			}
+		}
+		assert_err!(
+			Dispatch::<Test, MockValidator>::execute(&mut handle),
+			PrecompileFailure::Error {
+				exit_status: ExitError::Other("This call is not allowed".into()),
+			}
+		);
 	});
 }
