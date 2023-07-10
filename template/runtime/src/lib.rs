@@ -692,15 +692,15 @@ impl_runtime_apis! {
 			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 
 			let mut estimated_transaction_len = data.len() +
-				// to: 20
-				// from: 20
-				// value: 32
-				// gas_limit: 32
-				// nonce: 32
-				// 1 byte transaction action variant
-				// chain id 8 bytes
-				// 65 bytes signature
-				210;
+				20 + // to
+				20 + // from
+				32 + // value
+				32 + // gas_limit
+				32 + // nonce
+				1 + // TransactionAction
+				8 + // chain id
+				65; // signature
+
 			if max_fee_per_gas.is_some() {
 				estimated_transaction_len += 32;
 			}
@@ -767,15 +767,14 @@ impl_runtime_apis! {
 			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 
 			let mut estimated_transaction_len = data.len() +
-				// to: 20
-				// from: 20
-				// value: 32
-				// gas_limit: 32
-				// nonce: 32
-				// 1 byte transaction action variant
-				// chain id 8 bytes
-				// 65 bytes signature
-				210;
+				20 + // from
+				32 + // value
+				32 + // gas_limit
+				32 + // nonce
+				1 + // TransactionAction
+				8 + // chain id
+				65; // signature
+
 			if max_fee_per_gas.is_some() {
 				estimated_transaction_len += 32;
 			}
