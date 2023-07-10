@@ -31,11 +31,14 @@ mod receipt;
 mod sync;
 mod transaction;
 mod transaction_request;
+#[cfg(feature = "txpool")]
 mod txpool;
 mod work;
 
 pub mod pubsub;
 
+#[cfg(feature = "txpool")]
+pub use self::txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction};
 pub use self::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
@@ -56,6 +59,5 @@ pub use self::{
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
 	transaction_request::{TransactionMessage, TransactionRequest},
-	txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	work::Work,
 };
