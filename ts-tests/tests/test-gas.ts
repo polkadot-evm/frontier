@@ -1,10 +1,22 @@
 import { expect } from "chai";
+import { ethers } from "ethers";
+import { step } from "mocha-steps";
 import { AbiItem } from "web3-utils";
 
 import InvalidOpcode from "../build/contracts/InvalidOpcode.json";
 import Test from "../build/contracts/Test.json";
-import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS, ETH_BLOCK_GAS_LIMIT } from "./config";
+import Web3 from "web3";
+import {
+	GENESIS_ACCOUNT,
+	GENESIS_ACCOUNT_PRIVATE_KEY,
+	FIRST_CONTRACT_ADDRESS,
+	ETH_BLOCK_GAS_LIMIT,
+	ETH_BLOCK_POV_LIMIT,
+	TEST_ERC20_BYTECODE,
+} from "./config";
 import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./util";
+
+const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
 // (!) The implementation must match the one in the rpc handler.
 // If the variation in the estimate is less than 10%,
@@ -52,27 +64,6 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				data: Test.bytecode,
 			})
 		).to.equal(binarySearchEstimation);
-	});
-
-	it.skip("block gas limit over 5M", async function () {
-		expect((await context.web3.eth.getBlock("latest")).gasLimit).to.be.above(5000000);
-	});
-
-	// Testing the gas limit protection, hardcoded to 25M
-	it.skip("gas limit should decrease on next block if gas unused", async function () {
-		this.timeout(15000);
-
-		const gasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
-		await createAndFinalizeBlock(context.web3);
-
-		// Gas limit is expected to have decreased as the gasUsed by the block is lower than 2/3 of the previous gas limit
-		const newGasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
-		expect(newGasLimit).to.be.below(gasLimit);
-	});
-
-	// Testing the gas limit protection, hardcoded to 25M
-	it.skip("gas limit should increase on next block if gas fully used", async function () {
-		// TODO: fill a block with many heavy transaction to simulate lot of gas.
 	});
 
 	it("eth_estimateGas for contract call", async function () {
@@ -183,6 +174,109 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
 		expect((createReceipt as any).error.message).to.equal("exceeds block gas limit");
+	});
+});
+
+describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => {
+	step("gas limit bound works with ref time heavy txns", async function () {
+		this.timeout(100000000);
+
+		let transfers_per_block = Math.round(ETH_BLOCK_GAS_LIMIT / 21_000);
+		// do transfer transfers_per_block + 1
+		for (var nonce = 0; nonce < transfers_per_block + 1; nonce++) {
+			const tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: TEST_ACCOUNT,
+					value: "0x1",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x5208",
+					nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		}
+
+		await createAndFinalizeBlock(context.web3);
+
+		let latest = await context.web3.eth.getBlock("latest");
+		expect(latest.transactions.length).to.be.eq(transfers_per_block);
+		expect(latest.gasUsed).to.be.lessThanOrEqual(ETH_BLOCK_GAS_LIMIT);
+		expect(ETH_BLOCK_GAS_LIMIT - latest.gasUsed).to.be.lessThan(21_000);
+	});
+});
+
+describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => {
+	// This test fills a block with regular transfers + a transfer to a contract with big bytecode.
+	// We consider bytecode "big" when it consumes an effective gas greater than the legacy gas.
+	step("gas limit bound works with pov size heavy txns", async function () {
+		this.timeout(100000000);
+		let nonce = 0;
+		let tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: TEST_ERC20_BYTECODE,
+				gas: "0x1000000",
+				gasPrice: "0x3B9ACA00",
+				nonce,
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const { result } = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		await createAndFinalizeBlock(context.web3);
+		const receipt = await context.web3.eth.getTransactionReceipt(result);
+		let contractAddress = receipt.contractAddress;
+
+		let contract_byte_size = (await (await context.web3.eth.getCode(contractAddress)).length) / 2;
+
+		let gas_per_byte = Math.round(ETH_BLOCK_GAS_LIMIT / ETH_BLOCK_POV_LIMIT); // 75_000_000 / 5_242_880
+		let contract_transfer_effective_gas = contract_byte_size * gas_per_byte; // 100_520
+
+		// Transfer to contract
+		nonce += 1;
+		tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				to: contractAddress,
+				value: "0x1",
+				gasPrice: "0x3B9ACA00",
+				gas: "0xF4240",
+				nonce,
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		let contract_transfer_hash = await (
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])
+		).result;
+
+		// Fill the rest of the block with regular transfers
+		let transfers_per_block = Math.floor((ETH_BLOCK_GAS_LIMIT - contract_transfer_effective_gas) / 21_000);
+		// do transfer transfers_per_block + some number
+		for (var i = 0; i < transfers_per_block + 100; i++) {
+			nonce += 1;
+			tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: TEST_ACCOUNT,
+					value: "0x1",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x5208",
+					nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		}
+
+		await createAndFinalizeBlock(context.web3);
+
+		let latest = await context.web3.eth.getBlock("latest");
+		// Expect all regular transfers to go through + contract transfer.
+		expect(latest.transactions.length).to.be.eq(transfers_per_block + 1);
+		expect(latest.transactions).contain(contract_transfer_hash);
+		expect(latest.gasUsed).to.be.lessThanOrEqual(ETH_BLOCK_GAS_LIMIT);
+		expect(ETH_BLOCK_GAS_LIMIT - latest.gasUsed).to.be.lessThan(21_000);
 	});
 });
 
