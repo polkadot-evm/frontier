@@ -1026,6 +1026,9 @@
 <a href="#1026" id="1026">1026</a>
 <a href="#1027" id="1027">1027</a>
 <a href="#1028" id="1028">1028</a>
+<a href="#1029" id="1029">1029</a>
+<a href="#1030" id="1030">1030</a>
+<a href="#1031" id="1031">1031</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1711,7 +1714,10 @@
 		<span class="prelude-val">Ok</span>(PostDispatchInfo {
 			actual_weight: {
 				<span class="kw">let </span><span class="kw-2">mut </span>gas_to_weight = T::GasWeightMapping::gas_to_weight(
-					used_gas.standard.unique_saturated_into(),
+					sp_std::cmp::max(
+						used_gas.standard.unique_saturated_into(),
+						used_gas.effective.unique_saturated_into(),
+					),
 					<span class="bool-val">true</span>,
 				);
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(weight_info) = weight_info {
