@@ -688,7 +688,10 @@ impl<T: Config> Pallet<T> {
 		Ok(PostDispatchInfo {
 			actual_weight: {
 				let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-					used_gas.standard.unique_saturated_into(),
+					sp_std::cmp::max(
+						used_gas.standard.unique_saturated_into(),
+						used_gas.effective.unique_saturated_into(),
+					),
 					true,
 				);
 				if let Some(weight_info) = weight_info {
