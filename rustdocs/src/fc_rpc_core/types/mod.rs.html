@@ -59,6 +59,34 @@
 <a href="#59" id="59">59</a>
 <a href="#60" id="60">60</a>
 <a href="#61" id="61">61</a>
+<a href="#62" id="62">62</a>
+<a href="#63" id="63">63</a>
+<a href="#64" id="64">64</a>
+<a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
+<a href="#71" id="71">71</a>
+<a href="#72" id="72">72</a>
+<a href="#73" id="73">73</a>
+<a href="#74" id="74">74</a>
+<a href="#75" id="75">75</a>
+<a href="#76" id="76">76</a>
+<a href="#77" id="77">77</a>
+<a href="#78" id="78">78</a>
+<a href="#79" id="79">79</a>
+<a href="#80" id="80">80</a>
+<a href="#81" id="81">81</a>
+<a href="#82" id="82">82</a>
+<a href="#83" id="83">83</a>
+<a href="#84" id="84">84</a>
+<a href="#85" id="85">85</a>
+<a href="#86" id="86">86</a>
+<a href="#87" id="87">87</a>
+<a href="#88" id="88">88</a>
+<a href="#89" id="89">89</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -97,6 +125,8 @@
 
 <span class="kw">pub mod </span>pubsub;
 
+<span class="kw">use </span>serde::{de::Error, Deserialize, Deserializer};
+
 <span class="kw">pub use </span><span class="self">self</span>::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
@@ -120,4 +150,30 @@
 	txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	work::Work,
 };
+
+<span class="attr">#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">struct </span>CallOrInputData {
+	data: <span class="prelude-ty">Option</span>&lt;Bytes&gt;,
+	input: <span class="prelude-ty">Option</span>&lt;Bytes&gt;,
+}
+
+<span class="doccomment">/// Function to deserialize `data` and `input`  within `TransactionRequest` and `CallRequest`.
+/// It verifies that if both `data` and `input` are provided, they must be identical.
+</span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>deserialize_data_or_input&lt;<span class="lifetime">&#39;d</span>, D: Deserializer&lt;<span class="lifetime">&#39;d</span>&gt;&gt;(
+	d: D,
+) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Bytes&gt;, D::Error&gt; {
+	<span class="kw">let </span>CallOrInputData { data, input } = CallOrInputData::deserialize(d)<span class="question-mark">?</span>;
+	<span class="kw">match </span>(<span class="kw-2">&amp;</span>data, <span class="kw-2">&amp;</span>input) {
+		(<span class="prelude-val">Some</span>(data), <span class="prelude-val">Some</span>(input)) =&gt; {
+			<span class="kw">if </span>data == input {
+				<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(data.clone()))
+			} <span class="kw">else </span>{
+				<span class="prelude-val">Err</span>(D::Error::custom(
+					<span class="string">&quot;Ambiguous value for `data` and `input`&quot;</span>.to_string(),
+				))
+			}
+		}
+		(<span class="kw">_</span>, <span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(data.or(input)),
+	}
+}
 </code></pre></div></section></main></body></html>
