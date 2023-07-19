@@ -35,7 +35,7 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
+	traits::{ConstBool, ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, ConstantMultiplier, IdentityFee, Weight},
 };
 use pallet_grandpa::{
@@ -110,6 +110,7 @@ pub mod opaque {
 	}
 }
 
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frontier-template"),
 	impl_name: create_runtime_str!("frontier-template"),
@@ -161,6 +162,8 @@ parameter_types! {
 // Configure FRAME pallets to include in runtime.
 
 impl frame_system::Config for Runtime {
+	/// The ubiquitous event type.
+	type RuntimeEvent = RuntimeEvent;
 	/// The basic call filter to use in dispatchable.
 	type BaseCallFilter = frame_support::traits::Everything;
 	/// Block & extrinsics weights: base values and limits.
@@ -185,8 +188,6 @@ impl frame_system::Config for Runtime {
 	type Lookup = IdentityLookup<AccountId>;
 	/// The header type.
 	type Header = generic::Header<BlockNumber, BlakeTwo256>;
-	/// The ubiquitous event type.
-	type RuntimeEvent = RuntimeEvent;
 	/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	type BlockHashCount = BlockHashCount;
 	/// The weight of database operations that the runtime can invoke.
@@ -220,6 +221,7 @@ impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type MaxAuthorities = MaxAuthorities;
 	type DisabledValidators = ();
+	type AllowMultipleBlocksPerSlot = ConstBool<false>;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -271,7 +273,7 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = ();
 	type FreezeIdentifier = ();
 	type MaxLocks = MaxLocks;
 	type MaxReserves = ();

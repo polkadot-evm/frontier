@@ -43,6 +43,7 @@ parameter_types! {
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 impl frame_system::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
@@ -55,7 +56,6 @@ impl frame_system::Config for Test {
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Header = Header;
-	type RuntimeEvent = RuntimeEvent;
 	type BlockHashCount = BlockHashCount;
 	type DbWeight = ();
 	type Version = ();
