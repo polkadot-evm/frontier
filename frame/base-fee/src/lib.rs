@@ -159,7 +159,7 @@ pub mod pallet {
 					if let Some(scaled_basefee) = bf.checked_mul(U256::from(coef.deconstruct())) {
 						// Normalize to GWEI.
 						let increase = scaled_basefee
-							.checked_div(U256::from(1_000_000))
+							.checked_div(U256::from(1_000_000_000))
 							.unwrap_or_else(U256::zero);
 						*bf = bf.saturating_add(increase);
 					} else {
@@ -175,9 +175,13 @@ pub mod pallet {
 					if let Some(scaled_basefee) = bf.checked_mul(U256::from(coef.deconstruct())) {
 						// Normalize to GWEI.
 						let decrease = scaled_basefee
-							.checked_div(U256::from(1_000_000))
+							.checked_div(U256::from(1_000_000_000))
 							.unwrap_or_else(U256::zero);
-						*bf = bf.saturating_sub(decrease);
+						let default_base_fee = T::DefaultBaseFeePerGas::get();
+						match bf.saturating_sub(decrease) >= default_base_fee {
+							true => *bf = bf.saturating_sub(decrease),
+							false => *bf = default_base_fee,
+						}
 					} else {
 						Self::deposit_event(Event::BaseFeeOverflow);
 					}
