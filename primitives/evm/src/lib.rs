@@ -103,16 +103,16 @@ impl FeeCalculator for () {
 }
 
 pub trait EvmFreeCall {
-	fn can_send_free_call(source: &H160, target: &H160, input: &[u8]) -> bool;
-	fn on_sent_free_call(source: &H160);
+	fn can_send_free_call(source: &H160, target: &H160, selector: &[u8; 4]) -> bool;
+	fn on_sent_free_call(source: &H160, target: &H160, input: &[u8; 4]);
 }
 
 impl EvmFreeCall for () {
-	fn can_send_free_call(_source: &H160, _target: &H160, _input: &[u8]) -> bool {
+	fn can_send_free_call(_source: &H160, _target: &H160, _input: &[u8; 4]) -> bool {
 		false
 	}
 
-	fn on_sent_free_call(_source: &H160) {
+	fn on_sent_free_call(_source: &H160, _target: &H160, _input: &[u8; 4]) {
 
 	}
 }

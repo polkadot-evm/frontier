@@ -476,7 +476,7 @@ impl<T: Config> Pallet<T> {
 
 		let (mut base_fee, _) = T::FeeCalculator::min_gas_price();
 		// Set base fee to zero to pass validation of transaction in pool. @Horacio
-		if Self::is_free_call(&origin, &transaction) {
+		if Self::is_free_call(&origin, &transaction).0 {
 			base_fee = U256::zero();
 		}
 
@@ -545,7 +545,7 @@ impl<T: Config> Pallet<T> {
 		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
 		let transaction_index = pending.len() as u32;
-		let is_free = Self::is_free_call(&source, &transaction);
+		let (is_free, target, selector) = Self::is_free_call(&source, &transaction);
 
 		let (reason, status, used_gas, dest, extra_data) = match info {
 			CallOrCreateInfo::Call(info) => (
@@ -661,7 +661,7 @@ impl<T: Config> Pallet<T> {
 		});
 
 		if is_free {
-			<T as pallet_evm::Config>::FreeCalls::on_sent_free_call(&source);
+			<T as pallet_evm::Config>::FreeCalls::on_sent_free_call(&source, &target.unwrap(), &selector.unwrap());
 		}
 
 		Ok(PostDispatchInfo {
@@ -824,7 +824,7 @@ impl<T: Config> Pallet<T> {
 
 		let (mut base_fee, _) = T::FeeCalculator::min_gas_price();
 		// Set base fee to zero to pass validation of transaction in block. @Horacio
-		if Self::is_free_call(&origin, &transaction) {
+		if Self::is_free_call(&origin, &transaction).0 {
 			base_fee = U256::zero();
 		}
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
@@ -870,12 +870,14 @@ impl<T: Config> Pallet<T> {
 		weight
 	}
 
-	pub fn is_free_call(source: &H160, transaction: &Transaction) -> bool {
+	pub fn is_free_call(source: &H160, transaction: &Transaction) -> (bool, Option<H160>, Option<[u8; 4]>) {
 		if let Some(target) = Self::try_get_contract_address(transaction) {
-			let input = Self::get_input(transaction);
-			return <T as pallet_evm::Config>::FreeCalls::can_send_free_call(source, &target, input);
+			if let Some(selector) = Self::get_selector(transaction) {
+				let is_free_call = <T as pallet_evm::Config>::FreeCalls::can_send_free_call(source, &target, &selector);
+				return (is_free_call, Some(target), Some(selector))
+			}	
 		}
-		false
+		(false, None, None)
 	}
 
 	pub fn try_get_contract_address(transaction: &Transaction) -> Option<H160> {
@@ -890,11 +892,16 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
-	pub fn get_input(transaction: &Transaction) -> &[u8] {
-		match transaction {
+	pub fn get_selector(transaction: &Transaction) -> Option<[u8; 4]> {
+		let input = match transaction {
 			Transaction::Legacy(t) => &t.input,
 			Transaction::EIP1559(t) => &t.input,
 			Transaction::EIP2930(t) => &t.input,
+		};
+		if input.len() >= 4 {
+			input[..4].try_into().ok()
+		} else {
+			None
 		}
 	}
 	

@@ -219,7 +219,11 @@ pub mod pallet {
 
 			let is_transactional = true;
 			let validate = true;
-			let is_free = T::FreeCalls::can_send_free_call(&source, &target, &input[..]);
+			let maybe_selector: Option<[u8; 4]> = input.get(0..4).and_then(|input| input.try_into().ok());
+			let mut is_free = false;
+			if let Some(ref selector) = maybe_selector {
+				is_free = T::FreeCalls::can_send_free_call(&source, &target, selector);
+			}
 			let info = match T::Runner::call(
 				source,
 				target,
@@ -238,7 +242,7 @@ pub mod pallet {
 				Ok(info) => info,
 				Err(e) => {
 					if is_free {
-						T::FreeCalls::on_sent_free_call(&source);
+						T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
 					}
 					return Err(DispatchErrorWithPostInfo {
 						post_info: PostDispatchInfo {
@@ -260,7 +264,7 @@ pub mod pallet {
 			};
 
 			if is_free {
-				T::FreeCalls::on_sent_free_call(&source);
+				T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
 			}
 			Ok(PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
