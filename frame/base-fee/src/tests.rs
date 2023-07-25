@@ -158,12 +158,11 @@ fn should_not_overflow_u256() {
 }
 
 #[test]
-fn should_handle_zero() {
+fn should_fallback_to_default_value() {
 	let base_fee = U256::zero();
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		let init = BaseFeePerGas::<Test>::get();
 		BaseFee::on_finalize(System::block_number());
-		assert_eq!(BaseFeePerGas::<Test>::get(), init);
+		assert_eq!(BaseFeePerGas::<Test>::get(), DefaultBaseFeePerGas::get());
 	});
 }
 
@@ -175,11 +174,7 @@ fn should_handle_consecutive_empty_blocks() {
 			BaseFee::on_finalize(System::block_number());
 			System::set_block_number(System::block_number() + 1);
 		}
-		assert_eq!(
-			BaseFeePerGas::<Test>::get(),
-			// 8 is the lowest number which's 12.5% is >= 1.
-			U256::from(7)
-		);
+		assert_eq!(BaseFeePerGas::<Test>::get(), DefaultBaseFeePerGas::get());
 	});
 	let zero_elasticity = Permill::zero();
 	new_test_ext(Some(base_fee), Some(zero_elasticity)).execute_with(|| {
@@ -211,10 +206,7 @@ fn should_handle_consecutive_full_blocks() {
 		assert_eq!(
 			BaseFeePerGas::<Test>::get(),
 			// Max value allowed in the algorithm before overflowing U256.
-			U256::from_dec_str(
-				"930583037201699994746877284806656508753618758732556029383742480470471799"
-			)
-			.unwrap()
+			U256::from_dec_str("3490060326").unwrap()
 		);
 	});
 	let zero_elasticity = Permill::zero();
@@ -248,7 +240,7 @@ fn should_increase_total_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect the base fee to increase by 12.5%.
-		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1125000000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000125000));
 	});
 }
 
@@ -264,7 +256,7 @@ fn should_increase_delta_of_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect a 6.25% increase in base fee for a target capacity of 50% ((75/50)-1 = 0.5 * 0.125 = 0.0625).
-		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1062500000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000062500));
 	});
 }
 

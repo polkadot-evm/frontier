@@ -178,9 +178,10 @@ pub mod pallet {
 							.checked_div(U256::from(1_000_000_000))
 							.unwrap_or_else(U256::zero);
 						let default_base_fee = T::DefaultBaseFeePerGas::get();
-						match bf.saturating_sub(decrease) >= default_base_fee {
-							true => *bf = bf.saturating_sub(decrease),
-							false => *bf = default_base_fee,
+						if bf.saturating_sub(decrease) >= default_base_fee {
+							*bf = bf.saturating_sub(decrease);
+						} else {
+							*bf = default_base_fee;
 						}
 					} else {
 						Self::deposit_event(Event::BaseFeeOverflow);
