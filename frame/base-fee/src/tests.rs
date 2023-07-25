@@ -216,7 +216,10 @@ fn should_handle_consecutive_full_blocks() {
 		assert_eq!(
 			BaseFeePerGas::<Test>::get(),
 			// Max value allowed in the algorithm before overflowing U256.
-			U256::from_dec_str("930583037201699994746877284806656508753618758732556029383742480470471799").unwrap()
+			U256::from_dec_str(
+				"930583037201699994746877284806656508753618758732556029383742480470471799"
+			)
+			.unwrap()
 		);
 	});
 	let zero_elasticity = Permill::zero();
