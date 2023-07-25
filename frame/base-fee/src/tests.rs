@@ -33,6 +33,7 @@ use sp_runtime::{
 
 use super::*;
 use crate as pallet_base_fee;
+use crate::BaseFeeThreshold as BaseFeeThresholdT;
 
 type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
 type Block = frame_system::mocking::MockBlock<Test>;
@@ -75,7 +76,7 @@ parameter_types! {
 }
 
 pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
+impl BaseFeeThresholdT for BaseFeeThreshold {
 	fn lower() -> Permill {
 		Permill::zero()
 	}
@@ -132,6 +133,15 @@ pub fn new_test_ext(base_fee: Option<U256>, elasticity: Option<Permill>) -> Test
 	TestExternalities::new(t)
 }
 
+pub fn get_lowest_base_fee() -> U256 {
+	let default_base_fee = DefaultBaseFeePerGas::get();
+	default_base_fee
+		.checked_mul(U256::from(BaseFeeThreshold::ideal().deconstruct()))
+		.unwrap_or(default_base_fee)
+		.checked_div(U256::from(1_000_000))
+		.unwrap_or(default_base_fee)
+}
+
 #[test]
 fn should_default() {
 	new_test_ext(None, None).execute_with(|| {
@@ -162,7 +172,7 @@ fn should_fallback_to_default_value() {
 	let base_fee = U256::zero();
 	new_test_ext(Some(base_fee), None).execute_with(|| {
 		BaseFee::on_finalize(System::block_number());
-		assert_eq!(BaseFeePerGas::<Test>::get(), DefaultBaseFeePerGas::get());
+		assert_eq!(BaseFeePerGas::<Test>::get(), get_lowest_base_fee());
 	});
 }
 
@@ -174,7 +184,7 @@ fn should_handle_consecutive_empty_blocks() {
 			BaseFee::on_finalize(System::block_number());
 			System::set_block_number(System::block_number() + 1);
 		}
-		assert_eq!(BaseFeePerGas::<Test>::get(), DefaultBaseFeePerGas::get());
+		assert_eq!(BaseFeePerGas::<Test>::get(), get_lowest_base_fee());
 	});
 	let zero_elasticity = Permill::zero();
 	new_test_ext(Some(base_fee), Some(zero_elasticity)).execute_with(|| {
@@ -206,7 +216,7 @@ fn should_handle_consecutive_full_blocks() {
 		assert_eq!(
 			BaseFeePerGas::<Test>::get(),
 			// Max value allowed in the algorithm before overflowing U256.
-			U256::from_dec_str("3490060326").unwrap()
+			U256::from_dec_str("930583037201699994746877284806656508753618758732556029383742480470471799").unwrap()
 		);
 	});
 	let zero_elasticity = Permill::zero();
@@ -240,7 +250,7 @@ fn should_increase_total_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect the base fee to increase by 12.5%.
-		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000125000));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1125000000));
 	});
 }
 
@@ -256,7 +266,7 @@ fn should_increase_delta_of_base_fee() {
 		);
 		BaseFee::on_finalize(System::block_number());
 		// Expect a 6.25% increase in base fee for a target capacity of 50% ((75/50)-1 = 0.5 * 0.125 = 0.0625).
-		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1000062500));
+		assert_eq!(BaseFeePerGas::<Test>::get(), U256::from(1062500000));
 	});
 }
 
