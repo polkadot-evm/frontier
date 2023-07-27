@@ -72,7 +72,9 @@ where
 		.await?
 		{
 			let Ok(number) = self.client.expect_block_number_from_id(&id) else {
-				return Err(internal_err(format!("Failed to retrieve block number at {id}")));
+				return Err(internal_err(format!(
+					"Failed to retrieve block number at {id}"
+				)));
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
