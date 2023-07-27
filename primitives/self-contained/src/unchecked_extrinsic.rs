@@ -57,8 +57,12 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 	}
 }
 
-impl<Address, Call: SelfContainedCall, Signature, Extra: SignedExtension> Extrinsic
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<
+		Address: TypeInfo,
+		Call: SelfContainedCall + TypeInfo,
+		Signature: TypeInfo,
+		Extra: SignedExtension,
+	> Extrinsic for UncheckedExtrinsic<Address, Call, Signature, Extra>
 {
 	type Call = Call;
 
@@ -160,8 +164,8 @@ where
 	type SignedExtensions = Extra;
 }
 
-impl<Address, Call: SelfContainedCall, Signature, Extra> ExtrinsicCall
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address: TypeInfo, Call: SelfContainedCall + TypeInfo, Signature: TypeInfo, Extra>
+	ExtrinsicCall for UncheckedExtrinsic<Address, Call, Signature, Extra>
 where
 	Extra: SignedExtension,
 {

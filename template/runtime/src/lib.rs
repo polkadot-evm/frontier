@@ -111,6 +111,7 @@ pub mod opaque {
 	}
 }
 
+#[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: create_runtime_str!("frontier-template"),
 	impl_name: create_runtime_str!("frontier-template"),
@@ -215,12 +216,14 @@ impl frame_system::Config for Runtime {
 
 parameter_types! {
 	pub const MaxAuthorities: u32 = 100;
+	pub const AllowMultipleBlocksPerSlot: bool = false;
 }
 
 impl pallet_aura::Config for Runtime {
 	type AuthorityId = AuraId;
 	type MaxAuthorities = MaxAuthorities;
 	type DisabledValidators = ();
+	type AllowMultipleBlocksPerSlot = AllowMultipleBlocksPerSlot;
 }
 
 impl pallet_grandpa::Config for Runtime {
@@ -272,7 +275,7 @@ impl pallet_balances::Config for Runtime {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type ReserveIdentifier = [u8; 8];
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = ();
 	type FreezeIdentifier = ();
 	type MaxLocks = MaxLocks;
 	type MaxReserves = ();
