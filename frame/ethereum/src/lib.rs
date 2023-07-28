@@ -34,7 +34,8 @@ use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_ethereum::{
-	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
+	proof_size_base_cost, TransactionData, TransactionValidationError,
+	ValidatedTransaction as ValidatedTransactionT,
 };
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
@@ -353,17 +354,6 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-	fn proof_size_base_cost(transaction: &Transaction) -> u64 {
-		transaction
-			.encode()
-			.len()
-			// pallet index
-			.saturating_add(1)
-			// call index
-			.saturating_add(1) as u64
-	}
-
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -489,10 +479,9 @@ impl<T: Config> Pallet<T> {
 				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(weight_limit),
-					Some(Self::proof_size_base_cost(transaction)),
-				),
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(weight_limit), Some(proof_size_base_cost(transaction)))
+				}
 				_ => (None, None),
 			};
 
@@ -782,10 +771,9 @@ impl<T: Config> Pallet<T> {
 				gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(Self::proof_size_base_cost(transaction)),
-					Some(weight_limit),
-				),
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(proof_size_base_cost(transaction)), Some(weight_limit))
+				}
 				_ => (None, None),
 			};
 		match action {
@@ -871,10 +859,9 @@ impl<T: Config> Pallet<T> {
 				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(weight_limit),
-					Some(Self::proof_size_base_cost(transaction)),
-				),
+				weight_limit if weight_limit.proof_size() > 0 => {
+					(Some(weight_limit), Some(proof_size_base_cost(transaction)))
+				}
 				_ => (None, None),
 			};
 

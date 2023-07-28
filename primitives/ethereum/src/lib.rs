@@ -132,3 +132,14 @@ impl From<&Transaction> for TransactionData {
 		}
 	}
 }
+
+/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+pub fn proof_size_base_cost(transaction: &Transaction) -> u64 {
+	transaction
+		.encode()
+		.len()
+		// pallet index
+		.saturating_add(1)
+		// call index
+		.saturating_add(1) as u64
+}
