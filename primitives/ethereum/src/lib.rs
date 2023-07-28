@@ -63,6 +63,7 @@ pub struct TransactionData {
 }
 
 impl TransactionData {
+	#[allow(clippy::too_many_arguments)]
 	pub fn new(
 		action: TransactionAction,
 		input: Vec<u8>,
@@ -88,10 +89,16 @@ impl TransactionData {
 			access_list,
 			proof_size_base_cost: None,
 		};
-		transaction_data.proof_size_base_cost = Some(
-			// transaction data length + signature length + pallet_index + call index
-			(transaction_data.encode().len() + 65 + 1 + 1) as u64,
-		);
+		let proof_size_base_cost = transaction_data
+			.encode()
+			.len()
+			// signature
+			.saturating_add(65)
+			// pallet index
+			.saturating_add(1)
+			// call index
+			.saturating_add(1) as u64;
+		transaction_data.proof_size_base_cost = Some(proof_size_base_cost);
 
 		transaction_data
 	}
@@ -127,7 +134,7 @@ impl From<&Transaction> for TransactionData {
 			// pallet index
 			.saturating_add(1)
 			// call index
-			.saturating_add(1);
+			.saturating_add(1) as u64;
 
 		match t {
 			Transaction::Legacy(t) => TransactionData {
@@ -141,7 +148,7 @@ impl From<&Transaction> for TransactionData {
 				value: t.value,
 				chain_id: t.signature.chain_id(),
 				access_list: Vec::new(),
-				proof_size_base_cost: Some(proof_size_base_cost as u64),
+				proof_size_base_cost: Some(proof_size_base_cost),
 			},
 			Transaction::EIP2930(t) => TransactionData {
 				action: t.action,
@@ -158,7 +165,7 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
-				proof_size_base_cost: Some(proof_size_base_cost as u64),
+				proof_size_base_cost: Some(proof_size_base_cost),
 			},
 			Transaction::EIP1559(t) => TransactionData {
 				action: t.action,
@@ -175,7 +182,7 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
-				proof_size_base_cost: Some(proof_size_base_cost as u64),
+				proof_size_base_cost: Some(proof_size_base_cost),
 			},
 		}
 	}
