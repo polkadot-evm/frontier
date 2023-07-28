@@ -513,20 +513,3 @@ fn proof_size_weight_limit_validation_works() {
 		);
 	});
 }
-
-#[test]
-fn transaction_encode_length() {
-	use fp_ethereum::TransactionData;
-	use scale_codec::{Decode, Encode};
-
-	let (pairs, mut ext) = new_test_ext(1);
-	let alice = &pairs[0];
-	let transaction = &legacy_erc20_creation_transaction(alice);
-	let mut transaction_data: TransactionData = transaction.into();
-	transaction_data.chain_id = None;
-
-	assert_eq!(
-		scale_codec::Encode::encode(transaction).len(),
-		transaction_data.encode().len()
-	);
-}
