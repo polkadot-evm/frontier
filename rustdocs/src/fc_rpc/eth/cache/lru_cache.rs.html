@@ -162,11 +162,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>lru::LruCache;
-<span class="kw">use </span>scale_codec::Encode;
+</span><span class="kw">use </span>scale_codec::Encode;
+<span class="kw">use </span>schnellru::{LruMap, Unlimited};
 
 <span class="kw">pub struct </span>LRUCacheByteLimited&lt;K, V&gt; {
-	cache: LruCache&lt;K, V&gt;,
+	cache: LruMap&lt;K, V, Unlimited&gt;,
 	max_size: u64,
 	metrics: <span class="prelude-ty">Option</span>&lt;LRUCacheByteLimitedMetrics&gt;,
 	size: u64,
@@ -190,7 +190,7 @@
 		};
 
 		<span class="self">Self </span>{
-			cache: LruCache::unbounded(),
+			cache: LruMap::new(Unlimited),
 			max_size,
 			metrics,
 			size: <span class="number">0</span>,
@@ -216,7 +216,7 @@
 		</span><span class="self">self</span>.size += v.encoded_size() <span class="kw">as </span>u64;
 
 		<span class="kw">while </span><span class="self">self</span>.size &gt; <span class="self">self</span>.max_size {
-			<span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, v)) = <span class="self">self</span>.cache.pop_lru() {
+			<span class="kw">if let </span><span class="prelude-val">Some</span>((<span class="kw">_</span>, v)) = <span class="self">self</span>.cache.pop_oldest() {
 				<span class="kw">let </span>v_size = v.encoded_size() <span class="kw">as </span>u64;
 				<span class="self">self</span>.size -= v_size;
 			} <span class="kw">else </span>{
@@ -225,7 +225,7 @@
 		}
 
 		<span class="comment">// Add entry in cache
-		</span><span class="self">self</span>.cache.put(k, v);
+		</span><span class="self">self</span>.cache.insert(k, v);
 		<span class="comment">// Update metrics
 		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(metrics) = <span class="kw-2">&amp;</span><span class="self">self</span>.metrics {
 			metrics.size.set(<span class="self">self</span>.size);
@@ -243,7 +243,7 @@
 	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>register(
 		cache_name: <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str,
 		registry: <span class="kw-2">&amp;</span>prometheus_endpoint::Registry,
-	) -&gt; std::result::Result&lt;<span class="self">Self</span>, prometheus_endpoint::PrometheusError&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, prometheus_endpoint::PrometheusError&gt; {
 		<span class="prelude-val">Ok</span>(<span class="self">Self </span>{
 			hits: prometheus_endpoint::register(
 				prometheus::IntCounter::new(

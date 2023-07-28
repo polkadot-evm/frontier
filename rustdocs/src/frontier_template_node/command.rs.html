@@ -250,11 +250,6 @@
 <a href="#250" id="250">250</a>
 <a href="#251" id="251">251</a>
 <a href="#252" id="252">252</a>
-<a href="#253" id="253">253</a>
-<a href="#254" id="254">254</a>
-<a href="#255" id="255">255</a>
-<a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
 </pre></div><pre class="rust"><code><span class="comment">// This file is part of Substrate.
 
 // Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
@@ -274,7 +269,7 @@
 
 </span><span class="kw">use </span>futures::TryFutureExt;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_cli::{ChainSpec, RuntimeVersion, SubstrateCli};
+</span><span class="kw">use </span>sc_cli::{ChainSpec, SubstrateCli};
 <span class="kw">use </span>sc_service::DatabaseSource;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_db::kv::frontier_database_dir;
@@ -324,10 +319,6 @@
 				std::path::PathBuf::from(path),
 			)<span class="question-mark">?</span>),
 		})
-	}
-
-	<span class="kw">fn </span>native_runtime_version(<span class="kw">_</span>: <span class="kw-2">&amp;</span>Box&lt;<span class="kw">dyn </span>ChainSpec&gt;) -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>RuntimeVersion {
-		<span class="kw-2">&amp;</span>frontier_template_runtime::VERSION
 	}
 }
 
@@ -444,8 +435,7 @@
 
 			<span class="kw">let </span>runner = cli.create_runner(cmd)<span class="question-mark">?</span>;
 			<span class="kw">match </span>cmd {
-				BenchmarkCmd::Pallet(cmd) =&gt; runner
-					.sync_run(|config| cmd.run::&lt;Block, service::TemplateRuntimeExecutor&gt;(config)),
+				BenchmarkCmd::Pallet(cmd) =&gt; runner.sync_run(|config| cmd.run::&lt;Block, ()&gt;(config)),
 				BenchmarkCmd::Block(cmd) =&gt; runner.sync_run(|<span class="kw-2">mut </span>config| {
 					<span class="kw">let </span>(client, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>) = service::new_chain_ops(<span class="kw-2">&amp;mut </span>config, <span class="kw-2">&amp;</span>cli.eth)<span class="question-mark">?</span>;
 					cmd.run(client)

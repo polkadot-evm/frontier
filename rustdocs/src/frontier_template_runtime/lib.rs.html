@@ -1011,6 +1011,8 @@
 <a href="#1011" id="1011">1011</a>
 <a href="#1012" id="1012">1012</a>
 <a href="#1013" id="1013">1013</a>
+<a href="#1014" id="1014">1014</a>
+<a href="#1015" id="1015">1015</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
@@ -1048,7 +1050,7 @@
 </span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::{
 	construct_runtime, parameter_types,
-	traits::{ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
+	traits::{ConstBool, ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
 };
 <span class="kw">use </span>pallet_grandpa::{
@@ -1124,7 +1126,8 @@
 	}
 }
 
-<span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
+<span class="attr">#[sp_version::runtime_version]
+</span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
 	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frontier-template&quot;</span>),
 	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frontier-template&quot;</span>),
 	authoring_version: <span class="number">1</span>,
@@ -1175,6 +1178,8 @@
 <span class="comment">// Configure FRAME pallets to include in runtime.
 
 </span><span class="kw">impl </span>frame_system::Config <span class="kw">for </span>Runtime {
+	<span class="doccomment">/// The ubiquitous event type.
+	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="doccomment">/// The basic call filter to use in dispatchable.
 	</span><span class="kw">type </span>BaseCallFilter = frame_support::traits::Everything;
 	<span class="doccomment">/// Block &amp; extrinsics weights: base values and limits.
@@ -1199,8 +1204,6 @@
 	</span><span class="kw">type </span>Lookup = IdentityLookup&lt;AccountId&gt;;
 	<span class="doccomment">/// The header type.
 	</span><span class="kw">type </span>Header = generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
-	<span class="doccomment">/// The ubiquitous event type.
-	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="doccomment">/// Maximum number of block number to block hash mappings to keep (oldest pruned first).
 	</span><span class="kw">type </span>BlockHashCount = BlockHashCount;
 	<span class="doccomment">/// The weight of database operations that the runtime can invoke.
@@ -1234,6 +1237,7 @@
 	<span class="kw">type </span>AuthorityId = AuraId;
 	<span class="kw">type </span>MaxAuthorities = MaxAuthorities;
 	<span class="kw">type </span>DisabledValidators = ();
+	<span class="kw">type </span>AllowMultipleBlocksPerSlot = ConstBool&lt;<span class="bool-val">false</span>&gt;;
 }
 
 <span class="kw">impl </span>pallet_grandpa::Config <span class="kw">for </span>Runtime {
@@ -1285,7 +1289,7 @@
 	<span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
 	<span class="kw">type </span>AccountStore = System;
 	<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">8</span>];
-	<span class="kw">type </span>HoldIdentifier = ();
+	<span class="kw">type </span>RuntimeHoldReason = ();
 	<span class="kw">type </span>FreezeIdentifier = ();
 	<span class="kw">type </span>MaxLocks = MaxLocks;
 	<span class="kw">type </span>MaxReserves = ();
