@@ -36,6 +36,7 @@ std = [
 ]
 serde = [
 	"dep:serde",
+	"evm/with-serde",
 	"scale-info/serde",
 	"sp-core/serde",
 	"sp-runtime/serde",

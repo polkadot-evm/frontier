@@ -31,7 +31,7 @@ sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frontier
 fp-account = { workspace = true }
-fp-evm = { workspace = true }
+fp-evm = { workspace = true, features = ["serde"] }
 
 [dev-dependencies]
 hex = { workspace = true }
