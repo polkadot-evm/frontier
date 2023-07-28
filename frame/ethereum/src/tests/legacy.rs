@@ -18,7 +18,6 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
-use ethereum::EnvelopedEncodable;
 use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::ValidatedTransaction;
 use frame_support::{

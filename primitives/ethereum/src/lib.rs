@@ -88,7 +88,11 @@ impl TransactionData {
 			access_list,
 			proof_size_base_cost: None,
 		};
-		transaction_data.proof_size_base_cost = Some(transaction_data.encode().len() as u64 + 65);
+		transaction_data.proof_size_base_cost = Some(
+			// transaction data length + signature length + pallet_index + call index
+			(transaction_data.encode().len() + 65 + 1 + 1) as u64,
+		);
+
 		transaction_data
 	}
 }
@@ -124,6 +128,7 @@ impl From<&Transaction> for TransactionData {
 			.saturating_add(1)
 			// call index
 			.saturating_add(1);
+
 		match t {
 			Transaction::Legacy(t) => TransactionData {
 				action: t.action,
