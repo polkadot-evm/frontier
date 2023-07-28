@@ -34,8 +34,7 @@ use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_ethereum::{
-	proof_size_base_cost, TransactionData, TransactionValidationError,
-	ValidatedTransaction as ValidatedTransactionT,
+	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
 };
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
@@ -479,9 +478,10 @@ impl<T: Config> Pallet<T> {
 				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => {
-					(Some(weight_limit), Some(proof_size_base_cost(transaction)))
-				}
+				weight_limit if weight_limit.proof_size() > 0 => (
+					Some(weight_limit),
+					Some(transaction_data.proof_size_base_cost),
+				),
 				_ => (None, None),
 			};
 
@@ -703,6 +703,7 @@ impl<T: Config> Pallet<T> {
 		(Option<H160>, Option<H160>, CallOrCreateInfo),
 		DispatchErrorWithPostInfo<PostDispatchInfo>,
 	> {
+		let transaction_data: TransactionData = transaction.into();
 		let (
 			input,
 			value,
@@ -771,9 +772,10 @@ impl<T: Config> Pallet<T> {
 				gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => {
-					(Some(proof_size_base_cost(transaction)), Some(weight_limit))
-				}
+				weight_limit if weight_limit.proof_size() > 0 => (
+					Some(transaction_data.proof_size_base_cost),
+					Some(weight_limit),
+				),
 				_ => (None, None),
 			};
 		match action {
@@ -859,9 +861,10 @@ impl<T: Config> Pallet<T> {
 				transaction_data.gas_limit.unique_saturated_into(),
 				true,
 			) {
-				weight_limit if weight_limit.proof_size() > 0 => {
-					(Some(weight_limit), Some(proof_size_base_cost(transaction)))
-				}
+				weight_limit if weight_limit.proof_size() > 0 => (
+					Some(weight_limit),
+					Some(transaction_data.proof_size_base_cost),
+				),
 				_ => (None, None),
 			};
 
