@@ -18,7 +18,7 @@ use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_runtime::traits::Block as BlockT;
 // Runtime
-use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
+use frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 mod eth;
 pub use self::eth::{create_eth, overrides_handle, EthDeps};
@@ -61,7 +61,7 @@ pub fn create_full<C, P, BE, A, CT>(
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
 	C: CallApiAt<Block> + ProvideRuntimeApi<Block>,
-	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Index>,
+	C::Api: substrate_frame_rpc_system::AccountNonceApi<Block, AccountId, Nonce>,
 	C::Api: sp_block_builder::BlockBuilder<Block>,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi<Block, Balance>,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi<Block>,

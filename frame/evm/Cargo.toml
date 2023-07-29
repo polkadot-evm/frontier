@@ -18,7 +18,7 @@ hex = { workspace = true, optional = true }
 hex-literal = { workspace = true }
 impl-trait-for-tuples = "0.2.2"
 log = { workspace = true }
-rlp = { workspace = true }
+rlp = { workspace = true, optional = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
@@ -46,12 +46,13 @@ std = [
 	"environmental?/std",
 	"evm/std",
 	"evm/with-serde",
+	"hex?/std",
 	"log/std",
-	"rlp/std",
+	"rlp?/std",
 	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
-	"frame-benchmarking/std",
+	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
 	"sp-core/std",
@@ -64,6 +65,7 @@ std = [
 ]
 runtime-benchmarks = [
 	"hex",
+	"rlp",
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-support/runtime-benchmarks",
 	"frame-system/runtime-benchmarks",
