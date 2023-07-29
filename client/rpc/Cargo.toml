@@ -73,4 +73,5 @@ rocksdb = [
 	"fc-db/rocksdb",
 	"fc-mapping-sync/rocksdb",
 ]
+txpool = ["fc-rpc-core/txpool"]
 rpc-binary-search-estimate = []
