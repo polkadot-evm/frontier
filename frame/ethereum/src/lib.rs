@@ -23,7 +23,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 #[cfg(all(feature = "std", test))]
 mod mock;
@@ -201,7 +201,7 @@ pub mod pallet {
 
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
-		fn on_finalize(n: T::BlockNumber) {
+		fn on_finalize(n: BlockNumberFor<T>) {
 			<Pallet<T>>::store_block(
 				match fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 					Ok(_) => None,
@@ -225,7 +225,7 @@ pub mod pallet {
 			Pending::<T>::kill();
 		}
 
-		fn on_initialize(_: T::BlockNumber) -> Weight {
+		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
 			let mut weight = T::SystemWeightInfo::kill_storage(1);
 
 			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
@@ -337,11 +337,14 @@ pub mod pallet {
 	pub type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
 
 	#[pallet::genesis_config]
-	#[derive(Default)]
-	pub struct GenesisConfig {}
+	#[derive(frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T> {
+		#[serde(skip)]
+		pub _marker: PhantomData<T>,
+	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig {
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {
 			<Pallet<T>>::store_block(None, U256::zero());
 			frame_support::storage::unhashed::put::<EthereumStorageSchema>(
