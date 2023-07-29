@@ -191,8 +191,8 @@
 <span class="kw">use </span>ethereum::{TransactionAction, TransactionV2 <span class="kw">as </span>EthereumTransaction};
 <span class="kw">use </span>ethereum_types::{H160, H256, U256};
 <span class="kw">use </span>serde::{Serialize, Serializer};
-
-<span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
+<span class="comment">// Frontier
+</span><span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
 
 <span class="kw">pub type </span>TransactionMap&lt;T&gt; = HashMap&lt;H160, HashMap&lt;U256, T&gt;&gt;;
 

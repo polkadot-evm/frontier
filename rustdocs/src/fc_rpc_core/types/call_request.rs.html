@@ -169,7 +169,6 @@
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
 <a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -190,11 +189,10 @@
 
 </span><span class="kw">use </span>std::collections::BTreeMap;
 
+<span class="kw">use </span><span class="kw">crate</span>::types::{deserialize_data_or_input, Bytes};
 <span class="kw">use </span>ethereum::AccessListItem;
 <span class="kw">use </span>ethereum_types::{H160, H256, U256};
 <span class="kw">use </span>serde::Deserialize;
-
-<span class="kw">use </span><span class="kw">crate</span>::types::{deserialize_data_or_input, Bytes};
 
 <span class="doccomment">/// Call request
 </span><span class="attr">#[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]

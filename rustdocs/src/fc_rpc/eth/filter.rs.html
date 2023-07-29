@@ -792,29 +792,6 @@
 <a href="#792" id="792">792</a>
 <a href="#793" id="793">793</a>
 <a href="#794" id="794">794</a>
-<a href="#795" id="795">795</a>
-<a href="#796" id="796">796</a>
-<a href="#797" id="797">797</a>
-<a href="#798" id="798">798</a>
-<a href="#799" id="799">799</a>
-<a href="#800" id="800">800</a>
-<a href="#801" id="801">801</a>
-<a href="#802" id="802">802</a>
-<a href="#803" id="803">803</a>
-<a href="#804" id="804">804</a>
-<a href="#805" id="805">805</a>
-<a href="#806" id="806">806</a>
-<a href="#807" id="807">807</a>
-<a href="#808" id="808">808</a>
-<a href="#809" id="809">809</a>
-<a href="#810" id="810">810</a>
-<a href="#811" id="811">811</a>
-<a href="#812" id="812">812</a>
-<a href="#813" id="813">813</a>
-<a href="#814" id="814">814</a>
-<a href="#815" id="815">815</a>
-<a href="#816" id="816">816</a>
-<a href="#817" id="817">817</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -840,8 +817,7 @@
 <span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
-<span class="kw">use </span>sc_transaction_pool::{ChainApi, Pool};
-<span class="kw">use </span>sc_transaction_pool_api::InPoolTransaction;
+<span class="kw">use </span>sc_transaction_pool::ChainApi;
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
@@ -853,12 +829,12 @@
 </span><span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthFilterApiServer};
 <span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-<span class="kw">use crate</span>::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+<span class="kw">use crate</span>::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, TxPool};
 
 <span class="kw">pub struct </span>EthFilter&lt;B: BlockT, C, BE, A: ChainApi&gt; {
 	client: Arc&lt;C&gt;,
 	backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
-	graph: Arc&lt;Pool&lt;A&gt;&gt;,
+	tx_pool: TxPool&lt;B, C, A&gt;,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -870,7 +846,7 @@
 	<span class="kw">pub fn </span>new(
 		client: Arc&lt;C&gt;,
 		backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
-		graph: Arc&lt;Pool&lt;A&gt;&gt;,
+		tx_pool: TxPool&lt;B, C, A&gt;,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -879,7 +855,7 @@
 		<span class="self">Self </span>{
 			client,
 			backend,
-			graph,
+			tx_pool,
 			filter_pool,
 			max_stored_filters,
 			max_past_logs,
@@ -898,9 +874,8 @@
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">fn </span>create_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter_type: FilterType) -&gt; RpcResult&lt;U256&gt; {
-		<span class="kw">let </span>info = <span class="self">self</span>.client.info();
-		<span class="kw">let </span>best_hash = info.best_hash;
-		<span class="kw">let </span>best_number = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(info.best_number);
+		<span class="kw">let </span>block_number =
+			UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(<span class="self">self</span>.client.info().best_number);
 		<span class="kw">let </span>pool = <span class="self">self</span>.filter_pool.clone();
 		<span class="kw">let </span>response = <span class="kw">if let </span><span class="prelude-val">Ok</span>(locked) = <span class="kw-2">&amp;mut </span>pool.lock() {
 			<span class="kw">if </span>locked.len() &gt;= <span class="self">self</span>.max_stored_filters {
@@ -916,35 +891,24 @@
 				<span class="prelude-val">Some</span>((k, <span class="kw">_</span>)) =&gt; <span class="kw-2">*</span>k,
 				<span class="prelude-val">None </span>=&gt; U256::zero(),
 			};
-
 			<span class="kw">let </span>pending_transaction_hashes = <span class="kw">if let </span>FilterType::PendingTransaction = filter_type {
-				<span class="kw">let </span>txs_ready = <span class="self">self
-					</span>.graph
-					.validated_pool()
-					.ready()
-					.map(|in_pool_tx| in_pool_tx.data().clone())
-					.collect();
-				<span class="comment">// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
-				</span><span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
-				api.extrinsic_filter(best_hash, txs_ready)
-					.map_err(|err| {
-						internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch ready transactions failed: {err:?}&quot;</span>))
-					})<span class="question-mark">?
-					</span>.into_iter()
+				<span class="self">self</span>.tx_pool
+					.tx_pool_response()<span class="question-mark">?
+					</span>.ready
+					.into_iter()
 					.map(|tx| tx.hash())
-					.collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;()
+					.collect()
 			} <span class="kw">else </span>{
 				HashSet::new()
 			};
-
 			<span class="comment">// Assume `max_stored_filters` is always &lt; U256::max.
 			</span><span class="kw">let </span>key = last_key.checked_add(U256::one()).unwrap();
 			locked.insert(
 				key,
 				FilterPoolItem {
-					last_poll: BlockNumber::Num(best_number),
+					last_poll: BlockNumber::Num(block_number),
 					filter_type,
-					at_block: best_number,
+					at_block: block_number,
 					pending_transaction_hashes,
 				},
 			);
@@ -1004,9 +968,8 @@
 		}
 
 		<span class="kw">let </span>key = U256::from(index.value());
-		<span class="kw">let </span>info = <span class="self">self</span>.client.info();
-		<span class="kw">let </span>best_hash = info.best_hash;
-		<span class="kw">let </span>best_number = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(info.best_number);
+		<span class="kw">let </span>block_number =
+			UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(<span class="self">self</span>.client.info().best_number);
 		<span class="kw">let </span>pool = <span class="self">self</span>.filter_pool.clone();
 		<span class="comment">// Try to lock.
 		</span><span class="kw">let </span>path = <span class="kw">if let </span><span class="prelude-val">Ok</span>(locked) = <span class="kw-2">&amp;mut </span>pool.lock() {
@@ -1016,7 +979,7 @@
 					<span class="comment">// For each block created since last poll, get a vector of ethereum hashes.
 					</span>FilterType::Block =&gt; {
 						<span class="kw">let </span>last = pool_item.last_poll.to_min_block_num().unwrap();
-						<span class="kw">let </span>next = best_number + <span class="number">1</span>;
+						<span class="kw">let </span>next = block_number + <span class="number">1</span>;
 						<span class="comment">// Update filter `last_poll`.
 						</span>locked.insert(
 							key,
@@ -1032,28 +995,19 @@
 					}
 					FilterType::PendingTransaction =&gt; {
 						<span class="kw">let </span>previous_hashes = pool_item.pending_transaction_hashes;
-						<span class="kw">let </span>txs_ready = <span class="self">self
-							</span>.graph
-							.validated_pool()
-							.ready()
-							.map(|in_pool_tx| in_pool_tx.data().clone())
-							.collect();
-						<span class="comment">// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
-						</span><span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
-						<span class="kw">let </span>current_hashes = api
-							.extrinsic_filter(best_hash, txs_ready)
-							.map_err(|err| {
-								internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch ready transactions failed: {err:?}&quot;</span>))
-							})<span class="question-mark">?
-							</span>.into_iter()
+						<span class="kw">let </span>current_hashes: HashSet&lt;H256&gt; = <span class="self">self
+							</span>.tx_pool
+							.tx_pool_response()<span class="question-mark">?
+							</span>.ready
+							.into_iter()
 							.map(|tx| tx.hash())
-							.collect::&lt;HashSet&lt;<span class="kw">_</span>&gt;&gt;();
+							.collect();
 
 						<span class="comment">// Update filter `last_poll`.
 						</span>locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(best_number + <span class="number">1</span>),
+								last_poll: BlockNumber::Num(block_number + <span class="number">1</span>),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: current_hashes.clone(),
@@ -1073,7 +1027,7 @@
 						</span>locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(best_number + <span class="number">1</span>),
+								last_poll: BlockNumber::Num(block_number + <span class="number">1</span>),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: HashSet::new(),
