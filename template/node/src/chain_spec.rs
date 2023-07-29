@@ -190,6 +190,7 @@ fn testnet_genesis(
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
 			code: wasm_binary.to_vec(),
+			..Default::default()
 		},
 		sudo: SudoConfig {
 			// Assign network admin rights.
@@ -215,10 +216,14 @@ fn testnet_genesis(
 				.iter()
 				.map(|x| (x.1.clone(), 1))
 				.collect(),
+			..Default::default()
 		},
 
 		// EVM compatibility
-		evm_chain_id: EVMChainIdConfig { chain_id },
+		evm_chain_id: EVMChainIdConfig {
+			chain_id,
+			..Default::default()
+		},
 		evm: EVMConfig {
 			accounts: {
 				let mut map = BTreeMap::new();
@@ -263,6 +268,7 @@ fn testnet_genesis(
 				);
 				map
 			},
+			..Default::default()
 		},
 		ethereum: Default::default(),
 		dynamic_fee: Default::default(),

@@ -81,6 +81,7 @@ sc-keystore = { version = "4.0.0-dev", git = "https://github.com/paritytech/subs
 sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network-common = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-network-sync = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
+sc-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
