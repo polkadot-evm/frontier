@@ -201,6 +201,9 @@
 <a href="#201" id="201">201</a>
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, sync::Arc};
 
 <span class="kw">use </span>jsonrpsee::RpcModule;
@@ -220,7 +223,7 @@
 <span class="kw">use </span>sp_core::H256;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
-</span><span class="kw">pub use </span>fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle, StorageOverride, TxPool};
+</span><span class="kw">pub use </span>fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle, StorageOverride};
 <span class="kw">pub use </span>fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 <span class="kw">pub use </span>fc_storage::overrides_handle;
 <span class="kw">use </span>fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
@@ -312,8 +315,10 @@
 {
 	<span class="kw">use </span>fc_rpc::{
 		Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer, EthPubSub,
-		EthPubSubApiServer, EthSigner, Net, NetApiServer, TxPoolApiServer, Web3, Web3ApiServer,
+		EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
 	};
+	<span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
+	</span><span class="kw">use </span>fc_rpc::{TxPool, TxPoolApiServer};
 
 	<span class="kw">let </span>EthDeps {
 		client,
@@ -361,13 +366,12 @@
 		.into_rpc(),
 	)<span class="question-mark">?</span>;
 
-	<span class="kw">let </span>tx_pool = TxPool::new(client.clone(), graph);
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(filter_pool) = filter_pool {
 		io.merge(
 			EthFilter::new(
 				client.clone(),
 				frontier_backend,
-				tx_pool.clone(),
+				graph.clone(),
 				filter_pool,
 				<span class="number">500_usize</span>, <span class="comment">// max stored filters
 				</span>max_past_logs,
@@ -399,8 +403,10 @@
 		.into_rpc(),
 	)<span class="question-mark">?</span>;
 
-	io.merge(Web3::new(client).into_rpc())<span class="question-mark">?</span>;
-	io.merge(tx_pool.into_rpc())<span class="question-mark">?</span>;
+	io.merge(Web3::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+
+	<span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
+	</span>io.merge(TxPool::new(client, graph).into_rpc())<span class="question-mark">?</span>;
 
 	<span class="prelude-val">Ok</span>(io)
 }

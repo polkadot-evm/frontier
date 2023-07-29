@@ -450,6 +450,7 @@
 <a href="#450" id="450">450</a>
 <a href="#451" id="451">451</a>
 <a href="#452" id="452">452</a>
+<a href="#453" id="453">453</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -790,19 +791,19 @@
 			<span class="kw">let </span>base_fee = client.runtime_api().gas_price(hash).unwrap_or_default();
 			<span class="kw">let </span>receipts = handler.current_receipts(hash);
 			<span class="kw">let </span><span class="kw-2">mut </span>result = FeeHistoryCacheItem {
-				base_fee: <span class="kw">if </span>base_fee &gt; U256::from(u64::MAX) { u64::MAX } <span class="kw">else </span>{ base_fee.low_u64() },
+				base_fee: UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(base_fee),
 				gas_used_ratio: <span class="number">0f64</span>,
 				rewards: Vec::new(),
 			};
 			<span class="kw">if let </span>(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(receipts)) = (block, receipts) {
-				block_number = <span class="prelude-val">Some</span>(block.header.number.as_u64());
-				<span class="kw">let </span>gas_used = block.header.gas_used.as_u64() <span class="kw">as </span>f64;
-				<span class="kw">let </span>gas_limit = block.header.gas_limit.as_u64() <span class="kw">as </span>f64;
+				block_number = <span class="prelude-val">Some</span>(UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(block.header.number));
+				<span class="kw">let </span>gas_used = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(block.header.gas_used) <span class="kw">as </span>f64;
+				<span class="kw">let </span>gas_limit = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(block.header.gas_limit) <span class="kw">as </span>f64;
 				result.gas_used_ratio = gas_used / gas_limit;
 
 				<span class="kw">let </span><span class="kw-2">mut </span>previous_cumulative_gas = U256::zero();
 				<span class="kw">let </span>used_gas = |current: U256, previous: <span class="kw-2">&amp;mut </span>U256| -&gt; u64 {
-					<span class="kw">let </span>r = current.saturating_sub(<span class="kw-2">*</span>previous).as_u64();
+					<span class="kw">let </span>r = UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(current.saturating_sub(<span class="kw-2">*</span>previous));
 					<span class="kw-2">*</span>previous = current;
 					r
 				};
@@ -816,15 +817,16 @@
 						},
 						effective_reward: <span class="kw">match </span>block.transactions.get(i) {
 							<span class="prelude-val">Some</span>(ethereum::TransactionV2::Legacy(t)) =&gt; {
-								t.gas_price.saturating_sub(base_fee).as_u64()
+								UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
 							<span class="prelude-val">Some</span>(ethereum::TransactionV2::EIP2930(t)) =&gt; {
-								t.gas_price.saturating_sub(base_fee).as_u64()
+								UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							<span class="prelude-val">Some</span>(ethereum::TransactionV2::EIP1559(t)) =&gt; t
-								.max_priority_fee_per_gas
-								.min(t.max_fee_per_gas.saturating_sub(base_fee))
-								.as_u64(),
+							<span class="prelude-val">Some</span>(ethereum::TransactionV2::EIP1559(t)) =&gt; UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(
+									t
+										.max_priority_fee_per_gas
+										.min(t.max_fee_per_gas.saturating_sub(base_fee))
+							),
 							<span class="prelude-val">None </span>=&gt; <span class="number">0</span>,
 						},
 					})

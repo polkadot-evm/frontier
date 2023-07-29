@@ -210,6 +210,7 @@
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
 <a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -362,7 +363,8 @@
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					<span class="kw">let </span>elasticity = elasticity <span class="kw">as </span>f64 / <span class="number">1_000_000f64</span>;
-					<span class="kw">let </span>last_fee_per_gas = last_fee_per_gas.as_u64() <span class="kw">as </span>f64;
+					<span class="kw">let </span>last_fee_per_gas =
+						UniqueSaturatedInto::&lt;u64&gt;::unique_saturated_into(<span class="kw-2">*</span>last_fee_per_gas) <span class="kw">as </span>f64;
 					<span class="kw">if </span>last_gas_used &gt; <span class="kw-2">&amp;</span><span class="number">0.5 </span>{
 						<span class="comment">// Increase base gas
 						</span><span class="kw">let </span>increase = ((last_gas_used - <span class="number">0.5</span>) * <span class="number">2f64</span>) * elasticity;
