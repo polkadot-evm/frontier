@@ -26,11 +26,18 @@ default = ["std"]
 std = [
 	"evm/std",
 	"evm/with-serde",
-	"serde",
+	"serde/std",
 	"scale-codec/std",
 	# Substrate
 	"frame-support/std",
 	"sp-core/std",
 	"sp-runtime/std",
 	"sp-std/std",
+]
+serde = [
+	"dep:serde",
+	"evm/with-serde",
+	"scale-info/serde",
+	"sp-core/serde",
+	"sp-runtime/serde",
 ]

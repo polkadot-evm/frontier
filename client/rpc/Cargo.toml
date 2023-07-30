@@ -18,12 +18,12 @@ futures = { workspace = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 libsecp256k1 = { workspace = true }
-log = "0.4.17"
-lru = "0.8.1"
+log = { workspace = true }
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
+schnellru = "0.2.1"
 serde = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 
@@ -62,7 +62,7 @@ pallet-evm = { workspace = true }
 tempfile = "3.3.0"
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true }
+sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 # Frontier
@@ -75,4 +75,5 @@ rocksdb = [
 	"fc-db/rocksdb",
 	"fc-mapping-sync/rocksdb",
 ]
+txpool = ["fc-rpc-core/txpool"]
 rpc-binary-search-estimate = []

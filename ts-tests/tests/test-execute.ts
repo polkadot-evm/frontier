@@ -238,4 +238,29 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 
 		expect(result.result).to.be.equal(TEST_CONTRACT_DEPLOYED_BYTECODE);
 	});
+
+	step("Deserializes correctly when data and input are equal", async function () {
+		const result = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT - 1).toString(16)}`,
+				data: TEST_CONTRACT_BYTECODE,
+				input: TEST_CONTRACT_BYTECODE,
+			},
+		]);
+
+		expect(result.result).to.be.equal(TEST_CONTRACT_DEPLOYED_BYTECODE);
+	});
+
+	step("Throws error when data and input are both present and not equal", async function () {
+		const result = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				gas: `0x${(ETH_BLOCK_GAS_LIMIT - 1).toString(16)}`,
+				data: TEST_CONTRACT_BYTECODE,
+				input: "0x12345678",
+			},
+		]);
+		expect((result as any).error.message).to.match(/^Ambiguous value for `data` and `input`/);
+	});
 });

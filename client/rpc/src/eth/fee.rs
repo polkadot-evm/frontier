@@ -72,7 +72,9 @@ where
 		.await?
 		{
 			let Ok(number) = self.client.expect_block_number_from_id(&id) else {
-				return Err(internal_err(format!("Failed to retrieve block number at {id}")));
+				return Err(internal_err(format!(
+					"Failed to retrieve block number at {id}"
+				)));
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
@@ -148,7 +150,8 @@ where
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					let elasticity = elasticity as f64 / 1_000_000f64;
-					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
+					let last_fee_per_gas =
+						UniqueSaturatedInto::<u64>::unique_saturated_into(*last_fee_per_gas) as f64;
 					if last_gas_used > &0.5 {
 						// Increase base gas
 						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;

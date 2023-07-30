@@ -81,7 +81,7 @@ where
 				TransactionV2::EIP1559(t) => t.nonce,
 			};
 			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from_slice(keccak_256(&pk).as_slice())),
+				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),
 				Err(_e) => H160::default(),
 			};
 			pending
@@ -98,7 +98,7 @@ where
 				TransactionV2::EIP1559(t) => t.nonce,
 			};
 			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from_slice(keccak_256(&pk).as_slice())),
+				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),
 				Err(_e) => H160::default(),
 			};
 			queued
