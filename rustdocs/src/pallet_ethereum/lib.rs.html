@@ -997,6 +997,16 @@
 <a href="#997" id="997">997</a>
 <a href="#998" id="998">998</a>
 <a href="#999" id="999">999</a>
+<a href="#1000" id="1000">1000</a>
+<a href="#1001" id="1001">1001</a>
+<a href="#1002" id="1002">1002</a>
+<a href="#1003" id="1003">1003</a>
+<a href="#1004" id="1004">1004</a>
+<a href="#1005" id="1005">1005</a>
+<a href="#1006" id="1006">1006</a>
+<a href="#1007" id="1007">1007</a>
+<a href="#1008" id="1008">1008</a>
+<a href="#1009" id="1009">1009</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1504,6 +1514,16 @@
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(<span class="kw-2">&amp;</span>who))
 		.map_err(|e| e.<span class="number">0</span>)<span class="question-mark">?</span>;
+
+		<span class="comment">// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
+		// Do not allow transactions for which `tx.sender` has any code deployed.
+		//
+		// This check should be done on the transaction validation (here) **and**
+		// on trnasaction execution, otherwise a contract tx will be included in
+		// the mempool and pollute the mempool forever.
+		</span><span class="kw">if </span>!pallet_evm::AccountCodes::&lt;T&gt;::get(origin).is_empty() {
+			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidTransaction::BadSigner.into());
+		}
 
 		<span class="kw">let </span>priority = <span class="kw">match </span>(
 			transaction_data.gas_price,
