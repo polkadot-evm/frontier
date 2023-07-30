@@ -33,9 +33,7 @@ mod tests;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-use fp_ethereum::{
-	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
-};
+use fp_ethereum::{TransactionValidationError, ValidatedTransaction as ValidatedTransactionT};
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
 };
@@ -63,6 +61,7 @@ pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
+pub use fp_ethereum::TransactionData;
 pub use fp_rpc::TransactionStatus;
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
@@ -353,15 +352,17 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-	fn proof_size_base_cost(transaction: &Transaction) -> u64 {
-		transaction
-			.encode()
-			.len()
-			// pallet index
-			.saturating_add(1)
-			// call index
-			.saturating_add(1) as u64
+	pub fn transaction_weight(transaction_data: &TransactionData) -> (Option<Weight>, Option<u64>) {
+		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+			transaction_data.gas_limit.unique_saturated_into(),
+			true,
+		) {
+			weight_limit if weight_limit.proof_size() > 0 => (
+				Some(weight_limit),
+				Some(transaction_data.proof_size_base_cost.unwrap_or_default()),
+			),
+			_ => (None, None),
+		}
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
@@ -483,19 +484,7 @@ impl<T: Config> Pallet<T> {
 	) -> TransactionValidity {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
-
-		let (weight_limit, proof_size_base_cost) =
-			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.unique_saturated_into(),
-				true,
-			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(weight_limit),
-					Some(Self::proof_size_base_cost(transaction)),
-				),
-				_ => (None, None),
-			};
-
+		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
@@ -714,6 +703,11 @@ impl<T: Config> Pallet<T> {
 		(Option<H160>, Option<H160>, CallOrCreateInfo),
 		DispatchErrorWithPostInfo<PostDispatchInfo>,
 	> {
+		let transaction_data: TransactionData = transaction.into();
+		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
+		let is_transactional = true;
+		let validate = false;
+
 		let (
 			input,
 			value,
@@ -774,20 +768,6 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 
-		let is_transactional = true;
-		let validate = false;
-
-		let (proof_size_base_cost, weight_limit) =
-			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				gas_limit.unique_saturated_into(),
-				true,
-			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(Self::proof_size_base_cost(transaction)),
-					Some(weight_limit),
-				),
-				_ => (None, None),
-			};
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(
@@ -862,21 +842,9 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 	) -> Result<(), TransactionValidityError> {
 		let transaction_data: TransactionData = transaction.into();
-
+		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
-
-		let (weight_limit, proof_size_base_cost) =
-			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.unique_saturated_into(),
-				true,
-			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(weight_limit),
-					Some(Self::proof_size_base_cost(transaction)),
-				),
-				_ => (None, None),
-			};
 
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
