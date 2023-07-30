@@ -997,38 +997,6 @@
 <a href="#997" id="997">997</a>
 <a href="#998" id="998">998</a>
 <a href="#999" id="999">999</a>
-<a href="#1000" id="1000">1000</a>
-<a href="#1001" id="1001">1001</a>
-<a href="#1002" id="1002">1002</a>
-<a href="#1003" id="1003">1003</a>
-<a href="#1004" id="1004">1004</a>
-<a href="#1005" id="1005">1005</a>
-<a href="#1006" id="1006">1006</a>
-<a href="#1007" id="1007">1007</a>
-<a href="#1008" id="1008">1008</a>
-<a href="#1009" id="1009">1009</a>
-<a href="#1010" id="1010">1010</a>
-<a href="#1011" id="1011">1011</a>
-<a href="#1012" id="1012">1012</a>
-<a href="#1013" id="1013">1013</a>
-<a href="#1014" id="1014">1014</a>
-<a href="#1015" id="1015">1015</a>
-<a href="#1016" id="1016">1016</a>
-<a href="#1017" id="1017">1017</a>
-<a href="#1018" id="1018">1018</a>
-<a href="#1019" id="1019">1019</a>
-<a href="#1020" id="1020">1020</a>
-<a href="#1021" id="1021">1021</a>
-<a href="#1022" id="1022">1022</a>
-<a href="#1023" id="1023">1023</a>
-<a href="#1024" id="1024">1024</a>
-<a href="#1025" id="1025">1025</a>
-<a href="#1026" id="1026">1026</a>
-<a href="#1027" id="1027">1027</a>
-<a href="#1028" id="1028">1028</a>
-<a href="#1029" id="1029">1029</a>
-<a href="#1030" id="1030">1030</a>
-<a href="#1031" id="1031">1031</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1064,9 +1032,7 @@
 <span class="kw">use </span>ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 <span class="kw">use </span>evm::ExitReason;
 <span class="kw">use </span>fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-<span class="kw">use </span>fp_ethereum::{
-	TransactionData, TransactionValidationError, ValidatedTransaction <span class="kw">as </span>ValidatedTransactionT,
-};
+<span class="kw">use </span>fp_ethereum::{TransactionValidationError, ValidatedTransaction <span class="kw">as </span>ValidatedTransactionT};
 <span class="kw">use </span>fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
 };
@@ -1094,6 +1060,7 @@
 	AccessListItem, BlockV2 <span class="kw">as </span>Block, LegacyTransactionMessage, Log, ReceiptV3 <span class="kw">as </span>Receipt,
 	TransactionAction, TransactionV2 <span class="kw">as </span>Transaction,
 };
+<span class="kw">pub use </span>fp_ethereum::TransactionData;
 <span class="kw">pub use </span>fp_rpc::TransactionStatus;
 
 <span class="attr">#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
@@ -1384,15 +1351,17 @@
 }
 
 <span class="kw">impl</span>&lt;T: Config&gt; Pallet&lt;T&gt; {
-	<span class="doccomment">/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-	</span><span class="kw">fn </span>proof_size_base_cost(transaction: <span class="kw-2">&amp;</span>Transaction) -&gt; u64 {
-		transaction
-			.encode()
-			.len()
-			<span class="comment">// pallet index
-			</span>.saturating_add(<span class="number">1</span>)
-			<span class="comment">// call index
-			</span>.saturating_add(<span class="number">1</span>) <span class="kw">as </span>u64
+	<span class="kw">pub fn </span>transaction_weight(transaction_data: <span class="kw-2">&amp;</span>TransactionData) -&gt; (<span class="prelude-ty">Option</span>&lt;Weight&gt;, <span class="prelude-ty">Option</span>&lt;u64&gt;) {
+		<span class="kw">match </span>&lt;T <span class="kw">as </span>pallet_evm::Config&gt;::GasWeightMapping::gas_to_weight(
+			transaction_data.gas_limit.unique_saturated_into(),
+			<span class="bool-val">true</span>,
+		) {
+			weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
+				<span class="prelude-val">Some</span>(weight_limit),
+				<span class="prelude-val">Some</span>(transaction_data.proof_size_base_cost.unwrap_or_default()),
+			),
+			<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
+		}
 	}
 
 	<span class="kw">fn </span>recover_signer(transaction: <span class="kw-2">&amp;</span>Transaction) -&gt; <span class="prelude-ty">Option</span>&lt;H160&gt; {
@@ -1514,19 +1483,7 @@
 	) -&gt; TransactionValidity {
 		<span class="kw">let </span>transaction_data: TransactionData = transaction.into();
 		<span class="kw">let </span>transaction_nonce = transaction_data.nonce;
-
-		<span class="kw">let </span>(weight_limit, proof_size_base_cost) =
-			<span class="kw">match </span>&lt;T <span class="kw">as </span>pallet_evm::Config&gt;::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.unique_saturated_into(),
-				<span class="bool-val">true</span>,
-			) {
-				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
-					<span class="prelude-val">Some</span>(weight_limit),
-					<span class="prelude-val">Some</span>(<span class="self">Self</span>::proof_size_base_cost(transaction)),
-				),
-				<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
-			};
-
+		<span class="kw">let </span>(weight_limit, proof_size_base_cost) = <span class="self">Self</span>::transaction_weight(<span class="kw-2">&amp;</span>transaction_data);
 		<span class="kw">let </span>(base_fee, <span class="kw">_</span>) = T::FeeCalculator::min_gas_price();
 		<span class="kw">let </span>(who, <span class="kw">_</span>) = pallet_evm::Pallet::&lt;T&gt;::account_basic(<span class="kw-2">&amp;</span>origin);
 
@@ -1745,6 +1702,11 @@
 		(<span class="prelude-ty">Option</span>&lt;H160&gt;, <span class="prelude-ty">Option</span>&lt;H160&gt;, CallOrCreateInfo),
 		DispatchErrorWithPostInfo&lt;PostDispatchInfo&gt;,
 	&gt; {
+		<span class="kw">let </span>transaction_data: TransactionData = transaction.into();
+		<span class="kw">let </span>(weight_limit, proof_size_base_cost) = <span class="self">Self</span>::transaction_weight(<span class="kw-2">&amp;</span>transaction_data);
+		<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
+		<span class="kw">let </span>validate = <span class="bool-val">false</span>;
+
 		<span class="kw">let </span>(
 			input,
 			value,
@@ -1805,20 +1767,6 @@
 			}
 		};
 
-		<span class="kw">let </span>is_transactional = <span class="bool-val">true</span>;
-		<span class="kw">let </span>validate = <span class="bool-val">false</span>;
-
-		<span class="kw">let </span>(proof_size_base_cost, weight_limit) =
-			<span class="kw">match </span>&lt;T <span class="kw">as </span>pallet_evm::Config&gt;::GasWeightMapping::gas_to_weight(
-				gas_limit.unique_saturated_into(),
-				<span class="bool-val">true</span>,
-			) {
-				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
-					<span class="prelude-val">Some</span>(<span class="self">Self</span>::proof_size_base_cost(transaction)),
-					<span class="prelude-val">Some</span>(weight_limit),
-				),
-				<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
-			};
 		<span class="kw">match </span>action {
 			ethereum::TransactionAction::Call(target) =&gt; {
 				<span class="kw">let </span>res = <span class="kw">match </span>T::Runner::call(
@@ -1893,21 +1841,9 @@
 		transaction: <span class="kw-2">&amp;</span>Transaction,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), TransactionValidityError&gt; {
 		<span class="kw">let </span>transaction_data: TransactionData = transaction.into();
-
+		<span class="kw">let </span>(weight_limit, proof_size_base_cost) = <span class="self">Self</span>::transaction_weight(<span class="kw-2">&amp;</span>transaction_data);
 		<span class="kw">let </span>(base_fee, <span class="kw">_</span>) = T::FeeCalculator::min_gas_price();
 		<span class="kw">let </span>(who, <span class="kw">_</span>) = pallet_evm::Pallet::&lt;T&gt;::account_basic(<span class="kw-2">&amp;</span>origin);
-
-		<span class="kw">let </span>(weight_limit, proof_size_base_cost) =
-			<span class="kw">match </span>&lt;T <span class="kw">as </span>pallet_evm::Config&gt;::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.unique_saturated_into(),
-				<span class="bool-val">true</span>,
-			) {
-				weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
-					<span class="prelude-val">Some</span>(weight_limit),
-					<span class="prelude-val">Some</span>(<span class="self">Self</span>::proof_size_base_cost(transaction)),
-				),
-				<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
-			};
 
 		<span class="kw">let _ </span>= CheckEvmTransaction::&lt;InvalidTransactionWrapper&gt;::new(
 			CheckEvmTransactionConfig {

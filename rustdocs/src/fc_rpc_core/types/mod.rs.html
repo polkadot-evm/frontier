@@ -87,6 +87,8 @@
 <a href="#87" id="87">87</a>
 <a href="#88" id="88">88</a>
 <a href="#89" id="89">89</a>
+<a href="#90" id="90">90</a>
+<a href="#91" id="91">91</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -120,13 +122,16 @@
 <span class="kw">mod </span>sync;
 <span class="kw">mod </span>transaction;
 <span class="kw">mod </span>transaction_request;
-<span class="kw">mod </span>txpool;
+<span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
+</span><span class="kw">mod </span>txpool;
 <span class="kw">mod </span>work;
 
 <span class="kw">pub mod </span>pubsub;
 
 <span class="kw">use </span>serde::{de::Error, Deserialize, Deserializer};
 
+<span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
+</span><span class="kw">pub use </span><span class="self">self</span>::txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction};
 <span class="kw">pub use </span><span class="self">self</span>::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
@@ -147,7 +152,6 @@
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
 	transaction_request::{TransactionMessage, TransactionRequest},
-	txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	work::Work,
 };
 
