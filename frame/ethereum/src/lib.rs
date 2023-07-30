@@ -506,6 +506,16 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_balance_for(&who))
 		.map_err(|e| e.0)?;
 
+		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
+		// Do not allow transactions for which `tx.sender` has any code deployed.
+		//
+		// This check should be done on the transaction validation (here) **and**
+		// on trnasaction execution, otherwise a contract tx will be included in
+		// the mempool and pollute the mempool forever.
+		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
+			return Err(InvalidTransaction::BadSigner.into());
+		}
+
 		let priority = match (
 			transaction_data.gas_price,
 			transaction_data.max_fee_per_gas,
