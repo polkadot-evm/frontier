@@ -392,12 +392,13 @@
 <span class="comment">// Substrate
 </span><span class="kw">pub use </span>sc_client_db::DatabaseSource;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_core::{H160, H256};
+<span class="kw">use </span>sp_core::H256;
 <span class="kw">pub use </span>sp_database::Database;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fc_api::{FilteredLog, TransactionMetadata};
-<span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
+</span><span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
+
+<span class="kw">use </span><span class="kw">crate</span>::TransactionMetadata;
 
 <span class="kw">const </span>DB_HASH_LEN: usize = <span class="number">32</span>;
 <span class="doccomment">/// Hash type that this backend uses for the database.
@@ -426,18 +427,16 @@
 </span><span class="kw">pub struct </span>Backend&lt;Block: BlockT&gt; {
 	meta: Arc&lt;MetaDb&lt;Block&gt;&gt;,
 	mapping: Arc&lt;MappingDb&lt;Block&gt;&gt;,
-	log_indexer: LogIndexerBackend&lt;Block&gt;,
 }
 
 <span class="attr">#[async_trait::async_trait]
-</span><span class="kw">impl</span>&lt;Block: BlockT&gt; fc_api::Backend&lt;Block&gt; <span class="kw">for </span>Backend&lt;Block&gt; {
+</span><span class="kw">impl</span>&lt;Block: BlockT&gt; <span class="kw">crate</span>::BackendReader&lt;Block&gt; <span class="kw">for </span>Backend&lt;Block&gt; {
 	<span class="kw">async fn </span>block_hash(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ethereum_block_hash: <span class="kw-2">&amp;</span>H256,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Block::Hash&gt;&gt;, String&gt; {
 		<span class="self">self</span>.mapping().block_hash(ethereum_block_hash)
 	}
-
 	<span class="kw">async fn </span>transaction_metadata(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ethereum_transaction_hash: <span class="kw-2">&amp;</span>H256,
@@ -445,30 +444,19 @@
 		<span class="self">self</span>.mapping()
 			.transaction_metadata(ethereum_transaction_hash)
 	}
-
-	<span class="kw">fn </span>log_indexer(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::LogIndexerBackend&lt;Block&gt; {
-		<span class="kw-2">&amp;</span><span class="self">self</span>.log_indexer
-	}
-}
-
-<span class="attr">#[derive(Clone, Default)]
-</span><span class="kw">pub struct </span>LogIndexerBackend&lt;Block&gt;(PhantomData&lt;Block&gt;);
-
-<span class="attr">#[async_trait::async_trait]
-</span><span class="kw">impl</span>&lt;Block: BlockT&gt; fc_api::LogIndexerBackend&lt;Block&gt; <span class="kw">for </span>LogIndexerBackend&lt;Block&gt; {
-	<span class="kw">fn </span>is_indexed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-		<span class="bool-val">false
-	</span>}
-
 	<span class="kw">async fn </span>filter_logs(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		_from_block: u64,
 		_to_block: u64,
-		_addresses: Vec&lt;H160&gt;,
+		_addresses: Vec&lt;sp_core::H160&gt;,
 		_topics: Vec&lt;Vec&lt;<span class="prelude-ty">Option</span>&lt;H256&gt;&gt;&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;FilteredLog&lt;Block&gt;&gt;, String&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">crate</span>::FilteredLog&lt;Block&gt;&gt;, String&gt; {
 		<span class="prelude-val">Err</span>(<span class="string">&quot;KeyValue db does not index logs&quot;</span>.into())
 	}
+
+	<span class="kw">fn </span>is_indexed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+		<span class="bool-val">false
+	</span>}
 }
 
 <span class="doccomment">/// Returns the frontier database directory.
@@ -525,7 +513,6 @@
 				db: db.clone(),
 				_marker: PhantomData,
 			}),
-			log_indexer: LogIndexerBackend(PhantomData),
 		})
 	}
 
@@ -545,11 +532,13 @@
 
 <span class="kw">impl</span>&lt;Block: BlockT&gt; MetaDb&lt;Block&gt; {
 	<span class="kw">pub fn </span>current_syncing_tips(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;Block::Hash&gt;, String&gt; {
-		<span class="kw">match </span><span class="self">self
-			</span>.db
-			.get(columns::META, static_keys::CURRENT_SYNCING_TIPS)
-		{
-			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(Vec::&lt;Block::Hash&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| e.to_string())<span class="question-mark">?</span>),
+		<span class="kw">match </span><span class="self">self</span>.db.get(
+			<span class="kw">crate</span>::columns::META,
+			<span class="kw">crate</span>::static_keys::CURRENT_SYNCING_TIPS,
+		) {
+			<span class="prelude-val">Some</span>(raw) =&gt; {
+				<span class="prelude-val">Ok</span>(Vec::&lt;Block::Hash&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>)
+			}
 			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(Vec::new()),
 		}
 	}
@@ -558,12 +547,14 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
 		transaction.set(
-			columns::META,
-			static_keys::CURRENT_SYNCING_TIPS,
+			<span class="kw">crate</span>::columns::META,
+			<span class="kw">crate</span>::static_keys::CURRENT_SYNCING_TIPS,
 			<span class="kw-2">&amp;</span>tips.encode(),
 		);
 
-		<span class="self">self</span>.db.commit(transaction).map_err(|e| e.to_string())<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -571,10 +562,10 @@
 	<span class="kw">pub fn </span>ethereum_schema(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;(EthereumStorageSchema, H256)&gt;&gt;, String&gt; {
 		<span class="kw">match </span><span class="self">self
 			</span>.db
-			.get(columns::META, <span class="kw-2">&amp;</span>PALLET_ETHEREUM_SCHEMA_CACHE.encode())
+			.get(<span class="kw">crate</span>::columns::META, <span class="kw-2">&amp;</span>PALLET_ETHEREUM_SCHEMA_CACHE.encode())
 		{
 			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
-				Decode::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| e.to_string())<span class="question-mark">?</span>,
+				Decode::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>,
 			)),
 			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
@@ -587,12 +578,14 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
 		transaction.set(
-			columns::META,
+			<span class="kw">crate</span>::columns::META,
 			<span class="kw-2">&amp;</span>PALLET_ETHEREUM_SCHEMA_CACHE.encode(),
 			<span class="kw-2">&amp;</span>new_cache.encode(),
 		);
 
-		<span class="self">self</span>.db.commit(transaction).map_err(|e| e.to_string())<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -613,7 +606,10 @@
 
 <span class="kw">impl</span>&lt;Block: BlockT&gt; MappingDb&lt;Block&gt; {
 	<span class="kw">pub fn </span>is_synced(<span class="kw-2">&amp;</span><span class="self">self</span>, block_hash: <span class="kw-2">&amp;</span>Block::Hash) -&gt; <span class="prelude-ty">Result</span>&lt;bool, String&gt; {
-		<span class="kw">match </span><span class="self">self</span>.db.get(columns::SYNCED_MAPPING, <span class="kw-2">&amp;</span>block_hash.encode()) {
+		<span class="kw">match </span><span class="self">self
+			</span>.db
+			.get(<span class="kw">crate</span>::columns::SYNCED_MAPPING, <span class="kw-2">&amp;</span>block_hash.encode())
+		{
 			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(bool::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>),
 			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="bool-val">false</span>),
 		}
@@ -625,7 +621,7 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Block::Hash&gt;&gt;, String&gt; {
 		<span class="kw">match </span><span class="self">self
 			</span>.db
-			.get(columns::BLOCK_MAPPING, <span class="kw-2">&amp;</span>ethereum_block_hash.encode())
+			.get(<span class="kw">crate</span>::columns::BLOCK_MAPPING, <span class="kw-2">&amp;</span>ethereum_block_hash.encode())
 		{
 			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
 				Vec::&lt;Block::Hash&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..]).map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>,
@@ -639,11 +635,11 @@
 		ethereum_transaction_hash: <span class="kw-2">&amp;</span>H256,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;TransactionMetadata&lt;Block&gt;&gt;, String&gt; {
 		<span class="kw">match </span><span class="self">self</span>.db.get(
-			columns::TRANSACTION_MAPPING,
+			<span class="kw">crate</span>::columns::TRANSACTION_MAPPING,
 			<span class="kw-2">&amp;</span>ethereum_transaction_hash.encode(),
 		) {
 			<span class="prelude-val">Some</span>(raw) =&gt; <span class="prelude-val">Ok</span>(Vec::&lt;TransactionMetadata&lt;Block&gt;&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>raw[..])
-				.map_err(|e| e.to_string())<span class="question-mark">?</span>),
+				.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>),
 			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(Vec::new()),
 		}
 	}
@@ -654,12 +650,14 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
 
 		transaction.set(
-			columns::SYNCED_MAPPING,
+			<span class="kw">crate</span>::columns::SYNCED_MAPPING,
 			<span class="kw-2">&amp;</span>block_hash.encode(),
 			<span class="kw-2">&amp;</span><span class="bool-val">true</span>.encode(),
 		);
 
-		<span class="self">self</span>.db.commit(transaction).map_err(|e| e.to_string())<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}
@@ -686,7 +684,7 @@
 		};
 
 		transaction.set(
-			columns::BLOCK_MAPPING,
+			<span class="kw">crate</span>::columns::BLOCK_MAPPING,
 			<span class="kw-2">&amp;</span>commitment.ethereum_block_hash.encode(),
 			<span class="kw-2">&amp;</span>substrate_hashes.encode(),
 		);
@@ -698,24 +696,26 @@
 		{
 			<span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="self">self</span>.transaction_metadata(<span class="kw-2">&amp;</span>ethereum_transaction_hash)<span class="question-mark">?</span>;
 			metadata.push(TransactionMetadata::&lt;Block&gt; {
-				substrate_block_hash: commitment.block_hash,
+				block_hash: commitment.block_hash,
 				ethereum_block_hash: commitment.ethereum_block_hash,
 				ethereum_index: i <span class="kw">as </span>u32,
 			});
 			transaction.set(
-				columns::TRANSACTION_MAPPING,
+				<span class="kw">crate</span>::columns::TRANSACTION_MAPPING,
 				<span class="kw-2">&amp;</span>ethereum_transaction_hash.encode(),
 				<span class="kw-2">&amp;</span>metadata.encode(),
 			);
 		}
 
 		transaction.set(
-			columns::SYNCED_MAPPING,
+			<span class="kw">crate</span>::columns::SYNCED_MAPPING,
 			<span class="kw-2">&amp;</span>commitment.block_hash.encode(),
 			<span class="kw-2">&amp;</span><span class="bool-val">true</span>.encode(),
 		);
 
-		<span class="self">self</span>.db.commit(transaction).map_err(|e| e.to_string())<span class="question-mark">?</span>;
+		<span class="self">self</span>.db
+			.commit(transaction)
+			.map_err(|e| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, e))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(())
 	}

@@ -815,9 +815,6 @@
 <a href="#815" id="815">815</a>
 <a href="#816" id="816">816</a>
 <a href="#817" id="817">817</a>
-<a href="#818" id="818">818</a>
-<a href="#819" id="819">819</a>
-<a href="#820" id="820">820</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -836,12 +833,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="kw">use </span>std::{
-	collections::{BTreeMap, HashSet},
-	marker::PhantomData,
-	sync::Arc,
-	time::{Duration, Instant},
-};
+</span><span class="kw">use </span>std::{collections::HashSet, marker::PhantomData, sync::Arc, time};
 
 <span class="kw">use </span>ethereum::BlockV2 <span class="kw">as </span>EthereumBlock;
 <span class="kw">use </span>ethereum_types::{H256, U256};
@@ -865,7 +857,7 @@
 
 <span class="kw">pub struct </span>EthFilter&lt;B: BlockT, C, BE, A: ChainApi&gt; {
 	client: Arc&lt;C&gt;,
-	backend: Arc&lt;<span class="kw">dyn </span>fc_api::Backend&lt;B&gt;&gt;,
+	backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
 	graph: Arc&lt;Pool&lt;A&gt;&gt;,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
@@ -877,7 +869,7 @@
 <span class="kw">impl</span>&lt;B: BlockT, C, BE, A: ChainApi&gt; EthFilter&lt;B, C, BE, A&gt; {
 	<span class="kw">pub fn </span>new(
 		client: Arc&lt;C&gt;,
-		backend: Arc&lt;<span class="kw">dyn </span>fc_api::Backend&lt;B&gt;&gt;,
+		backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
 		graph: Arc&lt;Pool&lt;A&gt;&gt;,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
@@ -1165,7 +1157,7 @@
 				<span class="kw">if </span>backend.is_indexed() {
 					<span class="kw">let _ </span>= filter_range_logs_indexed(
 						client.as_ref(),
-						backend.log_indexer(),
+						backend.as_ref(),
 						<span class="kw-2">&amp;</span>block_data_cache,
 						<span class="kw-2">&amp;mut </span>ret,
 						max_past_logs,
@@ -1244,7 +1236,7 @@
 		<span class="kw">if </span>backend.is_indexed() {
 			<span class="kw">let _ </span>= filter_range_logs_indexed(
 				client.as_ref(),
-				backend.log_indexer(),
+				backend.as_ref(),
 				<span class="kw-2">&amp;</span>block_data_cache,
 				<span class="kw-2">&amp;mut </span>ret,
 				max_past_logs,
@@ -1333,7 +1325,7 @@
 			<span class="kw">if </span>backend.is_indexed() {
 				<span class="kw">let _ </span>= filter_range_logs_indexed(
 					client.as_ref(),
-					backend.log_indexer(),
+					backend.as_ref(),
 					<span class="kw-2">&amp;</span>block_data_cache,
 					<span class="kw-2">&amp;mut </span>ret,
 					max_past_logs,
@@ -1361,7 +1353,7 @@
 
 <span class="kw">async fn </span>filter_range_logs_indexed&lt;B, C, BE&gt;(
 	_client: <span class="kw-2">&amp;</span>C,
-	backend: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::LogIndexerBackend&lt;B&gt;,
+	backend: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync),
 	block_data_cache: <span class="kw-2">&amp;</span>EthBlockDataCacheTask&lt;B&gt;,
 	ret: <span class="kw-2">&amp;mut </span>Vec&lt;Log&gt;,
 	max_past_logs: u32,
@@ -1376,12 +1368,13 @@
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 {
+	<span class="kw">use </span>std::time::Instant;
 	<span class="kw">let </span>timer_start = Instant::now();
 	<span class="kw">let </span>timer_prepare = Instant::now();
 
 	<span class="comment">// Max request duration of 10 seconds.
-	</span><span class="kw">let </span>max_duration = Duration::from_secs(<span class="number">10</span>);
-	<span class="kw">let </span>begin_request = Instant::now();
+	</span><span class="kw">let </span>max_duration = time::Duration::from_secs(<span class="number">10</span>);
+	<span class="kw">let </span>begin_request = time::Instant::now();
 
 	<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
 		<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
@@ -1419,6 +1412,7 @@
 	</span>{
 		<span class="kw">let </span>time_fetch = timer_fetch.elapsed().as_millis();
 		<span class="kw">let </span>timer_post = Instant::now();
+		<span class="kw">use </span>std::collections::BTreeMap;
 
 		<span class="kw">let </span><span class="kw-2">mut </span>statuses_cache: BTreeMap&lt;B::Hash, <span class="prelude-ty">Option</span>&lt;Vec&lt;TransactionStatus&gt;&gt;&gt; = BTreeMap::new();
 
@@ -1520,8 +1514,8 @@
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="comment">// Max request duration of 10 seconds.
-	</span><span class="kw">let </span>max_duration = Duration::from_secs(<span class="number">10</span>);
-	<span class="kw">let </span>begin_request = Instant::now();
+	</span><span class="kw">let </span>max_duration = time::Duration::from_secs(<span class="number">10</span>);
+	<span class="kw">let </span>begin_request = time::Instant::now();
 
 	<span class="kw">let </span><span class="kw-2">mut </span>current_number = from;
 

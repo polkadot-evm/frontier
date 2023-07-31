@@ -152,7 +152,7 @@
 
 <span class="kw">impl</span>&lt;C, BE&gt; fc_rpc::EthConfig&lt;Block, C&gt; <span class="kw">for </span>DefaultEthConfig&lt;C, BE&gt;
 <span class="kw">where
-	</span>C: StorageProvider&lt;Block, BE&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
+	</span>C: sc_client_api::StorageProvider&lt;Block, BE&gt; + Sync + Send + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">type </span>EstimateGasAdapter = ();

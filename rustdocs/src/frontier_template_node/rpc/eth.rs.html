@@ -247,7 +247,7 @@
 	<span class="doccomment">/// Chain syncing service
 	</span><span class="kw">pub </span>sync: Arc&lt;SyncingService&lt;B&gt;&gt;,
 	<span class="doccomment">/// Frontier Backend.
-	</span><span class="kw">pub </span>frontier_backend: Arc&lt;<span class="kw">dyn </span>fc_api::Backend&lt;B&gt;&gt;,
+	</span><span class="kw">pub </span>frontier_backend: Arc&lt;<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync&gt;,
 	<span class="doccomment">/// Ethereum data access overrides.
 	</span><span class="kw">pub </span>overrides: Arc&lt;OverrideHandle&lt;B&gt;&gt;,
 	<span class="doccomment">/// Cache for Ethereum block data.

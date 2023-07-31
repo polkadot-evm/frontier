@@ -1845,10 +1845,6 @@
 <a href="#1845" id="1845">1845</a>
 <a href="#1846" id="1846">1846</a>
 <a href="#1847" id="1847">1847</a>
-<a href="#1848" id="1848">1848</a>
-<a href="#1849" id="1849">1849</a>
-<a href="#1850" id="1850">1850</a>
-<a href="#1851" id="1851">1851</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1888,11 +1884,12 @@
 	traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT, UniqueSaturatedInto, Zero},
 };
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fc_api::{FilteredLog, TransactionMetadata};
-<span class="kw">use </span>fc_storage::OverrideHandle;
+</span><span class="kw">use </span>fc_storage::OverrideHandle;
 <span class="kw">use </span>fp_consensus::{FindLogError, Hashes, Log <span class="kw">as </span>ConsensusLog, PostLog, PreLog};
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 <span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+
+<span class="kw">use crate</span>::{BackendReader, FilteredLog};
 
 <span class="doccomment">/// Maximum number to topics allowed to be filtered upon
 </span><span class="kw">const </span>MAX_TOPIC_COUNT: u16 = <span class="number">4</span>;
@@ -1915,7 +1912,7 @@
 </span><span class="kw">struct </span>BlockMetadata {
 	<span class="kw">pub </span>substrate_block_hash: H256,
 	<span class="kw">pub </span>block_number: i32,
-	<span class="kw">pub </span>post_hashes: Hashes,
+	<span class="kw">pub </span>post_hashes: fp_consensus::Hashes,
 	<span class="kw">pub </span>schema: EthereumStorageSchema,
 	<span class="kw">pub </span>is_canon: i32,
 }
@@ -1958,7 +1955,7 @@
 
 <span class="kw">impl</span>&lt;Block: BlockT&gt; Backend&lt;Block&gt;
 <span class="kw">where
-	</span>Block: BlockT&lt;Hash = H256&gt;,
+	</span>Block: BlockT&lt;Hash = H256&gt; + Send + Sync,
 {
 	<span class="doccomment">/// Creates a new instance of the SQL backend.
 	</span><span class="kw">pub async fn </span>new(
@@ -2051,7 +2048,7 @@
 		client: Arc&lt;Client&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;H256&gt;, Error&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 		Client: ProvideRuntimeApi&lt;Block&gt;,
 		Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
 		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
@@ -2120,7 +2117,7 @@
 		overrides: Arc&lt;OverrideHandle&lt;Block&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockMetadata, Error&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
@@ -2212,7 +2209,7 @@
 		hash: H256,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
@@ -2288,7 +2285,7 @@
 	<span class="doccomment">/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
 	</span><span class="kw">pub async fn </span>index_block_logs&lt;Client, BE&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, client: Arc&lt;Client&gt;, block_hash: Block::Hash)
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
@@ -2369,7 +2366,7 @@
 		substrate_block_hash: H256,
 	) -&gt; Vec&lt;Log&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
@@ -2417,7 +2414,7 @@
 
 	<span class="kw">fn </span>onchain_storage_schema&lt;Client, BE&gt;(client: <span class="kw-2">&amp;</span>Client, at: Block::Hash) -&gt; EthereumStorageSchema
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
@@ -2647,7 +2644,7 @@
 }
 
 <span class="attr">#[async_trait::async_trait]
-</span><span class="kw">impl</span>&lt;Block: BlockT&lt;Hash = H256&gt;&gt; fc_api::Backend&lt;Block&gt; <span class="kw">for </span>Backend&lt;Block&gt; {
+</span><span class="kw">impl</span>&lt;Block: BlockT&lt;Hash = H256&gt;&gt; BackendReader&lt;Block&gt; <span class="kw">for </span>Backend&lt;Block&gt; {
 	<span class="kw">async fn </span>block_hash(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ethereum_block_hash: <span class="kw-2">&amp;</span>H256,
@@ -2672,7 +2669,7 @@
 	<span class="kw">async fn </span>transaction_metadata(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		ethereum_transaction_hash: <span class="kw-2">&amp;</span>H256,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;TransactionMetadata&lt;Block&gt;&gt;, String&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;<span class="kw">crate</span>::TransactionMetadata&lt;Block&gt;&gt;, String&gt; {
 		<span class="kw">let </span>ethereum_transaction_hash = ethereum_transaction_hash.as_bytes();
 		<span class="kw">let </span>out = sqlx::query(
 			<span class="string">&quot;SELECT
@@ -2690,8 +2687,8 @@
 			<span class="kw">let </span>ethereum_block_hash =
 				H256::from_slice(<span class="kw-2">&amp;</span>row.try_get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">1</span>).unwrap_or_default()[..]);
 			<span class="kw">let </span>ethereum_transaction_index = row.try_get::&lt;i32, <span class="kw">_</span>&gt;(<span class="number">2</span>).unwrap_or_default() <span class="kw">as </span>u32;
-			TransactionMetadata {
-				substrate_block_hash,
+			<span class="kw">crate</span>::TransactionMetadata {
+				block_hash: substrate_block_hash,
 				ethereum_block_hash,
 				ethereum_index: ethereum_transaction_index,
 			}
@@ -2700,17 +2697,6 @@
 
 		<span class="prelude-val">Ok</span>(out)
 	}
-
-	<span class="kw">fn </span>log_indexer(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::LogIndexerBackend&lt;Block&gt; {
-		<span class="self">self
-	</span>}
-}
-
-<span class="attr">#[async_trait::async_trait]
-</span><span class="kw">impl</span>&lt;Block: BlockT&lt;Hash = H256&gt;&gt; fc_api::LogIndexerBackend&lt;Block&gt; <span class="kw">for </span>Backend&lt;Block&gt; {
-	<span class="kw">fn </span>is_indexed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-		<span class="bool-val">true
-	</span>}
 
 	<span class="kw">async fn </span>filter_logs(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -2737,7 +2723,10 @@
 			}
 		}
 
-		<span class="kw">let </span>log_key = <span class="macro">format!</span>(<span class="string">&quot;{from_block}-{to_block}-{addresses:?}-{unique_topics:?}&quot;</span>);
+		<span class="kw">let </span>log_key = <span class="macro">format!</span>(
+			<span class="string">&quot;{}-{}-{:?}-{:?}&quot;</span>,
+			from_block, to_block, addresses, unique_topics
+		);
 		<span class="kw">let </span><span class="kw-2">mut </span>qb = QueryBuilder::new(<span class="string">&quot;&quot;</span>);
 		<span class="kw">let </span>query = build_query(<span class="kw-2">&amp;mut </span>qb, from_block, to_block, addresses, unique_topics);
 		<span class="kw">let </span>sql = query.sql();
@@ -2807,6 +2796,10 @@
 		<span class="macro">log::info!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;FILTER remove handler - {log_key}&quot;</span>);
 		<span class="prelude-val">Ok</span>(out)
 	}
+
+	<span class="kw">fn </span>is_indexed(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+		<span class="bool-val">true
+	</span>}
 }
 
 <span class="doccomment">/// Build a SQL query to retrieve a list of logs given certain constraints.
@@ -2900,8 +2893,7 @@ LIMIT 10001&quot;</span>,
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	<span class="comment">// Frontier
-	</span><span class="kw">use </span>fc_api::Backend <span class="kw">as </span>BackendT;
-	<span class="kw">use </span>fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
+	</span><span class="kw">use </span>fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
 	<span class="kw">use </span>fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	<span class="kw">type </span>OpaqueBlock =
@@ -2928,7 +2920,7 @@ LIMIT 10001&quot;</span>,
 
 	<span class="attr">#[allow(unused)]
 	</span><span class="kw">struct </span>TestData {
-		backend: Backend&lt;OpaqueBlock&gt;,
+		backend: <span class="kw">super</span>::Backend&lt;OpaqueBlock&gt;,
 		alice: H160,
 		bob: H160,
 		topics_a: H256,
@@ -2990,8 +2982,8 @@ LIMIT 10001&quot;</span>,
 		});
 
 		<span class="comment">// Indexer backend
-		</span><span class="kw">let </span>indexer_backend = Backend::new(
-			BackendConfig::Sqlite(SqliteBackendConfig {
+		</span><span class="kw">let </span>indexer_backend = <span class="kw">super</span>::Backend::new(
+			<span class="kw">super</span>::BackendConfig::Sqlite(<span class="kw">super</span>::SqliteBackendConfig {
 				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
 					.join(tmp.path())
 					.join(<span class="string">&quot;test.db3&quot;</span>)
@@ -3238,11 +3230,10 @@ LIMIT 10001&quot;</span>,
 	}
 
 	<span class="kw">async fn </span>run_test_case(
-		backend: Backend&lt;OpaqueBlock&gt;,
+		backend: <span class="kw">super</span>::Backend&lt;OpaqueBlock&gt;,
 		test_case: <span class="kw-2">&amp;</span>TestFilter,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;FilteredLog&lt;OpaqueBlock&gt;&gt;, String&gt; {
 		backend
-			.log_indexer()
 			.filter_logs(
 				test_case.from_block,
 				test_case.to_block,
@@ -3696,7 +3687,8 @@ ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
 LIMIT 10001&quot;</span>;
 
 		<span class="kw">let </span><span class="kw-2">mut </span>qb = QueryBuilder::new(<span class="string">&quot;&quot;</span>);
-		<span class="kw">let </span>actual_query_sql = build_query(<span class="kw-2">&amp;mut </span>qb, from_block, to_block, addresses, topics).sql();
+		<span class="kw">let </span>actual_query_sql =
+			<span class="kw">super</span>::build_query(<span class="kw-2">&amp;mut </span>qb, from_block, to_block, addresses, topics).sql();
 		<span class="macro">assert_eq!</span>(expected_query_sql, actual_query_sql);
 	}
 }
