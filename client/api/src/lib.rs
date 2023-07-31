@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
+// Copyright (c) 2023 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,17 +18,6 @@
 
 #![deny(unused_crate_dependencies)]
 
-// Substrate
-pub use sc_client_db::DatabaseSource;
-use sp_runtime::traits::Block as BlockT;
+pub mod backend;
 
-pub mod kv;
-#[cfg(feature = "sql")]
-pub mod sql;
-
-#[derive(Clone)]
-pub enum Backend<Block: BlockT> {
-	KeyValue(kv::Backend<Block>),
-	#[cfg(feature = "sql")]
-	Sql(sql::Backend<Block>),
-}
+pub use self::backend::*;
