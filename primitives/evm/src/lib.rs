@@ -20,6 +20,7 @@
 
 mod precompile;
 mod validation;
+mod metric;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
