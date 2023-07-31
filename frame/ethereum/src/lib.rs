@@ -681,7 +681,8 @@ impl<T: Config> Pallet<T> {
 			extra_data,
 		});
 
-		Ok((PostDispatchInfo {
+		Ok((
+			PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
 						sp_std::cmp::max(
@@ -695,7 +696,7 @@ impl<T: Config> Pallet<T> {
 							*gas_to_weight.proof_size_mut() = proof_size_usage;
 						}
 					}
-						Some(gas_to_weight)
+					Some(gas_to_weight)
 				},
 				pays_fee: Pays::No,
 			},
@@ -713,10 +714,7 @@ impl<T: Config> Pallet<T> {
 		from: H160,
 		transaction: &Transaction,
 		config: Option<evm::Config>,
-	) -> Result<
-		(Option<H160>, Option<H160>, CallOrCreateInfo),
-		DispatchErrorWithPostInfo,
-	> {
+	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchErrorWithPostInfo> {
 		let transaction_data: TransactionData = transaction.into();
 		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
 		let is_transactional = true;
