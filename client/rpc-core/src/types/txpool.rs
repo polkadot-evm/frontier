@@ -21,7 +21,7 @@ use std::collections::HashMap;
 use ethereum::{TransactionAction, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, U256};
 use serde::{Serialize, Serializer};
-// Frontier
+
 use crate::types::Bytes;
 
 pub type TransactionMap<T> = HashMap<H160, HashMap<U256, T>>;

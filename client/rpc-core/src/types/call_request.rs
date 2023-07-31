@@ -18,10 +18,11 @@
 
 use std::collections::BTreeMap;
 
-use crate::types::{deserialize_data_or_input, Bytes};
 use ethereum::AccessListItem;
 use ethereum_types::{H160, H256, U256};
 use serde::Deserialize;
+
+use crate::types::{deserialize_data_or_input, Bytes};
 
 /// Call request
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
