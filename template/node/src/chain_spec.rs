@@ -1,23 +1,26 @@
 use std::{collections::BTreeMap, str::FromStr};
 
+use hex_literal::hex;
 use serde::{Deserialize, Serialize};
 // Substrate
-use sc_service::ChainType;
+use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
-use sp_core::{sr25519, storage::Storage, Pair, Public, H160, U256};
-use sp_finality_grandpa::AuthorityId as GrandpaId;
+use sp_consensus_grandpa::AuthorityId as GrandpaId;
+#[allow(unused_imports)]
+use sp_core::ecdsa;
+use sp_core::{storage::Storage, Pair, Public, H160, U256};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
 use frontier_template_runtime::{
-	AccountId, EnableManualSeal, GenesisConfig, Signature, WASM_BINARY,
+	AccountId, Balance, EnableManualSeal, RuntimeGenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
 
 /// Specialized `ChainSpec` for development.
 pub type DevChainSpec = sc_service::GenericChainSpec<DevGenesisExt>;
@@ -26,7 +29,7 @@ pub type DevChainSpec = sc_service::GenericChainSpec<DevGenesisExt>;
 #[derive(Serialize, Deserialize)]
 pub struct DevGenesisExt {
 	/// Genesis config.
-	genesis_config: GenesisConfig,
+	genesis_config: RuntimeGenesisConfig,
 	/// The flag that if enable manual-seal mode.
 	enable_manual_seal: Option<bool>,
 }
@@ -49,9 +52,12 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 		.public()
 }
 
+#[allow(dead_code)]
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
+/// For use with `AccountId32`, `dead_code` if `AccountId20`.
+#[allow(dead_code)]
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
 	AccountPublic: From<<TPublic::Pair as Pair>::Public>,
@@ -63,6 +69,15 @@ where
 pub fn authority_keys_from_seed(s: &str) -> (AuraId, GrandpaId) {
 	(get_from_seed::<AuraId>(s), get_from_seed::<GrandpaId>(s))
 }
+
+fn properties() -> Properties {
+	let mut properties = Properties::new();
+	properties.insert("tokenDecimals".into(), 18.into());
+	properties.insert("ss58Format".into(), SS58Prefix::get().into());
+	properties
+}
+
+const UNITS: Balance = 1_000_000_000_000_000_000;
 
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
@@ -77,18 +92,21 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 			DevGenesisExt {
 				genesis_config: testnet_genesis(
 					wasm_binary,
-					// Sudo account
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					// Sudo account (Alith)
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 					// Pre-funded accounts
 					vec![
-						get_account_id_from_seed::<sr25519::Public>("Alice"),
-						get_account_id_from_seed::<sr25519::Public>("Bob"),
-						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+						AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
+						AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
+						AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
+						AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
+						AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
+						AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
 					],
 					// Initial PoA authorities
 					vec![authority_keys_from_seed("Alice")],
-					42,
+					// Ethereum chain ID
+					SS58Prefix::get() as u64,
 				),
 				enable_manual_seal,
 			}
@@ -99,9 +117,10 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 		None,
 		// Protocol ID
 		None,
+		// Fork ID
 		None,
 		// Properties
-		None,
+		Some(properties()),
 		// Extensions
 		None,
 	)
@@ -120,22 +139,16 @@ pub fn local_testnet_config() -> ChainSpec {
 			testnet_genesis(
 				wasm_binary,
 				// Initial PoA authorities
-				// Sudo account
-				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// Sudo account (Alith)
+				AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 				// Pre-funded accounts
 				vec![
-					get_account_id_from_seed::<sr25519::Public>("Alice"),
-					get_account_id_from_seed::<sr25519::Public>("Bob"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie"),
-					get_account_id_from_seed::<sr25519::Public>("Dave"),
-					get_account_id_from_seed::<sr25519::Public>("Eve"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
-					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
-					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
+					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
+					AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
+					AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
+					AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
+					AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
+					AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
 				],
 				vec![
 					authority_keys_from_seed("Alice"),
@@ -150,6 +163,7 @@ pub fn local_testnet_config() -> ChainSpec {
 		None,
 		// Protocol ID
 		None,
+		// Fork ID
 		None,
 		// Properties
 		None,
@@ -165,13 +179,13 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
 	chain_id: u64,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
 	use frontier_template_runtime::{
 		AuraConfig, BalancesConfig, EVMChainIdConfig, EVMConfig, GrandpaConfig, SudoConfig,
 		SystemConfig,
 	};
 
-	GenesisConfig {
+	RuntimeGenesisConfig {
 		// System
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
@@ -184,11 +198,10 @@ fn testnet_genesis(
 
 		// Monetary
 		balances: BalancesConfig {
-			// Configure endowed accounts with initial balance of 1 << 60.
 			balances: endowed_accounts
 				.iter()
 				.cloned()
-				.map(|k| (k, 1 << 60))
+				.map(|k| (k, 1_000_000 * UNITS))
 				.collect(),
 		},
 		transaction_payment: Default::default(),

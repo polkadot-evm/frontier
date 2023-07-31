@@ -26,6 +26,7 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(unused_crate_dependencies)]
 
 pub use pallet::*;
 
@@ -44,13 +45,12 @@ pub mod pallet {
 
 	impl<T: Config> Get<u64> for Pallet<T> {
 		fn get() -> u64 {
-			Self::chain_id()
+			<ChainId<T>>::get()
 		}
 	}
 
 	/// The EVM chain ID.
 	#[pallet::storage]
-	#[pallet::getter(fn chain_id)]
 	pub type ChainId<T> = StorageValue<_, u64, ValueQuery>;
 
 	#[pallet::genesis_config]

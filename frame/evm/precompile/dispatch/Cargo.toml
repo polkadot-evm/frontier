@@ -18,14 +18,14 @@ pallet-evm = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
-frame-system = { workspace = true }
-pallet-balances = { workspace = true, features = ["std"] }
-pallet-timestamp = { workspace = true }
-pallet-utility = { workspace = true }
-sp-core = { workspace = true }
-sp-io = { workspace = true }
-sp-runtime = { workspace = true }
-sp-std = { workspace = true }
+frame-system = { workspace = true, features = ["default"] }
+pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
+pallet-timestamp = { workspace = true, features = ["default"] }
+pallet-utility = { workspace = true, features = ["default"] }
+sp-core = { workspace = true, features = ["default"] }
+sp-io = { workspace = true, features = ["default"] }
+sp-runtime = { workspace = true, features = ["default"] }
+sp-std = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]

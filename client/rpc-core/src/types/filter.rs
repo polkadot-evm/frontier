@@ -16,17 +16,17 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use core::convert::AsRef;
+use std::{
+	collections::{BTreeMap, HashSet},
+	sync::{Arc, Mutex},
+};
+
 use ethereum_types::{Bloom, BloomInput, H160, H256, U256};
 use serde::{
 	de::{DeserializeOwned, Error},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 use serde_json::{from_value, Value};
-use std::{
-	collections::BTreeMap,
-	sync::{Arc, Mutex},
-};
 
 use crate::types::{BlockNumber, Log};
 
@@ -67,7 +67,7 @@ where
 
 /// Filter Address
 pub type FilterAddress = VariadicValue<H160>;
-/// Topic, supports `A` | `null` | `[A,B,C]` | `[A,[B,C]]` | [null,[B,C]] | [null,[null,C]]
+/// Topic, supports `A` | `null` | `[A,B,C]` | `[A,[B,C]]` | `[null,[B,C]]` | `[null,[null,C]]`
 pub type Topic = VariadicValue<Option<VariadicValue<Option<H256>>>>;
 /// FlatTopic, simplifies the matching logic.
 pub type FlatTopic = VariadicValue<Option<H256>>;
@@ -460,6 +460,7 @@ pub struct FilterPoolItem {
 	pub last_poll: BlockNumber,
 	pub filter_type: FilterType,
 	pub at_block: u64,
+	pub pending_transaction_hashes: HashSet<H256>,
 }
 
 /// On-memory stored filters created through the `eth_newFilter` RPC.

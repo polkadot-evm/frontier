@@ -17,6 +17,7 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(test)]
 mod tests;
@@ -38,8 +39,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -86,7 +85,7 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
-	#[cfg_attr(feature = "std", derive(Default))]
+	#[derive(Default)]
 	pub struct GenesisConfig {
 		pub min_gas_price: U256,
 	}
@@ -99,11 +98,10 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn min_gas_price)]
-	pub(super) type MinGasPrice<T: Config> = StorageValue<_, U256, ValueQuery>;
+	pub type MinGasPrice<T: Config> = StorageValue<_, U256, ValueQuery>;
 
 	#[pallet::storage]
-	pub(super) type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
+	pub type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
 
 	#[derive(Encode, Decode, RuntimeDebug)]
 	pub enum InherentError {}

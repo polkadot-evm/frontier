@@ -16,12 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum_types::U256;
-use serde::Serialize;
 use std::{
 	collections::BTreeMap,
 	sync::{Arc, Mutex},
 };
+
+use ethereum_types::U256;
+use serde::Serialize;
 
 /// `eth_feeHistory` response
 #[derive(Debug, Serialize)]

@@ -25,31 +25,25 @@ use std::{
 };
 
 use ethereum::BlockV2 as EthereumBlock;
-use ethereum_types::{H256, U256};
+use ethereum_types::U256;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot};
 // Substrate
 use sc_client_api::{
-	backend::{Backend, StateBackend, StorageProvider},
+	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_service::SpawnTaskHandle;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
-};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::types::*;
+use fc_storage::{OverrideHandle, StorageOverride};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 use fp_storage::EthereumStorageSchema;
 
 use self::lru_cache::LRUCacheByteLimited;
-use crate::{
-	frontier_backend_client,
-	overrides::{OverrideHandle, StorageOverride},
-};
 
 type WaitList<Hash, T> = HashMap<Hash, Vec<oneshot::Sender<Option<T>>>>;
 
@@ -132,7 +126,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 						task_tx.clone(),
 						move |handler| FetchedCurrentBlock {
 							block_hash,
-							block: handler.current_block(&BlockId::Hash(block_hash)),
+							block: handler.current_block(block_hash),
 						},
 					),
 					FetchedCurrentBlock { block_hash, block } => {
@@ -162,8 +156,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 						task_tx.clone(),
 						move |handler| FetchedCurrentTransactionStatuses {
 							block_hash,
-							statuses: handler
-								.current_transaction_statuses(&BlockId::Hash(block_hash)),
+							statuses: handler.current_transaction_statuses(block_hash),
 						},
 					),
 					FetchedCurrentTransactionStatuses {
@@ -199,7 +192,7 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		handler_call: F,
 	) where
 		T: Clone + scale_codec::Encode,
-		F: FnOnce(&Box<dyn StorageOverride<B> + Send + Sync>) -> EthBlockDataCacheMessage<B>,
+		F: FnOnce(&Box<dyn StorageOverride<B>>) -> EthBlockDataCacheMessage<B>,
 		F: Send + 'static,
 	{
 		// Data is cached, we respond immediately.
@@ -278,12 +271,12 @@ pub struct EthTask<B, C, BE>(PhantomData<(B, C, BE)>);
 
 impl<B, C, BE> EthTask<B, C, BE>
 where
-	B: BlockT<Hash = H256>,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE> + BlockchainEvents<B>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: BlockchainEvents<B> + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
 	pub async fn filter_pool_task(
 		client: Arc<C>,
@@ -315,13 +308,11 @@ where
 		}
 		// Calculates the cache for a single block
 		#[rustfmt::skip]
-			let fee_history_cache_item = |hash: H256| -> (
+			let fee_history_cache_item = |hash: B::Hash| -> (
 			FeeHistoryCacheItem,
 			Option<u64>
 		) {
-			let id = BlockId::Hash(hash);
-			let schema =
-				frontier_backend_client::onchain_storage_schema::<B, C, BE>(client.as_ref(), id);
+			let schema = fc_storage::onchain_storage_schema(client.as_ref(), hash);
 			let handler = overrides
 				.schemas
 				.get(&schema)
@@ -334,7 +325,6 @@ where
 			let reward_percentiles: Vec<f64> = {
 				let mut percentile: f64 = 0.0;
 				(0..201)
-					.into_iter()
 					.map(|_| {
 						let val = percentile;
 						percentile += 0.5;
@@ -343,24 +333,24 @@ where
 					.collect()
 			};
 
-			let block = handler.current_block(&id);
+			let block = handler.current_block(hash);
 			let mut block_number: Option<u64> = None;
-			let base_fee = client.runtime_api().gas_price(&id).unwrap_or_default();
-			let receipts = handler.current_receipts(&id);
+			let base_fee = client.runtime_api().gas_price(hash).unwrap_or_default();
+			let receipts = handler.current_receipts(hash);
 			let mut result = FeeHistoryCacheItem {
-				base_fee: base_fee.as_u64(),
+				base_fee: UniqueSaturatedInto::<u64>::unique_saturated_into(base_fee),
 				gas_used_ratio: 0f64,
 				rewards: Vec::new(),
 			};
 			if let (Some(block), Some(receipts)) = (block, receipts) {
-				block_number = Some(block.header.number.as_u64());
-				let gas_used = block.header.gas_used.as_u64() as f64;
-				let gas_limit = block.header.gas_limit.as_u64() as f64;
+				block_number = Some(UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.number));
+				let gas_used = UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.gas_used) as f64;
+				let gas_limit = UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.gas_limit) as f64;
 				result.gas_used_ratio = gas_used / gas_limit;
 
 				let mut previous_cumulative_gas = U256::zero();
 				let used_gas = |current: U256, previous: &mut U256| -> u64 {
-					let r = current.saturating_sub(*previous).as_u64();
+					let r = UniqueSaturatedInto::<u64>::unique_saturated_into(current.saturating_sub(*previous));
 					*previous = current;
 					r
 				};
@@ -373,16 +363,17 @@ where
 							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
 						},
 						effective_reward: match block.transactions.get(i) {
-							Some(&ethereum::TransactionV2::Legacy(ref t)) => {
-								t.gas_price.saturating_sub(base_fee).as_u64()
+							Some(ethereum::TransactionV2::Legacy(t)) => {
+								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(&ethereum::TransactionV2::EIP2930(ref t)) => {
-								t.gas_price.saturating_sub(base_fee).as_u64()
+							Some(ethereum::TransactionV2::EIP2930(t)) => {
+								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(&ethereum::TransactionV2::EIP1559(ref t)) => t
-								.max_priority_fee_per_gas
-								.min(t.max_fee_per_gas.saturating_sub(base_fee))
-								.as_u64(),
+							Some(ethereum::TransactionV2::EIP1559(t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
+									t
+										.max_priority_fee_per_gas
+										.min(t.max_fee_per_gas.saturating_sub(base_fee))
+							),
 							None => 0,
 						},
 					})

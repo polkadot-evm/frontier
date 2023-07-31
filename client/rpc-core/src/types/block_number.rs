@@ -16,15 +16,16 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use std::fmt;
+
 use ethereum_types::H256;
 use serde::{
 	de::{Error, MapAccess, Visitor},
 	Deserialize, Deserializer, Serialize, Serializer,
 };
-use std::fmt;
 
 /// Represents rpc api block number param.
-#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Default, Hash)]
 pub enum BlockNumber {
 	/// Hash
 	Hash {
@@ -36,6 +37,7 @@ pub enum BlockNumber {
 	/// Number
 	Num(u64),
 	/// Latest block
+	#[default]
 	Latest,
 	/// Earliest block (genesis)
 	Earliest,
@@ -47,12 +49,6 @@ pub enum BlockNumber {
 	Safe,
 	/// The most recent crypto-economically secure block.
 	Finalized,
-}
-
-impl Default for BlockNumber {
-	fn default() -> Self {
-		BlockNumber::Latest
-	}
 }
 
 impl<'a> Deserialize<'a> for BlockNumber {

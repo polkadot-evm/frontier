@@ -17,57 +17,59 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum_types::{H160, H256, U256};
-use jsonrpsee::core::RpcResult as Result;
+use jsonrpsee::core::RpcResult;
 use scale_codec::Encode;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network_common::ExHashT;
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT},
-};
+use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{pending_runtime_api, Eth},
+	eth::{pending_runtime_api, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
-	P: TransactionPool<Block = B> + Send + Sync + 'static,
+	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub fn balance(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub async fn balance(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
 			Ok(api
-				.account_basic(&BlockId::Hash(self.client.info().best_hash), address)
+				.account_basic(self.client.info().best_hash, address)
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.balance)
 		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
+		)
+		.await
+		{
+			let substrate_hash = self
+				.client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 			Ok(self
 				.client
 				.runtime_api()
-				.account_basic(&id, address)
+				.account_basic(substrate_hash, address)
 				.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))?
 				.balance)
 		} else {
@@ -75,47 +77,54 @@ where
 		}
 	}
 
-	pub fn storage_at(
+	pub async fn storage_at(
 		&self,
 		address: H160,
 		index: U256,
 		number: Option<BlockNumber>,
-	) -> Result<H256> {
+	) -> RpcResult<H256> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
 			Ok(api
-				.storage_at(&BlockId::Hash(self.client.info().best_hash), address, index)
+				.storage_at(self.client.info().best_hash, address, index)
 				.unwrap_or_default())
 		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-				self.client.as_ref(),
-				id,
-			);
+		)
+		.await
+		{
+			let substrate_hash = self
+				.client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 			Ok(self
 				.overrides
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback)
-				.storage_at(&id, address, index)
+				.storage_at(substrate_hash, address, index)
 				.unwrap_or_default())
 		} else {
 			Ok(H256::default())
 		}
 	}
 
-	pub fn transaction_count(&self, address: H160, number: Option<BlockNumber>) -> Result<U256> {
+	pub async fn transaction_count(
+		&self,
+		address: H160,
+		number: Option<BlockNumber>,
+	) -> RpcResult<U256> {
 		if let Some(BlockNumber::Pending) = number {
-			let block = BlockId::Hash(self.client.info().best_hash);
+			let substrate_hash = self.client.info().best_hash;
 
 			let nonce = self
 				.client
 				.runtime_api()
-				.account_basic(&block, address)
+				.account_basic(substrate_hash, address)
 				.map_err(|err| {
 					internal_err(format!("fetch runtime account basic failed: {:?}", err))
 				})?
@@ -139,43 +148,53 @@ where
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number,
-		)? {
+		)
+		.await?
+		{
 			Some(id) => id,
 			None => return Ok(U256::zero()),
 		};
 
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
 		Ok(self
 			.client
 			.runtime_api()
-			.account_basic(&id, address)
+			.account_basic(substrate_hash, address)
 			.map_err(|err| internal_err(format!("fetch runtime account basic failed: {:?}", err)))?
 			.nonce)
 	}
 
-	pub fn code_at(&self, address: H160, number: Option<BlockNumber>) -> Result<Bytes> {
+	pub async fn code_at(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<Bytes> {
 		let number = number.unwrap_or(BlockNumber::Latest);
 		if number == BlockNumber::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
 			Ok(api
-				.account_code_at(&BlockId::Hash(self.client.info().best_hash), address)
+				.account_code_at(self.client.info().best_hash, address)
 				.unwrap_or_default()
 				.into())
 		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
-		) {
-			let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-				self.client.as_ref(),
-				id,
-			);
+		)
+		.await
+		{
+			let substrate_hash = self
+				.client
+				.expect_block_hash_from_id(&id)
+				.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 
 			Ok(self
 				.overrides
 				.schemas
 				.get(&schema)
 				.unwrap_or(&self.overrides.fallback)
-				.account_code_at(&id, address)
+				.account_code_at(substrate_hash, address)
 				.unwrap_or_default()
 				.into())
 		} else {

@@ -8,11 +8,11 @@
   },
   "repository": "https://github.com/paritytech/frontier",
   "scripts": {
-    "dev": "vuepress dev .",
-    "build": "vuepress build ."
+    "dev": "NODE_OPTIONS=--openssl-legacy-provider vuepress dev .",
+    "build": "NODE_OPTIONS=--openssl-legacy-provider vuepress build ."
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "vuepress": "^1.9.8"
+    "vuepress": "^1.9.9"
   }
 }

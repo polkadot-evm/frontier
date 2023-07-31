@@ -14,27 +14,30 @@ targets = ["x86_64-unknown-linux-gnu"]
 ethereum = { workspace = true, features = ["with-codec"] }
 ethereum-types = { workspace = true }
 evm = { workspace = true }
-futures = "0.3.25"
-hex = "0.4.3"
+futures = { workspace = true }
+hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 libsecp256k1 = { workspace = true }
-log = "0.4.17"
-lru = "0.8.1"
+log = { workspace = true }
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-tokio = { version = "1.24", features = ["sync"] }
+schnellru = "0.2.1"
+serde = { workspace = true }
+tokio = { workspace = true, features = ["sync"] }
 
 # Substrate
 prometheus-endpoint = { workspace = true }
 sc-client-api = { workspace = true }
 sc-network = { workspace = true }
 sc-network-common = { workspace = true }
+sc-network-sync = { workspace = true }
 sc-rpc = { workspace = true }
 sc-service = { workspace = true }
 sc-transaction-pool = { workspace = true }
 sc-transaction-pool-api = { workspace = true }
+sc-utils = { workspace = true }
 sp-api = { workspace = true }
 sp-block-builder = { workspace = true }
 sp-blockchain = { workspace = true }
@@ -42,21 +45,35 @@ sp-consensus = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
+sp-state-machine = { workspace = true }
 sp-storage = { workspace = true }
 # Frontier
-fc-db = { workspace = true }
+fc-api = { workspace = true }
+fc-mapping-sync = { workspace = true }
 fc-rpc-core = { workspace = true }
-fp-ethereum = { workspace = true, features = ["std"] }
-fp-rpc = { workspace = true, features = ["std"] }
-fp-storage = { workspace = true, features = ["std"] }
+fc-storage = { workspace = true }
+fp-ethereum = { workspace = true, features = ["default"] }
+fp-evm = { workspace = true }
+fp-rpc = { workspace = true, features = ["default"] }
+fp-storage = { workspace = true, features = ["default"] }
+pallet-evm = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3.3.0"
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true }
+sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
+# Frontier
+fc-db = { workspace = true }
 
 [features]
+default = ["rocksdb"]
+rocksdb = [
+	"sc-service/rocksdb",
+	"fc-db/rocksdb",
+	"fc-mapping-sync/rocksdb",
+]
+txpool = ["fc-rpc-core/txpool"]
 rpc-binary-search-estimate = []

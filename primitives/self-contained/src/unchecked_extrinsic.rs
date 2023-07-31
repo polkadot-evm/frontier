@@ -16,11 +16,11 @@
 // limitations under the License.
 
 use frame_support::{
-	codec::{Decode, Encode},
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	scale_info::TypeInfo,
 	traits::ExtrinsicCall,
 };
+use scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
 use sp_runtime::{
 	traits::{
 		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
@@ -57,8 +57,13 @@ impl<Address, Call, Signature, Extra: SignedExtension>
 	}
 }
 
-impl<Address, Call: SelfContainedCall, Signature, Extra: SignedExtension> Extrinsic
+impl<Address, Call, Signature, Extra> Extrinsic
 	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+where
+	Address: TypeInfo,
+	Call: SelfContainedCall + TypeInfo,
+	Signature: TypeInfo,
+	Extra: SignedExtension,
 {
 	type Call = Call;
 
@@ -160,9 +165,12 @@ where
 	type SignedExtensions = Extra;
 }
 
-impl<Address, Call: SelfContainedCall, Signature, Extra> ExtrinsicCall
+impl<Address, Call, Signature, Extra> ExtrinsicCall
 	for UncheckedExtrinsic<Address, Call, Signature, Extra>
 where
+	Address: TypeInfo,
+	Call: SelfContainedCall + TypeInfo,
+	Signature: TypeInfo,
 	Extra: SignedExtension,
 {
 	fn call(&self) -> &Self::Call {
@@ -180,7 +188,7 @@ where
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
 	for UncheckedExtrinsic<Address, Call, Signature, Extra>
 {
@@ -192,7 +200,7 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 	}
 }
 
-#[cfg(feature = "std")]
+#[cfg(feature = "serde")]
 impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension>
 	serde::Deserialize<'a> for UncheckedExtrinsic<Address, Call, Signature, Extra>
 {

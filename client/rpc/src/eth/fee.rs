@@ -16,48 +16,46 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum_types::{H256, U256};
-use jsonrpsee::core::RpcResult as Result;
+use ethereum_types::U256;
+use jsonrpsee::core::RpcResult;
 // Substrate
-use sc_client_api::backend::{Backend, StateBackend, StorageProvider};
-use sc_network_common::ExHashT;
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::{
-	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto},
-};
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{
+	eth::{Eth, EthConfig},
+	frontier_backend_client, internal_err,
+};
 
-impl<B, C, P, CT, BE, H: ExHashT, A: ChainApi> Eth<B, C, P, CT, BE, H, A>
+impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
 where
-	B: BlockT<Hash = H256> + Send + Sync + 'static,
-	C: ProvideRuntimeApi<B> + StorageProvider<B, BE>,
-	C: HeaderBackend<B> + Send + Sync + 'static,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	BE::State: StateBackend<BlakeTwo256>,
 {
-	pub fn gas_price(&self) -> Result<U256> {
-		let block = BlockId::Hash(self.client.info().best_hash);
+	pub fn gas_price(&self) -> RpcResult<U256> {
+		let block_hash = self.client.info().best_hash;
 
 		self.client
 			.runtime_api()
-			.gas_price(&block)
+			.gas_price(block_hash)
 			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
 	}
 
-	pub fn fee_history(
+	pub async fn fee_history(
 		&self,
 		block_count: U256,
 		newest_block: BlockNumber,
 		reward_percentiles: Option<Vec<f64>>,
-	) -> Result<FeeHistory> {
+	) -> RpcResult<FeeHistory> {
 		// The max supported range size is 1024 by spec.
 		let range_limit = U256::from(1024);
 		let block_count = if block_count > range_limit {
@@ -66,25 +64,17 @@ where
 			block_count.as_u64()
 		};
 
-		if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		if let Some(id) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(newest_block),
-		) {
-			let header = match self.client.header(id) {
-				Ok(Some(h)) => h,
-				_ => {
-					return Err(internal_err(format!("Failed to retrieve header at {}", id)));
-				}
-			};
-			let number = match self.client.number(header.hash()) {
-				Ok(Some(n)) => n,
-				_ => {
-					return Err(internal_err(format!(
-						"Failed to retrieve block number at {}",
-						id
-					)));
-				}
+		)
+		.await?
+		{
+			let Ok(number) = self.client.expect_block_number_from_id(&id) else {
+				return Err(internal_err(format!(
+					"Failed to retrieve block number at {id}"
+				)));
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
@@ -143,10 +133,12 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
-					let schema = frontier_backend_client::onchain_storage_schema::<B, C, BE>(
-						self.client.as_ref(),
-						id,
-					);
+					let substrate_hash =
+						self.client.expect_block_hash_from_id(&id).map_err(|_| {
+							internal_err(format!("Expect block number from id: {}", id))
+						})?;
+					let schema =
+						fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 					let handler = self
 						.overrides
 						.schemas
@@ -154,11 +146,12 @@ where
 						.unwrap_or(&self.overrides.fallback);
 					let default_elasticity = sp_runtime::Permill::from_parts(125_000);
 					let elasticity = handler
-						.elasticity(&id)
+						.elasticity(substrate_hash)
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					let elasticity = elasticity as f64 / 1_000_000f64;
-					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
+					let last_fee_per_gas =
+						UniqueSaturatedInto::<u64>::unique_saturated_into(*last_fee_per_gas) as f64;
 					if last_gas_used > &0.5 {
 						// Increase base gas
 						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;
@@ -189,7 +182,7 @@ where
 		)))
 	}
 
-	pub fn max_priority_fee_per_gas(&self) -> Result<U256> {
+	pub fn max_priority_fee_per_gas(&self) -> RpcResult<U256> {
 		// https://github.com/ethereum/go-ethereum/blob/master/eth/ethconfig/config.go#L44-L51
 		let at_percentile = 60;
 		let block_count = 20;

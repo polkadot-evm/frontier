@@ -17,6 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::comparison_chain)]
+#![deny(unused_crate_dependencies)]
 
 #[cfg(test)]
 mod tests;
@@ -40,8 +41,6 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
-	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
@@ -60,7 +59,6 @@ pub mod pallet {
 		_marker: PhantomData<T>,
 	}
 
-	#[cfg(feature = "std")]
 	impl<T: Config> GenesisConfig<T> {
 		pub fn new(base_fee_per_gas: U256, elasticity: Permill) -> Self {
 			Self {
@@ -71,7 +69,6 @@ pub mod pallet {
 		}
 	}
 
-	#[cfg(feature = "std")]
 	impl<T: Config> Default for GenesisConfig<T> {
 		fn default() -> Self {
 			Self {
@@ -96,7 +93,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn base_fee_per_gas)]
 	pub type BaseFeePerGas<T> = StorageValue<_, U256, ValueQuery, DefaultBaseFeePerGas<T>>;
 
 	#[pallet::type_value]
@@ -105,7 +101,6 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn elasticity)]
 	pub type Elasticity<T> = StorageValue<_, Permill, ValueQuery, DefaultElasticity<T>>;
 
 	#[pallet::event]
@@ -182,7 +177,18 @@ pub mod pallet {
 						let decrease = scaled_basefee
 							.checked_div(U256::from(1_000_000))
 							.unwrap_or_else(U256::zero);
-						*bf = bf.saturating_sub(decrease);
+						let default_base_fee = T::DefaultBaseFeePerGas::get();
+						// lowest fee is norm(DefaultBaseFeePerGas * Threshold::ideal()):
+						let lowest_base_fee = default_base_fee
+							.checked_mul(U256::from(T::Threshold::ideal().deconstruct()))
+							.unwrap_or(default_base_fee)
+							.checked_div(U256::from(1_000_000))
+							.unwrap_or(default_base_fee);
+						if bf.saturating_sub(decrease) >= lowest_base_fee {
+							*bf = bf.saturating_sub(decrease);
+						} else {
+							*bf = lowest_base_fee;
+						}
 					} else {
 						Self::deposit_event(Event::BaseFeeOverflow);
 					}

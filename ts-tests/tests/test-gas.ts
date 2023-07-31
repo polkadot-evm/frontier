@@ -1,10 +1,23 @@
 import { expect } from "chai";
+import { ethers } from "ethers";
+import { step } from "mocha-steps";
 import { AbiItem } from "web3-utils";
 
 import InvalidOpcode from "../build/contracts/InvalidOpcode.json";
 import Test from "../build/contracts/Test.json";
-import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
+import StorageLoop from "../build/contracts/StorageLoop.json";
+import Web3 from "web3";
+import {
+	GENESIS_ACCOUNT,
+	GENESIS_ACCOUNT_PRIVATE_KEY,
+	FIRST_CONTRACT_ADDRESS,
+	ETH_BLOCK_GAS_LIMIT,
+	ETH_BLOCK_POV_LIMIT,
+	TEST_ERC20_BYTECODE,
+} from "./config";
 import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./util";
+
+const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
 // (!) The implementation must match the one in the rpc handler.
 // If the variation in the estimate is less than 10%,
@@ -40,12 +53,9 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
 	// to spin up a frontier node, it saves a lot of time.
 
-	// EXTRINSIC_GAS_LIMIT = [BLOCK_GAS_LIMIT - BLOCK_GAS_LIMIT * (NORMAL_DISPATCH_RATIO - AVERAGE_ON_INITIALIZE_RATIO)] / WEIGHT_PER_GAS = (1_000_000_000_000 * 2 * (0.75-0.1) - 125_000_000) / 20000
-	const EXTRINSIC_GAS_LIMIT = 65000000;
-
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let oneOffEstimation = 196657;
+		let oneOffEstimation = 196701;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -55,27 +65,6 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				data: Test.bytecode,
 			})
 		).to.equal(binarySearchEstimation);
-	});
-
-	it.skip("block gas limit over 5M", async function () {
-		expect((await context.web3.eth.getBlock("latest")).gasLimit).to.be.above(5000000);
-	});
-
-	// Testing the gas limit protection, hardcoded to 25M
-	it.skip("gas limit should decrease on next block if gas unused", async function () {
-		this.timeout(15000);
-
-		const gasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
-		await createAndFinalizeBlock(context.web3);
-
-		// Gas limit is expected to have decreased as the gasUsed by the block is lower than 2/3 of the previous gas limit
-		const newGasLimit = (await context.web3.eth.getBlock("latest")).gasLimit;
-		expect(newGasLimit).to.be.below(gasLimit);
-	});
-
-	// Testing the gas limit protection, hardcoded to 25M
-	it.skip("gas limit should increase on next block if gas fully used", async function () {
-		// TODO: fill a block with many heavy transaction to simulate lot of gas.
 	});
 
 	it("eth_estimateGas for contract call", async function () {
@@ -108,7 +97,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	it("eth_estimateGas should handle AccessList alias", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		// 4300 == 1900 for one key and 2400 for one storage.
-		let oneOffEstimation = 196657 + 4300;
+		let oneOffEstimation = 196701 + 4300;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -135,20 +124,20 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			data: Test.bytecode,
 			gasPrice: "0x0",
 		});
-		expect(result).to.equal(197690);
+		expect(result).to.equal(197732);
 		result = await context.web3.eth.estimateGas({
 			from: GENESIS_ACCOUNT,
 			data: Test.bytecode,
 		});
-		expect(result).to.equal(197690);
+		expect(result).to.equal(197732);
 	});
 
-	it("tx gas limit below EXTRINSIC_GAS_LIMIT", async function () {
+	it("tx gas limit below ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-				gas: EXTRINSIC_GAS_LIMIT - 1,
+				gas: ETH_BLOCK_GAS_LIMIT - 1,
 				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -158,12 +147,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect((createReceipt as any).transactionHash).to.be.not.null;
 		expect((createReceipt as any).blockHash).to.be.not.null;
 	});
-	it("tx gas limit equal EXTRINSIC_GAS_LIMIT", async function () {
+	it("tx gas limit equal ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-				gas: EXTRINSIC_GAS_LIMIT,
+				gas: ETH_BLOCK_GAS_LIMIT,
 				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -173,12 +162,12 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect((createReceipt as any).transactionHash).to.be.not.null;
 		expect((createReceipt as any).blockHash).to.be.not.null;
 	});
-	it("tx gas limit larger EXTRINSIC_GAS_LIMIT", async function () {
+	it("tx gas limit larger ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-				gas: EXTRINSIC_GAS_LIMIT + 1,
+				gas: ETH_BLOCK_GAS_LIMIT + 1,
 				gasPrice: "0x3B9ACA00",
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
@@ -186,6 +175,211 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
 		expect((createReceipt as any).error.message).to.equal("exceeds block gas limit");
+	});
+});
+
+describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => {
+	const STORAGE_LOOP_CONTRACT_BYTECODE = StorageLoop.bytecode;
+	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
+
+	// First call to contract storageLoop method
+	const FIRST_CALL = 752_450;
+	// Rest of calls
+	const CALL_COST = 735_350;
+	// Block gas limit
+	const BLOCK_GAS_LIMIT = ETH_BLOCK_GAS_LIMIT - FIRST_CALL;
+	// Number of calls per block
+	const CALLS_PER_BLOCK = Math.floor(BLOCK_GAS_LIMIT / CALL_COST) + 1;
+	// Available space left after all calls
+	const REMNANT = Math.floor(ETH_BLOCK_GAS_LIMIT - (CALL_COST * (CALLS_PER_BLOCK - 1) + FIRST_CALL));
+	// Number of transfers per available space left
+	const TRANSFERS_PER_BLOCK = Math.floor(REMNANT / 21_000);
+
+	before("create the contract", async function () {
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: STORAGE_LOOP_CONTRACT_BYTECODE,
+				value: "0x00",
+				gasPrice: "0x3B9ACA00",
+				gas: "0x100000",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		await createAndFinalizeBlock(context.web3);
+	});
+
+	step("gas limit bound works with ref time heavy txns", async function () {
+		this.timeout(10000);
+
+		const contract = new context.web3.eth.Contract(STORAGE_LOOP_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x3B9ACA00",
+		});
+
+		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
+
+		for (var i = 0; i < CALLS_PER_BLOCK; i++) {
+			let data = contract.methods.storageLoop(1000, TEST_ACCOUNT, i);
+			let tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: contract.options.address,
+					data: data.encodeABI(),
+					gasPrice: "0x3B9ACA00",
+					gas: "0x100000",
+					nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+			nonce++;
+		}
+		// because we are using Math.floor for everything, at the end there is room for an additional
+		// transfer.
+		for (var i = 0; i < TRANSFERS_PER_BLOCK + 1; i++) {
+			const tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: "0x2111111111111111111111111111111111111111",
+					value: "0x1",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x5208",
+					nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			let r = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+			nonce++;
+		}
+
+		await createAndFinalizeBlock(context.web3);
+
+		let latest = await context.web3.eth.getBlock("latest");
+		expect(latest.transactions.length).to.be.eq(CALLS_PER_BLOCK + TRANSFERS_PER_BLOCK + 1);
+		expect(latest.gasUsed).to.be.lessThanOrEqual(ETH_BLOCK_GAS_LIMIT);
+		expect(ETH_BLOCK_GAS_LIMIT - latest.gasUsed).to.be.lessThan(21_000);
+	});
+});
+
+describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => {
+	const STORAGE_LOOP_CONTRACT_BYTECODE = StorageLoop.bytecode;
+	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
+
+	// First call to contract storageLoop method
+	const FIRST_CALL = 752_450;
+	// Rest of calls
+	const CALL_COST = 735_350;
+	// Block gas limit
+	const BLOCK_GAS_LIMIT = ETH_BLOCK_GAS_LIMIT - FIRST_CALL;
+	// Number of calls per block
+	const CALLS_PER_BLOCK = Math.floor(BLOCK_GAS_LIMIT / CALL_COST) + 1;
+	// Available space left after all calls
+	const REMNANT = Math.floor(ETH_BLOCK_GAS_LIMIT - (CALL_COST * (CALLS_PER_BLOCK - 1) + FIRST_CALL));
+	// Big transfer
+	const CONTRACT_TRANSFER_EFFECTIVE_GAS = 100_520;
+	// Number of transfers per available space left
+	const TRANSFERS_PER_BLOCK = Math.floor((REMNANT - CONTRACT_TRANSFER_EFFECTIVE_GAS) / 21_000);
+
+	let contractAddress;
+	before("create the contract", async function () {
+		const tx1 = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: STORAGE_LOOP_CONTRACT_BYTECODE,
+				value: "0x00",
+				gasPrice: "0x3B9ACA00",
+				gas: "0x100000",
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		await customRequest(context.web3, "eth_sendRawTransaction", [tx1.rawTransaction]);
+		const tx2 = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				data: TEST_ERC20_BYTECODE,
+				gas: "0x1000000",
+				gasPrice: "0x3B9ACA00",
+				nonce: 1,
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		const { result } = await customRequest(context.web3, "eth_sendRawTransaction", [tx2.rawTransaction]);
+		await createAndFinalizeBlock(context.web3);
+		const receipt = await context.web3.eth.getTransactionReceipt(result);
+		contractAddress = receipt.contractAddress;
+	});
+
+	// This test fills a block with regular transfers + a transfer to a contract with big bytecode.
+	// We consider bytecode "big" when it consumes an effective gas greater than the legacy gas.
+	step("gas limit bound works with pov size heavy txns", async function () {
+		this.timeout(10000);
+
+		const contract = new context.web3.eth.Contract(STORAGE_LOOP_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
+			from: GENESIS_ACCOUNT,
+			gasPrice: "0x3B9ACA00",
+		});
+
+		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
+		let tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				to: contractAddress,
+				value: "0x1",
+				gasPrice: "0x3B9ACA00",
+				gas: "0xF4240",
+				nonce,
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+		let contract_transfer_hash = await (
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])
+		).result;
+		nonce++;
+
+		for (var i = 0; i < CALLS_PER_BLOCK; i++) {
+			let data = contract.methods.storageLoop(1000, TEST_ACCOUNT, i);
+			let tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: contract.options.address,
+					data: data.encodeABI(),
+					gasPrice: "0x3B9ACA00",
+					gas: "0x100000",
+					nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+			nonce++;
+		}
+		// because we are using Math.floor for everything, at the end there is room for an additional
+		// transfer.
+		for (var i = 0; i < TRANSFERS_PER_BLOCK; i++) {
+			const tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: "0x2111111111111111111111111111111111111111",
+					value: "0x1",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x5208",
+					nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			let r = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+			nonce++;
+		}
+
+		await createAndFinalizeBlock(context.web3);
+
+		let latest = await context.web3.eth.getBlock("latest");
+		// Expect all regular transfers to go through + contract transfer.
+		expect(latest.transactions.length).to.be.eq(CALLS_PER_BLOCK + TRANSFERS_PER_BLOCK);
+		expect(latest.transactions).contain(contract_transfer_hash);
+		expect(latest.gasUsed).to.be.lessThanOrEqual(ETH_BLOCK_GAS_LIMIT);
+		expect(ETH_BLOCK_GAS_LIMIT - latest.gasUsed).to.be.lessThan(21_000);
 	});
 });
 

@@ -7,7 +7,7 @@ import {
 	GENESIS_ACCOUNT_PRIVATE_KEY,
 	FIRST_CONTRACT_ADDRESS,
 	BLOCK_HASH_COUNT,
-	BLOCK_GAS_LIMIT,
+	ETH_BLOCK_GAS_LIMIT,
 } from "./config";
 import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
 
@@ -89,7 +89,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x3B9ACA00",
 		});
-		expect(await contract.methods.gasLimit().call()).to.eq(BLOCK_GAS_LIMIT.toString());
+		expect(await contract.methods.gasLimit().call()).to.eq(ETH_BLOCK_GAS_LIMIT.toString());
 	});
 
 	// Requires error handling

@@ -18,6 +18,7 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
+use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::ValidatedTransaction;
 use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
 use pallet_evm::{AddressMapping, GasWeightMapping};
@@ -273,7 +274,7 @@ fn contract_constructor_should_get_executed() {
 
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
 		assert_eq!(
-			EVM::account_storages(erc20_address, alice_storage_address),
+			pallet_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
@@ -297,7 +298,7 @@ fn source_should_be_derived_from_signature() {
 
 		// We verify the transaction happened with alice account.
 		assert_eq!(
-			EVM::account_storages(erc20_address, alice_storage_address),
+			pallet_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
 				.unwrap()
 		)
@@ -314,7 +315,10 @@ fn contract_should_be_created_at_given_address() {
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
-		assert_ne!(EVM::account_codes(erc20_address).len(), 0);
+		assert_ne!(
+			pallet_evm::AccountCodes::<Test>::get(erc20_address).len(),
+			0
+		);
 	});
 }
 
@@ -323,7 +327,7 @@ fn transaction_should_generate_correct_gas_used() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
-	let expected_gas = U256::from(893928);
+	let expected_gas = U256::from(894198);
 
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
@@ -331,7 +335,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
-				assert_eq!(info.used_gas, expected_gas);
+				assert_eq!(info.used_gas.standard, expected_gas);
 			}
 			CallOrCreateInfo::Call(_) => panic!("expected create info"),
 		}
@@ -340,17 +344,6 @@ fn transaction_should_generate_correct_gas_used() {
 
 #[test]
 fn call_should_handle_errors() {
-	// 	pragma solidity ^0.6.6;
-	// 	contract Test {
-	// 		function foo() external pure returns (bool) {
-	// 			return true;
-	// 		}
-	// 		function bar() external pure {
-	// 			require(false, "error_msg");
-	// 		}
-	// 	}
-	let contract: &str = "608060405234801561001057600080fd5b50610113806100206000396000f3fe6080604052348015600f57600080fd5b506004361060325760003560e01c8063c2985578146037578063febb0f7e146057575b600080fd5b603d605f565b604051808215151515815260200191505060405180910390f35b605d6068565b005b60006001905090565b600060db576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260098152602001807f6572726f725f6d7367000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b56fea2646970667358221220fde68a3968e0e99b16fabf9b2997a78218b32214031f8e07e2c502daf603a69e64736f6c63430006060033";
-
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 
@@ -362,7 +355,7 @@ fn call_should_handle_errors() {
 			gas_limit: U256::from(0x100000),
 			action: ethereum::TransactionAction::Create,
 			value: U256::zero(),
-			input: hex::decode(contract).unwrap(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key, None);
 		assert_ok!(Ethereum::execute(alice.address, &t, None,));
@@ -412,11 +405,85 @@ fn call_should_handle_errors() {
 }
 
 #[test]
+fn event_extra_data_should_be_handle_properly() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		System::set_block_number(1);
+
+		let t = EIP1559UnsignedTransaction {
+			nonce: U256::zero(),
+			max_priority_fee_per_gas: U256::from(1),
+			max_fee_per_gas: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Create,
+			value: U256::zero(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
+		}
+		.sign(&alice.private_key, None);
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t,));
+
+		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let foo = hex::decode("c2985578").unwrap();
+		let bar = hex::decode("febb0f7e").unwrap();
+
+		let t2 = EIP1559UnsignedTransaction {
+			nonce: U256::from(1),
+			max_priority_fee_per_gas: U256::from(1),
+			max_fee_per_gas: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(H160::from_slice(&contract_address)),
+			value: U256::zero(),
+			input: foo,
+		}
+		.sign(&alice.private_key, None);
+
+		// calling foo
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2,));
+		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
+			from: alice.address,
+			to: H160::from_slice(&contract_address),
+			transaction_hash: H256::from_str(
+				"0x66036e60bafa1fabb847679d86d1f0a027ae52afde7690aaadf6f81c7e8ecda2",
+			)
+			.unwrap(),
+			exit_reason: ExitReason::Succeed(ExitSucceed::Returned),
+			extra_data: vec![],
+		}));
+
+		let t3 = EIP1559UnsignedTransaction {
+			nonce: U256::from(2),
+			max_priority_fee_per_gas: U256::from(1),
+			max_fee_per_gas: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(H160::from_slice(&contract_address)),
+			value: U256::zero(),
+			input: bar,
+		}
+		.sign(&alice.private_key, None);
+
+		// calling bar revert
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3,));
+		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
+			from: alice.address,
+			to: H160::from_slice(&contract_address),
+			transaction_hash: H256::from_str(
+				"0xf14cd5e6d0535a8407339dabce26616a3f19c2048937450859ea65d5201fb7e4",
+			)
+			.unwrap(),
+			exit_reason: ExitReason::Revert(ExitRevert::Reverted),
+			extra_data: b"very_long_error_msg_that_we_ex".to_vec(),
+		}));
+	});
+}
+
+#[test]
 fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_dispatch() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
 	let base_extrinsic_weight = frame_system::limits::BlockWeights::with_sensible_defaults(
-		Weight::from_ref_time(2000000000000).set_proof_size(u64::MAX),
+		Weight::from_parts(2000000000000, u64::MAX),
 		sp_runtime::Perbill::from_percent(75),
 	)
 	.per_class
@@ -484,5 +551,38 @@ fn validated_transaction_apply_zero_gas_price_works() {
 		assert_eq!(Balances::free_balance(&substrate_alice), 900);
 		// Bob received 100 from Alice.
 		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
+	});
+}
+
+#[test]
+fn proof_size_weight_limit_validation_works() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let mut tx = EIP1559UnsignedTransaction {
+			nonce: U256::from(2),
+			max_priority_fee_per_gas: U256::zero(),
+			max_fee_per_gas: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Call(alice.address),
+			value: U256::from(1),
+			input: Vec::new(),
+		};
+
+		let gas_limit: u64 = 1_000_000;
+		tx.gas_limit = U256::from(gas_limit);
+
+		let weight_limit =
+			<Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+
+		// Gas limit cannot afford the extra byte and thus is expected to exhaust.
+		tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
+		let tx = tx.sign(&alice.private_key, None);
+
+		// Execute
+		assert!(
+			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
+		);
 	});
 }

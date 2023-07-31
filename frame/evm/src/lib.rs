@@ -52,8 +52,8 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
+#![cfg_attr(feature = "runtime-benchmarks", deny(unused_crate_dependencies))]
 #![allow(clippy::too_many_arguments)]
-#![cfg_attr(test, feature(assert_matches))]
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
@@ -63,37 +63,48 @@ mod mock;
 pub mod runner;
 #[cfg(test)]
 mod tests;
-
-use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
-	traits::{
-		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, WithdrawReasons,
-	},
-	weights::Weight,
-};
-use frame_system::RawOrigin;
-use sp_core::{Hasher, H160, H256, U256};
-use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32, DispatchErrorWithPostInfo,
-};
-use sp_std::{cmp::min, vec::Vec};
+pub mod weights;
 
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
-#[cfg(feature = "std")]
+use impl_trait_for_tuples::impl_for_tuples;
+use scale_info::TypeInfo;
+// Substrate
+use frame_support::{
+	dispatch::{DispatchResultWithPostInfo, MaxEncodedLen, Pays, PostDispatchInfo},
+	traits::{
+		tokens::{
+			currency::Currency,
+			fungible::Inspect,
+			imbalance::{Imbalance, OnUnbalanced, SignedImbalance},
+			ExistenceRequirement, Fortitude, Preservation, WithdrawReasons,
+		},
+		FindAuthor, Get, Time,
+	},
+	weights::Weight,
+};
+use frame_system::RawOrigin;
+use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
+use sp_runtime::{
+	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
+	AccountId32, DispatchErrorWithPostInfo,
+};
+use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
+// Frontier
+use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
-	LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
-	PrecompileResult, PrecompileSet, Vicinity,
+	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
+	InvalidEvmTransactionError, IsPrecompileResult, LinearCostPrecompile, Log, Precompile,
+	PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+	Vicinity,
 };
 
 pub use self::{
 	pallet::*,
 	runner::{Runner, RunnerError},
+	weights::WeightInfo,
 };
 
 #[frame_support::pallet]
@@ -103,12 +114,11 @@ pub mod pallet {
 	use frame_system::pallet_prelude::*;
 
 	#[pallet::pallet]
-	#[pallet::generate_store(pub(super) trait Store)]
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
 	#[pallet::config]
-	pub trait Config: frame_system::Config + pallet_timestamp::Config {
+	pub trait Config: frame_system::Config {
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -148,12 +158,24 @@ pub mod pallet {
 		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
+		/// Called on create calls, used to record owner
+		type OnCreate: OnCreate<Self>;
+
 		/// Find author for the current block.
 		type FindAuthor: FindAuthor<H160>;
 
+		/// Gas limit Pov size ratio.
+		type GasLimitPovSizeRatio: Get<u64>;
+
+		/// Get the timestamp for the current block.
+		type Timestamp: Time;
+
+		/// Weight information for extrinsics in this pallet.
+		type WeightInfo: WeightInfo;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&LONDON_CONFIG
+			&SHANGHAI_CONFIG
 		}
 	}
 
@@ -161,7 +183,7 @@ pub mod pallet {
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::call_index(0)]
-		#[pallet::weight(0)]
+		#[pallet::weight(<T as pallet::Config>::WeightInfo::withdraw())]
 		pub fn withdraw(
 			origin: OriginFor<T>,
 			address: H160,
@@ -214,6 +236,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -238,10 +262,18 @@ pub mod pallet {
 			};
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -279,6 +311,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -315,10 +349,18 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -357,6 +399,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -393,10 +437,18 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -460,9 +512,9 @@ pub mod pallet {
 	}
 
 	#[pallet::genesis_config]
-	#[cfg_attr(feature = "std", derive(Default))]
+	#[derive(Default)]
 	pub struct GenesisConfig {
-		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
+		pub accounts: BTreeMap<H160, GenesisAccount>,
 	}
 
 	#[pallet::genesis_build]
@@ -497,11 +549,13 @@ pub mod pallet {
 	}
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_codes)]
 	pub type AccountCodes<T: Config> = StorageMap<_, Blake2_128Concat, H160, Vec<u8>, ValueQuery>;
 
 	#[pallet::storage]
-	#[pallet::getter(fn account_storages)]
+	pub type AccountCodesMetadata<T: Config> =
+		StorageMap<_, Blake2_128Concat, H160, CodeMetadata, OptionQuery>;
+
+	#[pallet::storage]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
 }
@@ -513,6 +567,31 @@ pub type BalanceOf<T> =
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+
+#[derive(
+	Debug,
+	Clone,
+	Copy,
+	Eq,
+	PartialEq,
+	Encode,
+	Decode,
+	TypeInfo,
+	MaxEncodedLen
+)]
+pub struct CodeMetadata {
+	pub size: u64,
+	pub hash: H256,
+}
+
+impl CodeMetadata {
+	fn from_code(code: &[u8]) -> Self {
+		let size = code.len() as u64;
+		let hash = H256::from(sp_io::hashing::keccak_256(code));
+
+		Self { size, hash }
+	}
+}
 
 pub trait EnsureAddressOrigin<OuterOrigin> {
 	/// Success return type.
@@ -599,6 +678,25 @@ where
 	}
 }
 
+/// Ensure that the address is AccountId20.
+pub struct EnsureAccountId20;
+
+impl<OuterOrigin> EnsureAddressOrigin<OuterOrigin> for EnsureAccountId20
+where
+	OuterOrigin: Into<Result<RawOrigin<AccountId20>, OuterOrigin>> + From<RawOrigin<AccountId20>>,
+{
+	type Success = AccountId20;
+
+	fn try_address_origin(address: &H160, origin: OuterOrigin) -> Result<AccountId20, OuterOrigin> {
+		let acc: AccountId20 = AccountId20::from(*address);
+		origin.into().and_then(|o| match o {
+			RawOrigin::Signed(who) if who == acc => Ok(who),
+			r => Err(OuterOrigin::from(r)),
+		})
+	}
+}
+
+/// Trait to be implemented for evm address mapping.
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
 }
@@ -606,9 +704,9 @@ pub trait AddressMapping<A> {
 /// Identity address mapping.
 pub struct IdentityAddressMapping;
 
-impl AddressMapping<H160> for IdentityAddressMapping {
-	fn into_account_id(address: H160) -> H160 {
-		address
+impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
+	fn into_account_id(address: H160) -> T {
+		address.into()
 	}
 }
 
@@ -657,6 +755,13 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 					.base_extrinsic,
 			);
 		}
+		// Apply a gas to proof size ratio based on BlockGasLimit
+		let ratio = T::GasLimitPovSizeRatio::get();
+		if ratio > 0 {
+			let proof_size = gas.saturating_div(ratio);
+			*weight.proof_size_mut() = proof_size;
+		}
+
 		weight
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {
@@ -664,7 +769,7 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	}
 }
 
-static LONDON_CONFIG: EvmConfig = EvmConfig::london();
+static SHANGHAI_CONFIG: EvmConfig = EvmConfig::shanghai();
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
@@ -690,6 +795,7 @@ impl<T: Config> Pallet<T> {
 		}
 
 		<AccountCodes<T>>::remove(address);
+		<AccountCodesMetadata<T>>::remove(address);
 		#[allow(deprecated)]
 		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
@@ -705,7 +811,38 @@ impl<T: Config> Pallet<T> {
 			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
 		}
 
+		// Update metadata.
+		let meta = CodeMetadata::from_code(&code);
+		<AccountCodesMetadata<T>>::insert(address, meta);
+
 		<AccountCodes<T>>::insert(address, code);
+	}
+
+	/// Get the account metadata (hash and size) from storage if it exists,
+	/// or compute it from code and store it if it doesn't exist.
+	pub fn account_code_metadata(address: H160) -> CodeMetadata {
+		if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+			return meta;
+		}
+
+		let code = <AccountCodes<T>>::get(address);
+
+		// If code is empty we return precomputed hash for empty code.
+		// We don't store it as this address could get code deployed in the future.
+		if code.is_empty() {
+			const EMPTY_CODE_HASH: [u8; 32] = hex_literal::hex!(
+				"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
+			);
+			return CodeMetadata {
+				size: 0,
+				hash: EMPTY_CODE_HASH.into(),
+			};
+		}
+
+		let meta = CodeMetadata::from_code(&code);
+
+		<AccountCodesMetadata<T>>::insert(address, meta);
+		meta
 	}
 
 	/// Get the account basic in EVM format.
@@ -714,7 +851,8 @@ impl<T: Config> Pallet<T> {
 
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
-		let balance = T::Currency::reducible_balance(&account_id, true);
+		let balance =
+			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 
 		(
 			Account {
@@ -890,5 +1028,22 @@ U256: UniqueSaturatedInto<BalanceOf<T>>,
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
 		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
+	}
+}
+
+pub trait OnCreate<T> {
+	fn on_create(owner: H160, contract: H160);
+}
+
+impl<T> OnCreate<T> for () {
+	fn on_create(_owner: H160, _contract: H160) {}
+}
+
+#[impl_for_tuples(1, 12)]
+impl<T> OnCreate<T> for Tuple {
+	fn on_create(owner: H160, contract: H160) {
+		for_tuples!(#(
+			Tuple::on_create(owner, contract);
+		)*)
 	}
 }
