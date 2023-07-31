@@ -187,6 +187,7 @@
 <a href="#187" id="187">187</a>
 <a href="#188" id="188">188</a>
 <a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -212,9 +213,10 @@
 	TransactionAction, TransactionV2 <span class="kw">as </span>Transaction,
 };
 <span class="kw">use </span>ethereum_types::{H160, H256, U256};
-<span class="kw">use </span>fp_evm::CheckEvmTransactionInput;
+<span class="kw">use </span>fp_evm::{CallOrCreateInfo, CheckEvmTransactionInput};
+<span class="kw">use </span>frame_support::dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo};
 <span class="kw">use </span>scale_codec::{Decode, Encode};
-<span class="kw">use </span>sp_std::vec::Vec;
+<span class="kw">use </span>sp_std::{result::Result, vec::Vec};
 
 <span class="attr">#[repr(u8)]
 #[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
@@ -233,7 +235,7 @@
 	<span class="kw">fn </span>apply(
 		source: H160,
 		transaction: Transaction,
-	) -&gt; frame_support::dispatch::DispatchResultWithPostInfo;
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(PostDispatchInfo, CallOrCreateInfo), DispatchErrorWithPostInfo&gt;;
 }
 
 <span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
