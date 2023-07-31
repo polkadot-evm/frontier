@@ -30,22 +30,24 @@ mod eth;
 mod eth_pubsub;
 mod net;
 mod signer;
+#[cfg(feature = "txpool")]
 mod txpool;
 mod web3;
 
+#[cfg(feature = "txpool")]
+pub use self::txpool::TxPool;
 pub use self::{
 	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
-	txpool::TxPool,
 	web3::Web3,
 };
-
 pub use ethereum::TransactionV2 as EthereumTransaction;
+#[cfg(feature = "txpool")]
+pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, TxPoolApiServer,
-	Web3ApiServer,
+	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
 };
 pub use fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,

@@ -19,11 +19,11 @@ hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 libsecp256k1 = { workspace = true }
 log = { workspace = true }
-lru = "0.8.1"
 prometheus = { version = "0.13.1", default-features = false }
 rand = "0.8"
 rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
+schnellru = "0.2.1"
 serde = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 
@@ -73,4 +73,5 @@ rocksdb = [
 	"fc-db/rocksdb",
 	"fc-mapping-sync/rocksdb",
 ]
+txpool = ["fc-rpc-core/txpool"]
 rpc-binary-search-estimate = []

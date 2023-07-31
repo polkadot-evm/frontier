@@ -33,9 +33,7 @@ mod tests;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-use fp_ethereum::{
-	TransactionData, TransactionValidationError, ValidatedTransaction as ValidatedTransactionT,
-};
+use fp_ethereum::{TransactionValidationError, ValidatedTransaction as ValidatedTransactionT};
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
 };
@@ -65,6 +63,7 @@ pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
+pub use fp_ethereum::TransactionData;
 pub use fp_rpc::TransactionStatus;
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
@@ -355,15 +354,17 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-	fn proof_size_base_cost(transaction: &Transaction) -> u64 {
-		transaction
-			.encode()
-			.len()
-			// pallet index
-			.saturating_add(1)
-			// call index
-			.saturating_add(1) as u64
+	pub fn transaction_weight(transaction_data: &TransactionData) -> (Option<Weight>, Option<u64>) {
+		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+			transaction_data.gas_limit.unique_saturated_into(),
+			true,
+		) {
+			weight_limit if weight_limit.proof_size() > 0 => (
+				Some(weight_limit),
+				Some(transaction_data.proof_size_base_cost.unwrap_or_default()),
+			),
+			_ => (None, None),
+		}
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
@@ -485,19 +486,7 @@ impl<T: Config> Pallet<T> {
 	) -> TransactionValidity {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
-
-		let (weight_limit, proof_size_base_cost) =
-			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.unique_saturated_into(),
-				true,
-			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(weight_limit),
-					Some(Self::proof_size_base_cost(transaction)),
-				),
-				_ => (None, None),
-			};
-
+		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
@@ -518,6 +507,16 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&who))
 		.map_err(|e| e.0)?;
+
+		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
+		// Do not allow transactions for which `tx.sender` has any code deployed.
+		//
+		// This check should be done on the transaction validation (here) **and**
+		// on trnasaction execution, otherwise a contract tx will be included in
+		// the mempool and pollute the mempool forever.
+		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
+			return Err(InvalidTransaction::BadSigner.into());
+		}
 
 		let priority = match (
 			transaction_data.gas_price,
@@ -682,11 +681,13 @@ impl<T: Config> Pallet<T> {
 			extra_data,
 		});
 
-		Ok((
-			PostDispatchInfo {
+		Ok((PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						used_gas.standard.unique_saturated_into(),
+						sp_std::cmp::max(
+							used_gas.standard.unique_saturated_into(),
+							used_gas.effective.unique_saturated_into(),
+						),
 						true,
 					);
 					if let Some(weight_info) = weight_info {
@@ -694,7 +695,7 @@ impl<T: Config> Pallet<T> {
 							*gas_to_weight.proof_size_mut() = proof_size_usage;
 						}
 					}
-					Some(gas_to_weight)
+						Some(gas_to_weight)
 				},
 				pays_fee: Pays::No,
 			},
@@ -712,7 +713,15 @@ impl<T: Config> Pallet<T> {
 		from: H160,
 		transaction: &Transaction,
 		config: Option<evm::Config>,
-	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchErrorWithPostInfo> {
+	) -> Result<
+		(Option<H160>, Option<H160>, CallOrCreateInfo),
+		DispatchErrorWithPostInfo,
+	> {
+		let transaction_data: TransactionData = transaction.into();
+		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
+		let is_transactional = true;
+		let validate = false;
+
 		let (
 			input,
 			value,
@@ -773,20 +782,6 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 
-		let is_transactional = true;
-		let validate = false;
-
-		let (proof_size_base_cost, weight_limit) =
-			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				gas_limit.unique_saturated_into(),
-				true,
-			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(Self::proof_size_base_cost(transaction)),
-					Some(weight_limit),
-				),
-				_ => (None, None),
-			};
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(
@@ -861,21 +856,9 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 	) -> Result<(), TransactionValidityError> {
 		let transaction_data: TransactionData = transaction.into();
-
+		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
-
-		let (weight_limit, proof_size_base_cost) =
-			match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-				transaction_data.gas_limit.unique_saturated_into(),
-				true,
-			) {
-				weight_limit if weight_limit.proof_size() > 0 => (
-					Some(weight_limit),
-					Some(Self::proof_size_base_cost(transaction)),
-				),
-				_ => (None, None),
-			};
 
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {

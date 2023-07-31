@@ -13,14 +13,14 @@ use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
 // Frontier
 use frontier_template_runtime::{
-	AccountId, Balance, EnableManualSeal, GenesisConfig, SS58Prefix, Signature, WASM_BINARY,
+	AccountId, Balance, EnableManualSeal, RuntimeGenesisConfig, SS58Prefix, Signature, WASM_BINARY,
 };
 
 // The URL for the telemetry server.
 // const STAGING_TELEMETRY_URL: &str = "wss://telemetry.polkadot.io/submit/";
 
 /// Specialized `ChainSpec`. This is a specialization of the general Substrate ChainSpec type.
-pub type ChainSpec = sc_service::GenericChainSpec<GenesisConfig>;
+pub type ChainSpec = sc_service::GenericChainSpec<RuntimeGenesisConfig>;
 
 /// Specialized `ChainSpec` for development.
 pub type DevChainSpec = sc_service::GenericChainSpec<DevGenesisExt>;
@@ -29,7 +29,7 @@ pub type DevChainSpec = sc_service::GenericChainSpec<DevGenesisExt>;
 #[derive(Serialize, Deserialize)]
 pub struct DevGenesisExt {
 	/// Genesis config.
-	genesis_config: GenesisConfig,
+	genesis_config: RuntimeGenesisConfig,
 	/// The flag that if enable manual-seal mode.
 	enable_manual_seal: Option<bool>,
 }
@@ -179,13 +179,13 @@ fn testnet_genesis(
 	endowed_accounts: Vec<AccountId>,
 	initial_authorities: Vec<(AuraId, GrandpaId)>,
 	chain_id: u64,
-) -> GenesisConfig {
+) -> RuntimeGenesisConfig {
 	use frontier_template_runtime::{
 		AuraConfig, BalancesConfig, EVMChainIdConfig, EVMConfig, GrandpaConfig, SudoConfig,
 		SystemConfig,
 	};
 
-	GenesisConfig {
+	RuntimeGenesisConfig {
 		// System
 		system: SystemConfig {
 			// Add Wasm runtime to storage.
