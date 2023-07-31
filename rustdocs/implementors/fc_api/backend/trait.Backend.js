@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"fc_db":[["impl&lt;Block: BlockT&gt; <a class=\"trait\" href=\"fc_api/backend/trait.Backend.html\" title=\"trait fc_api::backend::Backend\">Backend</a>&lt;Block&gt; for <a class=\"struct\" href=\"fc_db/kv/struct.Backend.html\" title=\"struct fc_db::kv::Backend\">Backend</a>&lt;Block&gt;"],["impl&lt;Block: BlockT&lt;Hash = H256&gt;&gt; <a class=\"trait\" href=\"fc_api/backend/trait.Backend.html\" title=\"trait fc_api::backend::Backend\">Backend</a>&lt;Block&gt; for <a class=\"struct\" href=\"fc_db/sql/struct.Backend.html\" title=\"struct fc_db::sql::Backend\">Backend</a>&lt;Block&gt;"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
