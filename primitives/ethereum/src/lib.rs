@@ -23,9 +23,10 @@ pub use ethereum::{
 	TransactionAction, TransactionV2 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
-use fp_evm::CheckEvmTransactionInput;
+use fp_evm::{CallOrCreateInfo, CheckEvmTransactionInput};
+use frame_support::dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo};
 use scale_codec::{Decode, Encode};
-use sp_std::vec::Vec;
+use sp_std::{result::Result, vec::Vec};
 
 #[repr(u8)]
 #[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
@@ -44,7 +45,7 @@ pub trait ValidatedTransaction {
 	fn apply(
 		source: H160,
 		transaction: Transaction,
-	) -> frame_support::dispatch::DispatchResultWithPostInfo;
+	) -> Result<(PostDispatchInfo, CallOrCreateInfo), DispatchErrorWithPostInfo>;
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
