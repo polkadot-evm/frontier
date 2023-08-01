@@ -528,7 +528,6 @@
 <a href="#528" id="528">528</a>
 <a href="#529" id="529">529</a>
 <a href="#530" id="530">530</a>
-<a href="#531" id="531">531</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -852,27 +851,26 @@
 
 <span class="attr">#[cfg(test)]
 </span><span class="kw">mod </span>tests {
-	<span class="kw">use </span>futures::executor;
-	<span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
-	<span class="kw">use </span>sp_consensus::BlockOrigin;
-	<span class="kw">use </span>substrate_test_runtime_client::{
-		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder,
-	};
-
 	<span class="kw">use </span>std::{
 		io::{Read, Write},
 		sync::Arc,
 	};
 
-	<span class="kw">use </span><span class="kw">crate</span>::kv::DatabaseSettings;
+	<span class="kw">use </span>futures::executor;
 	<span class="kw">use </span>scale_codec::Encode;
+	<span class="kw">use </span>tempfile::tempdir;
+	<span class="comment">// Substrate
+	</span><span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
+	<span class="kw">use </span>sp_consensus::BlockOrigin;
 	<span class="kw">use </span>sp_core::H256;
 	<span class="kw">use </span>sp_runtime::{
 		generic::{Block, Header},
 		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
 	};
-	<span class="kw">use </span>tempfile::tempdir;
+	<span class="kw">use </span>substrate_test_runtime_client::{
+		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
 
 	<span class="kw">type </span>OpaqueBlock =
 		Block&lt;Header&lt;u64, BlakeTwo256&gt;, substrate_test_runtime_client::runtime::Extrinsic&gt;;
@@ -887,7 +885,7 @@
 	<span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;rocksdb&quot;</span>), ignore)]
 	#[test]
 	</span><span class="kw">fn </span>upgrade_1_to_2_works() {
-		<span class="kw">let </span>settings: Vec&lt;DatabaseSettings&gt; = <span class="macro">vec!</span>[
+		<span class="kw">let </span>settings: Vec&lt;<span class="kw">crate</span>::kv::DatabaseSettings&gt; = <span class="macro">vec!</span>[
 			<span class="comment">// Rocks db
 			</span><span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
 			</span><span class="kw">crate</span>::kv::DatabaseSettings {
@@ -974,7 +972,7 @@
 					<span class="kw">let </span><span class="kw-2">mut </span>metadata = <span class="macro">vec!</span>[];
 					<span class="kw">for </span>hash <span class="kw">in </span><span class="macro">vec!</span>[next_canon_block_hash, orphan_block_hash].iter() {
 						metadata.push(<span class="kw">crate</span>::kv::TransactionMetadata::&lt;OpaqueBlock&gt; {
-							block_hash: <span class="kw-2">*</span>hash,
+							substrate_block_hash: <span class="kw-2">*</span>hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: <span class="number">0u32</span>,
 						});
@@ -1024,7 +1022,7 @@
 					.unwrap();
 				<span class="macro">assert!</span>(mapped_transaction
 					.into_iter()
-					.any(|tx| tx.block_hash == <span class="kw-2">*</span>canon_substrate_block_hash));
+					.any(|tx| tx.substrate_block_hash == <span class="kw-2">*</span>canon_substrate_block_hash));
 			}
 
 			<span class="comment">// Upgrade db version file

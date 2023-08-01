@@ -660,7 +660,7 @@
 
 	<span class="kw">pub async fn </span>native_block_id&lt;B: BlockT, C&gt;(
 		client: <span class="kw-2">&amp;</span>C,
-		backend: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync),
+		backend: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::Backend&lt;B&gt;,
 		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;BlockId&lt;B&gt;&gt;&gt;
 	<span class="kw">where
@@ -686,7 +686,7 @@
 
 	<span class="kw">pub async fn </span>load_hash&lt;B: BlockT, C&gt;(
 		client: <span class="kw-2">&amp;</span>C,
-		backend: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync),
+		backend: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::Backend&lt;B&gt;,
 		hash: H256,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;B::Hash&gt;&gt;
 	<span class="kw">where
@@ -723,7 +723,7 @@
 
 	<span class="kw">pub async fn </span>load_transactions&lt;B: BlockT, C&gt;(
 		client: <span class="kw-2">&amp;</span>C,
-		backend: <span class="kw-2">&amp;</span>(<span class="kw">dyn </span>fc_db::BackendReader&lt;B&gt; + Send + Sync),
+		backend: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::Backend&lt;B&gt;,
 		transaction_hash: H256,
 		only_canonical: bool,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;(H256, u32)&gt;&gt;
@@ -738,7 +738,7 @@
 
 		transaction_metadata
 			.iter()
-			.find(|meta| is_canon::&lt;B, C&gt;(client, meta.block_hash))
+			.find(|meta| is_canon::&lt;B, C&gt;(client, meta.substrate_block_hash))
 			.map_or_else(
 				|| {
 					<span class="kw">if </span>!only_canonical &amp;&amp; transaction_metadata.len() &gt; <span class="number">0 </span>{
