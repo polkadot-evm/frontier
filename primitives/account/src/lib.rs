@@ -84,6 +84,19 @@ impl From<[u8; 20]> for AccountId20 {
 	}
 }
 
+impl<'a> TryFrom<&'a [u8]> for AccountId20 {
+	type Error = ();
+	fn try_from(x: &'a [u8]) -> Result<AccountId20, ()> {
+		if x.len() == 20 {
+			let mut data = [0; 20];
+			data.copy_from_slice(x);
+			Ok(AccountId20(data))
+		} else {
+			Err(())
+		}
+	}
+}
+
 impl From<AccountId20> for [u8; 20] {
 	fn from(val: AccountId20) -> Self {
 		val.0
@@ -99,6 +112,30 @@ impl From<H160> for AccountId20 {
 impl From<AccountId20> for H160 {
 	fn from(val: AccountId20) -> Self {
 		H160(val.0)
+	}
+}
+
+impl AsRef<[u8]> for AccountId20 {
+	fn as_ref(&self) -> &[u8] {
+		&self.0[..]
+	}
+}
+
+impl AsMut<[u8]> for AccountId20 {
+	fn as_mut(&mut self) -> &mut [u8] {
+		&mut self.0[..]
+	}
+}
+
+impl AsRef<[u8; 20]> for AccountId20 {
+	fn as_ref(&self) -> &[u8; 20] {
+		&self.0
+	}
+}
+
+impl AsMut<[u8; 20]> for AccountId20 {
+	fn as_mut(&mut self) -> &mut [u8; 20] {
+		&mut self.0
 	}
 }
 
