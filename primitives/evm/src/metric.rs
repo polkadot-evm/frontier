@@ -4,12 +4,12 @@ use sp_runtime::{
 	Saturating,
 };
 
-pub struct BasicMetric<T> {
+pub struct Metric<T> {
 	limit: T,
 	usage: T,
 }
 
-impl<T> BasicMetric<T>
+impl<T> Metric<T>
 where
 	T: Zero,
 {
@@ -21,7 +21,7 @@ where
 	}
 }
 
-impl<T> BasicMetric<T>
+impl<T> Metric<T>
 where
 	T: CheckedAdd + Saturating + PartialOrd + Copy,
 {
@@ -43,7 +43,7 @@ where
 	}
 }
 
-pub struct StorageMetric(BasicMetric<u64>);
+pub struct StorageMetric(Metric<u64>);
 
 impl StorageMetric {
 	fn refund(&mut self, amount: u64) {
