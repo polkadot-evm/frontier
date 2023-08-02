@@ -24,7 +24,7 @@ jobs:
         target: wasm32-unknown-unknown
         override: true
     - name: Install protoc
-      uses: arduino/setup-protoc@v1
+      uses: arduino/setup-protoc@v2
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
@@ -43,7 +43,7 @@ jobs:
         target: wasm32-unknown-unknown
         override: true
     - name: Install protoc
-      uses: arduino/setup-protoc@v1
+      uses: arduino/setup-protoc@v2
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Build client
@@ -77,7 +77,7 @@ jobs:
         override: true
         components: rustfmt, clippy
     - name: Install protoc
-      uses: arduino/setup-protoc@v1
+      uses: arduino/setup-protoc@v2
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Check Cargo.toml Format
