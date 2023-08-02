@@ -1,15 +1,8 @@
-use evm::ExitError;
+use evm::{gasometer::GasCost, ExitError, Opcode};
 use sp_runtime::{
 	traits::{CheckedAdd, Zero},
 	Saturating,
 };
-
-/// A trait for metering different foreign metrics.
-pub trait Metric<T> {
-	fn try_consume(&self, cost: T) -> Result<T, ExitError>;
-	fn refund(&mut self, amount: T);
-	fn record(&mut self, cost: T) -> Result<(), ExitError>;
-}
 
 pub struct BasicMetric<T> {
 	limit: T,
@@ -28,40 +21,45 @@ where
 	}
 }
 
-impl<T> Metric<T> for BasicMetric<T>
+impl<T> BasicMetric<T>
 where
 	T: CheckedAdd + Saturating + PartialOrd + Copy,
 {
-	fn try_consume(&self, cost: T) -> Result<T, ExitError> {
+	fn try_consume(&mut self, cost: T) -> Result<(), ExitError> {
 		let usage = self.usage.checked_add(&cost).ok_or(ExitError::OutOfGas)?;
 		if usage > self.limit {
 			return Err(ExitError::OutOfGas);
 		}
-		Ok(usage)
+		self.usage = usage;
+		Ok(())
 	}
 
 	fn refund(&mut self, amount: T) {
 		self.usage = self.usage.saturating_sub(amount);
 	}
 
-    fn record(&mut self, cost: T) -> Result<(), ExitError> {
-
-        Ok(())
-    }
+	fn record(&mut self, opcode: Opcode, gas_cost: GasCost) -> Result<(), ExitError> {
+		Ok(())
+	}
 }
 
-pub struct StorageMetric(pub BasicMetric<u64>);
+pub struct StorageMetric(BasicMetric<u64>);
 
-impl Metric<u64> for StorageMetric {
-	fn try_consume(&self, cost: u64) -> Result<u64, ExitError> {
-		self.0.try_consume(cost)
-	}
-
+impl StorageMetric {
 	fn refund(&mut self, amount: u64) {
 		self.0.refund(amount)
 	}
 
-	fn record(&mut self, cost: u64) -> Result<(), ExitError> {
-		Ok(())
+	fn record_dynamic_opcode_cost(
+		&mut self,
+		_opcode: Opcode,
+		gas_cost: GasCost,
+	) -> Result<(), ExitError> {
+		let cost = match gas_cost {
+			GasCost::Create => 0,
+			GasCost::Create2 { len } => len.try_into().map_err(|_| ExitError::OutOfGas)?,
+			_ => return Ok(()),
+		};
+		self.0.try_consume(cost)
 	}
 }
