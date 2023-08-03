@@ -268,8 +268,8 @@ pub mod pallet {
 						true,
 					);
 					if let Some(weight_info) = info.weight_info {
-						if let Some(proof_size_usage) = weight_info.proof_size_usage {
-							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						if let Some(proof_size_meter) = weight_info.proof_size_meter {
+							*gas_to_weight.proof_size_mut() = proof_size_meter.usage();
 						}
 					}
 					Some(gas_to_weight)
@@ -355,8 +355,8 @@ pub mod pallet {
 						true,
 					);
 					if let Some(weight_info) = info.weight_info {
-						if let Some(proof_size_usage) = weight_info.proof_size_usage {
-							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						if let Some(proof_size_meter) = weight_info.proof_size_meter {
+							*gas_to_weight.proof_size_mut() = proof_size_meter.usage();
 						}
 					}
 					Some(gas_to_weight)
@@ -443,8 +443,8 @@ pub mod pallet {
 						true,
 					);
 					if let Some(weight_info) = info.weight_info {
-						if let Some(proof_size_usage) = weight_info.proof_size_usage {
-							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						if let Some(proof_size_meter) = weight_info.proof_size_meter {
+							*gas_to_weight.proof_size_mut() = proof_size_meter.usage();
 						}
 					}
 					Some(gas_to_weight)

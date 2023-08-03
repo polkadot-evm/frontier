@@ -18,11 +18,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(unused_crate_dependencies)]
 
+mod metric;
 mod precompile;
 mod validation;
-mod metric;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
+use metric::ProofSizeMeter;
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
@@ -78,9 +79,8 @@ pub enum AccessedStorage {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
 	pub ref_time_limit: Option<u64>,
-	pub proof_size_limit: Option<u64>,
 	pub ref_time_usage: Option<u64>,
-	pub proof_size_usage: Option<u64>,
+	pub proof_size_meter: Option<ProofSizeMeter>,
 }
 
 impl WeightInfo {
@@ -95,16 +95,17 @@ impl WeightInfo {
 			{
 				Some(WeightInfo {
 					ref_time_limit: Some(weight_limit.ref_time()),
-					proof_size_limit: Some(weight_limit.proof_size()),
 					ref_time_usage: Some(0u64),
-					proof_size_usage: Some(proof_size_base_cost),
+					proof_size_meter: Some(
+						ProofSizeMeter::new(proof_size_base_cost, weight_limit.proof_size())
+							.map_err(|_| "invalid proof size base cost")?,
+					),
 				})
 			}
 			(Some(weight_limit), None) => Some(WeightInfo {
 				ref_time_limit: Some(weight_limit.ref_time()),
-				proof_size_limit: None,
 				ref_time_usage: Some(0u64),
-				proof_size_usage: None,
+				proof_size_meter: None,
 			}),
 			_ => return Err("must provide Some valid weight limit or None"),
 		})
@@ -129,22 +130,23 @@ impl WeightInfo {
 		Ok(())
 	}
 	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let (Some(proof_size_usage), Some(proof_size_limit)) =
-			(self.proof_size_usage, self.proof_size_limit)
-		{
-			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
-			if proof_size_usage > proof_size_limit {
-				return Err(ExitError::OutOfGas);
-			}
-			self.proof_size_usage = Some(proof_size_usage);
+		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
+			proof_size_meter
+				.record_proof_size(cost)
+				.map_err(|_| ExitError::OutOfGas)?;
 		}
+
 		Ok(())
 	}
 	pub fn refund_proof_size(&mut self, amount: u64) {
-		if let Some(proof_size_usage) = self.proof_size_usage {
-			let proof_size_usage = proof_size_usage.saturating_sub(amount);
-			self.proof_size_usage = Some(proof_size_usage);
-		}
+		self.proof_size_meter.as_mut().map(|proof_size_meter| {
+			proof_size_meter.refund(amount);
+		});
+	}
+
+	pub fn proof_size_usage(&self) -> u64 {
+		self.proof_size_meter
+			.map_or(0, |proof_size_meter| proof_size_meter.usage())
 	}
 	pub fn refund_ref_time(&mut self, amount: u64) {
 		if let Some(ref_time_usage) = self.ref_time_usage {
