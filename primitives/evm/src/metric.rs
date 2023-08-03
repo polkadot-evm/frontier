@@ -1,5 +1,12 @@
-use evm::{gasometer::GasCost, ExitError, Opcode};
+use evm::{gasometer::GasCost, Opcode};
+use scale_codec::{Decode, Encode};
+use scale_info::TypeInfo;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+use sp_core::U256;
 use sp_runtime::{traits::CheckedAdd, Saturating};
+
+use crate::AccessedStorage;
 
 #[derive(Debug, PartialEq)]
 /// Metric error.
@@ -10,14 +17,8 @@ pub enum MetricError {
 	InvalidBaseCost,
 }
 
-impl Into<ExitError> for MetricError {
-	fn into(self) -> ExitError {
-		match self {
-			MetricError::LimitExceeded | MetricError::InvalidBaseCost => ExitError::OutOfGas,
-		}
-	}
-}
-
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 /// A struct that keeps track of metric usage and limit.
 pub struct Metric<T> {
 	limit: T,
@@ -65,12 +66,26 @@ where
 	fn refund(&mut self, amount: T) {
 		self.usage = self.usage.saturating_sub(amount);
 	}
+
+	/// Returns the usage.
+	fn usage(&self) -> T {
+		self.usage
+	}
 }
 
-/// A struct that keeps track of the size of the proof.
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+/// A struct that keeps track of the proof size and limit.
 pub struct ProofSizeMeter(Metric<u64>);
 
 impl ProofSizeMeter {
+	/// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
+	pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
+	/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
+	pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
+	/// Account basic proof size + 5 bytes max of `decode_len` call.
+	pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+
 	/// Creates a new `ProofSizeMetric` instance with the given limit.
 	pub fn new(base_cost: u64, limit: u64) -> Result<Self, MetricError> {
 		Ok(Self(Metric::new(base_cost, limit)?))
@@ -81,8 +96,23 @@ impl ProofSizeMeter {
 	/// # Errors
 	///
 	/// Returns `MetricError::LimitExceeded` if the proof size exceeds the limit.
-	fn record_proof_size(&mut self, size: u64) -> Result<(), MetricError> {
+	pub fn record_proof_size(&mut self, size: u64) -> Result<(), MetricError> {
 		self.0.record_cost(size)
+	}
+
+	/// Refunds the given amount of proof size.
+	pub fn refund(&mut self, amount: u64) {
+		self.0.refund(amount)
+	}
+
+	/// Returns the proof size usage.
+	pub fn usage(&self) -> u64 {
+		self.0.usage()
+	}
+
+	/// Returns the proof size limit.
+	pub fn limit(&self) -> u64 {
+		self.0.limit
 	}
 }
 

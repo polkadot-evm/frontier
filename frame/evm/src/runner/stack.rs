@@ -281,8 +281,7 @@ where
 			Some(weight_info) => U256::from(sp_std::cmp::max(
 				used_gas,
 				weight_info
-					.proof_size_usage
-					.unwrap_or_default()
+					.proof_size_usage()
 					.saturating_mul(T::GasLimitPovSizeRatio::get()),
 			)),
 			_ => used_gas.into(),
@@ -1029,8 +1028,8 @@ where
 
 		// Record proof_size
 		// Return if proof size recording is disabled
-		let proof_size_limit = if let Some(proof_size_limit) = weight_info.proof_size_limit {
-			proof_size_limit
+		let proof_size_limit = if let Some(proof_size_meter) = weight_info.proof_size_meter {
+			proof_size_meter.limit()
 		} else {
 			return Ok(());
 		};
