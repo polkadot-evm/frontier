@@ -23,7 +23,7 @@ mod precompile;
 mod validation;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
-use metric::ProofSizeMeter;
+use metric::{ProofSizeMeter, RefTimeMeter};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
@@ -78,8 +78,7 @@ pub enum AccessedStorage {
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
-	pub ref_time_limit: Option<u64>,
-	pub ref_time_usage: Option<u64>,
+	pub ref_time_meter: Option<RefTimeMeter>,
 	pub proof_size_meter: Option<ProofSizeMeter>,
 }
 
@@ -94,8 +93,10 @@ impl WeightInfo {
 				if weight_limit.proof_size() >= proof_size_base_cost =>
 			{
 				Some(WeightInfo {
-					ref_time_limit: Some(weight_limit.ref_time()),
-					ref_time_usage: Some(0u64),
+					ref_time_meter: Some(
+						RefTimeMeter::new(weight_limit.ref_time())
+							.map_err(|_| "invalid ref time base cost")?,
+					),
 					proof_size_meter: Some(
 						ProofSizeMeter::new(proof_size_base_cost, weight_limit.proof_size())
 							.map_err(|_| "invalid proof size base cost")?,
@@ -103,30 +104,23 @@ impl WeightInfo {
 				})
 			}
 			(Some(weight_limit), None) => Some(WeightInfo {
-				ref_time_limit: Some(weight_limit.ref_time()),
-				ref_time_usage: Some(0u64),
+				ref_time_meter: Some(
+					RefTimeMeter::new(weight_limit.ref_time())
+						.map_err(|_| "invalid ref time base cost")?,
+				),
 				proof_size_meter: None,
 			}),
 			_ => return Err("must provide Some valid weight limit or None"),
 		})
 	}
-	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
-		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
-		if usage > limit {
-			return Err(ExitError::OutOfGas);
-		}
-		Ok(usage)
-	}
+
 	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let (Some(ref_time_usage), Some(ref_time_limit)) =
-			(self.ref_time_usage, self.ref_time_limit)
-		{
-			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
-			if ref_time_usage > ref_time_limit {
-				return Err(ExitError::OutOfGas);
-			}
-			self.ref_time_usage = Some(ref_time_usage);
+		if let Some(ref_time_meter) = self.ref_time_meter.as_mut() {
+			ref_time_meter
+				.record_ref_time(cost)
+				.map_err(|_| ExitError::OutOfGas)?;
 		}
+
 		Ok(())
 	}
 	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
@@ -138,6 +132,7 @@ impl WeightInfo {
 
 		Ok(())
 	}
+
 	pub fn refund_proof_size(&mut self, amount: u64) {
 		self.proof_size_meter.as_mut().map(|proof_size_meter| {
 			proof_size_meter.refund(amount);
@@ -148,11 +143,11 @@ impl WeightInfo {
 		self.proof_size_meter
 			.map_or(0, |proof_size_meter| proof_size_meter.usage())
 	}
+
 	pub fn refund_ref_time(&mut self, amount: u64) {
-		if let Some(ref_time_usage) = self.ref_time_usage {
-			let ref_time_usage = ref_time_usage.saturating_sub(amount);
-			self.ref_time_usage = Some(ref_time_usage);
-		}
+		self.ref_time_meter.as_mut().map(|ref_time_meter| {
+			ref_time_meter.refund(amount);
+		});
 	}
 }
 
