@@ -3,10 +3,7 @@ use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use sp_core::U256;
 use sp_runtime::{traits::CheckedAdd, Saturating};
-
-use crate::AccessedStorage;
 
 #[derive(Debug, PartialEq)]
 /// Metric error.
@@ -73,9 +70,9 @@ where
 	}
 }
 
+/// A struct that keeps track of the proof size and limit.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-/// A struct that keeps track of the proof size and limit.
 pub struct ProofSizeMeter(Metric<u64>);
 
 impl ProofSizeMeter {
@@ -116,6 +113,27 @@ impl ProofSizeMeter {
 	}
 }
 
+/// A struct that keeps track of the ref_time usage and limit.
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct RefTimeMeter(Metric<u64>);
+
+impl RefTimeMeter {
+	/// Creates a new `RefTimeMetric` instance with the given limit.
+	pub fn new(limit: u64) -> Result<Self, MetricError> {
+		Ok(Self(Metric::new(0, limit)?))
+	}
+
+	/// Records the ref_time and updates the usage.
+	pub fn record_ref_time(&mut self, ref_time: u64) -> Result<(), MetricError> {
+		self.0.record_cost(ref_time)
+	}
+
+	/// Refunds the given amount of ref_time.
+	pub fn refund(&mut self, amount: u64) {
+		self.0.refund(amount)
+	}
+}
 /// A struct that keeps track of storage usage (newly created storage) and limit.
 pub struct StorageMeter(Metric<u64>);
 
