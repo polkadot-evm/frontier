@@ -30,6 +30,7 @@ members = [
 	"primitives/self-contained",
 	"template/node",
 	"template/runtime",
+	"template/pallets/evm-migration",
 ]
 resolver = "2"
 
@@ -155,6 +156,7 @@ pallet-base-fee = { version = "1.0.0", path = "frame/base-fee", default-features
 pallet-dynamic-fee = { version = "4.0.0-dev", path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-features = false }
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
+pallet-evm-migration = { version = "1.0.0", path = "template/pallets/evm-migration", default-features = false }
 pallet-evm-chain-id = { version = "1.0.0-dev", path = "frame/evm-chain-id", default-features = false }
 pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { version = "2.0.0-dev", path = "frame/evm/precompile/sha3fips", default-features = false }
