@@ -6,34 +6,34 @@ use serde::{Deserialize, Serialize};
 use sp_runtime::{traits::CheckedAdd, Saturating};
 
 #[derive(Debug, PartialEq)]
-/// Metric error.
-pub enum MetricError {
-	/// The metric usage exceeds the limit.
+/// Resource error.
+pub enum ResourceError {
+	/// The Resource usage exceeds the limit.
 	LimitExceeded,
 	/// Invalid Base Cost.
 	InvalidBaseCost,
 }
 
-/// A struct that keeps track of metric usage and limit.
+/// A struct that keeps track of resource usage and limit.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Metric<T> {
+pub struct Resource<T> {
 	limit: T,
 	usage: T,
 }
 
-impl<T> Metric<T>
+impl<T> Resource<T>
 where
 	T: CheckedAdd + Saturating + PartialOrd + Copy,
 {
-	/// Creates a new `Metric` instance with the given base cost and limit.
+	/// Creates a new `Resource` instance with the given base cost and limit.
 	///
 	/// # Errors
 	///
-	/// Returns `MetricError::InvalidBaseCost` if the base cost is greater than the limit.
-	pub fn new(base_cost: T, limit: T) -> Result<Self, MetricError> {
+	/// Returns `ResourceError::InvalidBaseCost` if the base cost is greater than the limit.
+	pub fn new(base_cost: T, limit: T) -> Result<Self, ResourceError> {
 		if base_cost > limit {
-			return Err(MetricError::InvalidBaseCost);
+			return Err(ResourceError::InvalidBaseCost);
 		}
 		Ok(Self {
 			limit,
@@ -45,15 +45,15 @@ where
 	///
 	/// # Errors
 	///
-	/// Returns `MetricError::LimitExceeded` if the metric usage exceeds the limit.
-	fn record_cost(&mut self, cost: T) -> Result<(), MetricError> {
+	/// Returns `ResourceError::LimitExceeded` if the Resource usage exceeds the limit.
+	fn record_cost(&mut self, cost: T) -> Result<(), ResourceError> {
 		let usage = self
 			.usage
 			.checked_add(&cost)
-			.ok_or(MetricError::LimitExceeded)?;
+			.ok_or(ResourceError::LimitExceeded)?;
 
 		if usage > self.limit {
-			return Err(MetricError::LimitExceeded);
+			return Err(ResourceError::LimitExceeded);
 		}
 		self.usage = usage;
 		Ok(())
@@ -73,20 +73,20 @@ where
 /// A struct that keeps track of the proof size and limit.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ProofSizeMeter(Metric<u64>);
+pub struct ProofSizeMeter(Resource<u64>);
 
 impl ProofSizeMeter {
-	/// Creates a new `ProofSizeMetric` instance with the given limit.
-	pub fn new(base_cost: u64, limit: u64) -> Result<Self, MetricError> {
-		Ok(Self(Metric::new(base_cost, limit)?))
+	/// Creates a new `ProofSizeResource` instance with the given limit.
+	pub fn new(base_cost: u64, limit: u64) -> Result<Self, ResourceError> {
+		Ok(Self(Resource::new(base_cost, limit)?))
 	}
 
 	/// Records the size of the proof and updates the usage.
 	///
 	/// # Errors
 	///
-	/// Returns `MetricError::LimitExceeded` if the proof size exceeds the limit.
-	pub fn record_proof_size(&mut self, size: u64) -> Result<(), MetricError> {
+	/// Returns `ResourceError::LimitExceeded` if the proof size exceeds the limit.
+	pub fn record_proof_size(&mut self, size: u64) -> Result<(), ResourceError> {
 		self.0.record_cost(size)
 	}
 
@@ -109,16 +109,16 @@ impl ProofSizeMeter {
 /// A struct that keeps track of the ref_time usage and limit.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct RefTimeMeter(Metric<u64>);
+pub struct RefTimeMeter(Resource<u64>);
 
 impl RefTimeMeter {
-	/// Creates a new `RefTimeMetric` instance with the given limit.
-	pub fn new(limit: u64) -> Result<Self, MetricError> {
-		Ok(Self(Metric::new(0, limit)?))
+	/// Creates a new `RefTimeResource` instance with the given limit.
+	pub fn new(limit: u64) -> Result<Self, ResourceError> {
+		Ok(Self(Resource::new(0, limit)?))
 	}
 
 	/// Records the ref_time and updates the usage.
-	pub fn record_ref_time(&mut self, ref_time: u64) -> Result<(), MetricError> {
+	pub fn record_ref_time(&mut self, ref_time: u64) -> Result<(), ResourceError> {
 		self.0.record_cost(ref_time)
 	}
 
@@ -130,12 +130,12 @@ impl RefTimeMeter {
 /// A struct that keeps track of storage usage (newly created storage) and limit.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct StorageMeter(Metric<u64>);
+pub struct StorageMeter(Resource<u64>);
 
 impl StorageMeter {
-	/// Creates a new `StorageMetric` instance with the given limit.
-	pub fn new(limit: u64) -> Result<Self, MetricError> {
-		Ok(Self(Metric::new(0, limit)?))
+	/// Creates a new `StorageResource` instance with the given limit.
+	pub fn new(limit: u64) -> Result<Self, ResourceError> {
+		Ok(Self(Resource::new(0, limit)?))
 	}
 
 	/// Refunds the given amount of storage.
@@ -147,12 +147,12 @@ impl StorageMeter {
 	///
 	/// # Errors
 	///
-	/// Returns `MetricError::LimitExceeded` if the storage usage exceeds the storage limit.
+	/// Returns `ResourceError::LimitExceeded` if the storage usage exceeds the storage limit.
 	fn record_dynamic_opcode_cost(
 		&mut self,
 		_opcode: Opcode,
 		gas_cost: GasCost,
-	) -> Result<(), MetricError> {
+	) -> Result<(), ResourceError> {
 		let cost = match gas_cost {
 			GasCost::Create => {
 				// TODO record cost for create
@@ -160,7 +160,7 @@ impl StorageMeter {
 			}
 			GasCost::Create2 { len } => {
 				// len in bytes ??
-				len.try_into().map_err(|_| MetricError::LimitExceeded)?
+				len.try_into().map_err(|_| ResourceError::LimitExceeded)?
 			}
 			GasCost::SStore { .. } => {
 				// TODO record cost for sstore
@@ -187,55 +187,55 @@ mod tests {
 
 	#[test]
 	fn test_init() {
-		let metric = Metric::<u64>::new(0, 100).unwrap();
-		assert_eq!(metric.limit, 100);
-		assert_eq!(metric.usage, 0);
+		let resource = Resource::<u64>::new(0, 100).unwrap();
+		assert_eq!(resource.limit, 100);
+		assert_eq!(resource.usage, 0);
 
 		// base cost > limit
-		let metric = Metric::<u64>::new(100, 0).err();
-		assert_eq!(metric, Some(MetricError::InvalidBaseCost));
+		let resource = Resource::<u64>::new(100, 0).err();
+		assert_eq!(resource, Some(ResourceError::InvalidBaseCost));
 	}
 
 	#[test]
 	fn test_record_cost() {
-		let mut metric = Metric::<u64>::new(0, 100).unwrap();
-		assert_eq!(metric.record_cost(10), Ok(()));
-		assert_eq!(metric.usage, 10);
-		assert_eq!(metric.record_cost(90), Ok(()));
-		assert_eq!(metric.usage, 100);
+		let mut resource = Resource::<u64>::new(0, 100).unwrap();
+		assert_eq!(resource.record_cost(10), Ok(()));
+		assert_eq!(resource.usage, 10);
+		assert_eq!(resource.record_cost(90), Ok(()));
+		assert_eq!(resource.usage, 100);
 
 		// exceed limit
-		assert_eq!(metric.record_cost(1), Err(MetricError::LimitExceeded));
-		assert_eq!(metric.usage, 100);
+		assert_eq!(resource.record_cost(1), Err(ResourceError::LimitExceeded));
+		assert_eq!(resource.usage, 100);
 	}
 
 	#[test]
 	fn test_refund() {
-		let mut metric = Metric::<u64>::new(0, 100).unwrap();
-		assert_eq!(metric.record_cost(10), Ok(()));
-		assert_eq!(metric.usage, 10);
-		metric.refund(10);
-		assert_eq!(metric.usage, 0);
+		let mut resource = Resource::<u64>::new(0, 100).unwrap();
+		assert_eq!(resource.record_cost(10), Ok(()));
+		assert_eq!(resource.usage, 10);
+		resource.refund(10);
+		assert_eq!(resource.usage, 0);
 
 		// refund more than usage
-		metric.refund(10);
-		assert_eq!(metric.usage, 0);
+		resource.refund(10);
+		assert_eq!(resource.usage, 0);
 	}
 
 	#[test]
-	fn test_storage_metric() {
-		let mut metric = StorageMeter::new(100).unwrap();
-		assert_eq!(metric.0.usage, 0);
-		assert_eq!(metric.0.limit, 100);
-		assert_eq!(metric.0.record_cost(10), Ok(()));
-		assert_eq!(metric.0.usage, 10);
-		assert_eq!(metric.0.record_cost(90), Ok(()));
-		assert_eq!(metric.0.usage, 100);
-		assert_eq!(metric.0.record_cost(1), Err(MetricError::LimitExceeded));
-		assert_eq!(metric.0.usage, 100);
-		metric.0.refund(10);
-		assert_eq!(metric.0.usage, 90);
-		metric.refund(10);
-		assert_eq!(metric.0.usage, 80);
+	fn test_storage_resource() {
+		let mut resource = StorageMeter::new(100).unwrap();
+		assert_eq!(resource.0.usage, 0);
+		assert_eq!(resource.0.limit, 100);
+		assert_eq!(resource.0.record_cost(10), Ok(()));
+		assert_eq!(resource.0.usage, 10);
+		assert_eq!(resource.0.record_cost(90), Ok(()));
+		assert_eq!(resource.0.usage, 100);
+		assert_eq!(resource.0.record_cost(1), Err(ResourceError::LimitExceeded));
+		assert_eq!(resource.0.usage, 100);
+		resource.0.refund(10);
+		assert_eq!(resource.0.usage, 90);
+		resource.refund(10);
+		assert_eq!(resource.0.usage, 80);
 	}
 }
