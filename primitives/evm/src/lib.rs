@@ -23,7 +23,7 @@ mod precompile;
 mod validation;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
-use metric::{ProofSizeMeter, RefTimeMeter};
+use metric::{ProofSizeMeter, RefTimeMeter, StorageMeter};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
@@ -80,38 +80,33 @@ pub enum AccessedStorage {
 pub struct WeightInfo {
 	pub ref_time_meter: Option<RefTimeMeter>,
 	pub proof_size_meter: Option<ProofSizeMeter>,
+	pub storage_meter: Option<StorageMeter>,
 }
 
 impl WeightInfo {
-	pub fn new_from_weight_limit(
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
-	) -> Result<Option<Self>, &'static str> {
-		Ok(match (weight_limit, proof_size_base_cost) {
-			(None, _) => None,
-			(Some(weight_limit), Some(proof_size_base_cost))
-				if weight_limit.proof_size() >= proof_size_base_cost =>
-			{
-				Some(WeightInfo {
-					ref_time_meter: Some(
-						RefTimeMeter::new(weight_limit.ref_time())
-							.map_err(|_| "invalid ref time base cost")?,
-					),
-					proof_size_meter: Some(
-						ProofSizeMeter::new(proof_size_base_cost, weight_limit.proof_size())
-							.map_err(|_| "invalid proof size base cost")?,
-					),
-				})
-			}
-			(Some(weight_limit), None) => Some(WeightInfo {
-				ref_time_meter: Some(
-					RefTimeMeter::new(weight_limit.ref_time())
-						.map_err(|_| "invalid ref time base cost")?,
-				),
-				proof_size_meter: None,
-			}),
-			_ => return Err("must provide Some valid weight limit or None"),
-		})
+	pub fn new() -> Self {
+		Self {
+			ref_time_meter: None,
+			proof_size_meter: None,
+			storage_meter: None,
+		}
+	}
+
+	pub fn add_ref_time_meter(&mut self, limit: u64) -> Result<(), &'static str> {
+		self.ref_time_meter = Some(RefTimeMeter::new(limit).map_err(|_| "Invalid parameters")?);
+		Ok(())
+	}
+
+	pub fn add_proof_size_meter(&mut self, base_cost: u64, limit: u64) -> Result<(), &'static str> {
+		self.proof_size_meter =
+			Some(ProofSizeMeter::new(base_cost, limit).map_err(|_| "Invalid parameters")?);
+		Ok(())
+	}
+
+	pub fn add_storage_meter(&mut self, limit: u64) -> Result<(), &'static str> {
+		self.storage_meter =
+			Some(StorageMeter::new(limit).map_err(|_| "Invalid parameters")?);
+		Ok(())
 	}
 
 	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
