@@ -18,12 +18,12 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(unused_crate_dependencies)]
 
-mod metric;
+mod resource;
 mod precompile;
 mod validation;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
-use metric::{ProofSizeMeter, RefTimeMeter, StorageMeter};
+use resource::{ProofSizeMeter, RefTimeMeter, StorageMeter};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
