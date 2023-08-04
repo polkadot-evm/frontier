@@ -153,13 +153,46 @@ where
 		R: Default,
 	{
 		// Used to record the external costs in the evm through the StackState implementation
-		let maybe_weight_info =
-			WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
-				|_| RunnerError {
-					error: Error::<T>::Undefined,
-					weight,
-				},
-			)?;
+
+		let mut weight_info = WeightInfo::new();
+		match weight_limit {
+			Some(weight_limit) => {
+				weight_info
+					.add_ref_time_meter(weight_limit.ref_time())
+					.map_err(|_| RunnerError {
+						error: Error::<T>::Undefined,
+						weight,
+					})?;
+				if let Some(proof_size_base_cost) = proof_size_base_cost {
+					weight_info
+						.add_proof_size_meter(proof_size_base_cost, weight_limit.proof_size())
+						.map_err(|_| RunnerError {
+							error: Error::<T>::Undefined,
+							weight,
+						})?;
+				}
+			}
+			None => (),
+		}
+
+		// TODO Compute the limit of storage per tx
+		let storage_limit = 0;
+		weight_info.add_storage_meter(storage_limit).map_err(|_| RunnerError {
+			error: Error::<T>::Undefined,
+			weight,
+		})?;
+
+		let weight_info = if weight_info.ref_time_meter.is_none()
+			&& weight_info.proof_size_meter.is_none()
+			&& weight_info.storage_meter.is_none()
+		{
+			None
+		}
+		else {
+			Some(weight_info)
+		};
+
+
 		// The precompile check is only used for transactional invocations. However, here we always
 		// execute the check, because the check has side effects.
 		match precompiles.is_precompile(source, gas_limit) {
@@ -174,7 +207,7 @@ where
 						standard: gas_limit.into(),
 						effective: gas_limit.into(),
 					},
-					weight_info: maybe_weight_info,
+					weight_info,
 					logs: Default::default(),
 				})
 			}
@@ -243,7 +276,7 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
+		let state = SubstrateStackState::new(&vicinity, metadata, weight_info);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);

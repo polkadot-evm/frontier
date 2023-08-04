@@ -14,9 +14,9 @@ pub enum MetricError {
 	InvalidBaseCost,
 }
 
+/// A struct that keeps track of metric usage and limit.
 #[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-/// A struct that keeps track of metric usage and limit.
 pub struct Metric<T> {
 	limit: T,
 	usage: T,
@@ -76,13 +76,6 @@ where
 pub struct ProofSizeMeter(Metric<u64>);
 
 impl ProofSizeMeter {
-	/// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
-	pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
-	/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
-	pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
-	/// Account basic proof size + 5 bytes max of `decode_len` call.
-	pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
-
 	/// Creates a new `ProofSizeMetric` instance with the given limit.
 	pub fn new(base_cost: u64, limit: u64) -> Result<Self, MetricError> {
 		Ok(Self(Metric::new(base_cost, limit)?))
@@ -135,6 +128,8 @@ impl RefTimeMeter {
 	}
 }
 /// A struct that keeps track of storage usage (newly created storage) and limit.
+#[derive(Clone, Copy, Encode, Decode, PartialEq, Eq, Debug, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct StorageMeter(Metric<u64>);
 
 impl StorageMeter {
@@ -174,6 +169,15 @@ impl StorageMeter {
 			_ => return Ok(()),
 		};
 		self.0.record_cost(cost)
+	}
+
+	fn record_external_operation(&mut self, operation: evm::ExternalOperation) {
+		match operation {
+			evm::ExternalOperation::Write => {
+				// Todo record cost for write
+			}
+			_ => {}
+		}
 	}
 }
 
