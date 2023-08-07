@@ -24,21 +24,21 @@ rlp = { version = "0.5", default-features = false }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Substate
-sp-core = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-sp-io = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+sp-io = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 # Substrate FRAME
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false, optional = true }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false, optional = true }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 
 # Frontier
 fp-evm = { version = "3.0.0-dev", path = "../../primitives/evm", default-features = false }
 
 [dev-dependencies]
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
 
 [features]
 default = ["std"]

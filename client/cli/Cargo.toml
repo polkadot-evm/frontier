@@ -19,11 +19,11 @@ serde_json = "1.0"
 ethereum-types = "0.13.1"
 
 # Substrate
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", features = ["wasmtime"] }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", features = ["wasmtime"] }
-sp-api = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
-sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", features = ["wasmtime"] }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", features = ["wasmtime"] }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
+sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
 
 # Frontier
 fc-db = { path = "../db" }
@@ -36,10 +36,10 @@ tempfile = "3.3.0"
 # Parity
 codec = { package = "parity-scale-codec", version = "3.0.0" }
 # Substrate
-sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
-sc-client-db = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
-sp-consensus = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
-sp-io = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
-substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25" }
+sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
+sp-io = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities" }
 # Frontier
 frontier-template-runtime = { path = "../../template/runtime" }

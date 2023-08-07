@@ -14,9 +14,9 @@ ethereum = { version = "0.12.0", default-features = false, features = ["with-cod
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-core = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 
 [features]
 default = ["std"]

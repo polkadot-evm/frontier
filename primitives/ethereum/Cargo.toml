@@ -19,10 +19,10 @@ fp-evm = { version = "3.0.0-dev", path = "../evm", default-features = false }
 codec = { package = "parity-scale-codec", version = "3.0.0", default-features = false }
 
 # Substrate
-sp-core = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
-sp-std = { version = "4.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+sp-core = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
+sp-std = { version = "4.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 # Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 
 [features]
 default = ["std"]

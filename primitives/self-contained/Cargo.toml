@@ -20,9 +20,9 @@ parity-util-mem = { version = "0.11", optional = true }
 scale-info = { version = "2.1.2", default-features = false, features = ["derive"] }
 
 # Substrate
-sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+sp-runtime = { version = "6.0.0", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 # Substrate FRAME
-frame-support = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/cloudwalk/substrate", branch = "cloudwalk-polkadot-v0.9.25-aura-upgrade-to-change-authorities", default-features = false }
 
 [features]
 default = ["std"]
