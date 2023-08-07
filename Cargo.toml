@@ -30,6 +30,9 @@ members = [
 	"primitives/self-contained",
 	"template/node",
 	"template/runtime",
+	"utils/precompiles",
+	"utils/precompiles/macro",
+	"utils/precompiles/tests-external",
 ]
 resolver = "2"
 
@@ -39,9 +42,11 @@ edition = "2021"
 repository = "https://github.com/moonbeam-foundation/frontier/"
 
 [workspace.dependencies]
+affix = "0.1.2"
 async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.3", features = ["derive", "deprecated"] }
+derive_more = "0.99"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
@@ -50,17 +55,22 @@ futures = "0.3.28"
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
 impl-serde = { version = "0.4.0", default-features = false }
+impl-trait-for-tuples = "0.2.1"
 jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.17", default-features = false }
+num_enum = { version = "0.5.3", default-features = false }
 parity-db = "0.4.8"
 parking_lot = "0.12.1"
+paste = "1.0.6"
 rlp = { version = "0.5", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
 scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
+sha3 = { version = "0.10", default-features = false }
+similar-asserts = "1.1.0"
 sqlx = { version = "0.7.0-alpha.3", default-features = false, features = ["macros"] }
 thiserror = "1.0"
 tokio = "1.28.2"
@@ -163,9 +173,16 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }
+
+# Frontier utils
+precompile-utils = { path = "utils/precompiles", default-features = false }
+
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-bw6-761 = { version = "0.4.0", default-features = false }
 ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
+
+# Polkadot / XCM (wasm)
+xcm = { git = "https://github.com/moonbeam-foundation/polkadot", branch = "moonbeam-polkadot-v0.9.43", default-features = false }
