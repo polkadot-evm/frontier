@@ -31,9 +31,6 @@ pub mod solidity;
 #[cfg(feature = "testing")]
 pub mod testing;
 
-#[cfg(test)]
-mod tests;
-
 use fp_evm::PrecompileFailure;
 
 // pub mod data;

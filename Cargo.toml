@@ -59,19 +59,19 @@ impl-trait-for-tuples = "0.2.1"
 jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
-log = { version = "0.4.17", default-features = false }
+log = { version = "0.4.19", default-features = false }
 num_enum = { version = "0.5.3", default-features = false }
-parity-db = "0.4.8"
+parity-db = "0.4.10"
 parking_lot = "0.12.1"
 paste = "1.0.6"
-rlp = { version = "0.5", default-features = false }
-scale-codec = { package = "parity-scale-codec", version = "3.2.1", default-features = false, features = ["derive"] }
-scale-info = { version = "2.3.1", default-features = false, features = ["derive"] }
+rlp = { version = "0.5.2", default-features = false }
+scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = ["derive"] }
+scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
 sha3 = { version = "0.10", default-features = false }
 similar-asserts = "1.1.0"
-sqlx = { version = "0.7.0-alpha.3", default-features = false, features = ["macros"] }
+sqlx = { version = "0.7.1", default-features = false, features = ["macros"] }
 thiserror = "1.0"
 tokio = "1.28.2"
 # Substrate Client
