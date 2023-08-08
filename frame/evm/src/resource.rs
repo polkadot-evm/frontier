@@ -3,7 +3,7 @@ use crate::{AccountCodes, AccountCodesMetadata, Config, Pallet};
 use core::marker::PhantomData;
 use evm::{
 	gasometer::{GasCost, StorageTarget},
-	ExitError, Opcode,
+	Opcode,
 };
 use fp_evm::WeightInfo;
 use sp_core::{Get, H160, H256, U256};
@@ -148,7 +148,7 @@ impl<T: Config> ProofSizeMeter<T> {
 				self.record_proof_size(ACCOUNT_BASIC_PROOF_SIZE)?
 			}
 			evm::ExternalOperation::AddressCodeRead(address) => {
-				let maybe_record = !self.recorded.account_codes.contains(&address);
+				let maybe_record = !self.recorded.account_codes.contains(address);
 				// Skip if the address has been already recorded this block
 				if maybe_record {
 					// First we record account emptiness check.
@@ -414,15 +414,13 @@ impl StorageMeter {
 		operation: &evm::ExternalOperation,
 		_contract_size_limit: u64,
 	) {
-		match operation {
-			evm::ExternalOperation::Write => {
-				// Todo record cost for write
-			}
-			_ => {}
+		if let evm::ExternalOperation::Write = operation {
+			// Todo record cost for write
 		}
 	}
 }
 
+#[derive(Default)]
 pub struct ResourceInfo<T> {
 	pub ref_time_meter: Option<RefTimeMeter>,
 	pub proof_size_meter: Option<ProofSizeMeter<T>>,
@@ -455,15 +453,15 @@ impl<T: Config> ResourceInfo<T> {
 	}
 
 	pub fn refund_proof_size(&mut self, amount: u64) {
-		self.proof_size_meter.as_mut().map(|proof_size_meter| {
+		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
 			proof_size_meter.refund(amount);
-		});
+		}
 	}
 
 	pub fn refund_ref_time(&mut self, amount: u64) {
-		self.ref_time_meter.as_mut().map(|ref_time_meter| {
+		if let Some(ref_time_meter) = self.ref_time_meter.as_mut() {
 			ref_time_meter.refund(amount);
-		});
+		}
 	}
 
 	/// Returns WeightInfo for the resource.
