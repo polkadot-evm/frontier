@@ -59,10 +59,10 @@ pub struct Vicinity {
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
-	pub ref_time_usage: Option<u64>,
 	pub ref_time_limit: Option<u64>,
-	pub proof_size_usage: Option<u64>,
 	pub proof_size_limit: Option<u64>,
+	pub ref_time_usage: Option<u64>,
+	pub proof_size_usage: Option<u64>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
