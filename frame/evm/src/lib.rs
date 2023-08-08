@@ -810,7 +810,11 @@ impl<T: Config> Pallet<T> {
 		omit_fee: bool,
 	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
 		let validate = true;
-		let is_free = T::FreeCalls::can_send_free_call(&source, &target, &input[..]);
+		let maybe_selector: Option<[u8; 4]> = input.get(0..4).and_then(|input| input.try_into().ok());
+		let mut is_free = false;
+		if let Some(ref selector) = maybe_selector {
+			is_free = T::FreeCalls::can_send_free_call(&source, &target, selector);
+		}
 		let info = match T::Runner::call(
 			source,
 			target,
@@ -829,7 +833,7 @@ impl<T: Config> Pallet<T> {
 			Ok(info) => info,
 			Err(e) => {
 				if is_free {
-					T::FreeCalls::on_sent_free_call(&source);
+					T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
 				}
 				return Err(DispatchErrorWithPostInfo {
 					post_info: PostDispatchInfo {
@@ -851,7 +855,7 @@ impl<T: Config> Pallet<T> {
 		};
 
 		if is_free {
-			T::FreeCalls::on_sent_free_call(&source);
+			T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
 		}
 		Ok(PostDispatchInfoWithValue {
 			info: PostDispatchInfo {
