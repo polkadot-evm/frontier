@@ -153,24 +153,23 @@ where
 		// Used to record the external costs in the evm through the StackState implementation
 
 		let mut resource_info = ResourceInfo::new();
-		match weight_limit {
-			Some(weight_limit) => {
+
+		if let Some(weight_limit) = weight_limit {
+			resource_info
+				.add_ref_time_meter(weight_limit.ref_time())
+				.map_err(|_| RunnerError {
+					error: Error::<T>::Undefined,
+					weight,
+				})?;
+
+			if let Some(proof_size_base_cost) = proof_size_base_cost {
 				resource_info
-					.add_ref_time_meter(weight_limit.ref_time())
+					.add_proof_size_meter(proof_size_base_cost, weight_limit.proof_size())
 					.map_err(|_| RunnerError {
 						error: Error::<T>::Undefined,
 						weight,
 					})?;
-				if let Some(proof_size_base_cost) = proof_size_base_cost {
-					resource_info
-						.add_proof_size_meter(proof_size_base_cost, weight_limit.proof_size())
-						.map_err(|_| RunnerError {
-							error: Error::<T>::Undefined,
-							weight,
-						})?;
-				}
 			}
-			None => (),
 		}
 
 		// TODO Compute the limit of storage per tx
