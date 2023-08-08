@@ -454,26 +454,6 @@ impl<T: Config> ResourceInfo<T> {
 		Ok(())
 	}
 
-	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let Some(ref_time_meter) = self.ref_time_meter.as_mut() {
-			ref_time_meter
-				.record_ref_time(cost)
-				.map_err(|_| ExitError::OutOfGas)?;
-		}
-
-		Ok(())
-	}
-
-	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
-			proof_size_meter
-				.record_proof_size(cost)
-				.map_err(|_| ExitError::OutOfGas)?;
-		}
-
-		Ok(())
-	}
-
 	pub fn refund_proof_size(&mut self, amount: u64) {
 		self.proof_size_meter.as_mut().map(|proof_size_meter| {
 			proof_size_meter.refund(amount);
