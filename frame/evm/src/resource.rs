@@ -3,7 +3,7 @@ use crate::{AccountCodes, AccountCodesMetadata, Config, Pallet};
 use core::marker::PhantomData;
 use evm::{
 	gasometer::{GasCost, StorageTarget},
-	Opcode,
+	ExitError, Opcode,
 };
 use fp_evm::WeightInfo;
 use sp_core::{Get, H160, H256, U256};
@@ -30,6 +30,12 @@ pub enum ResourceError {
 	InvalidBaseCost,
 	///Used to indicate that the code should be unreachable.
 	Unreachable,
+}
+
+impl From<ResourceError> for ExitError {
+	fn from(_error: ResourceError) -> Self {
+		ExitError::OutOfGas
+	}
 }
 
 /// A struct that keeps track of resource usage and limit.
@@ -521,28 +527,23 @@ impl<T: Config> ResourceInfo<T> {
 		Ok(())
 	}
 
-	/// Computes the effective gas for the transaction. Effective gas is the maximum between the
-	/// gas used and resource usage.
 	pub fn effective_gas(&self, gas: u64) -> U256 {
-		let proof_size_usage = self
-			.proof_size_meter
-			.as_ref()
-			.map_or(0, |meter| meter.usage())
-			.saturating_mul(T::GasLimitPovSizeRatio::get());
+		let proof_size_usage = self.proof_size_meter.as_ref().map_or(0, |meter| {
+			meter.usage().saturating_mul(T::GasLimitPovSizeRatio::get())
+		});
 
-		// TODO: use the actual ref time usage
-		// let ref_time_usage = self
-		// 	.ref_time_meter
-		// 	.map_or(0, |meter| meter.usage())
-		// 	.saturating_mul(T::GasLimitPovRefTimeRatio::get());
-
-		// TODO get the Storage Gas ratio
 		let storage_usage = self.storage_meter.as_ref().map_or(0, |meter| meter.usage());
 
 		let effective_gas =
 			sp_std::cmp::max(sp_std::cmp::max(proof_size_usage, storage_usage), gas);
 
 		U256::from(effective_gas)
+	}
+
+	pub fn is_empty(&self) -> bool {
+		self.ref_time_meter.is_none()
+			&& self.proof_size_meter.is_none()
+			&& self.storage_meter.is_none()
 	}
 }
 
