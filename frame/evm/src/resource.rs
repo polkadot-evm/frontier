@@ -104,13 +104,13 @@ pub struct Recorded {
 }
 
 /// A struct that keeps track of the proof size and limit.
-pub struct ProofSizeMeter<T> {
+pub struct ProofSizeResource<T> {
 	resource: Resource<u64>,
 	recorded: Recorded,
 	_marker: PhantomData<T>,
 }
 
-impl<T: Config> ProofSizeMeter<T> {
+impl<T: Config> ProofSizeResource<T> {
 	/// Creates a new `ProofSizeResource` instance with the given limit.
 	pub fn new(base_cost: u64, limit: u64) -> Result<Self, ResourceError> {
 		Ok(Self {
@@ -339,9 +339,9 @@ impl<T: Config> ProofSizeMeter<T> {
 }
 
 /// A struct that keeps track of the ref_time usage and limit.
-pub struct RefTimeMeter(Resource<u64>);
+pub struct RefTimeResource(Resource<u64>);
 
-impl RefTimeMeter {
+impl RefTimeResource {
 	/// Creates a new `RefTimeResource` instance with the given limit.
 	pub fn new(limit: u64) -> Result<Self, ResourceError> {
 		Ok(Self(Resource::new(0, limit)?))
@@ -369,9 +369,9 @@ impl RefTimeMeter {
 }
 
 /// A struct that keeps track of storage usage (newly created storage) and limit.
-pub struct StorageMeter(Resource<u64>);
+pub struct StorageGrowthResource(Resource<u64>);
 
-impl StorageMeter {
+impl StorageGrowthResource {
 	/// Creates a new `StorageResource` instance with the given limit.
 	pub fn new(limit: u64) -> Result<Self, ResourceError> {
 		Ok(Self(Resource::new(0, limit)?))
@@ -428,45 +428,45 @@ impl StorageMeter {
 
 #[derive(Default)]
 pub struct ResourceInfo<T> {
-	pub ref_time_meter: Option<RefTimeMeter>,
-	pub proof_size_meter: Option<ProofSizeMeter<T>>,
-	pub storage_meter: Option<StorageMeter>,
+	pub ref_time_resource: Option<RefTimeResource>,
+	pub proof_size_resource: Option<ProofSizeResource<T>>,
+	pub storage_resource: Option<StorageGrowthResource>,
 }
 
 impl<T: Config> ResourceInfo<T> {
 	pub fn new() -> Self {
 		Self {
-			ref_time_meter: None,
-			proof_size_meter: None,
-			storage_meter: None,
+			ref_time_resource: None,
+			proof_size_resource: None,
+			storage_resource: None,
 		}
 	}
 
-	pub fn add_ref_time_meter(&mut self, limit: u64) -> Result<(), &'static str> {
-		self.ref_time_meter = Some(RefTimeMeter::new(limit).map_err(|_| "Invalid parameters")?);
+	pub fn add_ref_time_resource(&mut self, limit: u64) -> Result<(), &'static str> {
+		self.ref_time_resource = Some(RefTimeResource::new(limit).map_err(|_| "Invalid pararesources")?);
 		Ok(())
 	}
 
-	pub fn add_proof_size_meter(&mut self, base_cost: u64, limit: u64) -> Result<(), &'static str> {
-		self.proof_size_meter =
-			Some(ProofSizeMeter::new(base_cost, limit).map_err(|_| "Invalid parameters")?);
+	pub fn add_proof_size_resource(&mut self, base_cost: u64, limit: u64) -> Result<(), &'static str> {
+		self.proof_size_resource =
+			Some(ProofSizeResource::new(base_cost, limit).map_err(|_| "Invalid pararesources")?);
 		Ok(())
 	}
 
-	pub fn add_storage_meter(&mut self, limit: u64) -> Result<(), &'static str> {
-		self.storage_meter = Some(StorageMeter::new(limit).map_err(|_| "Invalid parameters")?);
+	pub fn add_storage_growth_resource(&mut self, limit: u64) -> Result<(), &'static str> {
+		self.storage_resource = Some(StorageGrowthResource::new(limit).map_err(|_| "Invalid pararesources")?);
 		Ok(())
 	}
 
 	pub fn refund_proof_size(&mut self, amount: u64) {
-		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
-			proof_size_meter.refund(amount);
+		if let Some(proof_size_resource) = self.proof_size_resource.as_mut() {
+			proof_size_resource.refund(amount);
 		}
 	}
 
 	pub fn refund_ref_time(&mut self, amount: u64) {
-		if let Some(ref_time_meter) = self.ref_time_meter.as_mut() {
-			ref_time_meter.refund(amount);
+		if let Some(ref_time_resource) = self.ref_time_resource.as_mut() {
+			ref_time_resource.refund(amount);
 		}
 	}
 
@@ -481,8 +481,8 @@ impl<T: Config> ResourceInfo<T> {
 			};
 		}
 
-		let (proof_size_usage, proof_size_limit) = usage_and_limit!(self.proof_size_meter);
-		let (ref_time_usage, ref_time_limit) = usage_and_limit!(self.ref_time_meter);
+		let (proof_size_usage, proof_size_limit) = usage_and_limit!(self.proof_size_resource);
+		let (ref_time_usage, ref_time_limit) = usage_and_limit!(self.ref_time_resource);
 
 		WeightInfo {
 			proof_size_usage,
@@ -497,12 +497,12 @@ impl<T: Config> ResourceInfo<T> {
 		operation: evm::ExternalOperation,
 		contract_size_limit: u64,
 	) -> Result<(), ResourceError> {
-		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
-			proof_size_meter.record_external_operation(&operation, contract_size_limit)?;
+		if let Some(proof_size_resource) = self.proof_size_resource.as_mut() {
+			proof_size_resource.record_external_operation(&operation, contract_size_limit)?;
 		}
 
-		if let Some(storage_meter) = self.storage_meter.as_mut() {
-			storage_meter.record_external_operation(&operation, contract_size_limit)
+		if let Some(storage_resource) = self.storage_resource.as_mut() {
+			storage_resource.record_external_operation(&operation, contract_size_limit)
 		}
 
 		Ok(())
@@ -514,8 +514,8 @@ impl<T: Config> ResourceInfo<T> {
 		target: evm::gasometer::StorageTarget,
 		contract_size_limit: u64,
 	) -> Result<(), ResourceError> {
-		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
-			proof_size_meter.record_external_dynamic_opcode_cost(
+		if let Some(proof_size_resource) = self.proof_size_resource.as_mut() {
+			proof_size_resource.record_external_dynamic_opcode_cost(
 				opcode,
 				target,
 				contract_size_limit,
@@ -528,11 +528,11 @@ impl<T: Config> ResourceInfo<T> {
 	}
 
 	pub fn effective_gas(&self, gas: u64) -> U256 {
-		let proof_size_usage = self.proof_size_meter.as_ref().map_or(0, |meter| {
-			meter.usage().saturating_mul(T::GasLimitPovSizeRatio::get())
+		let proof_size_usage = self.proof_size_resource.as_ref().map_or(0, |resource| {
+			resource.usage().saturating_mul(T::GasLimitPovSizeRatio::get())
 		});
 
-		let storage_usage = self.storage_meter.as_ref().map_or(0, |meter| meter.usage());
+		let storage_usage = self.storage_resource.as_ref().map_or(0, |resource| resource.usage());
 
 		let effective_gas =
 			sp_std::cmp::max(sp_std::cmp::max(proof_size_usage, storage_usage), gas);
@@ -541,9 +541,9 @@ impl<T: Config> ResourceInfo<T> {
 	}
 
 	pub fn is_empty(&self) -> bool {
-		self.ref_time_meter.is_none()
-			&& self.proof_size_meter.is_none()
-			&& self.storage_meter.is_none()
+		self.ref_time_resource.is_none()
+			&& self.proof_size_resource.is_none()
+			&& self.storage_resource.is_none()
 	}
 }
 
@@ -590,7 +590,7 @@ mod tests {
 
 	#[test]
 	fn test_storage_resource() {
-		let mut resource = StorageMeter::new(100).unwrap();
+		let mut resource = StorageGrowthResource::new(100).unwrap();
 		assert_eq!(resource.0.usage, 0);
 		assert_eq!(resource.0.limit, 100);
 		assert_eq!(resource.0.record_cost(10), Ok(()));

@@ -188,18 +188,18 @@ where
 
 		if let Some(weight_limit) = weight_limit {
 			resource_info
-				.add_ref_time_meter(weight_limit.ref_time())
+				.add_ref_time_resource(weight_limit.ref_time())
 				.map_err(map_error)?;
 
 			if let Some(proof_size_base_cost) = proof_size_base_cost {
 				resource_info
-					.add_proof_size_meter(proof_size_base_cost, weight_limit.proof_size())
+					.add_proof_size_resource(proof_size_base_cost, weight_limit.proof_size())
 					.map_err(map_error)?;
 			}
 		}
 
 		resource_info
-			.add_storage_meter(0) // TODO Compute the limit of storage per tx
+			.add_storage_growth_resource(0) // TODO Compute the limit of storage per tx
 			.map_err(map_error)?;
 
 		let resource_info = if resource_info.is_empty() {
