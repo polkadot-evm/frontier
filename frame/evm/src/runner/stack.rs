@@ -154,37 +154,28 @@ where
 
 		let mut resource_info = ResourceInfo::new();
 
+		let map_error = |_e| RunnerError {
+			error: Error::<T>::Undefined,
+			weight,
+		};
+
 		if let Some(weight_limit) = weight_limit {
 			resource_info
 				.add_ref_time_meter(weight_limit.ref_time())
-				.map_err(|_| RunnerError {
-					error: Error::<T>::Undefined,
-					weight,
-				})?;
+				.map_err(map_error)?;
 
 			if let Some(proof_size_base_cost) = proof_size_base_cost {
 				resource_info
 					.add_proof_size_meter(proof_size_base_cost, weight_limit.proof_size())
-					.map_err(|_| RunnerError {
-						error: Error::<T>::Undefined,
-						weight,
-					})?;
+					.map_err(map_error)?;
 			}
 		}
 
-		// TODO Compute the limit of storage per tx
-		let storage_limit = 0;
 		resource_info
-			.add_storage_meter(storage_limit)
-			.map_err(|_| RunnerError {
-				error: Error::<T>::Undefined,
-				weight,
-			})?;
+			.add_storage_meter(0) // TODO Compute the limit of storage per tx
+			.map_err(map_error)?;
 
-		let resource_info = if resource_info.ref_time_meter.is_none()
-			&& resource_info.proof_size_meter.is_none()
-			&& resource_info.storage_meter.is_none()
-		{
+		let resource_info = if resource_info.is_empty() {
 			None
 		} else {
 			Some(resource_info)
@@ -969,9 +960,7 @@ where
 			.unwrap_or_default() as u64;
 
 		if let Some(resource_info) = self.resource_info.as_mut() {
-			resource_info
-				.record_external_operation(op, size_limit)
-				.map_err(|_| ExitError::OutOfGas)?;
+			resource_info.record_external_operation(op, size_limit)?
 		}
 
 		Ok(())
@@ -991,9 +980,7 @@ where
 			.unwrap_or_default() as u64;
 
 		if let Some(resource_info) = self.resource_info.as_mut() {
-			resource_info
-				.record_external_dynamic_opcode_cost(opcode, target, size_limit)
-				.map_err(|_| ExitError::OutOfGas)?;
+			resource_info.record_external_dynamic_opcode_cost(opcode, target, size_limit)?
 		}
 		Ok(())
 	}
