@@ -64,7 +64,7 @@ serde = { version = "1.0", default-features = false, features = ["derive", "allo
 serde_json = "1.0"
 sqlx = { version = "0.7.1", default-features = false, features = ["macros"] }
 thiserror = "1.0"
-tokio = "1.29.1"
+tokio = "1.30.0"
 # Substrate Client
 sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
