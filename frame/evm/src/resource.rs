@@ -20,6 +20,8 @@ pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 pub const WRITE_PROOF_SIZE: u64 = 32;
 /// Account basic proof size + 5 bytes max of `decode_len` call.
 pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+/// Storage: Set a new value. (32 bytes)
+pub const STORAGE_NEW_COST: u64 = 32;
 
 #[derive(Debug, PartialEq)]
 /// Resource error.
@@ -406,9 +408,16 @@ impl StorageGrowthResource {
 				// len in bytes ??
 				len.try_into().map_err(|_| ResourceError::LimitExceeded)?
 			}
-			GasCost::SStore { .. } => {
-				// TODO record cost for sstore
-				0
+			GasCost::SStore {
+				current,
+				new,
+				..
+			} => {
+				if current.is_zero() && !new.is_zero() {
+					STORAGE_NEW_COST
+				} else {
+					0
+				}
 			}
 			_ => return Ok(()),
 		};
@@ -443,18 +452,24 @@ impl<T: Config> ResourceInfo<T> {
 	}
 
 	pub fn add_ref_time_resource(&mut self, limit: u64) -> Result<(), &'static str> {
-		self.ref_time_resource = Some(RefTimeResource::new(limit).map_err(|_| "Invalid pararesources")?);
+		self.ref_time_resource =
+			Some(RefTimeResource::new(limit).map_err(|_| "Invalid parameters")?);
 		Ok(())
 	}
 
-	pub fn add_proof_size_resource(&mut self, base_cost: u64, limit: u64) -> Result<(), &'static str> {
+	pub fn add_proof_size_resource(
+		&mut self,
+		base_cost: u64,
+		limit: u64,
+	) -> Result<(), &'static str> {
 		self.proof_size_resource =
-			Some(ProofSizeResource::new(base_cost, limit).map_err(|_| "Invalid pararesources")?);
+			Some(ProofSizeResource::new(base_cost, limit).map_err(|_| "Invalid parameters")?);
 		Ok(())
 	}
 
 	pub fn add_storage_growth_resource(&mut self, limit: u64) -> Result<(), &'static str> {
-		self.storage_resource = Some(StorageGrowthResource::new(limit).map_err(|_| "Invalid pararesources")?);
+		self.storage_resource =
+			Some(StorageGrowthResource::new(limit).map_err(|_| "Invalid parameters")?);
 		Ok(())
 	}
 
@@ -529,10 +544,15 @@ impl<T: Config> ResourceInfo<T> {
 
 	pub fn effective_gas(&self, gas: u64) -> U256 {
 		let proof_size_usage = self.proof_size_resource.as_ref().map_or(0, |resource| {
-			resource.usage().saturating_mul(T::GasLimitPovSizeRatio::get())
+			resource
+				.usage()
+				.saturating_mul(T::GasLimitPovSizeRatio::get())
 		});
 
-		let storage_usage = self.storage_resource.as_ref().map_or(0, |resource| resource.usage());
+		let storage_usage = self
+			.storage_resource
+			.as_ref()
+			.map_or(0, |resource| resource.usage());
 
 		let effective_gas =
 			sp_std::cmp::max(sp_std::cmp::max(proof_size_usage, storage_usage), gas);
