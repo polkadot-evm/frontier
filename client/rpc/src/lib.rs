@@ -187,7 +187,7 @@ pub mod frontier_backend_client {
 
 	pub async fn native_block_id<B: BlockT, C>(
 		client: &C,
-		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+		backend: &dyn fc_api::Backend<B>,
 		number: Option<BlockNumber>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
@@ -213,7 +213,7 @@ pub mod frontier_backend_client {
 
 	pub async fn load_hash<B: BlockT, C>(
 		client: &C,
-		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+		backend: &dyn fc_api::Backend<B>,
 		hash: H256,
 	) -> RpcResult<Option<B::Hash>>
 	where
@@ -250,7 +250,7 @@ pub mod frontier_backend_client {
 
 	pub async fn load_transactions<B: BlockT, C>(
 		client: &C,
-		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+		backend: &dyn fc_api::Backend<B>,
 		transaction_hash: H256,
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
@@ -265,7 +265,7 @@ pub mod frontier_backend_client {
 
 		transaction_metadata
 			.iter()
-			.find(|meta| is_canon::<B, C>(client, meta.block_hash))
+			.find(|meta| is_canon::<B, C>(client, meta.substrate_block_hash))
 			.map_or_else(
 				|| {
 					if !only_canonical && transaction_metadata.len() > 0 {

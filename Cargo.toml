@@ -16,6 +16,7 @@ members = [
 	"frame/evm/precompile/bls12377",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
+	"client/api",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
@@ -53,8 +54,8 @@ impl-serde = { version = "0.4.0", default-features = false }
 jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
-log = { version = "0.4.17", default-features = false }
-parity-db = "0.4.9"
+log = { version = "0.4.19", default-features = false }
+parity-db = "0.4.10"
 parking_lot = "0.12.1"
 rlp = { version = "0.5.2", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = ["derive"] }
@@ -135,6 +136,7 @@ substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "polkadot-v1.0.0" }
 # Frontier Client
+fc-api = { version = "1.0.0-dev", path = "client/api" }
 fc-cli = { version = "1.0.0-dev", path = "client/cli", default-features = false }
 fc-consensus = { version = "2.0.0-dev", path = "client/consensus" }
 fc-db = { version = "2.0.0-dev", path = "client/db", default-features = false }

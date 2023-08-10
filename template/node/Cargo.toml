@@ -69,6 +69,7 @@ frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 
 # Frontier
+fc-api = { workspace = true }
 fc-cli = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }

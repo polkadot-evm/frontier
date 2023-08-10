@@ -321,27 +321,26 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 
 #[cfg(test)]
 mod tests {
-	use futures::executor;
-	use sc_block_builder::BlockBuilderProvider;
-	use sp_consensus::BlockOrigin;
-	use substrate_test_runtime_client::{
-		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
-	};
-
 	use std::{
 		io::{Read, Write},
 		sync::Arc,
 	};
 
-	use crate::kv::DatabaseSettings;
+	use futures::executor;
 	use scale_codec::Encode;
+	use tempfile::tempdir;
+	// Substrate
+	use sc_block_builder::BlockBuilderProvider;
 	use sp_blockchain::HeaderBackend;
+	use sp_consensus::BlockOrigin;
 	use sp_core::H256;
 	use sp_runtime::{
 		generic::{Block, Header},
 		traits::{BlakeTwo256, Block as BlockT},
 	};
-	use tempfile::tempdir;
+	use substrate_test_runtime_client::{
+		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
@@ -356,7 +355,7 @@ mod tests {
 	#[cfg_attr(not(feature = "rocksdb"), ignore)]
 	#[test]
 	fn upgrade_1_to_2_works() {
-		let settings: Vec<DatabaseSettings> = vec![
+		let settings: Vec<crate::kv::DatabaseSettings> = vec![
 			// Rocks db
 			#[cfg(feature = "rocksdb")]
 			crate::kv::DatabaseSettings {
@@ -443,7 +442,7 @@ mod tests {
 					let mut metadata = vec![];
 					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
 						metadata.push(crate::kv::TransactionMetadata::<OpaqueBlock> {
-							block_hash: *hash,
+							substrate_block_hash: *hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: 0u32,
 						});
@@ -493,7 +492,7 @@ mod tests {
 					.unwrap();
 				assert!(mapped_transaction
 					.into_iter()
-					.any(|tx| tx.block_hash == *canon_substrate_block_hash));
+					.any(|tx| tx.substrate_block_hash == *canon_substrate_block_hash));
 			}
 
 			// Upgrade db version file

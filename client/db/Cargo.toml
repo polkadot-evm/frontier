@@ -19,7 +19,7 @@ log = { workspace = true }
 parity-db = { workspace = true }
 parking_lot = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-smallvec = { version = "1.10", optional = true }
+smallvec = { version = "1.11", optional = true }
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"], optional = true }
 tokio = { workspace = true, features = ["macros", "sync"], optional = true }
 # Substrate
@@ -32,6 +32,7 @@ sp-database = { workspace = true }
 sp-runtime = { workspace = true }
 sp-storage = { workspace = true, optional = true }
 # Frontier
+fc-api = { workspace = true }
 fc-storage = { workspace = true, optional = true }
 fp-consensus = { workspace = true, features = ["default"], optional = true }
 fp-rpc = { workspace = true, features = ["default"], optional = true }
@@ -40,7 +41,7 @@ fp-storage = { workspace = true, features = ["default"] }
 [dev-dependencies]
 futures = { workspace = true }
 maplit = "1.0.2"
-tempfile = "3.3.0"
+tempfile = "3.7.0"
 # Substrate
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }

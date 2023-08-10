@@ -41,7 +41,7 @@ pub struct DefaultEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
 
 impl<C, BE> fc_rpc::EthConfig<Block, C> for DefaultEthConfig<C, BE>
 where
-	C: sc_client_api::StorageProvider<Block, BE> + Sync + Send + 'static,
+	C: StorageProvider<Block, BE> + Sync + Send + 'static,
 	BE: Backend<Block> + 'static,
 {
 	type EstimateGasAdapter = ();
