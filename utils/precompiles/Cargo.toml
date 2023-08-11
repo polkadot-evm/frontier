@@ -6,7 +6,6 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-affix = { workspace = true }
 derive_more = { workspace = true, optional = true }
 environmental = { workspace = true }
 hex = { workspace = true }
