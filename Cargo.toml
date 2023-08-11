@@ -31,9 +31,9 @@ members = [
 	"primitives/self-contained",
 	"template/node",
 	"template/runtime",
-	"utils/precompiles",
-	"utils/precompiles/macro",
-	"utils/precompiles/tests-external",
+	"precompiles",
+	"precompiles/macro",
+	"precompiles/tests-external",
 ]
 resolver = "2"
 
@@ -175,7 +175,7 @@ pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficient
 frontier-template-runtime = { path = "template/runtime", default-features = false }
 
 # Frontier utils
-precompile-utils = { path = "utils/precompiles", default-features = false }
+precompile-utils = { path = "precompiles", default-features = false }
 
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
