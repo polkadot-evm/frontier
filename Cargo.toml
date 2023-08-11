@@ -63,7 +63,6 @@ log = { version = "0.4.19", default-features = false }
 num_enum = { version = "0.5.3", default-features = false }
 parity-db = "0.4.10"
 parking_lot = "0.12.1"
-paste = "1.0.6"
 rlp = { version = "0.5.2", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = ["derive"] }
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
