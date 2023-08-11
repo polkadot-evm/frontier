@@ -108,18 +108,18 @@ pub enum DiscriminantResult<T> {
 	OutOfGas,
 }
 
-impl<T> Into<IsPrecompileResult> for DiscriminantResult<T> {
-	fn into(self) -> IsPrecompileResult {
-		match self {
-			Self::Some(_, extra_cost) => IsPrecompileResult::Answer {
+impl<T> From<DiscriminantResult<T>> for IsPrecompileResult {
+	fn from(val: DiscriminantResult<T>) -> Self {
+		match val {
+			DiscriminantResult::<T>::Some(_, extra_cost) => IsPrecompileResult::Answer {
 				is_precompile: true,
 				extra_cost,
 			},
-			Self::None(extra_cost) => IsPrecompileResult::Answer {
+			DiscriminantResult::<T>::None(extra_cost) => IsPrecompileResult::Answer {
 				is_precompile: false,
 				extra_cost,
 			},
-			Self::OutOfGas => IsPrecompileResult::OutOfGas,
+			DiscriminantResult::<T>::OutOfGas => IsPrecompileResult::OutOfGas,
 		}
 	}
 }
@@ -336,7 +336,7 @@ pub fn get_address_type<R: pallet_evm::Config>(
 	// check code matches dummy code
 	handle.record_db_read::<R>(code_len as usize)?;
 	let code = pallet_evm::AccountCodes::<R>::get(address);
-	if &code == &[0x60, 0x00, 0x60, 0x00, 0xfd] {
+	if code == [0x60, 0x00, 0x60, 0x00, 0xfd] {
 		return Ok(AddressType::Precompile);
 	}
 
@@ -377,10 +377,8 @@ fn common_checks<R: pallet_evm::Config, C: PrecompileChecks>(
 	// Is this selector callable from a smart contract?
 	let callable_by_smart_contract =
 		C::callable_by_smart_contract(caller, selector).unwrap_or(false);
-	if !callable_by_smart_contract {
-		if !is_address_eoa_or_precompile::<R>(handle, caller)? {
-			return Err(revert("Function not callable by smart contracts"));
-		}
+	if !callable_by_smart_contract && !is_address_eoa_or_precompile::<R>(handle, caller)? {
+		return Err(revert("Function not callable by smart contracts"));
 	}
 
 	// Is this selector callable from a precompile?
@@ -567,16 +565,14 @@ where
 			match self.current_recursion_level.try_borrow_mut() {
 				Ok(mut recursion_level) => {
 					if *recursion_level > max_recursion_level {
-						return Some(Err(
-							revert("Precompile is called with too high nesting").into()
-						));
+						return Some(Err(revert("Precompile is called with too high nesting")));
 					}
 
 					*recursion_level += 1;
 				}
 				// We don't hold the borrow and are in single-threaded code, thus we should
 				// not be able to fail borrowing in nested calls.
-				Err(_) => return Some(Err(revert("Couldn't check precompile nesting").into())),
+				Err(_) => return Some(Err(revert("Couldn't check precompile nesting"))),
 			}
 		}
 
@@ -597,7 +593,7 @@ where
 				}
 				// We don't hold the borrow and are in single-threaded code, thus we should
 				// not be able to fail borrowing in nested calls.
-				Err(_) => return Some(Err(revert("Couldn't check precompile nesting").into())),
+				Err(_) => return Some(Err(revert("Couldn't check precompile nesting"))),
 			}
 		}
 
@@ -921,15 +917,13 @@ impl PrecompileSetFragment for Tuple {
 	#[inline(always)]
 	fn is_precompile(&self, address: H160, gas: u64) -> IsPrecompileResult {
 		for_tuples!(#(
-			match self.Tuple.is_precompile(address, gas) {
-				IsPrecompileResult::Answer {
-					is_precompile: true,
-					..
-				} => return IsPrecompileResult::Answer {
-					is_precompile: true,
-					extra_cost: 0,
-				},
-				_ => {}
+			if let IsPrecompileResult::Answer {
+ 				is_precompile: true,
+				..
+			} = self.Tuple.is_precompile(address, gas) { return IsPrecompileResult::Answer {
+				is_precompile: true,
+				extra_cost: 0,
+				}
 			};
 		)*);
 		IsPrecompileResult::Answer {
@@ -967,16 +961,13 @@ impl IsActivePrecompile for Tuple {
 	#[inline(always)]
 	fn is_active_precompile(&self, address: H160, gas: u64) -> IsPrecompileResult {
 		for_tuples!(#(
-			match self.Tuple.is_active_precompile(address, gas) {
-				IsPrecompileResult::Answer {
-					is_precompile: true,
-					..
-				} => return IsPrecompileResult::Answer {
-					is_precompile: true,
-					extra_cost: 0,
-				},
-				_ => {}
-			};
+			if let IsPrecompileResult::Answer {
+				is_precompile: true,
+				..
+			} = self.Tuple.is_active_precompile(address, gas) { return IsPrecompileResult::Answer {
+				is_precompile: true,
+				extra_cost: 0,
+			} };
 		)*);
 		IsPrecompileResult::Answer {
 			is_precompile: false,
@@ -1076,6 +1067,12 @@ impl<R, P: IsActivePrecompile> IsActivePrecompile for PrecompileSetBuilder<R, P>
 	}
 }
 
+impl<R: pallet_evm::Config, P: PrecompileSetFragment> Default for PrecompileSetBuilder<R, P> {
+	fn default() -> Self {
+		Self::new()
+	}
+}
+
 impl<R: pallet_evm::Config, P: PrecompileSetFragment> PrecompileSetBuilder<R, P> {
 	/// Create a new instance of the PrecompileSet.
 	pub fn new() -> Self {
@@ -1091,7 +1088,7 @@ impl<R: pallet_evm::Config, P: PrecompileSetFragment> PrecompileSetBuilder<R, P>
 			.inner
 			.used_addresses()
 			.into_iter()
-			.map(|x| R::AddressMapping::into_account_id(x))
+			.map(R::AddressMapping::into_account_id)
 	}
 
 	pub fn summarize_checks(&self) -> Vec<PrecompileCheckSummary> {

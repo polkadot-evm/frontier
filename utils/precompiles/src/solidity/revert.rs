@@ -217,9 +217,9 @@ impl core::fmt::Debug for Revert {
 	}
 }
 
-impl Into<Vec<u8>> for Revert {
-	fn into(self) -> Vec<u8> {
-		self.to_string().into()
+impl From<Revert> for Vec<u8> {
+	fn from(val: Revert) -> Self {
+		val.to_string().into()
 	}
 }
 
