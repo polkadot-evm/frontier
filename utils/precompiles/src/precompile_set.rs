@@ -918,7 +918,7 @@ impl PrecompileSetFragment for Tuple {
 	fn is_precompile(&self, address: H160, gas: u64) -> IsPrecompileResult {
 		for_tuples!(#(
 			if let IsPrecompileResult::Answer {
- 				is_precompile: true,
+			is_precompile: true,
 				..
 			} = self.Tuple.is_precompile(address, gas) { return IsPrecompileResult::Answer {
 				is_precompile: true,
