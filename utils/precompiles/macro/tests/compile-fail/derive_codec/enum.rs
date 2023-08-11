@@ -20,7 +20,7 @@ use precompile_utils::prelude::*;
 enum Test {
 	One,
 	Two(u8),
-	Three { test: u16 }
+	Three { test: u16 },
 }
 
 fn main() {}

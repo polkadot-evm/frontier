@@ -16,13 +16,11 @@
 
 #[cfg(test)]
 mod tests {
-	use std::cell::RefCell;
-	use std::rc::Rc;
+	use std::{cell::RefCell, rc::Rc};
 
 	use evm::Context;
 	use fp_evm::{ExitReason, ExitRevert, PrecompileFailure, PrecompileHandle};
-	use frame_support::traits::Everything;
-	use frame_support::{construct_runtime, parameter_types, weights::Weight};
+	use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
 	use pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
 	use precompile_utils::{
 		precompile_set::*,
@@ -30,8 +28,7 @@ mod tests {
 		testing::*,
 		EvmResult,
 	};
-	use sp_core::H160;
-	use sp_core::{H256, U256};
+	use sp_core::{H160, H256, U256};
 	use sp_runtime::{
 		traits::{BlakeTwo256, IdentityLookup},
 		Perbill,

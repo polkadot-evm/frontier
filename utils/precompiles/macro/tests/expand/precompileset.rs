@@ -14,11 +14,9 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use {
-	core::marker::PhantomData,
-	precompile_utils::{EvmResult, prelude::*, testing::PrecompileTesterExt},
-	sp_core::H160
-};
+use core::marker::PhantomData;
+use precompile_utils::{prelude::*, testing::PrecompileTesterExt, EvmResult};
+use sp_core::H160;
 
 // Based on Erc20AssetsPrecompileSet with stripped code.
 
@@ -33,7 +31,7 @@ type MockRuntime = ConstU32<42>;
 #[precompile::test_concrete_types(MockRuntime)]
 impl<Runtime> PrecompileSet<Runtime>
 where
-	Runtime: Get<u32>
+	Runtime: Get<u32>,
 {
 	/// PrecompileSet discrimiant. Allows to knows if the address maps to an asset id,
 	/// and if this is the case which one.
@@ -43,10 +41,7 @@ where
 	}
 
 	#[precompile::public("totalSupply()")]
-	fn total_supply(
-		asset_id: Discriminant,
-		handle: &mut impl PrecompileHandle,
-	) -> EvmResult<U256> {
+	fn total_supply(asset_id: Discriminant, handle: &mut impl PrecompileHandle) -> EvmResult<U256> {
 		todo!("total_supply")
 	}
 
@@ -127,10 +122,7 @@ where
 	}
 
 	#[precompile::public("decimals()")]
-	fn decimals(
-		asset_id: Discriminant,
-		handle: &mut impl PrecompileHandle,
-	) -> EvmResult<u8> {
+	fn decimals(asset_id: Discriminant, handle: &mut impl PrecompileHandle) -> EvmResult<u8> {
 		todo!("decimals")
 	}
 
@@ -175,19 +167,13 @@ where
 
 	#[precompile::public("freezeAsset()")]
 	#[precompile::public("freeze_asset()")]
-	fn freeze_asset(
-		asset_id: Discriminant,
-		handle: &mut impl PrecompileHandle,
-	) -> EvmResult<bool> {
+	fn freeze_asset(asset_id: Discriminant, handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
 		todo!("freeze_asset")
 	}
 
 	#[precompile::public("thawAsset()")]
 	#[precompile::public("thaw_asset()")]
-	fn thaw_asset(
-		asset_id: Discriminant,
-		handle: &mut impl PrecompileHandle,
-	) -> EvmResult<bool> {
+	fn thaw_asset(asset_id: Discriminant, handle: &mut impl PrecompileHandle) -> EvmResult<bool> {
 		todo!("thaw_asset")
 	}
 

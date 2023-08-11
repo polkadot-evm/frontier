@@ -14,20 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use {
-	precompile_utils::{EvmResult, prelude::*},
-	sp_core::{H160, U256},
-};
+use precompile_utils::{prelude::*, EvmResult};
+use sp_core::{H160, U256};
 
 struct ExamplePrecompile;
 
 #[precompile_utils_macro::precompile]
-impl ExamplePrecompile
-{
+impl ExamplePrecompile {
 	#[precompile::public("example()")]
-	fn example(
-		handle: &mut impl PrecompileHandle,
-	) -> EvmResult<(Address, U256, UnboundedBytes)> {
+	fn example(handle: &mut impl PrecompileHandle) -> EvmResult<(Address, U256, UnboundedBytes)> {
 		todo!("example")
 	}
 }

@@ -26,4 +26,4 @@ impl<R> Precompile<R> {
 	}
 }
 
-fn main() { }
+fn main() {}

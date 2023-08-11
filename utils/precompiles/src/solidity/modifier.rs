@@ -16,11 +16,9 @@
 
 //! Provide checks related to function modifiers (view/payable).
 
-use {
-	crate::solidity::revert::{MayRevert, RevertReason},
-	fp_evm::Context,
-	sp_core::U256,
-};
+use crate::solidity::revert::{MayRevert, RevertReason};
+use fp_evm::Context;
+use sp_core::U256;
 
 /// Represents modifiers a Solidity function can be annotated with.
 #[derive(Copy, Clone, PartialEq, Eq)]

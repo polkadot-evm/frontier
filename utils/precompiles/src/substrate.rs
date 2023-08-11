@@ -18,17 +18,15 @@
 //! - Substrate call dispatch.
 //! - Substrate DB read and write costs
 
-use {
-	crate::{evm::handle::using_precompile_handle, solidity::revert::revert},
-	core::marker::PhantomData,
-	fp_evm::{ExitError, PrecompileFailure, PrecompileHandle},
-	frame_support::{
-		dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-		pallet_prelude::*,
-		traits::Get,
-	},
-	pallet_evm::GasWeightMapping,
+use crate::{evm::handle::using_precompile_handle, solidity::revert::revert};
+use core::marker::PhantomData;
+use fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
+use frame_support::{
+	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	pallet_prelude::*,
+	traits::Get,
 };
+use pallet_evm::GasWeightMapping;
 
 #[derive(Debug)]
 pub enum TryDispatchError {

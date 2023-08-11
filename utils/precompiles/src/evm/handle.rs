@@ -14,17 +14,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use {
-	crate::{
-		solidity::{
-			codec::Reader,
-			modifier::FunctionModifier,
-			revert::{MayRevert, RevertReason},
-		},
-		EvmResult,
+use crate::{
+	solidity::{
+		codec::Reader,
+		modifier::FunctionModifier,
+		revert::{MayRevert, RevertReason},
 	},
-	fp_evm::{Log, PrecompileHandle},
+	EvmResult,
 };
+use fp_evm::{Log, PrecompileHandle};
 
 pub trait PrecompileHandleExt: PrecompileHandle {
 	/// Record cost of one DB read manually.

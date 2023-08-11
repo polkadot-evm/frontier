@@ -1256,7 +1256,7 @@ mod tests {
 					false,
 					None,
 					None,
-							|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
+					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
 				assert_matches!(
 					res,

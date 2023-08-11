@@ -23,6 +23,6 @@ struct Empty1;
 struct Empty2 {}
 
 #[derive(solidity::Codec)]
-struct Empty3 ();
+struct Empty3();
 
 fn main() {}

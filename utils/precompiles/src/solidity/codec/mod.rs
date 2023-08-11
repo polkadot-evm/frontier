@@ -61,8 +61,7 @@ pub fn encode_arguments<T: Codec>(value: T) -> Vec<u8> {
 	}
 }
 
-pub use self::encode_arguments as encode_return_value;
-pub use self::encode_arguments as encode_event_data;
+pub use self::{encode_arguments as encode_return_value, encode_arguments as encode_event_data};
 
 /// Encode the value as the arguments of a Solidity function with given selector.
 /// If `T` is a tuple each member represents an argument of the function.
@@ -93,8 +92,7 @@ pub fn decode_arguments<T: Codec>(input: &[u8]) -> MayRevert<T> {
 	}
 }
 
-pub use self::decode_arguments as decode_return_value;
-pub use self::decode_arguments as decode_event_data;
+pub use self::{decode_arguments as decode_return_value, decode_arguments as decode_event_data};
 
 /// Extracts the selector from the start of the input, or returns `None` if the input is too short.
 pub fn selector(input: &[u8]) -> Option<u32> {

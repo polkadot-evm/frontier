@@ -28,4 +28,4 @@ impl<R> PrecompileSet<R> {
 	}
 }
 
-fn main() { }
+fn main() {}

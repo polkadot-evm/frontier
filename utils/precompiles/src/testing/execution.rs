@@ -14,18 +14,16 @@
 // You should have received a copy of the GNU General Public License
 // along with Moonbeam.  If not, see <http://www.gnu.org/licenses/>.
 
-use {
-	crate::{
-		solidity::codec::Codec,
-		testing::{decode_revert_message, MockHandle, PrettyLog, SubcallHandle, SubcallTrait},
-	},
-	fp_evm::{
-		Context, ExitError, ExitSucceed, Log, PrecompileFailure, PrecompileOutput,
-		PrecompileResult, PrecompileSet,
-	},
-	sp_core::{H160, U256},
-	sp_std::boxed::Box,
+use crate::{
+	solidity::codec::Codec,
+	testing::{decode_revert_message, MockHandle, PrettyLog, SubcallHandle, SubcallTrait},
 };
+use fp_evm::{
+	Context, ExitError, ExitSucceed, Log, PrecompileFailure, PrecompileOutput, PrecompileResult,
+	PrecompileSet,
+};
+use sp_core::{H160, U256};
+use sp_std::boxed::Box;
 
 #[must_use]
 pub struct PrecompilesTester<'p, P> {

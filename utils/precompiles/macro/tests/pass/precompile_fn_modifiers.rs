@@ -11,10 +11,8 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 // GNU General Public License for more details.
 
-use {
-	precompile_utils::{EvmResult, prelude::*, testing::PrecompileTesterExt},
-	sp_core::H160
-};
+use precompile_utils::{prelude::*, testing::PrecompileTesterExt, EvmResult};
+use sp_core::H160;
 
 pub struct PrecompileSet;
 
@@ -45,45 +43,33 @@ impl PrecompileSet {
 }
 
 fn main() {
-	PrecompileSet.prepare_test(
-		[0u8;20],
-		[0u8;20],
-		PrecompileSetCall::default {}
-	).with_value(1)
-	.execute_reverts(|output| output == b"Function is not payable");
+	PrecompileSet
+		.prepare_test([0u8; 20], [0u8; 20], PrecompileSetCall::default {})
+		.with_value(1)
+		.execute_reverts(|output| output == b"Function is not payable");
 
-	PrecompileSet.prepare_test(
-		[0u8;20],
-		[0u8;20],
-		PrecompileSetCall::default {}
-	).with_static_call(true)
-	.execute_reverts(|output| output == b"Can't call non-static function in static context");
+	PrecompileSet
+		.prepare_test([0u8; 20], [0u8; 20], PrecompileSetCall::default {})
+		.with_static_call(true)
+		.execute_reverts(|output| output == b"Can't call non-static function in static context");
 
-	PrecompileSet.prepare_test(
-		[0u8;20],
-		[0u8;20],
-		PrecompileSetCall::view {}
-	).with_value(1)
-	.execute_reverts(|output| output == b"Function is not payable");
+	PrecompileSet
+		.prepare_test([0u8; 20], [0u8; 20], PrecompileSetCall::view {})
+		.with_value(1)
+		.execute_reverts(|output| output == b"Function is not payable");
 
-	PrecompileSet.prepare_test(
-		[0u8;20],
-		[0u8;20],
-		PrecompileSetCall::view {}
-	).with_static_call(true)
-	.execute_returns(());
+	PrecompileSet
+		.prepare_test([0u8; 20], [0u8; 20], PrecompileSetCall::view {})
+		.with_static_call(true)
+		.execute_returns(());
 
-	PrecompileSet.prepare_test(
-		[0u8;20],
-		[0u8;20],
-		PrecompileSetCall::payable {}
-	).with_value(1)
-	.execute_returns(());
+	PrecompileSet
+		.prepare_test([0u8; 20], [0u8; 20], PrecompileSetCall::payable {})
+		.with_value(1)
+		.execute_returns(());
 
-	PrecompileSet.prepare_test(
-		[0u8;20],
-		[0u8;20],
-		PrecompileSetCall::payable {}
-	).with_static_call(true)
-	.execute_reverts(|output| output == b"Can't call non-static function in static context");
+	PrecompileSet
+		.prepare_test([0u8; 20], [0u8; 20], PrecompileSetCall::payable {})
+		.with_static_call(true)
+		.execute_reverts(|output| output == b"Can't call non-static function in static context");
 }
