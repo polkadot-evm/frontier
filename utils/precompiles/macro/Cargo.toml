@@ -19,13 +19,13 @@ prettyplease = "0.1.18"
 proc-macro2 = "1.0"
 quote = "1.0"
 sha3 = "0.10"
-syn = { version = "1.0", features = [ "extra-traits", "fold", "full", "visit" ] }
+syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
 
 [dev-dependencies]
 macrotest = "1.0.9"
 trybuild = "1.0"
 
-precompile-utils = { path = "../", features = [ "testing" ] }
+precompile-utils = { path = "../", features = ["testing"] }
 
 fp-evm = { workspace = true }
 frame-support = { workspace = true }
