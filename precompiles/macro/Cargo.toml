@@ -15,10 +15,9 @@ path = "tests/tests.rs"
 [dependencies]
 case = "1.0"
 num_enum = { workspace = true }
-prettyplease = "0.1.18"
+prettyplease = "0.2.12"
 proc-macro2 = "1.0"
 quote = "1.0"
-sha3 = "0.10"
 sp-core-hashing = { workspace = true }
 syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
 
