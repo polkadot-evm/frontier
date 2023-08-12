@@ -19,7 +19,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use sha3::{Digest, Keccak256};
+use sp_core_hashing::keccak_256;
 use syn::{parse_macro_input, spanned::Spanned, Expr, Ident, ItemType, Lit, LitStr};
 
 mod derive_codec;
@@ -47,7 +47,7 @@ impl ::std::fmt::Debug for Bytes {
 pub fn keccak256(input: TokenStream) -> TokenStream {
 	let lit_str = parse_macro_input!(input as LitStr);
 
-	let hash = Keccak256::digest(lit_str.value().as_bytes());
+	let hash = keccak_256(lit_str.value().as_bytes());
 
 	let bytes = Bytes(hash.to_vec());
 	let eval_str = format!("{:?}", bytes);

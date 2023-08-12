@@ -2694,7 +2694,7 @@ dependencies = [
  "ethereum-types",
  "fp-evm",
  "frame-support",
- "num_enum 0.6.1",
+ "num_enum",
  "parity-scale-codec",
  "sp-std",
 ]
@@ -5295,31 +5295,11 @@ dependencies = [
 
 [[package]]
 name = "num_enum"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f646caf906c20226733ed5b1374287eb97e3c2a5c227ce668c1f2ce20ae57c9"
-dependencies = [
- "num_enum_derive 0.5.11",
-]
-
-[[package]]
-name = "num_enum"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7a015b430d3c108a207fd776d2e2196aaf8b1cf8cf93253e3a097ff3085076a1"
 dependencies = [
- "num_enum_derive 0.6.1",
-]
-
-[[package]]
-name = "num_enum_derive"
-version = "0.5.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcbff9bc912032c62bf65ef1d5aea88983b420f4f839db1e9b0c281a25c9c799"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 1.0.109",
+ "num_enum_derive",
 ]
 
 [[package]]
@@ -6272,13 +6252,12 @@ dependencies = [
  "hex-literal",
  "impl-trait-for-tuples",
  "log",
- "num_enum 0.6.1",
+ "num_enum",
  "pallet-evm",
  "parity-scale-codec",
  "precompile-utils-macro",
  "scale-info",
  "serde",
- "sha3",
  "similar-asserts",
  "sp-core",
  "sp-io",
@@ -6294,13 +6273,13 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "macrotest",
- "num_enum 0.5.11",
+ "num_enum",
  "precompile-utils",
  "prettyplease 0.1.25",
  "proc-macro2",
  "quote",
  "sha3",
- "sp-core",
+ "sp-core-hashing",
  "sp-std",
  "syn 1.0.109",
  "trybuild",
@@ -6323,7 +6302,6 @@ dependencies = [
  "precompile-utils",
  "scale-info",
  "serde",
- "sha3",
  "sp-core",
  "sp-io",
  "sp-runtime",

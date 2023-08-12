@@ -68,7 +68,6 @@ scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-featu
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
-sha3 = { version = "0.10", default-features = false }
 similar-asserts = "1.1.0"
 sqlx = { version = "0.7.1", default-features = false, features = ["macros"] }
 thiserror = "1.0"
@@ -104,6 +103,8 @@ sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/su
 sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-consensus-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core-hashing = { version = "9.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core-hashing-proc-macro = { version = "9.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-io = { version = "23.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }

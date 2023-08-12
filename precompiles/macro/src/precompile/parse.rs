@@ -528,7 +528,7 @@ impl Precompile {
 		}
 
 		// Compute the 4-bytes selector.
-		let digest = Keccak256::digest(signature.as_bytes());
+		let digest = keccak_256(signature.as_bytes());
 		let selector = u32::from_be_bytes([digest[0], digest[1], digest[2], digest[3]]);
 
 		if let Some(previous) = self
