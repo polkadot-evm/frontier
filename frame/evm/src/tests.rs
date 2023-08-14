@@ -18,13 +18,8 @@
 #![cfg(test)]
 
 use super::*;
-use crate::{
-	mock::*,
-	resource::{
-		ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
-		IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
-	},
-};
+use crate::mock::*;
+
 use frame_support::{
 	assert_ok,
 	traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons},
@@ -33,7 +28,10 @@ use std::{collections::BTreeMap, str::FromStr};
 
 mod proof_size_test {
 	use super::*;
-	use fp_evm::CreateInfo;
+	use fp_evm::{
+		CreateInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+		ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+	};
 	use frame_support::traits::StorageInfoTrait;
 	// pragma solidity ^0.8.2;
 	// contract Callee {
