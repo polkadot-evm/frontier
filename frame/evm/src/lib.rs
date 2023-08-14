@@ -60,7 +60,6 @@ pub mod benchmarking;
 
 #[cfg(test)]
 mod mock;
-pub mod resource;
 pub mod runner;
 #[cfg(test)]
 mod tests;
