@@ -54,7 +54,7 @@ use crate::{
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
-environmental::thread_local_impl!(static IN_EVM: environmental::RefCell<bool> = environmental::RefCell::new(false));
+environmental::environmental!(IN_EVM: bool);
 
 #[derive(Default)]
 pub struct Runner<T: Config> {
@@ -93,14 +93,7 @@ where
 	{
 		let (base_fee, weight) = T::FeeCalculator::min_gas_price();
 
-		#[cfg(feature = "forbid-evm-reentrancy")]
-		if IN_EVM.with(|in_evm| in_evm.replace(true)) {
-			return Err(RunnerError {
-				error: Error::<T>::Reentrancy,
-				weight,
-			});
-		}
-
+		#[cfg(not(feature = "forbid-evm-reentrancy"))]
 		let res = Self::execute_inner(
 			source,
 			value,
@@ -117,10 +110,44 @@ where
 			proof_size_base_cost,
 		);
 
-		// Set IN_EVM to false
-		// We should make sure that this line is executed whatever the execution path.
 		#[cfg(feature = "forbid-evm-reentrancy")]
-		let _ = IN_EVM.with(|in_evm| in_evm.take());
+		let res = IN_EVM::using_once(&mut false, || {
+			IN_EVM::with(|in_evm| {
+				if *in_evm {
+					return Err(RunnerError {
+						error: Error::<T>::Reentrancy,
+						weight,
+					});
+				}
+				*in_evm = true;
+				Ok(())
+			})
+			// This should always return `Some`, but let's play it safe.
+			.unwrap_or(Ok(()))?;
+
+			// Ensure that we always release the lock whenever we finish processing
+			sp_core::defer! {
+				IN_EVM::with(|in_evm| {
+					*in_evm = false;
+				});
+			}
+
+			Self::execute_inner(
+				source,
+				value,
+				gas_limit,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				config,
+				precompiles,
+				is_transactional,
+				f,
+				base_fee,
+				weight,
+				weight_limit,
+				proof_size_base_cost,
+			)
+		});
 
 		res
 	}
