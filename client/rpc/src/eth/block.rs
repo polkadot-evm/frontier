@@ -267,6 +267,10 @@ where
 		}
 	}
 
+	pub async fn block_transaction_receipts(&self, number: BlockNumber) -> RpcResult<Vec<Receipt>> {
+		todo!();
+	}
+
 	pub fn block_uncles_count_by_hash(&self, _: H256) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}

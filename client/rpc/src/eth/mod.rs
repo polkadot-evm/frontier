@@ -236,6 +236,10 @@ where
 		self.block_transaction_count_by_number(number).await
 	}
 
+	async fn block_transaction_receipts(&self, number: BlockNumber) -> RpcResult<Vec<Receipt>> {
+		self.block_transaction_receipts(number).await
+	}
+
 	fn block_uncles_count_by_hash(&self, hash: H256) -> RpcResult<U256> {
 		self.block_uncles_count_by_hash(hash)
 	}

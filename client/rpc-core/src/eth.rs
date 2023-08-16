@@ -85,6 +85,10 @@ pub trait EthApi {
 		number: BlockNumber,
 	) -> RpcResult<Option<U256>>;
 
+	/// Returns the receipts of a block by number or hash.
+	#[method(name = "eth_getBlockReceipts")]
+	async fn block_transaction_receipts(&self, number: BlockNumber) -> RpcResult<Vec<Receipt>>;
+	
 	/// Returns the number of uncles in a block with given hash.
 	#[method(name = "eth_getUncleCountByBlockHash")]
 	fn block_uncles_count_by_hash(&self, hash: H256) -> RpcResult<U256>;
