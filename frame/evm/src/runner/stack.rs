@@ -17,20 +17,16 @@
 
 //! EVM stack-based runner.
 
-use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError,
-};
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	ExitError, ExitReason, Transfer,
 };
-use fp_evm::{
-	CallInfo, CreateInfo, ExecutionInfo, IsPrecompileResult, Log, PrecompileSet, Vicinity,
+// Substrate
+use frame_support::traits::{
+	tokens::{currency::Currency, ExistenceRequirement},
+	Get, Time,
 };
-use frame_support::traits::{Currency, ExistenceRequirement, Get, Time};
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
@@ -39,6 +35,16 @@ use sp_std::{
 	marker::PhantomData,
 	mem,
 	vec::Vec,
+};
+// Frontier
+use fp_evm::{
+	CallInfo, CreateInfo, ExecutionInfo, IsPrecompileResult, Log, PrecompileSet, Vicinity,
+};
+
+use crate::{
+	runner::Runner as RunnerT, AccountCodes, AccountStorages, AddressMapping, BalanceOf,
+	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
+	Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -876,9 +882,25 @@ where
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use crate::mock::Test;
+	use crate::mock::{MockPrecompileSet, Test};
 	use evm::ExitSucceed;
-	use std::assert_matches::assert_matches;
+
+	macro_rules! assert_matches {
+		( $left:expr, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )? $(,)? ) => {
+			match $left {
+				$( $pattern )|+ $( if $guard )? => {}
+				ref left_val => panic!("assertion failed: `{:?}` does not match `{}`",
+					left_val, stringify!($($pattern)|+ $(if $guard)?))
+			}
+		};
+		( $left:expr, $(|)? $( $pattern:pat_param )|+ $( if $guard: expr )?, $($arg:tt)+ ) => {
+			match $left {
+				$( $pattern )|+ $( if $guard )? => {}
+				ref left_val => panic!("assertion failed: `{:?}` does not match `{}`",
+					left_val, stringify!($($pattern)|+ $(if $guard)?))
+			}
+		};
+	}
 
 	#[test]
 	fn test_evm_reentrancy() {
@@ -892,7 +914,7 @@ mod tests {
 			None,
 			None,
 			&config,
-			&(),
+			&MockPrecompileSet,
 			false,
 			|_| {
 				let res = Runner::<Test>::execute(
@@ -902,7 +924,7 @@ mod tests {
 					None,
 					None,
 					&config,
-					&(),
+					&MockPrecompileSet,
 					false,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
@@ -932,7 +954,7 @@ mod tests {
 			None,
 			None,
 			&config,
-			&(),
+			&MockPrecompileSet,
 			false,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);

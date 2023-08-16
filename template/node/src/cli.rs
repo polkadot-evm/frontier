@@ -1,18 +1,13 @@
 use crate::service::EthConfiguration;
 
 /// Available Sealing methods.
-#[derive(Debug, Copy, Clone, clap::ValueEnum)]
+#[derive(Copy, Clone, Debug, Default, clap::ValueEnum)]
 pub enum Sealing {
-	// Seal using rpc method.
+	/// Seal using rpc method.
+	#[default]
 	Manual,
-	// Seal when transaction is executed.
+	/// Seal when transaction is executed.
 	Instant,
-}
-
-impl Default for Sealing {
-	fn default() -> Sealing {
-		Sealing::Manual
-	}
 }
 
 #[derive(Debug, clap::Parser)]

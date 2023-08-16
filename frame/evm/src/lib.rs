@@ -52,7 +52,6 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(test, feature(assert_matches))]
 #![cfg_attr(feature = "runtime-benchmarks", deny(unused_crate_dependencies))]
 #![allow(clippy::too_many_arguments)]
 
@@ -67,22 +66,27 @@ mod tests;
 pub mod weights;
 
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
-		tokens::fungible::Inspect, Currency, ExistenceRequirement, FindAuthor, Get, Imbalance,
-		OnUnbalanced, SignedImbalance, Time, WithdrawReasons,
+		tokens::{
+			currency::Currency,
+			fungible::Inspect,
+			imbalance::{Imbalance, OnUnbalanced, SignedImbalance},
+			ExistenceRequirement, Fortitude, Preservation, WithdrawReasons,
+		},
+		FindAuthor, Get, Time,
 	},
 	weights::Weight,
 };
 use frame_system::RawOrigin;
 use impl_trait_for_tuples::impl_for_tuples;
 use scale_info::TypeInfo;
-use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
+use sp_core::{Decode, Encode, Hasher, RuntimeDebug, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32, DispatchErrorWithPostInfo,
+	AccountId32,
 };
-use sp_std::{cmp::min, vec::Vec};
+use sp_std::{cmp::min, vec, vec::Vec};
 
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -217,14 +221,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			let is_transactional = true;
-			let validate = true;
-			let maybe_selector: Option<[u8; 4]> = input.get(0..4).and_then(|input| input.try_into().ok());
-			let mut is_free = false;
-			if let Some(ref selector) = maybe_selector {
-				is_free = T::FreeCalls::can_send_free_call(&source, &target, selector);
-			}
-			let info = match T::Runner::call(
+			match Self::do_call(
 				source,
 				target,
 				input,
@@ -234,45 +231,12 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
-				is_transactional,
-				validate,
-				is_free,
-				T::config(),
+				true,
+				false,
 			) {
-				Ok(info) => info,
-				Err(e) => {
-					if is_free {
-						T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
-					}
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
-
-			match info.exit_reason {
-				ExitReason::Succeed(_) => {
-					Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
-				}
-				_ => {
-					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
-				}
-			};
-
-			if is_free {
-				T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
+				Ok(result) => Ok(result.info),
+				Err(e) => Err(e),
 			}
-			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
-				pays_fee: Pays::No,
-			})
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
@@ -811,7 +775,8 @@ impl<T: Config> Pallet<T> {
 
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
-		let balance = T::Currency::reducible_balance(&account_id, true);
+		let balance =
+			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 
 		(
 			Account {
@@ -828,6 +793,81 @@ impl<T: Config> Pallet<T> {
 		let pre_runtime_digests = digest.logs.iter().filter_map(|d| d.as_pre_runtime());
 
 		T::FindAuthor::find_author(pre_runtime_digests).unwrap_or_default()
+	}
+
+	/// Perform the EVM call
+	fn do_call(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+		omit_fee: bool,
+	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
+		let validate = true;
+		let maybe_selector: Option<[u8; 4]> = input.get(0..4).and_then(|input| input.try_into().ok());
+		let mut is_free = false;
+		if let Some(ref selector) = maybe_selector {
+			is_free = T::FreeCalls::can_send_free_call(&source, &target, selector);
+		}
+		let info = match T::Runner::call(
+			source,
+			target,
+			input,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			nonce,
+			access_list,
+			is_transactional,
+			validate,
+			is_free || omit_fee,
+			T::config(),
+		) {
+			Ok(info) => info,
+			Err(e) => {
+				if is_free {
+					T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
+				}
+				return Err(DispatchErrorWithPostInfo {
+					post_info: PostDispatchInfo {
+						actual_weight: Some(e.weight),
+						pays_fee: Pays::Yes,
+					},
+					error: e.error.into(),
+				});
+			}
+		};
+
+		match info.exit_reason {
+			ExitReason::Succeed(_) => {
+				Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
+			}
+			_ => {
+				Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
+			}
+		};
+
+		if is_free {
+			T::FreeCalls::on_sent_free_call(&source, &target, &maybe_selector.unwrap());
+		}
+		Ok(PostDispatchInfoWithValue {
+			info: PostDispatchInfo {
+				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
+					info.used_gas.unique_saturated_into(),
+					true,
+				)),
+				pays_fee: Pays::No,
+			},
+			value: info.value,
+			exit_reason: info.exit_reason,
+		})
 	}
 }
 
@@ -1005,4 +1045,49 @@ impl<T> OnCreate<T> for Tuple {
 			Tuple::on_create(owner, contract);
 		)*)
 	}
+}
+
+/// Allows EVM calls to be made from within runtime
+pub trait EvmCall {
+	fn call(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		gas_limit: u64,
+		is_transactional: bool,
+		is_free: bool,
+	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo>;
+}
+
+impl<T: Config> EvmCall for Pallet<T> {
+	fn call(
+		source: H160,
+		target: H160,
+		input: Vec<u8>,
+		gas_limit: u64,
+		is_transactional: bool,
+		is_free: bool,
+	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
+		let gas_price = if is_free { U256::zero() } else { T::FeeCalculator::min_gas_price().0 };
+		Self::do_call(
+			source,
+			target,
+			input,
+			U256::zero(),
+			gas_limit,
+			Some(gas_price),
+			None,
+			None,
+			vec![],
+			is_transactional,
+			true,
+		)
+	}
+}
+
+#[derive(RuntimeDebug)]
+pub struct PostDispatchInfoWithValue {
+	pub info: PostDispatchInfo,
+	pub value: Vec<u8>,
+	pub exit_reason: ExitReason,
 }

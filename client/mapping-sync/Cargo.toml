@@ -36,7 +36,7 @@ ethereum-types = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"] }
 tempfile = "3.3.0"
-tokio = { version = "1.24", features = ["sync"] }
+tokio = { workspace = true, features = ["sync"] }
 # Substrate
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true }

@@ -145,6 +145,10 @@ impl EthereumSignature {
 	}
 }
 
+impl From<ecdsa::Signature> for EthereumSignature {
+	fn from(x: ecdsa::Signature) -> Self { EthereumSignature(x) }
+}
+
 pub struct EthereumSigner([u8; 20]);
 
 impl From<[u8; 20]> for EthereumSigner {
