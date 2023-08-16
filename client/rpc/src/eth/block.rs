@@ -43,7 +43,7 @@ where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
-	BE: Backend<B>,
+	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
@@ -267,8 +267,43 @@ where
 		}
 	}
 
-	pub async fn block_transaction_receipts(&self, number: BlockNumber) -> RpcResult<Vec<Receipt>> {
-		todo!();
+	pub async fn block_transaction_receipts(
+		&self,
+		number: BlockNumber,
+	) -> RpcResult<Vec<Option<Receipt>>> {
+		let id = match frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			Some(number),
+		)
+		.await?
+		{
+			Some(id) => id,
+			None => return Ok(vec![]),
+		};
+
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
+		let block = self
+			.overrides
+			.schemas
+			.get(&schema)
+			.unwrap_or(&self.overrides.fallback)
+			.current_block(substrate_hash);
+
+		let transaction_hashes = match block {
+			Some(block) => block.transactions.iter().map(|tx| tx.hash()).collect(),
+			None => vec![],
+		};
+		let mut receipts = Vec::new();
+		for hash in transaction_hashes {
+			receipts.push(self.transaction_receipt(hash).await?);
+		}
+
+		Ok(receipts)
 	}
 
 	pub fn block_uncles_count_by_hash(&self, _: H256) -> RpcResult<U256> {

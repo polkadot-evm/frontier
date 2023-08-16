@@ -236,7 +236,10 @@ where
 		self.block_transaction_count_by_number(number).await
 	}
 
-	async fn block_transaction_receipts(&self, number: BlockNumber) -> RpcResult<Vec<Receipt>> {
+	async fn block_transaction_receipts(
+		&self,
+		number: BlockNumber,
+	) -> RpcResult<Vec<Option<Receipt>>> {
 		self.block_transaction_receipts(number).await
 	}
 
