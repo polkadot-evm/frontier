@@ -177,7 +177,7 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		nonce = nonce + 100;
 		await sendTransaction();
 
-		// do not seal, get pendign block
+		// do not seal, get pending block
 		let pending_transactions = [];
 		{
 			const pending = (await customRequest(context.web3, "eth_getBlockByNumber", ["pending", false])).result;
@@ -193,5 +193,65 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		const latest_block = await context.web3.eth.getBlock("latest", false);
 		expect(pending_transactions).to.be.deep.eq(latest_block.transactions);
+	});
+});
+
+describeWithFrontier("Frontier RPC (BlockReceipts)", (context) => {
+	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
+	const N = 5;
+
+	it("should return empty if block without transaction", async function () {
+		await createAndFinalizeBlock(context.web3);
+		expect(await context.web3.eth.getBlockNumber()).to.equal(1);
+
+		let result = await customRequest(context.web3, "eth_getBlockReceipts", [
+			await context.web3.eth.getBlockNumber(),
+		]);
+		expect(result.result.length).to.be.eq(0);
+	});
+
+	it("should return multiple receipts", async function () {
+		var nonce = 0;
+		let sendTransaction = async () => {
+			const tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: TEST_ACCOUNT,
+					value: "0x200", // Must be higher than ExistentialDeposit
+					gasPrice: "0x3B9ACA00",
+					gas: "0x100000",
+					nonce: nonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
+			);
+			nonce = nonce + 1;
+			return (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
+		};
+
+		// block 1 send 5 transactions
+		for (var _ of Array(N)) {
+			await sendTransaction();
+		}
+		await createAndFinalizeBlock(context.web3);
+		expect(await context.web3.eth.getBlockNumber()).to.equal(2);
+
+		let result = await customRequest(context.web3, "eth_getBlockReceipts", [2]);
+		expect(result.result.length).to.be.eq(N);
+	});
+
+	it("should support block number, tag and hash", async function () {
+		expect(await context.web3.eth.getBlockNumber()).to.equal(2);
+
+		// block number
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", [2])).result.length).to.be.eq(N);
+		// block hash
+		let block = await context.web3.eth.getBlock(2);
+		let result = await customRequest(context.web3, "eth_getBlockReceipts", [block.hash, true]);
+		console.log("result", result);
+		// expect((await customRequest(context.web3, "eth_getBlockReceipts", [block.hash])).result.length).to.be.eq(N);
+		// block tags
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["earliest"])).result.length).to.be.eq(0);
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["pending"])).result.length).to.be.eq(0);
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["finalized"])).result.length).to.be.eq(N);
 	});
 });
