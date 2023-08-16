@@ -240,18 +240,26 @@ describeWithFrontier("Frontier RPC (BlockReceipts)", (context) => {
 	});
 
 	it("should support block number, tag and hash", async function () {
-		expect(await context.web3.eth.getBlockNumber()).to.equal(2);
+		let block_number = await context.web3.eth.getBlockNumber();
 
 		// block number
-		expect((await customRequest(context.web3, "eth_getBlockReceipts", [2])).result.length).to.be.eq(N);
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", [block_number])).result.length).to.be.eq(N);
 		// block hash
-		let block = await context.web3.eth.getBlock(2);
-		let result = await customRequest(context.web3, "eth_getBlockReceipts", [block.hash, true]);
-		console.log("result", result);
-		// expect((await customRequest(context.web3, "eth_getBlockReceipts", [block.hash])).result.length).to.be.eq(N);
+		let block = await context.web3.eth.getBlock(block_number);
+		expect(
+			(
+				await customRequest(context.web3, "eth_getBlockReceipts", [
+					{
+						blockHash: block.hash,
+						requireCanonical: true,
+					},
+				])
+			).result.length
+		).to.be.eq(N);
 		// block tags
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["earliest"])).result.length).to.be.eq(0);
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["pending"])).result.length).to.be.eq(0);
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["finalized"])).result.length).to.be.eq(N);
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["latest"])).result.length).to.be.eq(N);
 	});
 });
