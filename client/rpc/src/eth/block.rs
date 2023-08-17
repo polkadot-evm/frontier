@@ -222,7 +222,7 @@ where
 		};
 		let mut receipts = Vec::new();
 		for hash in transaction_hashes {
-			receipts.push(self.transaction_receipt(block_info.clone(), hash).await?);
+			receipts.push(self.transaction_receipt(&block_info, hash).await?);
 		}
 
 		Ok(receipts)

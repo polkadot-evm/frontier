@@ -409,7 +409,7 @@ where
 
 	async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
 		let block_info = self.block_info_by_eth_transaction_hash(hash).await?;
-		self.transaction_receipt(block_info, hash).await
+		self.transaction_receipt(&block_info, hash).await
 	}
 
 	// ########################################################################
