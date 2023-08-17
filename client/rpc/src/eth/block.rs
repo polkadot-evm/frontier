@@ -54,13 +54,11 @@ where
 			schema: _,
 			substrate_hash,
 			is_eip1559: _,
-		} = self.block_info_by_eth_hash(hash).await?;
+			base_fee,
+		} = self.block_info_by_eth_block_hash(hash).await?;
 		let Some(substrate_hash) = substrate_hash else {
 			return Ok(None);
 		};
-
-		let client = Arc::clone(&self.client);
-		let base_fee = client.runtime_api().gas_price(substrate_hash).ok();
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -69,7 +67,7 @@ where
 					statuses.into_iter().map(Option::Some).collect(),
 					Some(hash),
 					full,
-					base_fee,
+					Some(base_fee),
 					false,
 				);
 
@@ -193,7 +191,7 @@ where
 	}
 
 	pub async fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
-		let blockinfo = self.block_info_by_eth_hash(hash).await?;
+		let blockinfo = self.block_info_by_eth_block_hash(hash).await?;
 		match blockinfo.block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
 			None => Ok(None),
@@ -211,8 +209,8 @@ where
 			)));
 		}
 
-		let blockinfo = self.block_info_by_number(number).await?;
-		match blockinfo.block {
+		let block_info = self.block_info_by_number(number).await?;
+		match block_info.block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
 			None => Ok(None),
 		}
@@ -222,14 +220,14 @@ where
 		&self,
 		number: BlockNumber,
 	) -> RpcResult<Vec<Option<Receipt>>> {
-		let blockinfo = self.block_info_by_number(number).await?;
-		let transaction_hashes = match blockinfo.block {
-			Some(block) => block.transactions.iter().map(|tx| tx.hash()).collect(),
+		let block_info = self.block_info_by_number(number).await?;
+		let transaction_hashes = match block_info.clone().block {
+			Some(ref block) => block.transactions.iter().map(|tx| tx.hash()).collect(),
 			None => vec![],
 		};
 		let mut receipts = Vec::new();
 		for hash in transaction_hashes {
-			receipts.push(self.transaction_receipt(hash).await?);
+			receipts.push(self.transaction_receipt(block_info.clone(), hash).await?);
 		}
 
 		Ok(receipts)
