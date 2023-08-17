@@ -136,7 +136,7 @@ where
 		}
 	}
 
-	pub async fn block_info_by_number(&self, number: BlockNumber) -> RpcResult<BlockInfo<B>> {
+	pub async fn block_info_by_number(&self, number: BlockNumber) -> RpcResult<BlockInfo<B::Hash>> {
 		let id = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -159,7 +159,7 @@ where
 	pub async fn block_info_by_eth_block_hash(
 		&self,
 		eth_block_hash: H256,
-	) -> RpcResult<BlockInfo<B>> {
+	) -> RpcResult<BlockInfo<B::Hash>> {
 		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -178,7 +178,7 @@ where
 	pub async fn block_info_by_eth_transaction_hash(
 		&self,
 		ethereum_tx_hash: H256,
-	) -> RpcResult<BlockInfo<B>> {
+	) -> RpcResult<BlockInfo<B::Hash>> {
 		let (eth_block_hash, _index) = match frontier_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -210,7 +210,7 @@ where
 	pub async fn block_info_by_substrate_hash(
 		&self,
 		substrate_hash: B::Hash,
-	) -> RpcResult<BlockInfo<B>> {
+	) -> RpcResult<BlockInfo<B::Hash>> {
 		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 		let handler = self
 			.overrides
@@ -714,35 +714,22 @@ where
 }
 
 /// The most commonly used block information in the rpc interfaces.
-#[derive(Clone)]
-pub struct BlockInfo<B: BlockT> {
+#[derive(Clone, Default)]
+pub struct BlockInfo<H> {
 	block: Option<EthereumBlock>,
 	receipts: Option<Vec<ethereum::ReceiptV3>>,
 	statuses: Option<Vec<TransactionStatus>>,
-	substrate_hash: B::Hash,
+	substrate_hash: H,
 	is_eip1559: bool,
 	base_fee: U256,
 }
 
-impl<B: BlockT> Default for BlockInfo<B> {
-	fn default() -> Self {
-		Self {
-			block: None,
-			receipts: None,
-			statuses: None,
-			substrate_hash: B::Hash::default(),
-			is_eip1559: true,
-			base_fee: U256::zero(),
-		}
-	}
-}
-
-impl<B: BlockT> BlockInfo<B> {
+impl<H> BlockInfo<H> {
 	pub fn new(
 		block: Option<EthereumBlock>,
 		receipts: Option<Vec<ethereum::ReceiptV3>>,
 		statuses: Option<Vec<TransactionStatus>>,
-		substrate_hash: B::Hash,
+		substrate_hash: H,
 		is_eip1559: bool,
 		base_fee: U256,
 	) -> Self {

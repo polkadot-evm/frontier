@@ -205,7 +205,7 @@ where
 
 	pub async fn transaction_receipt(
 		&self,
-		block_info: &BlockInfo<B>,
+		block_info: &BlockInfo<B::Hash>,
 		hash: H256,
 	) -> RpcResult<Option<Receipt>> {
 		let client = Arc::clone(&self.client);
