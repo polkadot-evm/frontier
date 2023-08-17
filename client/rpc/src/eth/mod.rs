@@ -178,8 +178,8 @@ where
 	pub async fn block_info_by_eth_transaction_hash(
 		&self,
 		ethereum_tx_hash: H256,
-	) -> RpcResult<BlockInfo<B::Hash>> {
-		let (eth_block_hash, _index) = match frontier_backend_client::load_transactions::<B, C>(
+	) -> RpcResult<(BlockInfo<B::Hash>, usize)> {
+		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			ethereum_tx_hash,
@@ -189,7 +189,7 @@ where
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(BlockInfo::default()),
+			None => return Ok((BlockInfo::default(), 0)),
 		};
 
 		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
@@ -201,10 +201,13 @@ where
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
 			Some(hash) => hash,
-			_ => return Ok(BlockInfo::default()),
+			_ => return Ok((BlockInfo::default(), 0)),
 		};
 
-		self.block_info_by_substrate_hash(substrate_hash).await
+		Ok((
+			self.block_info_by_substrate_hash(substrate_hash).await?,
+			index,
+		))
 	}
 
 	pub async fn block_info_by_substrate_hash(
@@ -410,8 +413,8 @@ where
 	}
 
 	async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
-		let block_info = self.block_info_by_eth_transaction_hash(hash).await?;
-		self.transaction_receipt(&block_info, hash).await
+		let (block_info, index) = self.block_info_by_eth_transaction_hash(hash).await?;
+		self.transaction_receipt(&block_info, hash, index).await
 	}
 
 	// ########################################################################

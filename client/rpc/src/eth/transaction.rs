@@ -207,22 +207,8 @@ where
 		&self,
 		block_info: &BlockInfo<B::Hash>,
 		hash: H256,
+		index: usize,
 	) -> RpcResult<Option<Receipt>> {
-		let client = Arc::clone(&self.client);
-		let backend = Arc::clone(&self.backend);
-		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-			true,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(None),
-		};
-
 		let BlockInfo {
 			block,
 			receipts,
@@ -301,7 +287,8 @@ where
 				let effective_gas_price = match transaction {
 					EthereumTransaction::Legacy(t) => t.gas_price,
 					EthereumTransaction::EIP2930(t) => t.gas_price,
-					EthereumTransaction::EIP1559(t) => client
+					EthereumTransaction::EIP1559(t) => self
+						.client
 						.runtime_api()
 						.gas_price(substrate_hash)
 						.unwrap_or_default()

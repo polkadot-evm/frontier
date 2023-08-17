@@ -216,13 +216,15 @@ where
 		number: BlockNumber,
 	) -> RpcResult<Vec<Option<Receipt>>> {
 		let block_info = self.block_info_by_number(number).await?;
-		let transaction_hashes = match block_info.clone().block {
-			Some(ref block) => block.transactions.iter().map(|tx| tx.hash()).collect(),
-			None => vec![],
-		};
 		let mut receipts = Vec::new();
-		for hash in transaction_hashes {
-			receipts.push(self.transaction_receipt(&block_info, hash).await?);
+		if let Some(statuses) = block_info.clone().statuses {
+			let transactions: Vec<(H256, usize)> = statuses
+				.iter()
+				.map(|tx| (tx.transaction_hash, tx.transaction_index as usize))
+				.collect();
+			for (hash, index) in transactions {
+				receipts.push(self.transaction_receipt(&block_info, hash, index).await?);
+			}
 		}
 
 		Ok(receipts)
