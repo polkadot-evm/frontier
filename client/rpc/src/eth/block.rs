@@ -49,12 +49,10 @@ where
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
 		let BlockInfo {
 			block,
-			receipts: _,
 			statuses,
-			schema: _,
 			substrate_hash,
-			is_eip1559: _,
 			base_fee,
+			..
 		} = self.block_info_by_eth_block_hash(hash).await?;
 		let Some(substrate_hash) = substrate_hash else {
 			return Ok(None);

@@ -32,8 +32,7 @@ use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
 use ethereum_types::{H160, H256, H512, H64, U256, U64};
-use fp_storage::EthereumStorageSchema;
-use jsonrpsee::core::{async_trait, RpcResult, __reexports::serde_json::de};
+use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_sync::SyncingService;
@@ -52,7 +51,7 @@ use fp_rpc::{
 	RuntimeStorageOverride, TransactionStatus,
 };
 
-use crate::{internal_err, public_key, signer::EthSigner};
+use crate::{frontier_backend_client, internal_err, public_key, signer::EthSigner};
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},
@@ -136,8 +135,6 @@ where
 	}
 
 	pub async fn block_info_by_number(&self, number: BlockNumber) -> RpcResult<BlockInfo<B>> {
-		use crate::frontier_backend_client;
-
 		let id = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -154,15 +151,13 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		Ok(self.block_info_by_hash(substrate_hash).await?)
+		Ok(self.block_info_by_substrate_hash(substrate_hash).await?)
 	}
 
 	pub async fn block_info_by_eth_block_hash(
 		&self,
 		eth_block_hash: H256,
 	) -> RpcResult<BlockInfo<B>> {
-		use crate::frontier_backend_client;
-
 		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -175,16 +170,14 @@ where
 			_ => return Ok(BlockInfo::default()),
 		};
 
-		Ok(self.block_info_by_hash(substrate_hash).await?)
+		Ok(self.block_info_by_substrate_hash(substrate_hash).await?)
 	}
 
 	pub async fn block_info_by_eth_transaction_hash(
 		&self,
 		ethereum_tx_hash: H256,
 	) -> RpcResult<BlockInfo<B>> {
-		use crate::frontier_backend_client;
-
-		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (eth_block_hash, _index) = match frontier_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			ethereum_tx_hash,
@@ -209,10 +202,13 @@ where
 			_ => return Ok(BlockInfo::default()),
 		};
 
-		Ok(self.block_info_by_hash(substrate_hash).await?)
+		Ok(self.block_info_by_substrate_hash(substrate_hash).await?)
 	}
 
-	pub async fn block_info_by_hash(&self, substrate_hash: B::Hash) -> RpcResult<BlockInfo<B>> {
+	pub async fn block_info_by_substrate_hash(
+		&self,
+		substrate_hash: B::Hash,
+	) -> RpcResult<BlockInfo<B>> {
 		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 		let handler = self
 			.overrides
@@ -240,7 +236,6 @@ where
 			block,
 			receipts,
 			statuses,
-			schema,
 			Some(substrate_hash),
 			is_eip1559,
 			base_fee,
@@ -716,12 +711,12 @@ where
 	}
 }
 
+/// The most commonly used block information in the rpc interfaces.
 #[derive(Clone)]
 pub struct BlockInfo<B: BlockT> {
 	block: Option<EthereumBlock>,
 	receipts: Option<Vec<ethereum::ReceiptV3>>,
 	statuses: Option<Vec<TransactionStatus>>,
-	schema: EthereumStorageSchema,
 	substrate_hash: Option<B::Hash>,
 	is_eip1559: bool,
 	base_fee: U256,
@@ -733,7 +728,6 @@ impl<B: BlockT> Default for BlockInfo<B> {
 			block: None,
 			receipts: None,
 			statuses: None,
-			schema: EthereumStorageSchema::default(),
 			substrate_hash: None,
 			is_eip1559: true,
 			base_fee: U256::zero(),
@@ -746,7 +740,6 @@ impl<B: BlockT> BlockInfo<B> {
 		block: Option<EthereumBlock>,
 		receipts: Option<Vec<ethereum::ReceiptV3>>,
 		statuses: Option<Vec<TransactionStatus>>,
-		schema: EthereumStorageSchema,
 		substrate_hash: Option<B::Hash>,
 		is_eip1559: bool,
 		base_fee: U256,
@@ -755,7 +748,6 @@ impl<B: BlockT> BlockInfo<B> {
 			block,
 			receipts,
 			statuses,
-			schema,
 			substrate_hash,
 			is_eip1559,
 			base_fee,
