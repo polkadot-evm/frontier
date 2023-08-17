@@ -91,13 +91,15 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> {
 	_marker: PhantomData<(B, BE, EC)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
+impl<B, C, P, CT, BE, A, EC> Eth<B, C, P, CT, BE, A, EC>
 where
+	A: ChainApi,
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
+	EC: EthConfig<B, C>,
 {
 	pub fn new(
 		client: Arc<C>,
@@ -151,7 +153,7 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		Ok(self.block_info_by_substrate_hash(substrate_hash).await?)
+		self.block_info_by_substrate_hash(substrate_hash).await
 	}
 
 	pub async fn block_info_by_eth_block_hash(
@@ -170,7 +172,7 @@ where
 			_ => return Ok(BlockInfo::default()),
 		};
 
-		Ok(self.block_info_by_substrate_hash(substrate_hash).await?)
+		self.block_info_by_substrate_hash(substrate_hash).await
 	}
 
 	pub async fn block_info_by_eth_transaction_hash(
@@ -202,7 +204,7 @@ where
 			_ => return Ok(BlockInfo::default()),
 		};
 
-		Ok(self.block_info_by_substrate_hash(substrate_hash).await?)
+		self.block_info_by_substrate_hash(substrate_hash).await
 	}
 
 	pub async fn block_info_by_substrate_hash(

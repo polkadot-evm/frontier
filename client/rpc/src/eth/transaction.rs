@@ -52,7 +52,7 @@ where
 		let backend = Arc::clone(&self.backend);
 		let graph = Arc::clone(&self.graph);
 
-		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -61,7 +61,7 @@ where
 		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some((hash, index)) => (hash, index as usize),
+			Some((eth_block_hash, index)) => (eth_block_hash, index as usize),
 			None => {
 				let api = client.runtime_api();
 				let best_block = client.info().best_hash;
@@ -127,7 +127,7 @@ where
 			statuses,
 			base_fee,
 			..
-		} = self.block_info_by_eth_block_hash(hash).await?;
+		} = self.block_info_by_eth_block_hash(eth_block_hash).await?;
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 				block.transactions[index].clone(),
@@ -210,7 +210,6 @@ where
 	) -> RpcResult<Option<Receipt>> {
 		let client = Arc::clone(&self.client);
 		let backend = Arc::clone(&self.backend);
-
 		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
@@ -231,7 +230,6 @@ where
 			substrate_hash,
 			..
 		} = block_info.clone();
-
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
 				let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
