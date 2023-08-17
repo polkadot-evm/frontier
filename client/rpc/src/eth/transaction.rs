@@ -269,8 +269,6 @@ where
 
 	pub async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
 		let client = Arc::clone(&self.client);
-		let overrides = Arc::clone(&self.overrides);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 
 		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
@@ -298,19 +296,15 @@ where
 			_ => return Ok(None),
 		};
 
-		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-		let handler = overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&overrides.fallback);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
-		let statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.await;
-
-		let receipts = handler.current_receipts(substrate_hash);
-		let is_eip1559 = handler.is_eip1559(substrate_hash);
+		use crate::eth::BlockInfo;
+		let BlockInfo {
+			block,
+			receipts,
+			statuses,
+			schema: _,
+			substrate_hash: _,
+			is_eip1559,
+		} = self.block_info_by_hash(substrate_hash).await?;
 
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
