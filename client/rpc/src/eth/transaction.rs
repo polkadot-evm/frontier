@@ -228,11 +228,9 @@ where
 			block,
 			receipts,
 			statuses,
+			substrate_hash,
 			..
 		} = block_info.clone();
-		let Some(substrate_hash) = block_info.substrate_hash else {
-			return Ok(None);
-		};
 
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {

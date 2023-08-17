@@ -236,7 +236,7 @@ where
 			block,
 			receipts,
 			statuses,
-			Some(substrate_hash),
+			substrate_hash,
 			is_eip1559,
 			base_fee,
 		))
@@ -717,7 +717,7 @@ pub struct BlockInfo<B: BlockT> {
 	block: Option<EthereumBlock>,
 	receipts: Option<Vec<ethereum::ReceiptV3>>,
 	statuses: Option<Vec<TransactionStatus>>,
-	substrate_hash: Option<B::Hash>,
+	substrate_hash: B::Hash,
 	is_eip1559: bool,
 	base_fee: U256,
 }
@@ -728,7 +728,7 @@ impl<B: BlockT> Default for BlockInfo<B> {
 			block: None,
 			receipts: None,
 			statuses: None,
-			substrate_hash: None,
+			substrate_hash: B::Hash::default(),
 			is_eip1559: true,
 			base_fee: U256::zero(),
 		}
@@ -740,7 +740,7 @@ impl<B: BlockT> BlockInfo<B> {
 		block: Option<EthereumBlock>,
 		receipts: Option<Vec<ethereum::ReceiptV3>>,
 		statuses: Option<Vec<TransactionStatus>>,
-		substrate_hash: Option<B::Hash>,
+		substrate_hash: B::Hash,
 		is_eip1559: bool,
 		base_fee: U256,
 	) -> Self {

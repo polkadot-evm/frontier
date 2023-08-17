@@ -8,6 +8,7 @@
     "fmt": "prettier ./tests --write",
     "build": "truffle compile",
     "test": "mocha -r ts-node/register 'tests/**/*.ts'",
+    "s": "mocha -r ts-node/register 'tests/**/test-block.ts'",
     "test-sql": "FRONTIER_BACKEND_TYPE='sql' mocha -r ts-node/register 'tests/**/*.ts'"
   },
   "author": "",

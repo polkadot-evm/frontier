@@ -54,9 +54,6 @@ where
 			base_fee,
 			..
 		} = self.block_info_by_eth_block_hash(hash).await?;
-		let Some(substrate_hash) = substrate_hash else {
-			return Ok(None);
-		};
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
