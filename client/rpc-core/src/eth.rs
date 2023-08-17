@@ -90,7 +90,7 @@ pub trait EthApi {
 	async fn block_transaction_receipts(
 		&self,
 		number: BlockNumber,
-	) -> RpcResult<Vec<Option<Receipt>>>;
+	) -> RpcResult<Option<Vec<Receipt>>>;
 
 	/// Returns the number of uncles in a block with given hash.
 	#[method(name = "eth_getUncleCountByBlockHash")]

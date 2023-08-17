@@ -359,7 +359,7 @@ where
 	async fn block_transaction_receipts(
 		&self,
 		number: BlockNumber,
-	) -> RpcResult<Vec<Option<Receipt>>> {
+	) -> RpcResult<Option<Vec<Receipt>>> {
 		self.block_transaction_receipts(number).await
 	}
 

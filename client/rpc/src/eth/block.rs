@@ -214,20 +214,24 @@ where
 	pub async fn block_transaction_receipts(
 		&self,
 		number: BlockNumber,
-	) -> RpcResult<Vec<Option<Receipt>>> {
+	) -> RpcResult<Option<Vec<Receipt>>> {
 		let block_info = self.block_info_by_number(number).await?;
+		let Some(statuses) = block_info.clone().statuses else {
+			return Ok(None);
+		};
+
 		let mut receipts = Vec::new();
-		if let Some(statuses) = block_info.clone().statuses {
-			let transactions: Vec<(H256, usize)> = statuses
-				.iter()
-				.map(|tx| (tx.transaction_hash, tx.transaction_index as usize))
-				.collect();
-			for (hash, index) in transactions {
-				receipts.push(self.transaction_receipt(&block_info, hash, index).await?);
+		let transactions: Vec<(H256, usize)> = statuses
+			.iter()
+			.map(|tx| (tx.transaction_hash, tx.transaction_index as usize))
+			.collect();
+		for (hash, index) in transactions {
+			if let Some(receipt) = self.transaction_receipt(&block_info, hash, index).await? {
+				receipts.push(receipt);
 			}
 		}
 
-		Ok(receipts)
+		Ok(Some(receipts))
 	}
 
 	pub fn block_uncles_count_by_hash(&self, _: H256) -> RpcResult<U256> {

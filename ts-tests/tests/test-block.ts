@@ -258,7 +258,7 @@ describeWithFrontier("Frontier RPC (BlockReceipts)", (context) => {
 		).to.be.eq(N);
 		// block tags
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["earliest"])).result.length).to.be.eq(0);
-		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["pending"])).result.length).to.be.eq(0);
+		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["pending"])).result).to.be.null;
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["finalized"])).result.length).to.be.eq(N);
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["latest"])).result.length).to.be.eq(N);
 	});
