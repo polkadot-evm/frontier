@@ -167,6 +167,9 @@ pub mod pallet {
 		/// Gas limit Pov size ratio.
 		type GasLimitPovSizeRatio: Get<u64>;
 
+		/// Gas limit storage growth ratio.
+		type GasLimitStorageGrowthRatio: Get<u64>;
+
 		/// Get the timestamp for the current block.
 		type Timestamp: Time;
 
