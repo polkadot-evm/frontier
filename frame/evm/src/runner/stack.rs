@@ -32,7 +32,7 @@ use frame_support::{
 	weights::Weight,
 };
 use sp_core::{H160, H256, U256};
-use sp_runtime::{traits::UniqueSaturatedInto, DispatchError};
+use sp_runtime::traits::UniqueSaturatedInto;
 use sp_std::{
 	boxed::Box,
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
@@ -244,8 +244,14 @@ where
 			origin: source,
 		};
 
-		// TODO get Storage Limit Quota for the transaction
-		let storage_limit = Some(u64::MAX);
+		// Compute the storage limit based on the gas limit and the storage growth ratio.
+		let storage_growth_ratio = T::GasLimitStorageGrowthRatio::get();
+		let storage_limit = if storage_growth_ratio > 0 {
+			let storage_limit = gas_limit.saturating_div(storage_growth_ratio);
+			Some(storage_limit)
+		} else {
+			None
+		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
 		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info, storage_limit);
@@ -253,21 +259,24 @@ where
 
 		let (reason, retv) = f(&mut executor);
 
-		let storage_usage = if let Some(storage_meter) = executor.state().substate.storage_meter {
-			storage_meter.usage()
-		} else {
-			0
+		// Compute the storage gas cost based on the storage growth.
+		let storage_gas = match executor.state().substate.storage_meter {
+			Some(storage_meter) => storage_meter.storage_to_gas(storage_growth_ratio),
+			None => 0,
 		};
 
 		// Post execution.
 		let used_gas = executor.used_gas();
 		let effective_gas = match executor.state().weight_info() {
 			Some(weight_info) => U256::from(sp_std::cmp::max(
-				used_gas,
-				weight_info
-					.proof_size_usage
-					.unwrap_or_default()
-					.saturating_mul(T::GasLimitPovSizeRatio::get()),
+				sp_std::cmp::max(
+					used_gas,
+					weight_info
+						.proof_size_usage
+						.unwrap_or_default()
+						.saturating_mul(T::GasLimitPovSizeRatio::get()),
+				),
+				storage_gas,
 			)),
 			_ => used_gas.into(),
 		};

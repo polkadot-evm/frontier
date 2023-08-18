@@ -44,8 +44,8 @@ impl StorageMeter {
 	}
 
 	/// Map storage usage to the gas cost.
-	pub fn gas_cost(&self) -> u64 {
-		0
+	pub fn storage_to_gas(&self, ratio: u64) -> u64 {
+		self.usage.saturating_mul(ratio)
 	}
 
 	/// Checks if the current usage of storage is within the limit.

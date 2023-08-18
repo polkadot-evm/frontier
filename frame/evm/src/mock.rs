@@ -131,10 +131,13 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 }
 const BLOCK_GAS_LIMIT: u64 = 150_000_000;
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+/// The maximum storage growth per block in bytes (40 Kb).
+const MAX_STORAGE_GROWTH: u64 = 40 * 1024;
 
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
 	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+	pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
@@ -160,6 +163,7 @@ impl crate::Config for Test {
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 }
