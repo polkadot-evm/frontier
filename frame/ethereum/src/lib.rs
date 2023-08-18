@@ -364,6 +364,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
+		/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+		fn proof_size_base_cost(transaction: &Transaction) -> u64 {
+			transaction
+				.encoded_size()
+				// pallet index + call index
+				.saturating_add(2) as u64
+		}
+
 	pub fn transaction_weight(transaction_data: &TransactionData) -> (Option<Weight>, Option<u64>) {
 		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 			transaction_data.gas_limit.unique_saturated_into(),
@@ -376,7 +384,6 @@ impl<T: Config> Pallet<T> {
 			_ => (None, None),
 		}
 	}
-
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -520,8 +527,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|e| e.0)?;
 
 		use pallet_evm::OnChargeEVMTransaction;
-		let max_withdraw = check_transaction.max_withdraw_amount()
-			.map_err(|e| e.0)?;
+		let max_withdraw = check_transaction.max_withdraw_amount().map_err(|e| e.0)?;
 		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
 			.map_err(|_| InvalidTransaction::Payment)?;
 
@@ -864,6 +870,30 @@ impl<T: Config> Pallet<T> {
 		}
 	}
 
+	/// Estimated maximal SCALE encoded size of an ethereum transaction
+	pub fn max_transaction_encoded_size(input: &[u8], access_list: &[(H160, Vec<H256>)]) -> u64 {
+		Self::proof_size_base_cost(&Transaction::EIP1559(ethereum::EIP1559Transaction {
+			chain_id: 0,
+			nonce: Default::default(),
+			max_priority_fee_per_gas: Default::default(),
+			max_fee_per_gas: Default::default(),
+			gas_limit: Default::default(),
+			action: ethereum::TransactionAction::Call(Default::default()),
+			value: Default::default(),
+			input: input.to_vec(),
+			access_list: access_list
+				.iter()
+				.map(|(address, storage_keys)| AccessListItem {
+					address: *address,
+					storage_keys: storage_keys.to_vec(),
+				})
+				.collect(),
+			odd_y_parity: false,
+			r: Default::default(),
+			s: Default::default(),
+		}))
+	}
+
 	/// Validate an Ethereum transaction already in block
 	///
 	/// This function must be called during the pre-dispatch phase
@@ -897,8 +927,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		use pallet_evm::OnChargeEVMTransaction;
-		let max_withdraw = check_transaction.max_withdraw_amount()
-			.map_err(|e| e.0)?;
+		let max_withdraw = check_transaction.max_withdraw_amount().map_err(|e| e.0)?;
 		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
 			.map_err(|_| InvalidTransaction::Payment)?;
 
