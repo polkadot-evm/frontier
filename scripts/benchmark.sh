@@ -33,8 +33,9 @@ function bench {
         --extrinsic="${2}" \
         --execution=wasm \
         --wasm-execution=compiled \
+        --header=HEADER-APACHE2 \
         --output=weights.rs \
-        --template=./benchmarking/frame-weight-template.hbs
+        --template=./.maintain/frame-weight-template.hbs
 }
 
 if  [[ $# -eq 1 && "${1}" == "--help" ]]; then
