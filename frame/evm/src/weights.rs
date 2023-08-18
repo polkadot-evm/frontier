@@ -48,12 +48,47 @@ use core::marker::PhantomData;
 
 /// Weight functions needed for pallet_evm.
 pub trait WeightInfo {
+	fn runner_execute(x: u32, ) -> Weight;
 	fn withdraw() -> Weight;
 }
 
 /// Weights for pallet_evm using the Substrate node and recommended hardware.
 pub struct SubstrateWeight<T>(PhantomData<T>);
 impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
+	/// Storage: BaseFee BaseFeePerGas (r:1 w:0)
+	/// Proof: BaseFee BaseFeePerGas (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: System Account (r:2 w:1)
+	/// Proof: System Account (max_values: None, max_size: Some(116), added: 2591, mode: MaxEncodedLen)
+	/// Storage: EVMChainId ChainId (r:1 w:0)
+	/// Proof: EVMChainId ChainId (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: EVM AccountCodes (r:2 w:0)
+	/// Proof Skipped: EVM AccountCodes (max_values: None, max_size: None, mode: Measured)
+	/// Storage: System Number (r:1 w:0)
+	/// Proof: System Number (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: System ExecutionPhase (r:1 w:0)
+	/// Proof: System ExecutionPhase (max_values: Some(1), max_size: Some(5), added: 500, mode: MaxEncodedLen)
+	/// Storage: System EventCount (r:1 w:1)
+	/// Proof: System EventCount (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: System Events (r:1 w:1)
+	/// Proof Skipped: System Events (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: System Digest (r:1 w:0)
+	/// Proof Skipped: System Digest (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: EVM AccountStorages (r:1 w:0)
+	/// Proof Skipped: EVM AccountStorages (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Balances TotalIssuance (r:1 w:1)
+	/// Proof: Balances TotalIssuance (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// The range of component `x` is `[1, 10000000]`.
+	fn runner_execute(x: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `913`
+		//  Estimated: `6853`
+		// Minimum execution time: 20_400_192_000 picoseconds.
+		Weight::from_parts(20_767_272_339, 6853)
+			// Standard Error: 33
+			.saturating_add(Weight::from_parts(42, 0).saturating_mul(x.into()))
+			.saturating_add(T::DbWeight::get().reads(13_u64))
+			.saturating_add(T::DbWeight::get().writes(4_u64))
+	}
 	fn withdraw() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
@@ -61,10 +96,45 @@ impl<T: frame_system::Config> WeightInfo for SubstrateWeight<T> {
 		// Minimum execution time: 2_000_000 picoseconds.
 		Weight::from_parts(2_000_000, 0)
 	}
+	
 }
 
 // For backwards compatibility and tests
 impl WeightInfo for () {
+	/// Storage: BaseFee BaseFeePerGas (r:1 w:0)
+	/// Proof: BaseFee BaseFeePerGas (max_values: Some(1), max_size: Some(32), added: 527, mode: MaxEncodedLen)
+	/// Storage: System Account (r:2 w:1)
+	/// Proof: System Account (max_values: None, max_size: Some(116), added: 2591, mode: MaxEncodedLen)
+	/// Storage: EVMChainId ChainId (r:1 w:0)
+	/// Proof: EVMChainId ChainId (max_values: Some(1), max_size: Some(8), added: 503, mode: MaxEncodedLen)
+	/// Storage: EVM AccountCodes (r:2 w:0)
+	/// Proof Skipped: EVM AccountCodes (max_values: None, max_size: None, mode: Measured)
+	/// Storage: System Number (r:1 w:0)
+	/// Proof: System Number (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: System ExecutionPhase (r:1 w:0)
+	/// Proof: System ExecutionPhase (max_values: Some(1), max_size: Some(5), added: 500, mode: MaxEncodedLen)
+	/// Storage: System EventCount (r:1 w:1)
+	/// Proof: System EventCount (max_values: Some(1), max_size: Some(4), added: 499, mode: MaxEncodedLen)
+	/// Storage: System Events (r:1 w:1)
+	/// Proof Skipped: System Events (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: System Digest (r:1 w:0)
+	/// Proof Skipped: System Digest (max_values: Some(1), max_size: None, mode: Measured)
+	/// Storage: EVM AccountStorages (r:1 w:0)
+	/// Proof Skipped: EVM AccountStorages (max_values: None, max_size: None, mode: Measured)
+	/// Storage: Balances TotalIssuance (r:1 w:1)
+	/// Proof: Balances TotalIssuance (max_values: Some(1), max_size: Some(16), added: 511, mode: MaxEncodedLen)
+	/// The range of component `x` is `[1, 10000000]`.
+	fn runner_execute(x: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `913`
+		//  Estimated: `6853`
+		// Minimum execution time: 20_400_192_000 picoseconds.
+		Weight::from_parts(20_767_272_339, 6853)
+			// Standard Error: 33
+			.saturating_add(Weight::from_parts(42, 0).saturating_mul(x.into()))
+			.saturating_add(RocksDbWeight::get().reads(13_u64))
+			.saturating_add(RocksDbWeight::get().writes(4_u64))
+	}
 	fn withdraw() -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
