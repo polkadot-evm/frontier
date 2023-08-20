@@ -43,16 +43,16 @@ use sp_std::{
 // Frontier
 use fp_evm::{
 	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
-	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_KEY_SIZE,
+	ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE,
+	WRITE_PROOF_SIZE,
 };
 
 use super::meter::StorageMeter;
 use crate::{
-	runner::{meter::STORAGE_SIZE, Runner as RunnerT},
-	AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping, BalanceOf,
-	BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate,
-	Pallet, RunnerError,
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
+	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
+	OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -287,7 +287,7 @@ where
 		let (reason, retv) = f(&mut executor);
 
 		// Compute the storage gas cost based on the storage growth.
-		let storage_gas = match executor.state().substate.storage_meter {
+		let storage_gas = match executor.state().storage_meter {
 			Some(storage_meter) => storage_meter.storage_to_gas(storage_growth_ratio),
 			None => 0,
 		};
@@ -623,7 +623,6 @@ struct SubstrateStackSubstate<'config> {
 	deletes: BTreeSet<H160>,
 	logs: Vec<Log>,
 	parent: Option<Box<SubstrateStackSubstate<'config>>>,
-	storage_meter: Option<StorageMeter>,
 }
 
 impl<'config> SubstrateStackSubstate<'config> {
@@ -636,18 +635,11 @@ impl<'config> SubstrateStackSubstate<'config> {
 	}
 
 	pub fn enter(&mut self, gas_limit: u64, is_static: bool) {
-		let storage_meter = if let Some(meter) = self.storage_meter {
-			Some(StorageMeter::new(meter.available()))
-		} else {
-			None
-		};
-
 		let mut entering = Self {
 			metadata: self.metadata.spit_child(gas_limit, is_static),
 			parent: None,
 			deletes: BTreeSet::new(),
 			logs: Vec::new(),
-			storage_meter,
 		};
 		mem::swap(&mut entering, self);
 
@@ -663,14 +655,6 @@ impl<'config> SubstrateStackSubstate<'config> {
 		self.metadata.swallow_commit(exited.metadata)?;
 		self.logs.append(&mut exited.logs);
 		self.deletes.append(&mut exited.deletes);
-
-		if let Some(storage_meter) = self.storage_meter.as_mut() {
-			storage_meter.merge(exited.storage_meter);
-			// TODO Check for storage limit here ??
-			storage_meter
-				.check_limit()
-				.map_err(|_| ExitError::OutOfGas)?;
-		}
 
 		sp_io::storage::commit_transaction();
 		Ok(())
@@ -744,6 +728,7 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	original_storage: BTreeMap<(H160, H256), H256>,
 	recorded: Recorded,
 	weight_info: Option<WeightInfo>,
+	storage_meter: Option<StorageMeter>,
 	_marker: PhantomData<T>,
 }
 
@@ -755,7 +740,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		weight_info: Option<WeightInfo>,
 		storage_limit: Option<u64>,
 	) -> Self {
-		let storage_meter = storage_limit.map(|limit| StorageMeter::new(limit));
+		let storage_meter = storage_limit.map(StorageMeter::new);
 		Self {
 			vicinity,
 			substate: SubstrateStackSubstate {
@@ -763,12 +748,12 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 				deletes: BTreeSet::new(),
 				logs: Vec::new(),
 				parent: None,
-				storage_meter,
 			},
 			_marker: PhantomData,
 			original_storage: BTreeMap::new(),
 			recorded: Default::default(),
 			weight_info,
+			storage_meter,
 		}
 	}
 
@@ -917,9 +902,8 @@ where
 		// We cache the current value if this is the first time we modify it
 		// in the transaction.
 		use sp_std::collections::btree_map::Entry::Vacant;
-		let original = <AccountStorages<T>>::get(address, index);
-
 		if let Vacant(e) = self.original_storage.entry((address, index)) {
+			let original = <AccountStorages<T>>::get(address, index);
 			// No need to cache if same value.
 			if original != value {
 				e.insert(original);
@@ -944,15 +928,6 @@ where
 				value,
 			);
 			<AccountStorages<T>>::insert(address, index, value);
-
-			// If the original value was zero, and the new value is non-zero,
-			// then this is a new storage entry. We need to record the storage
-			// size.
-			if original.is_zero() {
-				if let Some(storage_meter) = self.substate.storage_meter.as_mut() {
-					storage_meter.record(STORAGE_SIZE);
-				}
-			}
 		}
 	}
 
@@ -976,14 +951,6 @@ where
 			code.len(),
 			address
 		);
-
-		if let Some(storage_meter) = self.substate.storage_meter.as_mut() {
-			let storage_usage = code.len() as u64;
-
-			// TODO record storage usage for new account code creation
-			storage_meter.record(storage_usage);
-		}
-
 		Pallet::<T>::create_account(address, code);
 	}
 
@@ -1085,6 +1052,16 @@ where
 				}
 				evm::ExternalOperation::Write(len) => {
 					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
+
+					if let Some(storage_meter) = self.storage_meter.as_mut() {
+						// Record the number of bytes written to storage when deploying a contract.
+						let storage_growth = ACCOUNT_CODES_KEY_SIZE
+							+ ACCOUNT_CODES_METADATA_PROOF_SIZE
+							+ len.as_u64();
+						storage_meter
+							.record(storage_growth)
+							.map_err(|_| ExitError::OutOfGas)?;
+					}
 				}
 			};
 		}
@@ -1094,9 +1071,15 @@ where
 	fn record_external_dynamic_opcode_cost(
 		&mut self,
 		opcode: Opcode,
-		_gas_cost: GasCost,
+		gas_cost: GasCost,
 		target: evm::gasometer::StorageTarget,
 	) -> Result<(), ExitError> {
+		if let Some(storage_meter) = self.storage_meter.as_mut() {
+			storage_meter
+				.record_dynamic_opcode_cost(opcode, gas_cost)
+				.map_err(|_| ExitError::OutOfGas)?;
+		}
+
 		// If account code or storage slot is in the overlay it is already accounted for and early exit
 		let mut accessed_storage: Option<AccessedStorage> = match target {
 			StorageTarget::Address(address) => {
