@@ -1083,8 +1083,8 @@ where
 				evm::ExternalOperation::IsEmpty => {
 					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?
 				}
-				evm::ExternalOperation::Write => {
-					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?
+				evm::ExternalOperation::Write(len) => {
+					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
 				}
 			};
 		}
