@@ -1,5 +1,6 @@
-/// The size of a storage key and storage value in bytes.
-pub const STORAGE_SIZE: u64 = 64;
+use evm::{gasometer::GasCost, Opcode};
+use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
+use sp_core::H256;
 
 /// A meter for tracking the storage growth.
 #[derive(Clone, Copy)]
@@ -21,9 +22,33 @@ impl StorageMeter {
 	}
 
 	/// Records the given amount of storage usage. The amount is added to the current usage.
-	/// The usage will saturate at `u64::MAX`.
-	pub fn record(&mut self, amount: u64) {
-		self.usage = self.usage.saturating_add(amount);
+	/// If the limit is reached, an error is returned.
+	pub fn record(&mut self, amount: u64) -> Result<(), MeterError> {
+		self.usage = self.usage.checked_add(amount).ok_or_else(|| {
+			self.usage = self.limit;
+			MeterError::LimitExceeded
+		})?;
+
+		if self.usage > self.limit {
+			return Err(MeterError::LimitExceeded);
+		}
+		Ok(())
+	}
+
+	/// Records the storage growth for the given Opcode.
+	pub fn record_dynamic_opcode_cost(
+		&mut self,
+		_opcode: Opcode,
+		gas_cost: GasCost,
+	) -> Result<(), MeterError> {
+		match gas_cost {
+			GasCost::SStore { original, new, .. }
+				if original == H256::default() && !new.is_zero() =>
+			{
+				self.record(ACCOUNT_STORAGE_PROOF_SIZE)
+			}
+			_ => Ok(()),
+		}
 	}
 
 	/// Returns the current usage of storage.
@@ -31,106 +56,100 @@ impl StorageMeter {
 		self.usage
 	}
 
+	/// Returns the limit of storage.
+	pub fn limit(&self) -> u64 {
+		self.limit
+	}
+
 	/// Returns the amount of storage that is available before the limit is reached.
 	pub fn available(&self) -> u64 {
 		self.limit.saturating_sub(self.usage)
-	}
-
-	/// Merge the given storage meter into the current one.
-	pub fn merge(&mut self, other: Option<Self>) {
-		self.usage = self
-			.usage
-			.saturating_add(other.map_or(0, |meter| meter.usage));
 	}
 
 	/// Map storage usage to the gas cost.
 	pub fn storage_to_gas(&self, ratio: u64) -> u64 {
 		self.usage.saturating_mul(ratio)
 	}
-
-	/// Checks if the current usage of storage is within the limit.
-	///
-	/// # Errors
-	///
-	/// Returns `MeterError::ResourceLimitExceeded` if the limit has been exceeded.
-	pub fn check_limit(&self) -> Result<(), MeterError> {
-		if self.usage > self.limit {
-			Err(MeterError::LimitExceeded)
-		} else {
-			Ok(())
-		}
-	}
 }
-
-// Generate a comprehensive unit test suite for the StorageMeter:
-// - Make sure to cover all the edge cases.
-// - Group the tests into a module so that they are not included in the crate documentation.
-// - Group similar or related tests in seperate functions.
-// - Document the different tests explaining the use case
 #[cfg(test)]
 mod test {
 	use super::*;
 
-	#[cfg(test)]
-	mod tests {
-		use super::*;
+	/// Tests the basic functionality of StorageMeter.
+	#[test]
+	fn test_basic_functionality() {
+		let limit = 100;
+		let mut meter = StorageMeter::new(limit);
 
-		/// Tests the basic functionality of StorageMeter.
-		#[test]
-		fn test_basic_functionality() {
-			let limit = 100;
-			let mut meter = StorageMeter::new(limit);
+		assert_eq!(meter.usage(), 0);
+		assert_eq!(meter.limit(), limit);
 
-			assert_eq!(meter.usage(), 0);
-			assert_eq!(meter.available(), limit);
+		let amount = 10;
+		meter.record(amount).unwrap();
+		assert_eq!(meter.usage(), amount);
+	}
 
-			let amount = 10;
-			meter.record(amount);
-			assert_eq!(meter.usage(), amount);
-			assert_eq!(meter.available(), limit - amount);
+	/// Tests the behavior of StorageMeter when reaching the limit.
+	#[test]
+	fn test_reaching_limit() {
+		let limit = 100;
+		let mut meter = StorageMeter::new(limit);
 
-			assert!(meter.check_limit().is_ok());
-		}
+		// Approaching the limit without exceeding
+		meter.record(limit - 1).unwrap();
+		assert_eq!(meter.usage(), limit - 1);
 
-		/// Tests the behavior of StorageMeter when reaching the limit.
-		#[test]
-		fn test_reaching_limit() {
-			let limit = 100;
-			let mut meter = StorageMeter::new(limit);
+		// Reaching the limit exactly
+		meter.record(1).unwrap();
+		assert_eq!(meter.usage(), limit);
 
-			// Approaching the limit without exceeding
-			meter.record(limit - 1);
-			assert_eq!(meter.usage(), limit - 1);
-			assert!(meter.check_limit().is_ok());
+		// Exceeding the limit
+		let res = meter.record(1);
+		assert_eq!(meter.usage(), limit + 1);
+		assert!(res.is_err());
+		assert_eq!(res, Err(MeterError::LimitExceeded));
+	}
 
-			// Reaching the limit exactly
-			meter.record(1);
-			assert_eq!(meter.usage(), limit);
-			assert!(meter.check_limit().is_ok());
+	/// Tests the record of dynamic opcode cost.
+	#[test]
+	fn test_record_dynamic_opcode_cost() {
+		let limit = 200;
+		let mut meter = StorageMeter::new(limit);
 
-			// Exceeding the limit
-			meter.record(1);
-			assert_eq!(meter.usage(), limit + 1);
-			assert_eq!(meter.check_limit(), Err(MeterError::LimitExceeded));
-		}
+		// Existing storage entry is updated. No change in storage growth.
+		let gas_cost = GasCost::SStore {
+			original: H256::from_low_u64_be(1),
+			current: Default::default(),
+			new: H256::from_low_u64_be(2),
+			target_is_cold: false,
+		};
+		meter
+			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost)
+			.unwrap();
+		assert_eq!(meter.usage(), 0);
 
-		/// Tests the behavior of StorageMeter with saturation.
-		#[test]
-		fn test_saturation_behavior() {
-			let limit = u64::MAX;
-			let mut meter = StorageMeter::new(limit);
+		// New storage entry is created. Storage growth is recorded.
+		let gas_cost = GasCost::SStore {
+			original: H256::default(),
+			current: Default::default(),
+			new: H256::from_low_u64_be(1),
+			target_is_cold: false,
+		};
+		meter
+			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost)
+			.unwrap();
+		assert_eq!(meter.usage(), ACCOUNT_STORAGE_PROOF_SIZE);
 
-			// Reaching the limit
-			meter.record(limit);
-			assert_eq!(meter.usage(), limit);
-			assert_eq!(meter.available(), 0);
-			assert!(meter.check_limit().is_ok());
-
-			// Exceeding the limit using saturating_add
-			meter.record(1);
-			assert_eq!(meter.usage(), limit);
-			assert_eq!(meter.available(), 0);
-			assert!(meter.check_limit().is_ok());
-		}
+		// New storage entry is created. Storage growth is recorded. The limit is reached.
+		let gas_cost = GasCost::SStore {
+			original: H256::default(),
+			current: Default::default(),
+			new: H256::from_low_u64_be(2),
+			target_is_cold: false,
+		};
+		let res = meter.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost);
+		assert!(res.is_err());
+		assert_eq!(res, Err(MeterError::LimitExceeded));
+		assert_eq!(meter.usage(), 232);
 	}
 }
