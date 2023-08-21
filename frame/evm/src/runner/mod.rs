@@ -15,8 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-pub mod stack;
 pub mod meter;
+pub mod stack;
 
 use crate::{Config, Weight};
 use fp_evm::{CallInfo, CreateInfo};

@@ -628,7 +628,8 @@ mod storage_growth_test {
 	use super::*;
 	use std::env;
 
-	pub const STORAGE_GROWTH_TEST_CONTRACT: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
+	pub const STORAGE_GROWTH_TEST_CONTRACT: &str =
+		include_str!("./res/proof_size_test_contract_bytecode.txt");
 
 	fn create_erc20_test_contract(
 		gas_limit: u64,
