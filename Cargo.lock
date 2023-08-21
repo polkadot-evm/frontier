@@ -2055,7 +2055,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "evm"
 version = "0.39.1"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#8ea64228cd02da080c2b3053a77a21bdd3871b36"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2075,7 +2075,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.39.0"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#8ea64228cd02da080c2b3053a77a21bdd3871b36"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2086,7 +2086,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.39.0"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#8ea64228cd02da080c2b3053a77a21bdd3871b36"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2097,7 +2097,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.39.0"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#8ea64228cd02da080c2b3053a77a21bdd3871b36"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
 dependencies = [
  "auto_impl",
  "environmental",

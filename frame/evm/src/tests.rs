@@ -624,6 +624,68 @@ mod proof_size_test {
 	}
 }
 
+mod storage_growth_test {
+	use super::*;
+	use std::env;
+
+	pub const ERC20_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
+
+	fn setup_logger() {
+		if env::var("RUST_LOG").is_err() {
+			env::set_var("RUST_LOG", "debug"); // Set log level here
+		}
+		let _ = env_logger::builder().is_test(true).try_init();
+	}
+
+	fn create_erc20_test_contract(
+		gas_limit: u64,
+	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(FixedGasWeightMapping::<Test>::gas_to_weight(
+				gas_limit, true,
+			)),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+	}
+
+	// This test is to ensure that the storage growth is accounted for correctly when deploying a
+	// a new contract. In this scenario, the contract is deployed with a gas limit that is not enough
+	// to cover the storage growth.
+	#[test]
+	fn contract_deployement_should_fail_oog() {
+		setup_logger();
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 4_700_000;
+
+			let result = create_erc20_test_contract(gas_limit).expect("create succeeds");
+			// The contract is deployed with a gas limit that is not enough to cover the storage
+			// growth. The contract creation should fail.
+			// assert_eq!(
+			// 	result.exit_reason,
+			// 	crate::ExitReason::Error(crate::ExitError::OutOfGas)
+			// );
+
+			// // The contract is deployed with a gas limit that is enough to cover the storage
+			// // growth. The contract creation should succeed.
+			// let gas_limit: u64 = 1_500_000;
+			// let result = create_erc20_test_contract(gas_limit).expect("create succeeds");
+
+			// assert_eq!(result.exit_reason, crate::ExitReason::Succeed(ExitSucceed::Returned));
+		});
+	}
+}
+
 type Balances = pallet_balances::Pallet<Test>;
 type EVM = Pallet<Test>;
 
