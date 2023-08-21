@@ -81,8 +81,11 @@ where
 			return Err(err);
 		}
 
-		handle
-			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()), None)?;
+		handle.record_external_cost(
+			Some(info.weight.ref_time()),
+			Some(info.weight.proof_size()),
+			None,
+		)?;
 
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
