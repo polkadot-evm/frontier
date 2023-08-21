@@ -1234,7 +1234,7 @@ where
 		}
 
 		// Record cost
-		self.record_external_cost(None, Some(opcode_proof_size.low_u64()))?;
+		self.record_external_cost(None, Some(opcode_proof_size.low_u64()), None)?;
 		Ok(())
 	}
 
@@ -1242,6 +1242,7 @@ where
 		&mut self,
 		ref_time: Option<u64>,
 		proof_size: Option<u64>,
+		storage_growth: Option<u64>,
 	) -> Result<(), ExitError> {
 		let weight_info = if let (Some(weight_info), _) = self.info_mut() {
 			weight_info
@@ -1255,6 +1256,13 @@ where
 		}
 		if let Some(amount) = proof_size {
 			weight_info.try_record_proof_size_or_fail(amount)?;
+		}
+		if let Some(storage_meter) = self.storage_meter.as_mut() {
+			if let Some(amount) = storage_growth {
+				storage_meter
+					.record(amount)
+					.map_err(|_| ExitError::OutOfGas)?;
+			}
 		}
 		Ok(())
 	}

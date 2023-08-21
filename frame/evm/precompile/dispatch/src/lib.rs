@@ -82,7 +82,7 @@ where
 		}
 
 		handle
-			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
+			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()), None)?;
 
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
