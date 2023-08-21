@@ -628,21 +628,14 @@ mod storage_growth_test {
 	use super::*;
 	use std::env;
 
-	pub const ERC20_CONTRACT_BYTECODE: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
-
-	fn setup_logger() {
-		if env::var("RUST_LOG").is_err() {
-			env::set_var("RUST_LOG", "debug"); // Set log level here
-		}
-		let _ = env_logger::builder().is_test(true).try_init();
-	}
+	pub const STORAGE_GROWTH_TEST_CONTRACT: &str = include_str!("./res/proof_size_test_contract_bytecode.txt");
 
 	fn create_erc20_test_contract(
 		gas_limit: u64,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
-			hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
+			hex::decode(STORAGE_GROWTH_TEST_CONTRACT.trim_end()).unwrap(),
 			U256::zero(),
 			gas_limit,
 			Some(FixedGasPrice::min_gas_price().0),
@@ -664,7 +657,6 @@ mod storage_growth_test {
 	// to cover the storage growth.
 	#[test]
 	fn contract_deployement_should_fail_oog() {
-		setup_logger();
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 4_700_000;
 
