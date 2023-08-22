@@ -319,8 +319,8 @@ impl<F: FindAuthor<u32>> FindAuthor<H160> for FindAuthorTruncated<F> {
 
 const BLOCK_GAS_LIMIT: u64 = 75_000_000;
 const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
-/// The maximum storage growth per block in bytes (40 Kb).
-const MAX_STORAGE_GROWTH: u64 = 80 * 1024;
+/// The maximum storage growth per block in bytes (3 Mb).
+const MAX_STORAGE_GROWTH: u64 = 3 * 1024 * 1024;
 const GAS_LIMIT_STORAGE_GROWTH_RATIO: u64 = 15_000_000u64.saturating_div(MAX_STORAGE_GROWTH);
 
 parameter_types! {
