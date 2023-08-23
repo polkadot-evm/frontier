@@ -265,21 +265,21 @@ where
 			None => 0,
 		};
 
+		let pov_gas = match executor.state().weight_info() {
+			Some(weight_info) => weight_info
+				.proof_size_usage
+				.unwrap_or_default()
+				.saturating_mul(T::GasLimitPovSizeRatio::get()),
+			None => 0,
+		};
+
 		// Post execution.
 		let used_gas = executor.used_gas();
-		let effective_gas = match executor.state().weight_info() {
-			Some(weight_info) => U256::from(sp_std::cmp::max(
-				sp_std::cmp::max(
-					used_gas,
-					weight_info
-						.proof_size_usage
-						.unwrap_or_default()
-						.saturating_mul(T::GasLimitPovSizeRatio::get()),
-				),
-				storage_gas,
-			)),
-			_ => used_gas.into(),
-		};
+		let effective_gas = U256::from(sp_std::cmp::max(
+			sp_std::cmp::max(used_gas, pov_gas),
+			storage_gas,
+		));
+
 		let actual_fee = effective_gas.saturating_mul(total_fee_per_gas);
 		let actual_base_fee = effective_gas.saturating_mul(base_fee);
 
