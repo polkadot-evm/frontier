@@ -261,6 +261,14 @@
 <a href="#261" id="261">261</a>
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
+<a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -411,6 +419,14 @@
 		m.copy_from_slice(<span class="kw-2">&amp;</span>decompressed[<span class="number">1</span>..<span class="number">65</span>]);
 		<span class="kw">let </span>account = H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>m)));
 		<span class="self">Self</span>(account.into())
+	}
+}
+
+<span class="kw">impl </span>From&lt;[u8; <span class="number">32</span>]&gt; <span class="kw">for </span>AccountId20 {
+	<span class="kw">fn </span>from(bytes: [u8; <span class="number">32</span>]) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span><span class="kw-2">mut </span>buffer = [<span class="number">0u8</span>; <span class="number">20</span>];
+		buffer.copy_from_slice(<span class="kw-2">&amp;</span>bytes[..<span class="number">20</span>]);
+		<span class="self">Self</span>(buffer)
 	}
 }
 
