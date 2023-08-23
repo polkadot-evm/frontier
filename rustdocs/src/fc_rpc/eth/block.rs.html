@@ -254,39 +254,6 @@
 <a href="#254" id="254">254</a>
 <a href="#255" id="255">255</a>
 <a href="#256" id="256">256</a>
-<a href="#257" id="257">257</a>
-<a href="#258" id="258">258</a>
-<a href="#259" id="259">259</a>
-<a href="#260" id="260">260</a>
-<a href="#261" id="261">261</a>
-<a href="#262" id="262">262</a>
-<a href="#263" id="263">263</a>
-<a href="#264" id="264">264</a>
-<a href="#265" id="265">265</a>
-<a href="#266" id="266">266</a>
-<a href="#267" id="267">267</a>
-<a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
-<a href="#275" id="275">275</a>
-<a href="#276" id="276">276</a>
-<a href="#277" id="277">277</a>
-<a href="#278" id="278">278</a>
-<a href="#279" id="279">279</a>
-<a href="#280" id="280">280</a>
-<a href="#281" id="281">281</a>
-<a href="#282" id="282">282</a>
-<a href="#283" id="283">283</a>
-<a href="#284" id="284">284</a>
-<a href="#285" id="285">285</a>
-<a href="#286" id="286">286</a>
-<a href="#287" id="287">287</a>
-<a href="#288" id="288">288</a>
-<a href="#289" id="289">289</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -322,7 +289,7 @@
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
 <span class="kw">use crate</span>::{
-	eth::{rich_block_build, Eth, EthConfig},
+	eth::{rich_block_build, BlockInfo, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
@@ -332,34 +299,17 @@
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
-	BE: Backend&lt;B&gt;,
+	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">pub async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
-		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
-		<span class="kw">let </span>block_data_cache = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.block_data_cache);
-		<span class="kw">let </span>backend = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.backend);
-
-		<span class="kw">let </span>substrate_hash = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-		)
-		.<span class="kw">await
-		</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
-		</span>{
-			<span class="prelude-val">Some</span>(hash) =&gt; hash,
-			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-		};
-
-		<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-		<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
-		<span class="kw">let </span>statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.<span class="kw">await</span>;
-
-		<span class="kw">let </span>base_fee = client.runtime_api().gas_price(substrate_hash).ok();
+		<span class="kw">let </span>BlockInfo {
+			block,
+			statuses,
+			substrate_hash,
+			base_fee,
+			..
+		} = <span class="self">self</span>.block_info_by_eth_block_hash(hash).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; {
@@ -368,7 +318,7 @@
 					statuses.into_iter().map(Option::Some).collect(),
 					<span class="prelude-val">Some</span>(hash),
 					full,
-					base_fee,
+					<span class="prelude-val">Some</span>(base_fee),
 					<span class="bool-val">false</span>,
 				);
 
@@ -492,26 +442,8 @@
 	}
 
 	<span class="kw">pub async fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
-		<span class="kw">let </span>substrate_hash = <span class="kw">match </span>frontier_backend_client::load_hash::&lt;B, C&gt;(
-			<span class="self">self</span>.client.as_ref(),
-			<span class="self">self</span>.backend.as_ref(),
-			hash,
-		)
-		.<span class="kw">await
-		</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err)))<span class="question-mark">?
-		</span>{
-			<span class="prelude-val">Some</span>(hash) =&gt; hash,
-			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-		};
-		<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
-		<span class="kw">let </span>block = <span class="self">self
-			</span>.overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides.fallback)
-			.current_block(substrate_hash);
-
-		<span class="kw">match </span>block {
+		<span class="kw">let </span>blockinfo = <span class="self">self</span>.block_info_by_eth_block_hash(hash).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">match </span>blockinfo.block {
 			<span class="prelude-val">Some</span>(block) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(U256::from(block.transactions.len()))),
 			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
@@ -528,32 +460,34 @@
 			)));
 		}
 
-		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::native_block_id::&lt;B, C&gt;(
-			<span class="self">self</span>.client.as_ref(),
-			<span class="self">self</span>.backend.as_ref(),
-			<span class="prelude-val">Some</span>(number),
-		)
-		.<span class="kw">await</span><span class="question-mark">?
-		</span>{
-			<span class="prelude-val">Some</span>(id) =&gt; id,
-			<span class="prelude-val">None </span>=&gt; <span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
-		};
-		<span class="kw">let </span>substrate_hash = <span class="self">self
-			</span>.client
-			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
-		<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
-		<span class="kw">let </span>block = <span class="self">self
-			</span>.overrides
-			.schemas
-			.get(<span class="kw-2">&amp;</span>schema)
-			.unwrap_or(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides.fallback)
-			.current_block(substrate_hash);
-
-		<span class="kw">match </span>block {
+		<span class="kw">let </span>block_info = <span class="self">self</span>.block_info_by_number(number).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">match </span>block_info.block {
 			<span class="prelude-val">Some</span>(block) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(U256::from(block.transactions.len()))),
 			<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
 		}
+	}
+
+	<span class="kw">pub async fn </span>block_transaction_receipts(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		number: BlockNumber,
+	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Receipt&gt;&gt;&gt; {
+		<span class="kw">let </span>block_info = <span class="self">self</span>.block_info_by_number(number).<span class="kw">await</span><span class="question-mark">?</span>;
+		<span class="kw">let </span><span class="prelude-val">Some</span>(statuses) = block_info.clone().statuses <span class="kw">else </span>{
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>);
+		};
+
+		<span class="kw">let </span><span class="kw-2">mut </span>receipts = Vec::new();
+		<span class="kw">let </span>transactions: Vec&lt;(H256, usize)&gt; = statuses
+			.iter()
+			.map(|tx| (tx.transaction_hash, tx.transaction_index <span class="kw">as </span>usize))
+			.collect();
+		<span class="kw">for </span>(hash, index) <span class="kw">in </span>transactions {
+			<span class="kw">if let </span><span class="prelude-val">Some</span>(receipt) = <span class="self">self</span>.transaction_receipt(<span class="kw-2">&amp;</span>block_info, hash, index).<span class="kw">await</span><span class="question-mark">? </span>{
+				receipts.push(receipt);
+			}
+		}
+
+		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(receipts))
 	}
 
 	<span class="kw">pub fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, <span class="kw">_</span>: H256) -&gt; RpcResult&lt;U256&gt; {
