@@ -171,3 +171,17 @@ ark-bw6-761 = { version = "0.4.0", default-features = false }
 ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
+
+[profile.release]
+# Substrate runtime requires unwinding.
+panic = "unwind"
+
+[profile.production]
+inherits = "release"
+
+# Sacrifice compile speed for execution speed by using optimization flags:
+
+# https://doc.rust-lang.org/rustc/linker-plugin-lto.html
+lto = "fat"
+# https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
+codegen-units = 1
