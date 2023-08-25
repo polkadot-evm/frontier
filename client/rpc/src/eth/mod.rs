@@ -138,12 +138,12 @@ where
 
 	pub async fn block_info_by_number(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
 		let id = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			Some(number),
+			Some(number_or_hash),
 		)
 		.await?
 		{
@@ -342,10 +342,10 @@ where
 
 	async fn block_by_number(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 		full: bool,
 	) -> RpcResult<Option<RichBlock>> {
-		self.block_by_number(number, full).await
+		self.block_by_number(number_or_hash, full).await
 	}
 
 	async fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
@@ -354,24 +354,24 @@ where
 
 	async fn block_transaction_count_by_number(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<Option<U256>> {
-		self.block_transaction_count_by_number(number).await
+		self.block_transaction_count_by_number(number_or_hash).await
 	}
 
 	async fn block_transaction_receipts(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<Option<Vec<Receipt>>> {
-		self.block_transaction_receipts(number).await
+		self.block_transaction_receipts(number_or_hash).await
 	}
 
 	fn block_uncles_count_by_hash(&self, hash: H256) -> RpcResult<U256> {
 		self.block_uncles_count_by_hash(hash)
 	}
 
-	fn block_uncles_count_by_number(&self, number: BlockNumberOrHash) -> RpcResult<U256> {
-		self.block_uncles_count_by_number(number)
+	fn block_uncles_count_by_number(&self, number_or_hash: BlockNumberOrHash) -> RpcResult<U256> {
+		self.block_uncles_count_by_number(number_or_hash)
 	}
 
 	fn uncle_by_block_hash_and_index(
@@ -384,10 +384,10 @@ where
 
 	fn uncle_by_block_number_and_index(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 		index: Index,
 	) -> RpcResult<Option<RichBlock>> {
-		self.uncle_by_block_number_and_index(number, index)
+		self.uncle_by_block_number_and_index(number_or_hash, index)
 	}
 
 	// ########################################################################
@@ -408,10 +408,10 @@ where
 
 	async fn transaction_by_block_number_and_index(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 		index: Index,
 	) -> RpcResult<Option<Transaction>> {
-		self.transaction_by_block_number_and_index(number, index)
+		self.transaction_by_block_number_and_index(number_or_hash, index)
 			.await
 	}
 
@@ -424,29 +424,37 @@ where
 	// State
 	// ########################################################################
 
-	async fn balance(&self, address: H160, number: Option<BlockNumberOrHash>) -> RpcResult<U256> {
-		self.balance(address, number).await
+	async fn balance(
+		&self,
+		address: H160,
+		number_or_hash: Option<BlockNumberOrHash>,
+	) -> RpcResult<U256> {
+		self.balance(address, number_or_hash).await
 	}
 
 	async fn storage_at(
 		&self,
 		address: H160,
 		index: U256,
-		number: Option<BlockNumberOrHash>,
+		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<H256> {
-		self.storage_at(address, index, number).await
+		self.storage_at(address, index, number_or_hash).await
 	}
 
 	async fn transaction_count(
 		&self,
 		address: H160,
-		number: Option<BlockNumberOrHash>,
+		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
-		self.transaction_count(address, number).await
+		self.transaction_count(address, number_or_hash).await
 	}
 
-	async fn code_at(&self, address: H160, number: Option<BlockNumberOrHash>) -> RpcResult<Bytes> {
-		self.code_at(address, number).await
+	async fn code_at(
+		&self,
+		address: H160,
+		number_or_hash: Option<BlockNumberOrHash>,
+	) -> RpcResult<Bytes> {
+		self.code_at(address, number_or_hash).await
 	}
 
 	// ########################################################################
@@ -456,18 +464,18 @@ where
 	async fn call(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumberOrHash>,
+		number_or_hash: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
-		self.call(request, number, state_overrides).await
+		self.call(request, number_or_hash, state_overrides).await
 	}
 
 	async fn estimate_gas(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumberOrHash>,
+		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
-		self.estimate_gas(request, number).await
+		self.estimate_gas(request, number_or_hash).await
 	}
 
 	// ########################################################################

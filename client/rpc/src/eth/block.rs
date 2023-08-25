@@ -83,7 +83,7 @@ where
 
 	pub async fn block_by_number(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 		full: bool,
 	) -> RpcResult<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
@@ -94,7 +94,7 @@ where
 		match frontier_backend_client::native_block_id::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
-			Some(number),
+			Some(number_or_hash),
 		)
 		.await?
 		{
@@ -138,7 +138,7 @@ where
 					_ => Ok(None),
 				}
 			}
-			None if number == BlockNumberOrHash::Pending => {
+			None if number_or_hash == BlockNumberOrHash::Pending => {
 				let api = client.runtime_api();
 				let best_hash = client.info().best_hash;
 
@@ -195,16 +195,16 @@ where
 
 	pub async fn block_transaction_count_by_number(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<Option<U256>> {
-		if let BlockNumberOrHash::Pending = number {
+		if let BlockNumberOrHash::Pending = number_or_hash {
 			// get the pending transactions count
 			return Ok(Some(U256::from(
 				self.graph.validated_pool().ready().count(),
 			)));
 		}
 
-		let block_info = self.block_info_by_number(number).await?;
+		let block_info = self.block_info_by_number(number_or_hash).await?;
 		match block_info.block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
 			None => Ok(None),
@@ -213,9 +213,9 @@ where
 
 	pub async fn block_transaction_receipts(
 		&self,
-		number: BlockNumberOrHash,
+		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<Option<Vec<Receipt>>> {
-		let block_info = self.block_info_by_number(number).await?;
+		let block_info = self.block_info_by_number(number_or_hash).await?;
 		let Some(statuses) = block_info.clone().statuses else {
 			return Ok(None);
 		};
