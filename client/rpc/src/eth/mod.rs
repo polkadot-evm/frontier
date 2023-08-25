@@ -136,7 +136,10 @@ where
 		}
 	}
 
-	pub async fn block_info_by_number(&self, number: BlockNumber) -> RpcResult<BlockInfo<B::Hash>> {
+	pub async fn block_info_by_number(
+		&self,
+		number: BlockNumberOrHash,
+	) -> RpcResult<BlockInfo<B::Hash>> {
 		let id = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
@@ -339,7 +342,7 @@ where
 
 	async fn block_by_number(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 		full: bool,
 	) -> RpcResult<Option<RichBlock>> {
 		self.block_by_number(number, full).await
@@ -351,14 +354,14 @@ where
 
 	async fn block_transaction_count_by_number(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 	) -> RpcResult<Option<U256>> {
 		self.block_transaction_count_by_number(number).await
 	}
 
 	async fn block_transaction_receipts(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 	) -> RpcResult<Option<Vec<Receipt>>> {
 		self.block_transaction_receipts(number).await
 	}
@@ -367,7 +370,7 @@ where
 		self.block_uncles_count_by_hash(hash)
 	}
 
-	fn block_uncles_count_by_number(&self, number: BlockNumber) -> RpcResult<U256> {
+	fn block_uncles_count_by_number(&self, number: BlockNumberOrHash) -> RpcResult<U256> {
 		self.block_uncles_count_by_number(number)
 	}
 
@@ -381,7 +384,7 @@ where
 
 	fn uncle_by_block_number_and_index(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 		index: Index,
 	) -> RpcResult<Option<RichBlock>> {
 		self.uncle_by_block_number_and_index(number, index)
@@ -405,7 +408,7 @@ where
 
 	async fn transaction_by_block_number_and_index(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 		index: Index,
 	) -> RpcResult<Option<Transaction>> {
 		self.transaction_by_block_number_and_index(number, index)
@@ -421,7 +424,7 @@ where
 	// State
 	// ########################################################################
 
-	async fn balance(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
+	async fn balance(&self, address: H160, number: Option<BlockNumberOrHash>) -> RpcResult<U256> {
 		self.balance(address, number).await
 	}
 
@@ -429,7 +432,7 @@ where
 		&self,
 		address: H160,
 		index: U256,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<H256> {
 		self.storage_at(address, index, number).await
 	}
@@ -437,12 +440,12 @@ where
 	async fn transaction_count(
 		&self,
 		address: H160,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		self.transaction_count(address, number).await
 	}
 
-	async fn code_at(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<Bytes> {
+	async fn code_at(&self, address: H160, number: Option<BlockNumberOrHash>) -> RpcResult<Bytes> {
 		self.code_at(address, number).await
 	}
 
@@ -453,7 +456,7 @@ where
 	async fn call(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
 		self.call(request, number, state_overrides).await
@@ -462,7 +465,7 @@ where
 	async fn estimate_gas(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		self.estimate_gas(request, number).await
 	}
@@ -478,7 +481,7 @@ where
 	async fn fee_history(
 		&self,
 		block_count: U256,
-		newest_block: BlockNumber,
+		newest_block: BlockNumberOrHash,
 		reward_percentiles: Option<Vec<f64>>,
 	) -> RpcResult<FeeHistory> {
 		self.fee_history(block_count, newest_block, reward_percentiles)

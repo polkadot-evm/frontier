@@ -130,7 +130,7 @@ where
 			locked.insert(
 				key,
 				FilterPoolItem {
-					last_poll: BlockNumber::Num(best_number),
+					last_poll: BlockNumberOrHash::Num(best_number),
 					filter_type,
 					at_block: best_number,
 					pending_transaction_hashes,
@@ -209,7 +209,7 @@ where
 						locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(next),
+								last_poll: BlockNumberOrHash::Num(next),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: HashSet::new(),
@@ -241,7 +241,7 @@ where
 						locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(best_number + 1),
+								last_poll: BlockNumberOrHash::Num(best_number + 1),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: current_hashes.clone(),
@@ -261,7 +261,7 @@ where
 						locked.insert(
 							key,
 							FilterPoolItem {
-								last_poll: BlockNumber::Num(best_number + 1),
+								last_poll: BlockNumberOrHash::Num(best_number + 1),
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: HashSet::new(),

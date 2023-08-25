@@ -76,7 +76,7 @@ where
 	pub async fn call(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
 		let CallRequest {
@@ -408,7 +408,7 @@ where
 	pub async fn estimate_gas(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);

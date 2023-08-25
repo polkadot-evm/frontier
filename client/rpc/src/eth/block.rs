@@ -83,7 +83,7 @@ where
 
 	pub async fn block_by_number(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 		full: bool,
 	) -> RpcResult<Option<RichBlock>> {
 		let client = Arc::clone(&self.client);
@@ -138,7 +138,7 @@ where
 					_ => Ok(None),
 				}
 			}
-			None if number == BlockNumber::Pending => {
+			None if number == BlockNumberOrHash::Pending => {
 				let api = client.runtime_api();
 				let best_hash = client.info().best_hash;
 
@@ -195,9 +195,9 @@ where
 
 	pub async fn block_transaction_count_by_number(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 	) -> RpcResult<Option<U256>> {
-		if let BlockNumber::Pending = number {
+		if let BlockNumberOrHash::Pending = number {
 			// get the pending transactions count
 			return Ok(Some(U256::from(
 				self.graph.validated_pool().ready().count(),
@@ -213,7 +213,7 @@ where
 
 	pub async fn block_transaction_receipts(
 		&self,
-		number: BlockNumber,
+		number: BlockNumberOrHash,
 	) -> RpcResult<Option<Vec<Receipt>>> {
 		let block_info = self.block_info_by_number(number).await?;
 		let Some(statuses) = block_info.clone().statuses else {
@@ -238,7 +238,7 @@ where
 		Ok(U256::zero())
 	}
 
-	pub fn block_uncles_count_by_number(&self, _: BlockNumber) -> RpcResult<U256> {
+	pub fn block_uncles_count_by_number(&self, _: BlockNumberOrHash) -> RpcResult<U256> {
 		Ok(U256::zero())
 	}
 
@@ -248,7 +248,7 @@ where
 
 	pub fn uncle_by_block_number_and_index(
 		&self,
-		_: BlockNumber,
+		_: BlockNumberOrHash,
 		_: Index,
 	) -> RpcResult<Option<RichBlock>> {
 		Ok(None)

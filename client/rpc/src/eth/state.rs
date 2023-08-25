@@ -46,9 +46,13 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	pub async fn balance(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<U256> {
-		let number = number.unwrap_or(BlockNumber::Latest);
-		if number == BlockNumber::Pending {
+	pub async fn balance(
+		&self,
+		address: H160,
+		number: Option<BlockNumberOrHash>,
+	) -> RpcResult<U256> {
+		let number = number.unwrap_or(BlockNumberOrHash::Latest);
+		if number == BlockNumberOrHash::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
 			Ok(api
 				.account_basic(self.client.info().best_hash, address)
@@ -81,10 +85,10 @@ where
 		&self,
 		address: H160,
 		index: U256,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<H256> {
-		let number = number.unwrap_or(BlockNumber::Latest);
-		if number == BlockNumber::Pending {
+		let number = number.unwrap_or(BlockNumberOrHash::Latest);
+		if number == BlockNumberOrHash::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
 			Ok(api
 				.storage_at(self.client.info().best_hash, address, index)
@@ -116,9 +120,9 @@ where
 	pub async fn transaction_count(
 		&self,
 		address: H160,
-		number: Option<BlockNumber>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
-		if let Some(BlockNumber::Pending) = number {
+		if let Some(BlockNumberOrHash::Pending) = number {
 			let substrate_hash = self.client.info().best_hash;
 
 			let nonce = self
@@ -168,9 +172,13 @@ where
 			.nonce)
 	}
 
-	pub async fn code_at(&self, address: H160, number: Option<BlockNumber>) -> RpcResult<Bytes> {
-		let number = number.unwrap_or(BlockNumber::Latest);
-		if number == BlockNumber::Pending {
+	pub async fn code_at(
+		&self,
+		address: H160,
+		number: Option<BlockNumberOrHash>,
+	) -> RpcResult<Bytes> {
+		let number = number.unwrap_or(BlockNumberOrHash::Latest);
+		if number == BlockNumberOrHash::Pending {
 			let api = pending_runtime_api(self.client.as_ref(), self.graph.as_ref())?;
 			Ok(api
 				.account_code_at(self.client.info().best_hash, address)
