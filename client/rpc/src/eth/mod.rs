@@ -309,8 +309,8 @@ where
 		self.protocol_version()
 	}
 
-	fn syncing(&self) -> RpcResult<SyncStatus> {
-		self.syncing()
+	async fn syncing(&self) -> RpcResult<SyncStatus> {
+		self.syncing().await
 	}
 
 	fn author(&self) -> RpcResult<H160> {

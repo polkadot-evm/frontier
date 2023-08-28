@@ -46,18 +46,20 @@ where
 		Ok(1)
 	}
 
-	pub fn syncing(&self) -> RpcResult<SyncStatus> {
+	pub async fn syncing(&self) -> RpcResult<SyncStatus> {
 		if self.sync.is_major_syncing() {
-			let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+			let current_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 				self.client.info().best_number,
 			));
+			let highest_block = self
+				.sync
+				.best_seen_block()
+				.await?
+				.unwrap_or_else(|| current_block);
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
-				current_block: block_number,
-				// TODO `highest_block` is not correct, should load `best_seen_block` from NetworkWorker,
-				// but afaik that is not currently possible in Substrate:
-				// https://github.com/paritytech/substrate/issues/7311
-				highest_block: block_number,
+				current_block,
+				highest_block,
 				warp_chunks_amount: None,
 				warp_chunks_processed: None,
 			}))

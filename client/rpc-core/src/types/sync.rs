@@ -33,7 +33,7 @@ pub struct SyncInfo {
 	pub highest_block: U256,
 	/// Warp sync snapshot chunks total.
 	pub warp_chunks_amount: Option<U256>,
-	/// Warp sync snpashot chunks processed.
+	/// Warp sync snapshot chunks processed.
 	pub warp_chunks_processed: Option<U256>,
 }
 
