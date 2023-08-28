@@ -1000,9 +1000,9 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 			TransactionValidationError::TxNonceTooHigh => {
 				InvalidTransactionWrapper(InvalidTransaction::Future)
 			}
-			TransactionValidationError::InvalidFeeInput => {
-				InvalidTransactionWrapper(InvalidTransaction::Payment)
-			}
+			TransactionValidationError::InvalidFeeInput => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::InvalidFeeInput as u8),
+			),
 			TransactionValidationError::InvalidChainId => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8),
 			),
