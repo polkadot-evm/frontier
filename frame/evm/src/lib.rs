@@ -499,12 +499,12 @@ pub mod pallet {
 			match validation_error {
 				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
 				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
-				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
-				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
 				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
 				TransactionValidationError::TxNonceTooLow => Error::<T>::InvalidNonce,
 				TransactionValidationError::TxNonceTooHigh => Error::<T>::InvalidNonce,
-				TransactionValidationError::InvalidPaymentInput => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
 				_ => Error::<T>::Undefined,
 			}
 		}

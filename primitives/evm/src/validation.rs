@@ -63,7 +63,7 @@ pub enum TransactionValidationError {
 	GasLimitTooHigh,
 	/// The transaction gas price is too low
 	GasPriceTooLow,
-	/// The transaction priority fee is too hign
+	/// The transaction priority fee is too high
 	PriorityFeeTooHigh,
 	/// The transaction balance is too low
 	BalanceTooLow,
@@ -72,7 +72,7 @@ pub enum TransactionValidationError {
 	/// The transaction nonce is too high
 	TxNonceTooHigh,
 	/// The transaction fee input is invalid
-	InvalidPaymentInput,
+	InvalidFeeInput,
 	/// The chain id is incorrect
 	InvalidChainId,
 	/// The transaction signature is invalid
@@ -189,7 +189,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			}
 			_ => {
 				if self.config.is_transactional {
-					Err(TransactionValidationError::InvalidPaymentInput.into())
+					Err(TransactionValidationError::InvalidFeeInput.into())
 				} else {
 					// Allow non-set fee input for non-transactional calls.
 					Ok((U256::zero(), None))
@@ -256,7 +256,7 @@ mod tests {
 		BalanceTooLow,
 		TxNonceTooLow,
 		TxNonceTooHigh,
-		InvalidPaymentInput,
+		InvalidFeeInput,
 		InvalidChainId,
 	}
 
@@ -272,7 +272,7 @@ mod tests {
 				TransactionValidationError::BalanceTooLow => TestError::BalanceTooLow,
 				TransactionValidationError::TxNonceTooLow => TestError::TxNonceTooLow,
 				TransactionValidationError::TxNonceTooHigh => TestError::TxNonceTooHigh,
-				TransactionValidationError::InvalidPaymentInput => TestError::InvalidPaymentInput,
+				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 			}
 		}
@@ -641,7 +641,7 @@ mod tests {
 		let test = transaction_none_fee(true);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidPaymentInput);
+		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
 	}
 
 	#[test]
@@ -728,7 +728,7 @@ mod tests {
 		let test = transaction_none_fee(true);
 		let res = test.with_balance_for(&who);
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidPaymentInput);
+		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
 	}
 
 	#[test]
@@ -808,7 +808,7 @@ mod tests {
 		let test = invalid_transaction_mixed_fees(is_transactional);
 		let res = test.with_balance_for(&who);
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidPaymentInput);
+		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
 		// Succeeds for non-transactional.
 		let is_transactional = false;
 		let test = invalid_transaction_mixed_fees(is_transactional);
@@ -824,7 +824,7 @@ mod tests {
 		let test = invalid_transaction_mixed_fees(is_transactional);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidPaymentInput);
+		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
 		// Succeeds for non-transactional.
 		let is_transactional = false;
 		let test = invalid_transaction_mixed_fees(is_transactional);
