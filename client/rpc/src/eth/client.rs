@@ -49,14 +49,18 @@ where
 	pub async fn syncing(&self) -> RpcResult<SyncStatus> {
 		if self.sync.is_major_syncing() {
 			let current_number = self.client.info().best_number;
-			let current_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(current_number));
+			let current_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+				current_number,
+			));
 			let highest_number = self
 				.sync
 				.best_seen_block()
 				.await
 				.map_err(|_err| internal_err("fetching best_seen_block failed"))?
 				.unwrap_or_else(|| current_number);
-			let highest_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(highest_number));
+			let highest_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+				highest_number,
+			));
 
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
