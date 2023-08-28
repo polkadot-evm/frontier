@@ -258,6 +258,8 @@ mod tests {
 		TxNonceTooHigh,
 		InvalidFeeInput,
 		InvalidChainId,
+		InvalidSignature,
+		UnknownError,
 	}
 
 	static SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
@@ -274,6 +276,8 @@ mod tests {
 				TransactionValidationError::TxNonceTooHigh => TestError::TxNonceTooHigh,
 				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
+				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
+				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
 		}
 	}

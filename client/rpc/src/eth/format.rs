@@ -43,8 +43,10 @@ impl Geth {
 					VError::InvalidSignature => "invalid sender".into(),
 					VError::GasLimitTooLow => "intrinsic gas too low".into(),
 					VError::GasLimitTooHigh => "exceeds block gas limit".into(),
-					VError::GasPriceTooLow => "gas price too low".into(),
-					VError::PriorityFeeTooHigh => "priority fee too high".into(),
+					VError::GasPriceTooLow => "gas price less than block base fee".into(),
+					VError::PriorityFeeTooHigh => {
+						"max priority fee per gas higher than max fee per gas".into()
+					}
 					VError::InvalidFeeInput => "invalid fee input".into(),
 					_ => "transaction validation error".into(),
 				},
