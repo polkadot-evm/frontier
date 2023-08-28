@@ -35,7 +35,7 @@ use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 use fp_ethereum::ValidatedTransaction as ValidatedTransactionT;
 use fp_evm::{
-	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
+	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, TransactionValidationError,
 };
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::{
@@ -113,7 +113,7 @@ where
 		if let Call::transact { transaction } = self {
 			let check = || {
 				let origin = Pallet::<T>::recover_signer(transaction).ok_or(
-					InvalidTransaction::Custom(InvalidEvmTransactionError::InvalidSignature as u8),
+					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
 				)?;
 
 				Ok(origin)
@@ -979,41 +979,41 @@ impl<T: Config> BlockHashMapping for EthereumBlockHashMapping<T> {
 
 pub struct InvalidTransactionWrapper(InvalidTransaction);
 
-impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
-	fn from(validation_error: InvalidEvmTransactionError) -> Self {
+impl From<TransactionValidationError> for InvalidTransactionWrapper {
+	fn from(validation_error: TransactionValidationError) -> Self {
 		match validation_error {
-			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::GasLimitTooLow as u8),
+			TransactionValidationError::GasLimitTooLow => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
 			),
-			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::GasLimitTooHigh as u8),
+			TransactionValidationError::GasLimitTooHigh => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooHigh as u8),
 			),
-			InvalidEvmTransactionError::GasPriceTooLow => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::GasPriceTooLow as u8),
+			TransactionValidationError::PriorityFeeTooHigh => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::PriorityFeeTooHigh as u8),
 			),
-			InvalidEvmTransactionError::PriorityFeeTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::PriorityFeeTooHigh as u8),
-			),
-			InvalidEvmTransactionError::BalanceTooLow => {
+			TransactionValidationError::BalanceTooLow => {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)
 			}
-			InvalidEvmTransactionError::TxNonceTooLow => {
+			TransactionValidationError::TxNonceTooLow => {
 				InvalidTransactionWrapper(InvalidTransaction::Stale)
 			}
-			InvalidEvmTransactionError::TxNonceTooHigh => {
+			TransactionValidationError::TxNonceTooHigh => {
 				InvalidTransactionWrapper(InvalidTransaction::Future)
 			}
-			InvalidEvmTransactionError::InvalidPaymentInput => {
+			TransactionValidationError::InvalidPaymentInput => {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)
 			}
-			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::InvalidChainId as u8),
+			TransactionValidationError::InvalidChainId => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8),
 			),
-			InvalidEvmTransactionError::InvalidSignature => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::InvalidSignature as u8),
+			TransactionValidationError::InvalidSignature => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
 			),
-			InvalidEvmTransactionError::UnknownError => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(InvalidEvmTransactionError::UnknownError as u8),
+			TransactionValidationError::GasPriceTooLow => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::GasPriceTooLow as u8),
+			),
+			TransactionValidationError::UnknownError => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::UnknownError as u8),
 			),
 		}
 	}

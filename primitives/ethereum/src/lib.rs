@@ -28,19 +28,6 @@ use frame_support::dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo};
 use scale_codec::{Decode, Encode};
 use sp_std::{result::Result, vec::Vec};
 
-// #[repr(u8)]
-// #[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive)]
-// pub enum TransactionValidationError {
-// 	#[allow(dead_code)]
-// 	#[num_enum(default)]
-// 	UnknownError,
-// 	InvalidChainId,
-// 	InvalidSignature,
-// 	GasLimitTooLow,
-// 	GasLimitTooHigh,
-// 	MaxFeePerGasTooLow,
-// }
-
 pub trait ValidatedTransaction {
 	fn apply(
 		source: H160,

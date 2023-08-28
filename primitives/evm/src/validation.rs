@@ -45,7 +45,7 @@ pub struct CheckEvmTransactionConfig<'config> {
 }
 
 #[derive(Debug)]
-pub struct CheckEvmTransaction<'config, E: From<InvalidEvmTransactionError>> {
+pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
 	pub weight_limit: Option<Weight>,
@@ -53,10 +53,10 @@ pub struct CheckEvmTransaction<'config, E: From<InvalidEvmTransactionError>> {
 	_marker: sp_std::marker::PhantomData<E>,
 }
 
-/// Transaction validate errors
+/// Transaction validation errors
 #[repr(u8)]
 #[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive, Debug)]
-pub enum InvalidEvmTransactionError {
+pub enum TransactionValidationError {
 	/// The transaction gas limit is too low
 	GasLimitTooLow,
 	/// The transaction gas limit is too hign
@@ -82,7 +82,7 @@ pub enum InvalidEvmTransactionError {
 	UnknownError,
 }
 
-impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {
+impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, E> {
 	pub fn new(
 		config: CheckEvmTransactionConfig<'config>,
 		transaction: CheckEvmTransactionInput,
@@ -100,16 +100,16 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 
 	pub fn validate_in_pool_for(&self, who: &Account) -> Result<&Self, E> {
 		if self.transaction.nonce < who.nonce {
-			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
+			return Err(TransactionValidationError::TxNonceTooLow.into());
 		}
 		self.validate_common()
 	}
 
 	pub fn validate_in_block_for(&self, who: &Account) -> Result<&Self, E> {
 		if self.transaction.nonce > who.nonce {
-			return Err(InvalidEvmTransactionError::TxNonceTooHigh.into());
+			return Err(TransactionValidationError::TxNonceTooHigh.into());
 		} else if self.transaction.nonce < who.nonce {
-			return Err(InvalidEvmTransactionError::TxNonceTooLow.into());
+			return Err(TransactionValidationError::TxNonceTooLow.into());
 		}
 		self.validate_common()
 	}
@@ -118,7 +118,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		// Chain id matches the one in the signature.
 		if let Some(chain_id) = self.transaction.chain_id {
 			if chain_id != self.config.chain_id {
-				return Err(InvalidEvmTransactionError::InvalidChainId.into());
+				return Err(TransactionValidationError::InvalidChainId.into());
 			}
 		}
 		Ok(self)
@@ -130,7 +130,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		if self.config.is_transactional || gas_price > U256::zero() {
 			// Transaction max fee is at least the current base fee.
 			if gas_price < self.config.base_fee {
-				return Err(InvalidEvmTransactionError::GasPriceTooLow.into());
+				return Err(TransactionValidationError::GasPriceTooLow.into());
 			}
 		}
 		Ok(self)
@@ -153,7 +153,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
-				return Err(InvalidEvmTransactionError::BalanceTooLow.into());
+				return Err(TransactionValidationError::BalanceTooLow.into());
 			}
 		}
 		Ok(self)
@@ -177,7 +177,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			// EIP-1559 tip.
 			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
 				if max_priority_fee_per_gas > max_fee_per_gas {
-					return Err(InvalidEvmTransactionError::PriorityFeeTooHigh.into());
+					return Err(TransactionValidationError::PriorityFeeTooHigh.into());
 				}
 				let effective_gas_price = self
 					.config
@@ -189,7 +189,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			}
 			_ => {
 				if self.config.is_transactional {
-					Err(InvalidEvmTransactionError::InvalidPaymentInput.into())
+					Err(TransactionValidationError::InvalidPaymentInput.into())
 				} else {
 					// Allow non-set fee input for non-transactional calls.
 					Ok((U256::zero(), None))
@@ -208,7 +208,7 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 				let _ = weight_limit
 					.proof_size()
 					.checked_sub(proof_size_base_cost)
-					.ok_or(InvalidEvmTransactionError::GasLimitTooLow)?;
+					.ok_or(TransactionValidationError::GasLimitTooLow)?;
 			}
 
 			// We must ensure a transaction can pay the cost of its data bytes.
@@ -230,12 +230,12 @@ impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, 
 			};
 
 			if gasometer.record_transaction(transaction_cost).is_err() {
-				return Err(InvalidEvmTransactionError::GasLimitTooLow.into());
+				return Err(TransactionValidationError::GasLimitTooLow.into());
 			}
 
 			// Transaction gas limit is within the upper bound block gas limit.
 			if self.transaction.gas_limit > self.config.block_gas_limit {
-				return Err(InvalidEvmTransactionError::GasLimitTooHigh.into());
+				return Err(TransactionValidationError::GasLimitTooHigh.into());
 			}
 		}
 
@@ -262,18 +262,18 @@ mod tests {
 
 	static SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
 
-	impl From<InvalidEvmTransactionError> for TestError {
-		fn from(e: InvalidEvmTransactionError) -> Self {
+	impl From<TransactionValidationError> for TestError {
+		fn from(e: TransactionValidationError) -> Self {
 			match e {
-				InvalidEvmTransactionError::GasLimitTooLow => TestError::GasLimitTooLow,
-				InvalidEvmTransactionError::GasLimitTooHigh => TestError::GasLimitTooHigh,
-				InvalidEvmTransactionError::GasPriceTooLow => TestError::GasPriceTooLow,
-				InvalidEvmTransactionError::PriorityFeeTooHigh => TestError::PriorityFeeTooHigh,
-				InvalidEvmTransactionError::BalanceTooLow => TestError::BalanceTooLow,
-				InvalidEvmTransactionError::TxNonceTooLow => TestError::TxNonceTooLow,
-				InvalidEvmTransactionError::TxNonceTooHigh => TestError::TxNonceTooHigh,
-				InvalidEvmTransactionError::InvalidPaymentInput => TestError::InvalidPaymentInput,
-				InvalidEvmTransactionError::InvalidChainId => TestError::InvalidChainId,
+				TransactionValidationError::GasLimitTooLow => TestError::GasLimitTooLow,
+				TransactionValidationError::GasLimitTooHigh => TestError::GasLimitTooHigh,
+				TransactionValidationError::GasPriceTooLow => TestError::GasPriceTooLow,
+				TransactionValidationError::PriorityFeeTooHigh => TestError::PriorityFeeTooHigh,
+				TransactionValidationError::BalanceTooLow => TestError::BalanceTooLow,
+				TransactionValidationError::TxNonceTooLow => TestError::TxNonceTooLow,
+				TransactionValidationError::TxNonceTooHigh => TestError::TxNonceTooHigh,
+				TransactionValidationError::InvalidPaymentInput => TestError::InvalidPaymentInput,
+				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 			}
 		}
 	}

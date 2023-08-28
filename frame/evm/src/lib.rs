@@ -96,9 +96,8 @@ use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
-	InvalidEvmTransactionError, IsPrecompileResult, LinearCostPrecompile, Log, Precompile,
-	PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
-	Vicinity,
+	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
+	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
 };
 
 pub use self::{
@@ -495,17 +494,17 @@ pub mod pallet {
 		TransactionMustComeFromEOA,
 	}
 
-	impl<T> From<InvalidEvmTransactionError> for Error<T> {
-		fn from(validation_error: InvalidEvmTransactionError) -> Self {
+	impl<T> From<TransactionValidationError> for Error<T> {
+		fn from(validation_error: TransactionValidationError) -> Self {
 			match validation_error {
-				InvalidEvmTransactionError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
-				InvalidEvmTransactionError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
-				InvalidEvmTransactionError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
-				InvalidEvmTransactionError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
-				InvalidEvmTransactionError::BalanceTooLow => Error::<T>::BalanceLow,
-				InvalidEvmTransactionError::TxNonceTooLow => Error::<T>::InvalidNonce,
-				InvalidEvmTransactionError::TxNonceTooHigh => Error::<T>::InvalidNonce,
-				InvalidEvmTransactionError::InvalidPaymentInput => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
+				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
+				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
+				TransactionValidationError::TxNonceTooLow => Error::<T>::InvalidNonce,
+				TransactionValidationError::TxNonceTooHigh => Error::<T>::InvalidNonce,
+				TransactionValidationError::InvalidPaymentInput => Error::<T>::GasPriceTooLow,
 				_ => Error::<T>::Undefined,
 			}
 		}
