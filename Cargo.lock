@@ -2079,7 +2079,7 @@ checksum = "0206175f82b8d6bf6652ff7d71a1e27fd2e4efde587fd368662814d6ec1d9ce0"
 [[package]]
 name = "evm"
 version = "0.39.1"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
+source = "git+https://github.com/rust-blockchain/evm?rev=44bb77c27be9ee615eaa576ad914fbb461537276#44bb77c27be9ee615eaa576ad914fbb461537276"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2099,7 +2099,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.39.0"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
+source = "git+https://github.com/rust-blockchain/evm?rev=44bb77c27be9ee615eaa576ad914fbb461537276#44bb77c27be9ee615eaa576ad914fbb461537276"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2110,7 +2110,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.39.0"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
+source = "git+https://github.com/rust-blockchain/evm?rev=44bb77c27be9ee615eaa576ad914fbb461537276#44bb77c27be9ee615eaa576ad914fbb461537276"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2121,7 +2121,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.39.0"
-source = "git+https://github.com/moonbeam-foundation/evm.git?branch=ahmad-update-external-operation#6bd1f61d38e33aab44b6b52cb14deaf9668755b5"
+source = "git+https://github.com/rust-blockchain/evm?rev=44bb77c27be9ee615eaa576ad914fbb461537276#44bb77c27be9ee615eaa576ad914fbb461537276"
 dependencies = [
  "auto_impl",
  "environmental",
