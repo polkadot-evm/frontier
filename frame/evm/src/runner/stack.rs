@@ -1056,8 +1056,8 @@ where
 					if let Some(storage_meter) = self.storage_meter.as_mut() {
 						// Record the number of bytes written to storage when deploying a contract.
 						let storage_growth = ACCOUNT_CODES_KEY_SIZE
-							+ ACCOUNT_CODES_METADATA_PROOF_SIZE
-							+ len.as_u64();
+							.saturating_add(ACCOUNT_CODES_METADATA_PROOF_SIZE)
+							.saturating_add(len.as_u64());
 						storage_meter
 							.record(storage_growth)
 							.map_err(|_| ExitError::OutOfGas)?;
