@@ -17,13 +17,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![deny(unused_crate_dependencies)]
-
-mod resource;
 mod precompile;
 mod validation;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
-use resource::{ProofSizeMeter, RefTimeMeter, StorageMeter};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
@@ -59,91 +56,13 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
-/// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
-pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
-/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
-pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
-/// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
-pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
-/// Fixed trie 32 byte hash.
-pub const WRITE_PROOF_SIZE: u64 = 32;
-/// Account basic proof size + 5 bytes max of `decode_len` call.
-pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
-
-pub enum AccessedStorage {
-	AccountCodes(H160),
-	AccountStorages((H160, H256)),
-}
-
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
-	pub ref_time_meter: Option<RefTimeMeter>,
-	pub proof_size_meter: Option<ProofSizeMeter>,
-	pub storage_meter: Option<StorageMeter>,
-}
-
-impl WeightInfo {
-	pub fn new() -> Self {
-		Self {
-			ref_time_meter: None,
-			proof_size_meter: None,
-			storage_meter: None,
-		}
-	}
-
-	pub fn add_ref_time_meter(&mut self, limit: u64) -> Result<(), &'static str> {
-		self.ref_time_meter = Some(RefTimeMeter::new(limit).map_err(|_| "Invalid parameters")?);
-		Ok(())
-	}
-
-	pub fn add_proof_size_meter(&mut self, base_cost: u64, limit: u64) -> Result<(), &'static str> {
-		self.proof_size_meter =
-			Some(ProofSizeMeter::new(base_cost, limit).map_err(|_| "Invalid parameters")?);
-		Ok(())
-	}
-
-	pub fn add_storage_meter(&mut self, limit: u64) -> Result<(), &'static str> {
-		self.storage_meter =
-			Some(StorageMeter::new(limit).map_err(|_| "Invalid parameters")?);
-		Ok(())
-	}
-
-	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let Some(ref_time_meter) = self.ref_time_meter.as_mut() {
-			ref_time_meter
-				.record_ref_time(cost)
-				.map_err(|_| ExitError::OutOfGas)?;
-		}
-
-		Ok(())
-	}
-	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let Some(proof_size_meter) = self.proof_size_meter.as_mut() {
-			proof_size_meter
-				.record_proof_size(cost)
-				.map_err(|_| ExitError::OutOfGas)?;
-		}
-
-		Ok(())
-	}
-
-	pub fn refund_proof_size(&mut self, amount: u64) {
-		self.proof_size_meter.as_mut().map(|proof_size_meter| {
-			proof_size_meter.refund(amount);
-		});
-	}
-
-	pub fn proof_size_usage(&self) -> u64 {
-		self.proof_size_meter
-			.map_or(0, |proof_size_meter| proof_size_meter.usage())
-	}
-
-	pub fn refund_ref_time(&mut self, amount: u64) {
-		self.ref_time_meter.as_mut().map(|ref_time_meter| {
-			ref_time_meter.refund(amount);
-		});
-	}
+	pub ref_time_usage: Option<u64>,
+	pub ref_time_limit: Option<u64>,
+	pub proof_size_usage: Option<u64>,
+	pub proof_size_limit: Option<u64>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
