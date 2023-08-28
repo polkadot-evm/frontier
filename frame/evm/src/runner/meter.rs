@@ -69,25 +69,22 @@ impl StorageMeter {
 		gas_cost: GasCost,
 		target: StorageTarget,
 	) -> Result<(), MeterError> {
-		match gas_cost {
-			GasCost::SStore { original, new, .. } => {
-				// Validate if storage growth for the current slot has been accounted for within this transaction.
-				// Comparing Original and new to determine if a new entry is being created is not sufficient, because
-				// 'original' updates only at the end of the transaction. So, if a new entry
-				// is created and updated multiple times within the same transaction, the storage growth is
-				// accounted for multiple times, because 'original' is always zero for the subsequent updates.
-				// To avoid this, we keep track of the new entries that are created within the transaction.
-				let (address, index) = match target {
-					StorageTarget::Slot(address, index) => (address, index),
-					_ => return Ok(()),
-				};
-				let recorded = self.recorded_new_entries.contains_key(&(address, index));
-				if !recorded && original == H256::default() && !new.is_zero() {
-					self.record(ACCOUNT_STORAGE_PROOF_SIZE)?;
-					self.recorded_new_entries.insert((address, index), ());
-				}
+		if let GasCost::SStore { original, new, .. } = gas_cost {
+			// Validate if storage growth for the current slot has been accounted for within this transaction.
+			// Comparing Original and new to determine if a new entry is being created is not sufficient, because
+			// 'original' updates only at the end of the transaction. So, if a new entry
+			// is created and updated multiple times within the same transaction, the storage growth is
+			// accounted for multiple times, because 'original' is always zero for the subsequent updates.
+			// To avoid this, we keep track of the new entries that are created within the transaction.
+			let (address, index) = match target {
+				StorageTarget::Slot(address, index) => (address, index),
+				_ => return Ok(()),
+			};
+			let recorded = self.recorded_new_entries.contains_key(&(address, index));
+			if !recorded && original == H256::default() && !new.is_zero() {
+				self.record(ACCOUNT_STORAGE_PROOF_SIZE)?;
+				self.recorded_new_entries.insert((address, index), ());
 			}
-			_ => {}
 		}
 		Ok(())
 	}
