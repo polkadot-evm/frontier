@@ -33,7 +33,7 @@ mod tests;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
-use fp_ethereum::{TransactionValidationError, ValidatedTransaction as ValidatedTransactionT};
+use fp_ethereum::ValidatedTransaction as ValidatedTransactionT;
 use fp_evm::{
 	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, InvalidEvmTransactionError,
 };
@@ -113,7 +113,7 @@ where
 		if let Call::transact { transaction } = self {
 			let check = || {
 				let origin = Pallet::<T>::recover_signer(transaction).ok_or(
-					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
+					InvalidTransaction::Custom(InvalidEvmTransactionError::InvalidSignature as u8),
 				)?;
 
 				Ok(origin)
@@ -983,16 +983,16 @@ impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 	fn from(validation_error: InvalidEvmTransactionError) -> Self {
 		match validation_error {
 			InvalidEvmTransactionError::GasLimitTooLow => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
+				InvalidTransaction::Custom(InvalidEvmTransactionError::GasLimitTooLow as u8),
 			),
 			InvalidEvmTransactionError::GasLimitTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooHigh as u8),
+				InvalidTransaction::Custom(InvalidEvmTransactionError::GasLimitTooHigh as u8),
 			),
-			InvalidEvmTransactionError::GasPriceTooLow => {
-				InvalidTransactionWrapper(InvalidTransaction::Payment)
-			}
+			InvalidEvmTransactionError::GasPriceTooLow => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(InvalidEvmTransactionError::GasPriceTooLow as u8),
+			),
 			InvalidEvmTransactionError::PriorityFeeTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::MaxFeePerGasTooLow as u8),
+				InvalidTransaction::Custom(InvalidEvmTransactionError::PriorityFeeTooHigh as u8),
 			),
 			InvalidEvmTransactionError::BalanceTooLow => {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)
@@ -1007,7 +1007,13 @@ impl From<InvalidEvmTransactionError> for InvalidTransactionWrapper {
 				InvalidTransactionWrapper(InvalidTransaction::Payment)
 			}
 			InvalidEvmTransactionError::InvalidChainId => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::InvalidChainId as u8),
+				InvalidTransaction::Custom(InvalidEvmTransactionError::InvalidChainId as u8),
+			),
+			InvalidEvmTransactionError::InvalidSignature => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(InvalidEvmTransactionError::InvalidSignature as u8),
+			),
+			InvalidEvmTransactionError::UnknownError => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(InvalidEvmTransactionError::UnknownError as u8),
 			),
 		}
 	}

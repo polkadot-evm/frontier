@@ -53,17 +53,33 @@ pub struct CheckEvmTransaction<'config, E: From<InvalidEvmTransactionError>> {
 	_marker: sp_std::marker::PhantomData<E>,
 }
 
-#[derive(Debug)]
+/// Transaction validate errors
+#[repr(u8)]
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive, Debug)]
 pub enum InvalidEvmTransactionError {
+	/// The transaction gas limit is too low
 	GasLimitTooLow,
+	/// The transaction gas limit is too hign
 	GasLimitTooHigh,
+	/// The transaction gas price is too low
 	GasPriceTooLow,
+	/// The transaction priority fee is too hign
 	PriorityFeeTooHigh,
+	/// The transaction balance is too low
 	BalanceTooLow,
+	/// The transaction nonce is too low
 	TxNonceTooLow,
+	/// The transaction nonce is too high
 	TxNonceTooHigh,
+	/// The transaction fee input is invalid
 	InvalidPaymentInput,
+	/// The chain id is incorrect
 	InvalidChainId,
+	/// The transaction signature is invalid
+	InvalidSignature,
+	/// Unknown error
+	#[num_enum(default)]
+	UnknownError,
 }
 
 impl<'config, E: From<InvalidEvmTransactionError>> CheckEvmTransaction<'config, E> {

@@ -20,7 +20,8 @@
 use sc_transaction_pool_api::error::{Error as PError, IntoPoolError};
 use sp_runtime::transaction_validity::InvalidTransaction;
 // Frontier
-use fp_ethereum::TransactionValidationError as VError;
+// use fp_ethereum::TransactionValidationError as VError;
+use fp_evm::InvalidEvmTransactionError as VError;
 
 // Formats the same way Geth node formats responses.
 pub struct Geth;
@@ -43,9 +44,11 @@ impl Geth {
 					VError::InvalidSignature => "invalid sender".into(),
 					VError::GasLimitTooLow => "intrinsic gas too low".into(),
 					VError::GasLimitTooHigh => "exceeds block gas limit".into(),
-					VError::MaxFeePerGasTooLow => {
-						"max priority fee per gas higher than max fee per gas".into()
-					}
+					VError::GasPriceTooLow => "gas price too low".into(),
+					// VError::MaxFeePerGasTooLow => {
+					// 	"max priority fee per gas higher than max fee per gas".into()
+					// }
+					_ => "unknown error".into(),
 				},
 				_ => "unknown error".into(),
 			},
