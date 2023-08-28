@@ -287,7 +287,7 @@ where
 		let (reason, retv) = f(&mut executor);
 
 		// Compute the storage gas cost based on the storage growth.
-		let storage_gas = match executor.state().storage_meter {
+		let storage_gas = match &executor.state().storage_meter {
 			Some(storage_meter) => storage_meter.storage_to_gas(storage_growth_ratio),
 			None => 0,
 		};
@@ -1076,7 +1076,7 @@ where
 	) -> Result<(), ExitError> {
 		if let Some(storage_meter) = self.storage_meter.as_mut() {
 			storage_meter
-				.record_dynamic_opcode_cost(opcode, gas_cost)
+				.record_dynamic_opcode_cost(opcode, gas_cost, target)
 				.map_err(|_| ExitError::OutOfGas)?;
 		}
 

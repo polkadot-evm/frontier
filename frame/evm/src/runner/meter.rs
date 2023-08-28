@@ -1,13 +1,10 @@
-use evm::{gasometer::GasCost, Opcode};
+use evm::{
+	gasometer::{GasCost, StorageTarget},
+	Opcode,
+};
 use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
-use sp_core::H256;
-
-/// A meter for tracking the storage growth.
-#[derive(Clone, Copy)]
-pub struct StorageMeter {
-	usage: u64,
-	limit: u64,
-}
+use sp_core::{H160, H256};
+use sp_std::collections::btree_map::BTreeMap;
 
 /// An error that is returned when the storage limit has been exceeded.
 #[derive(Debug, PartialEq)]
@@ -15,10 +12,22 @@ pub enum MeterError {
 	LimitExceeded,
 }
 
+/// A meter for tracking the storage growth.
+#[derive(Clone)]
+pub struct StorageMeter {
+	usage: u64,
+	limit: u64,
+	recorded_new_entries: BTreeMap<(H160, H256), ()>,
+}
+
 impl StorageMeter {
 	/// Creates a new storage meter with the given limit.
 	pub fn new(limit: u64) -> Self {
-		Self { usage: 0, limit }
+		Self {
+			usage: 0,
+			limit,
+			recorded_new_entries: BTreeMap::new(),
+		}
 	}
 
 	/// Records the given amount of storage usage. The amount is added to the current usage.
@@ -40,15 +49,29 @@ impl StorageMeter {
 		&mut self,
 		_opcode: Opcode,
 		gas_cost: GasCost,
+		target: StorageTarget,
 	) -> Result<(), MeterError> {
 		match gas_cost {
-			GasCost::SStore { original, new, .. }
-				if original == H256::default() && !new.is_zero() =>
-			{
-				self.record(ACCOUNT_STORAGE_PROOF_SIZE)
+			GasCost::SStore { original, new, .. } => {
+				// Validate if storage growth for the current slot has been accounted for within this transaction.
+				// Comparing Original and new to determine if a new entry is being created is not sufficient, because
+				// 'original' updates only at the end of the transaction. So, if a new entry
+				// is created and updated multiple times within the same transaction, the storage growth is
+				// accounted for multiple times, because 'original' is always zero for the subsequent updates.
+				// To avoid this, we keep track of the new entries that are created within the transaction.
+				let (address, index) = match target {
+					StorageTarget::Slot(address, index) => (address, index),
+					_ => return Ok(()),
+				};
+				let recorded = self.recorded_new_entries.contains_key(&(address, index));
+				if !recorded && original == H256::default() && !new.is_zero() {
+					self.record(ACCOUNT_STORAGE_PROOF_SIZE)?;
+					self.recorded_new_entries.insert((address, index), ());
+				}
 			}
-			_ => Ok(()),
+			_ => {}
 		}
+		Ok(())
 	}
 
 	/// Returns the current usage of storage.
@@ -123,8 +146,10 @@ mod test {
 			new: H256::from_low_u64_be(2),
 			target_is_cold: false,
 		};
+		let target = StorageTarget::Slot(H160::default(), H256::from_low_u64_be(1));
+
 		meter
-			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost)
+			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost, target)
 			.unwrap();
 		assert_eq!(meter.usage(), 0);
 
@@ -136,7 +161,19 @@ mod test {
 			target_is_cold: false,
 		};
 		meter
-			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost)
+			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost, target)
+			.unwrap();
+		assert_eq!(meter.usage(), ACCOUNT_STORAGE_PROOF_SIZE);
+
+		// Try to record the same storage growth again. No change in storage growth.
+		let gas_cost = GasCost::SStore {
+			original: H256::default(),
+			current: Default::default(),
+			new: H256::from_low_u64_be(1),
+			target_is_cold: false,
+		};
+		meter
+			.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost, target)
 			.unwrap();
 		assert_eq!(meter.usage(), ACCOUNT_STORAGE_PROOF_SIZE);
 
@@ -147,7 +184,9 @@ mod test {
 			new: H256::from_low_u64_be(2),
 			target_is_cold: false,
 		};
-		let res = meter.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost);
+		let target = StorageTarget::Slot(H160::default(), H256::from_low_u64_be(2));
+
+		let res = meter.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost, target);
 		assert!(res.is_err());
 		assert_eq!(res, Err(MeterError::LimitExceeded));
 		assert_eq!(meter.usage(), 232);
