@@ -140,7 +140,7 @@ where
 	}
 
 	io.merge(
-		Eth::new(
+		Eth::<B, C, P, CT, BE, A, EC>::new(
 			client.clone(),
 			pool.clone(),
 			graph.clone(),
