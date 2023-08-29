@@ -45,7 +45,7 @@ clap = { version = "4.3", features = ["derive", "deprecated"] }
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
-evm = { git = "https://github.com/rust-blockchain/evm", rev = "44bb77c27be9ee615eaa576ad914fbb461537276", default-features = false }
+evm = { git = "https://github.com/rust-blockchain/evm", rev = "a33ac87ad7462b7e7029d12c385492b2a8311d1c", default-features = false }
 futures = "0.3.28"
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
