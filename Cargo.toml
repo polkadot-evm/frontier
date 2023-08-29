@@ -31,6 +31,9 @@ members = [
 	"primitives/self-contained",
 	"template/node",
 	"template/runtime",
+	"precompiles",
+	"precompiles/macro",
+	"precompiles/tests-external",
 ]
 resolver = "2"
 
@@ -43,6 +46,7 @@ repository = "https://github.com/paritytech/frontier/"
 async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.3", features = ["derive", "deprecated"] }
+derive_more = "0.99"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.14.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
@@ -51,10 +55,12 @@ futures = "0.3.28"
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
 impl-serde = { version = "0.4.0", default-features = false }
+impl-trait-for-tuples = "0.2.1"
 jsonrpsee = "0.16.2"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.20", default-features = false }
+num_enum = { version = "0.6.1", default-features = false }
 parity-db = "0.4.10"
 parking_lot = "0.12.1"
 rlp = { version = "0.5.2", default-features = false }
@@ -62,6 +68,7 @@ scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-featu
 scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
+similar-asserts = "1.1.0"
 sqlx = { version = "0.7.1", default-features = false, features = ["macros"] }
 thiserror = "1.0"
 tokio = "1.32.0"
@@ -96,6 +103,8 @@ sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/su
 sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-consensus-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-core = { version = "21.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core-hashing = { version = "9.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
+sp-core-hashing-proc-macro = { version = "9.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master" }
 sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
 sp-io = { version = "23.0.0", git = "https://github.com/paritytech/substrate", branch = "master", default-features = false }
@@ -165,6 +174,10 @@ pallet-evm-test-vector-support = { version = "1.0.0-dev", path = "frame/evm/test
 pallet-hotfix-sufficients = { version = "1.0.0", path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }
+
+# Frontier utils
+precompile-utils = { path = "precompiles", default-features = false }
+
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-bw6-761 = { version = "0.4.0", default-features = false }
