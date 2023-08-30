@@ -1287,6 +1287,12 @@
 <a href="#1287" id="1287">1287</a>
 <a href="#1288" id="1288">1288</a>
 <a href="#1289" id="1289">1289</a>
+<a href="#1290" id="1290">1290</a>
+<a href="#1291" id="1291">1291</a>
+<a href="#1292" id="1292">1292</a>
+<a href="#1293" id="1293">1293</a>
+<a href="#1294" id="1294">1294</a>
+<a href="#1295" id="1295">1295</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -2531,6 +2537,8 @@
 			<span class="kw-2">&amp;</span>config,
 			<span class="kw-2">&amp;</span>MockPrecompileSet,
 			<span class="bool-val">false</span>,
+			<span class="prelude-val">None</span>,
+			<span class="prelude-val">None</span>,
 			|<span class="kw">_</span>| {
 				<span class="kw">let </span>res = Runner::&lt;Test&gt;::execute(
 					H160::default(),
@@ -2541,6 +2549,8 @@
 					<span class="kw-2">&amp;</span>config,
 					<span class="kw-2">&amp;</span>MockPrecompileSet,
 					<span class="bool-val">false</span>,
+					<span class="prelude-val">None</span>,
+					<span class="prelude-val">None</span>,
 					|<span class="kw">_</span>| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
 				<span class="macro">assert_matches!</span>(
@@ -2571,6 +2581,8 @@
 			<span class="kw-2">&amp;</span>config,
 			<span class="kw-2">&amp;</span>MockPrecompileSet,
 			<span class="bool-val">false</span>,
+			<span class="prelude-val">None</span>,
+			<span class="prelude-val">None</span>,
 			|<span class="kw">_</span>| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);
 		<span class="macro">assert!</span>(res.is_ok());

@@ -33,6 +33,9 @@ var sourcesIndex = JSON.parse('{\
 "pallet_evm_precompile_sha3fips":["",[],["lib.rs"]],\
 "pallet_evm_precompile_simple":["",[],["lib.rs"]],\
 "pallet_evm_test_vector_support":["",[],["lib.rs"]],\
-"pallet_hotfix_sufficients":["",[],["lib.rs","weights.rs"]]\
+"pallet_hotfix_sufficients":["",[],["lib.rs","weights.rs"]],\
+"precompile_utils":["",[["evm",[],["costs.rs","handle.rs","logs.rs","mod.rs"]],["solidity",[["codec",[],["bytes.rs","mod.rs","native.rs"]]],["mod.rs","modifier.rs","revert.rs"]],["testing",[],["account.rs","execution.rs","handle.rs","mod.rs","modifier.rs","solidity.rs"]]],["lib.rs","precompile_set.rs","substrate.rs"]],\
+"precompile_utils_macro":["",[["precompile",[],["attr.rs","expand.rs","mod.rs","parse.rs"]]],["derive_codec.rs","lib.rs","precompile_name_from_address.rs"]],\
+"precompile_utils_tests_external":["",[],["lib.rs"]]\
 }');
 createSourceSidebar();
