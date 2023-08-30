@@ -30,7 +30,6 @@ use fp_evm::{
 };
 
 /// Gas discount table for BW6-761 G1 and G2 multi exponentiation operations.
-// TODO::to be estimated
 const BW6761_MULTIEXP_DISCOUNT_TABLE: [u16; 128] = [
 	1266, 733, 561, 474, 422, 387, 362, 344, 329, 318, 308, 300, 296, 289, 283, 279, 275, 272, 269,
 	266, 265, 260, 259, 256, 255, 254, 252, 251, 250, 249, 249, 220, 228, 225, 223, 219, 216, 214,
@@ -186,7 +185,6 @@ fn decode_g2(input: &[u8], offset: usize) -> Result<G2Projective, PrecompileFail
 pub struct Bw6761G1Add;
 
 impl Bw6761G1Add {
-	// TODO::to be estimated
 	const GAS_COST: u64 = 180;
 }
 
@@ -224,7 +222,6 @@ impl Precompile for Bw6761G1Add {
 pub struct Bw6761G1Mul;
 
 impl Bw6761G1Mul {
-	// TODO::to be estimated
 	const GAS_COST: u64 = 64_000;
 }
 
@@ -262,7 +259,6 @@ impl Precompile for Bw6761G1Mul {
 pub struct Bw6761G1MultiExp;
 
 impl Bw6761G1MultiExp {
-	// TODO::to be estimated
 	const MULTIPLIER: u64 = 1_000;
 
 	/// Returns the gas required to execute the pre-compiled contract.
@@ -334,7 +330,6 @@ impl Precompile for Bw6761G1MultiExp {
 pub struct Bw6761G2Add;
 
 impl Bw6761G2Add {
-	// TODO::to be estimated
 	const GAS_COST: u64 = 180;
 }
 
@@ -372,7 +367,6 @@ impl Precompile for Bw6761G2Add {
 pub struct Bw6761G2Mul;
 
 impl Bw6761G2Mul {
-	// TODO::to be estimated
 	const GAS_COST: u64 = 64_000;
 }
 
@@ -410,7 +404,6 @@ impl Precompile for Bw6761G2Mul {
 pub struct Bw6761G2MultiExp;
 
 impl Bw6761G2MultiExp {
-	// TODO::to be estimated
 	const MULTIPLIER: u64 = 1_000;
 
 	/// Returns the gas required to execute the pre-compiled contract.
@@ -482,7 +475,6 @@ impl Precompile for Bw6761G2MultiExp {
 pub struct Bw6761Pairing;
 
 impl Bw6761Pairing {
-	// TODO::to be estimated
 	const BASE_GAS: u64 = 120_000;
 	const PER_PAIR_GAS: u64 = 320_000;
 }
