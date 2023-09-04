@@ -33,4 +33,24 @@ describeWithFrontier("Frontier RPC (Nonce)", (context) => {
 		expect(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "pending")).to.eq(1);
 		expect(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "earliest")).to.eq(0);
 	});
+
+	step("staled nonce", async function () {
+		await createAndFinalizeBlock(context.web3);
+		expect(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "latest")).to.eq(1);
+
+		const tx = await context.web3.eth.accounts.signTransaction(
+			{
+				from: GENESIS_ACCOUNT,
+				to: TEST_ACCOUNT,
+				value: "0x400", // Must be higher than ExistentialDeposit
+				gasPrice: "0x3B9ACA00",
+				gas: "0x100000",
+				nonce: 0,
+			},
+			GENESIS_ACCOUNT_PRIVATE_KEY
+		);
+
+		let result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+		expect(result.error.message).to.be.equal("nonce too low");
+	});
 });

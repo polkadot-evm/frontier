@@ -2416,7 +2416,6 @@ dependencies = [
  "fc-mapping-sync",
  "fc-rpc-core",
  "fc-storage",
- "fp-ethereum",
  "fp-evm",
  "fp-rpc",
  "fp-storage",
@@ -2694,7 +2693,6 @@ dependencies = [
  "ethereum-types",
  "fp-evm",
  "frame-support",
- "num_enum",
  "parity-scale-codec",
  "sp-std",
 ]
@@ -2705,6 +2703,7 @@ version = "3.0.0-dev"
 dependencies = [
  "evm",
  "frame-support",
+ "num_enum",
  "parity-scale-codec",
  "scale-info",
  "serde",
