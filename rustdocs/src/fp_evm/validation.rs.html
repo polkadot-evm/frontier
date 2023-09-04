@@ -816,6 +816,26 @@
 <a href="#816" id="816">816</a>
 <a href="#817" id="817">817</a>
 <a href="#818" id="818">818</a>
+<a href="#819" id="819">819</a>
+<a href="#820" id="820">820</a>
+<a href="#821" id="821">821</a>
+<a href="#822" id="822">822</a>
+<a href="#823" id="823">823</a>
+<a href="#824" id="824">824</a>
+<a href="#825" id="825">825</a>
+<a href="#826" id="826">826</a>
+<a href="#827" id="827">827</a>
+<a href="#828" id="828">828</a>
+<a href="#829" id="829">829</a>
+<a href="#830" id="830">830</a>
+<a href="#831" id="831">831</a>
+<a href="#832" id="832">832</a>
+<a href="#833" id="833">833</a>
+<a href="#834" id="834">834</a>
+<a href="#835" id="835">835</a>
+<a href="#836" id="836">836</a>
+<a href="#837" id="837">837</a>
+<a href="#838" id="838">838</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -863,7 +883,7 @@
 }
 
 <span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E: From&lt;InvalidEvmTransactionError&gt;&gt; {
+</span><span class="kw">pub struct </span>CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E: From&lt;TransactionValidationError&gt;&gt; {
 	<span class="kw">pub </span>config: CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt;,
 	<span class="kw">pub </span>transaction: CheckEvmTransactionInput,
 	<span class="kw">pub </span>weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
@@ -871,20 +891,36 @@
 	_marker: sp_std::marker::PhantomData&lt;E&gt;,
 }
 
-<span class="attr">#[derive(Debug)]
-</span><span class="kw">pub enum </span>InvalidEvmTransactionError {
-	GasLimitTooLow,
-	GasLimitTooHigh,
-	GasPriceTooLow,
-	PriorityFeeTooHigh,
-	BalanceTooLow,
-	TxNonceTooLow,
-	TxNonceTooHigh,
-	InvalidPaymentInput,
-	InvalidChainId,
+<span class="doccomment">/// Transaction validation errors
+</span><span class="attr">#[repr(u8)]
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive, Debug)]
+</span><span class="kw">pub enum </span>TransactionValidationError {
+	<span class="doccomment">/// The transaction gas limit is too low
+	</span>GasLimitTooLow,
+	<span class="doccomment">/// The transaction gas limit is too hign
+	</span>GasLimitTooHigh,
+	<span class="doccomment">/// The transaction gas price is too low
+	</span>GasPriceTooLow,
+	<span class="doccomment">/// The transaction priority fee is too high
+	</span>PriorityFeeTooHigh,
+	<span class="doccomment">/// The transaction balance is too low
+	</span>BalanceTooLow,
+	<span class="doccomment">/// The transaction nonce is too low
+	</span>TxNonceTooLow,
+	<span class="doccomment">/// The transaction nonce is too high
+	</span>TxNonceTooHigh,
+	<span class="doccomment">/// The transaction fee input is invalid
+	</span>InvalidFeeInput,
+	<span class="doccomment">/// The chain id is incorrect
+	</span>InvalidChainId,
+	<span class="doccomment">/// The transaction signature is invalid
+	</span>InvalidSignature,
+	<span class="doccomment">/// Unknown error
+	</span><span class="attr">#[num_enum(default)]
+	</span>UnknownError,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;config</span>, E: From&lt;InvalidEvmTransactionError&gt;&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;config</span>, E: From&lt;TransactionValidationError&gt;&gt; CheckEvmTransaction&lt;<span class="lifetime">&#39;config</span>, E&gt; {
 	<span class="kw">pub fn </span>new(
 		config: CheckEvmTransactionConfig&lt;<span class="lifetime">&#39;config</span>&gt;,
 		transaction: CheckEvmTransactionInput,
@@ -902,16 +938,16 @@
 
 	<span class="kw">pub fn </span>validate_in_pool_for(<span class="kw-2">&amp;</span><span class="self">self</span>, who: <span class="kw-2">&amp;</span>Account) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
 		<span class="kw">if </span><span class="self">self</span>.transaction.nonce &lt; who.nonce {
-			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::TxNonceTooLow.into());
+			<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::TxNonceTooLow.into());
 		}
 		<span class="self">self</span>.validate_common()
 	}
 
 	<span class="kw">pub fn </span>validate_in_block_for(<span class="kw-2">&amp;</span><span class="self">self</span>, who: <span class="kw-2">&amp;</span>Account) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="kw-2">&amp;</span><span class="self">Self</span>, E&gt; {
 		<span class="kw">if </span><span class="self">self</span>.transaction.nonce &gt; who.nonce {
-			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::TxNonceTooHigh.into());
+			<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::TxNonceTooHigh.into());
 		} <span class="kw">else if </span><span class="self">self</span>.transaction.nonce &lt; who.nonce {
-			<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::TxNonceTooLow.into());
+			<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::TxNonceTooLow.into());
 		}
 		<span class="self">self</span>.validate_common()
 	}
@@ -920,7 +956,7 @@
 		<span class="comment">// Chain id matches the one in the signature.
 		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(chain_id) = <span class="self">self</span>.transaction.chain_id {
 			<span class="kw">if </span>chain_id != <span class="self">self</span>.config.chain_id {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::InvalidChainId.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::InvalidChainId.into());
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
@@ -932,7 +968,7 @@
 		<span class="kw">if </span><span class="self">self</span>.config.is_transactional || gas_price &gt; U256::zero() {
 			<span class="comment">// Transaction max fee is at least the current base fee.
 			</span><span class="kw">if </span>gas_price &lt; <span class="self">self</span>.config.base_fee {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::GasPriceTooLow.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::GasPriceTooLow.into());
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
@@ -955,7 +991,7 @@
 		<span class="kw">if </span><span class="self">self</span>.config.is_transactional || fee &gt; U256::zero() {
 			<span class="kw">let </span>total_payment = <span class="self">self</span>.transaction.value.saturating_add(fee);
 			<span class="kw">if </span>who.balance &lt; total_payment {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::BalanceTooLow.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::BalanceTooLow.into());
 			}
 		}
 		<span class="prelude-val">Ok</span>(<span class="self">self</span>)
@@ -979,7 +1015,7 @@
 			<span class="comment">// EIP-1559 tip.
 			</span>(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(max_fee_per_gas), <span class="prelude-val">Some</span>(max_priority_fee_per_gas)) =&gt; {
 				<span class="kw">if </span>max_priority_fee_per_gas &gt; max_fee_per_gas {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::PriorityFeeTooHigh.into());
+					<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::PriorityFeeTooHigh.into());
 				}
 				<span class="kw">let </span>effective_gas_price = <span class="self">self
 					</span>.config
@@ -991,7 +1027,7 @@
 			}
 			<span class="kw">_ </span>=&gt; {
 				<span class="kw">if </span><span class="self">self</span>.config.is_transactional {
-					<span class="prelude-val">Err</span>(InvalidEvmTransactionError::InvalidPaymentInput.into())
+					<span class="prelude-val">Err</span>(TransactionValidationError::InvalidFeeInput.into())
 				} <span class="kw">else </span>{
 					<span class="comment">// Allow non-set fee input for non-transactional calls.
 					</span><span class="prelude-val">Ok</span>((U256::zero(), <span class="prelude-val">None</span>))
@@ -1010,7 +1046,7 @@
 				<span class="kw">let _ </span>= weight_limit
 					.proof_size()
 					.checked_sub(proof_size_base_cost)
-					.ok_or(InvalidEvmTransactionError::GasLimitTooLow)<span class="question-mark">?</span>;
+					.ok_or(TransactionValidationError::GasLimitTooLow)<span class="question-mark">?</span>;
 			}
 
 			<span class="comment">// We must ensure a transaction can pay the cost of its data bytes.
@@ -1032,12 +1068,12 @@
 			};
 
 			<span class="kw">if </span>gasometer.record_transaction(transaction_cost).is_err() {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::GasLimitTooLow.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::GasLimitTooLow.into());
 			}
 
 			<span class="comment">// Transaction gas limit is within the upper bound block gas limit.
 			</span><span class="kw">if </span><span class="self">self</span>.transaction.gas_limit &gt; <span class="self">self</span>.config.block_gas_limit {
-				<span class="kw">return </span><span class="prelude-val">Err</span>(InvalidEvmTransactionError::GasLimitTooHigh.into());
+				<span class="kw">return </span><span class="prelude-val">Err</span>(TransactionValidationError::GasLimitTooHigh.into());
 			}
 		}
 
@@ -1058,24 +1094,28 @@
 		BalanceTooLow,
 		TxNonceTooLow,
 		TxNonceTooHigh,
-		InvalidPaymentInput,
+		InvalidFeeInput,
 		InvalidChainId,
+		InvalidSignature,
+		UnknownError,
 	}
 
 	<span class="kw">static </span>SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
 
-	<span class="kw">impl </span>From&lt;InvalidEvmTransactionError&gt; <span class="kw">for </span>TestError {
-		<span class="kw">fn </span>from(e: InvalidEvmTransactionError) -&gt; <span class="self">Self </span>{
+	<span class="kw">impl </span>From&lt;TransactionValidationError&gt; <span class="kw">for </span>TestError {
+		<span class="kw">fn </span>from(e: TransactionValidationError) -&gt; <span class="self">Self </span>{
 			<span class="kw">match </span>e {
-				InvalidEvmTransactionError::GasLimitTooLow =&gt; TestError::GasLimitTooLow,
-				InvalidEvmTransactionError::GasLimitTooHigh =&gt; TestError::GasLimitTooHigh,
-				InvalidEvmTransactionError::GasPriceTooLow =&gt; TestError::GasPriceTooLow,
-				InvalidEvmTransactionError::PriorityFeeTooHigh =&gt; TestError::PriorityFeeTooHigh,
-				InvalidEvmTransactionError::BalanceTooLow =&gt; TestError::BalanceTooLow,
-				InvalidEvmTransactionError::TxNonceTooLow =&gt; TestError::TxNonceTooLow,
-				InvalidEvmTransactionError::TxNonceTooHigh =&gt; TestError::TxNonceTooHigh,
-				InvalidEvmTransactionError::InvalidPaymentInput =&gt; TestError::InvalidPaymentInput,
-				InvalidEvmTransactionError::InvalidChainId =&gt; TestError::InvalidChainId,
+				TransactionValidationError::GasLimitTooLow =&gt; TestError::GasLimitTooLow,
+				TransactionValidationError::GasLimitTooHigh =&gt; TestError::GasLimitTooHigh,
+				TransactionValidationError::GasPriceTooLow =&gt; TestError::GasPriceTooLow,
+				TransactionValidationError::PriorityFeeTooHigh =&gt; TestError::PriorityFeeTooHigh,
+				TransactionValidationError::BalanceTooLow =&gt; TestError::BalanceTooLow,
+				TransactionValidationError::TxNonceTooLow =&gt; TestError::TxNonceTooLow,
+				TransactionValidationError::TxNonceTooHigh =&gt; TestError::TxNonceTooHigh,
+				TransactionValidationError::InvalidFeeInput =&gt; TestError::InvalidFeeInput,
+				TransactionValidationError::InvalidChainId =&gt; TestError::InvalidChainId,
+				TransactionValidationError::InvalidSignature =&gt; TestError::InvalidSignature,
+				TransactionValidationError::UnknownError =&gt; TestError::UnknownError,
 			}
 		}
 	}
@@ -1443,7 +1483,7 @@
 		<span class="kw">let </span>test = transaction_none_fee(<span class="bool-val">true</span>);
 		<span class="kw">let </span>res = test.with_base_fee();
 		<span class="macro">assert!</span>(res.is_err());
-		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidFeeInput);
 	}
 
 	<span class="attr">#[test]
@@ -1530,7 +1570,7 @@
 		<span class="kw">let </span>test = transaction_none_fee(<span class="bool-val">true</span>);
 		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
 		<span class="macro">assert!</span>(res.is_err());
-		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidFeeInput);
 	}
 
 	<span class="attr">#[test]
@@ -1610,7 +1650,7 @@
 		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
 		<span class="kw">let </span>res = test.with_balance_for(<span class="kw-2">&amp;</span>who);
 		<span class="macro">assert!</span>(res.is_err());
-		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidFeeInput);
 		<span class="comment">// Succeeds for non-transactional.
 		</span><span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
 		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
@@ -1626,7 +1666,7 @@
 		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);
 		<span class="kw">let </span>res = test.with_base_fee();
 		<span class="macro">assert!</span>(res.is_err());
-		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidPaymentInput);
+		<span class="macro">assert_eq!</span>(res.unwrap_err(), TestError::InvalidFeeInput);
 		<span class="comment">// Succeeds for non-transactional.
 		</span><span class="kw">let </span>is_transactional = <span class="bool-val">false</span>;
 		<span class="kw">let </span>test = invalid_transaction_mixed_fees(is_transactional);

@@ -53,6 +53,9 @@
 <a href="#53" id="53">53</a>
 <a href="#54" id="54">54</a>
 <a href="#55" id="55">55</a>
+<a href="#56" id="56">56</a>
+<a href="#57" id="57">57</a>
+<a href="#58" id="58">58</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -75,7 +78,7 @@
 </span><span class="kw">use </span>sc_transaction_pool_api::error::{Error <span class="kw">as </span>PError, IntoPoolError};
 <span class="kw">use </span>sp_runtime::transaction_validity::InvalidTransaction;
 <span class="comment">// Frontier
-</span><span class="kw">use </span>fp_ethereum::TransactionValidationError <span class="kw">as </span>VError;
+</span><span class="kw">use </span>fp_evm::TransactionValidationError <span class="kw">as </span>VError;
 
 <span class="comment">// Formats the same way Geth node formats responses.
 </span><span class="kw">pub struct </span>Geth;
@@ -98,9 +101,12 @@
 					VError::InvalidSignature =&gt; <span class="string">&quot;invalid sender&quot;</span>.into(),
 					VError::GasLimitTooLow =&gt; <span class="string">&quot;intrinsic gas too low&quot;</span>.into(),
 					VError::GasLimitTooHigh =&gt; <span class="string">&quot;exceeds block gas limit&quot;</span>.into(),
-					VError::MaxFeePerGasTooLow =&gt; {
+					VError::GasPriceTooLow =&gt; <span class="string">&quot;gas price less than block base fee&quot;</span>.into(),
+					VError::PriorityFeeTooHigh =&gt; {
 						<span class="string">&quot;max priority fee per gas higher than max fee per gas&quot;</span>.into()
 					}
+					VError::InvalidFeeInput =&gt; <span class="string">&quot;invalid fee input&quot;</span>.into(),
+					<span class="kw">_ </span>=&gt; <span class="string">&quot;transaction validation error&quot;</span>.into(),
 				},
 				<span class="kw">_ </span>=&gt; <span class="string">&quot;unknown error&quot;</span>.into(),
 			},

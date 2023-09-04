@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Receipt","Transaction","TransactionAction","TransactionValidationError"],"struct":["AccessListItem","LegacyTransactionMessage","Log","TransactionData"],"trait":["ValidatedTransaction"],"type":["Block"]};
+window.SIDEBAR_ITEMS = {"enum":["Receipt","Transaction","TransactionAction"],"struct":["AccessListItem","LegacyTransactionMessage","Log","TransactionData"],"trait":["ValidatedTransaction"],"type":["Block"]};
