@@ -21,7 +21,7 @@
 use ark_bw6_761::{Fq, Fr, G1Affine, G1Projective, G2Affine, G2Projective, BW6_761};
 use ark_ec::{pairing::Pairing, AffineRepr, CurveGroup, VariableBaseMSM};
 use ark_ff::{BigInteger768, PrimeField, Zero};
-use ark_std::ops::Mul;
+use ark_std::{ops::Mul, vec::Vec};
 
 // Frontier
 use fp_evm::{

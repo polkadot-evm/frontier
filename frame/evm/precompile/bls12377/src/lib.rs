@@ -28,7 +28,7 @@ use ark_ec::{
 	AffineRepr, CurveGroup, VariableBaseMSM,
 };
 use ark_ff::{BigInteger384, PrimeField, Zero};
-use ark_std::ops::Mul;
+use ark_std::{ops::Mul, vec::Vec};
 
 // Frontier
 use fp_evm::{
