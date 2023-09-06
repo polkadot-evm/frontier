@@ -555,7 +555,7 @@ impl<T: Config> Pallet<T> {
 		builder.build()
 	}
 
-	fn apply_validated_transaction(
+	pub fn apply_validated_transaction(
 		source: H160,
 		transaction: Transaction,
 	) -> DispatchResultWithPostInfo {
