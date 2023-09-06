@@ -14,7 +14,8 @@ The Runtime's `Signature` type is configured as [`sp_runtime::MultiSignature`](h
 # Unified Accounts
 
 The second strategy was [originally implemented by Moonbeam](https://docs.moonbeam.network/learn/features/unified-accounts/).
-It consists of using `fp-account` so that  `unified-accounts` is the Account type used for `frame_system::pallet::Config::AccountId`.
+It consists of using `fp-account` so that `AccountId20` is the Account type used for 
+`frame_system::pallet::Config::AccountId`.
 
 The Runtime's `Signature` type is configured as `EthereumSigner`, which means only `ECDSA` signatures are supported.
 
@@ -50,6 +51,5 @@ Frontier's Template will pre-fund several well-known addresses that (mostly) con
 Frontier provides two different runtimes, one for each strategy.
 You can choose which one want to build by using the `--feature` flag. For example:
 ```
-$ cargo build --release                             # this builds a runtime with H256 -> H160
-mapping
-$ cargo build --release --features unified-accounts # this build a runtime with Unified Accounts
+$ cargo build                             # this builds a runtime with H256 -> H160 mapping
+$ cargo build --features unified-accounts # this builds a runtime with Unified Accounts
