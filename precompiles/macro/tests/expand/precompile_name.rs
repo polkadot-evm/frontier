@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
+// Copyright (c) 2019-2022 Moonsong Labs.
 // Copyright (c) 2023 Parity Technologies (UK) Ltd.
 //
 // This program is free software: you can redistribute it and/or modify
