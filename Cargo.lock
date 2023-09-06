@@ -3039,6 +3039,7 @@ dependencies = [
  "sp-consensus-grandpa",
  "sp-core",
  "sp-inherents",
+ "sp-keyring",
  "sp-offchain",
  "sp-runtime",
  "sp-session",

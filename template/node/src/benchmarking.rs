@@ -25,12 +25,27 @@ use scale_codec::Encode;
 // Substrate
 use sc_cli::Result;
 use sc_client_api::BlockBackend;
-use sp_core::{ecdsa, Pair};
+#[cfg(feature = "unified-accounts")]
+use sp_core::ecdsa;
+#[cfg(not(feature = "unified-accounts"))]
+use sp_core::sr25519;
+use sp_core::Pair;
 use sp_inherents::{InherentData, InherentDataProvider};
+#[cfg(not(feature = "unified-accounts"))]
+use sp_keyring::Sr25519Keyring;
 use sp_runtime::{generic::Era, OpaqueExtrinsic, SaturatedConversion};
 // Frontier
+#[cfg(not(feature = "unified-accounts"))]
+use fp_account as _;
+#[cfg(feature = "unified-accounts")]
 use fp_account::AccountId20;
 use frontier_template_runtime::{self as runtime, AccountId, Balance, BalancesCall, SystemCall};
+#[cfg(not(feature = "unified-accounts"))]
+use hex_literal as _;
+#[cfg(feature = "unified-accounts")]
+use sp_keyring as _;
+#[cfg(not(feature = "unified-accounts"))]
+use sp_runtime::AccountId32;
 
 use crate::client::Client;
 
@@ -57,8 +72,23 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for RemarkBuilder {
 		"remark"
 	}
 
+	#[cfg(feature = "unified-accounts")]
 	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
 		let acc = ecdsa::Pair::from_string("//Bob", None).expect("static values are valid; qed");
+		let extrinsic: OpaqueExtrinsic = create_benchmark_extrinsic(
+			self.client.as_ref(),
+			acc,
+			SystemCall::remark { remark: vec![] }.into(),
+			nonce,
+		)
+		.into();
+
+		Ok(extrinsic)
+	}
+
+	#[cfg(not(feature = "unified-accounts"))]
+	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
+		let acc = Sr25519Keyring::Bob.pair();
 		let extrinsic: OpaqueExtrinsic = create_benchmark_extrinsic(
 			self.client.as_ref(),
 			acc,
@@ -100,6 +130,7 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 		"transfer_keep_alive"
 	}
 
+	#[cfg(feature = "unified-accounts")]
 	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
 		let acc = ecdsa::Pair::from_string("//Bob", None).expect("static values are valid; qed");
 		let extrinsic: OpaqueExtrinsic = create_benchmark_extrinsic(
@@ -116,8 +147,27 @@ impl frame_benchmarking_cli::ExtrinsicBuilder for TransferKeepAliveBuilder {
 
 		Ok(extrinsic)
 	}
+
+	#[cfg(not(feature = "unified-accounts"))]
+	fn build(&self, nonce: u32) -> std::result::Result<OpaqueExtrinsic, &'static str> {
+		let acc = Sr25519Keyring::Bob.pair();
+		let extrinsic: OpaqueExtrinsic = create_benchmark_extrinsic(
+			self.client.as_ref(),
+			acc,
+			BalancesCall::transfer_keep_alive {
+				dest: self.dest.clone().into(),
+				value: self.value,
+			}
+			.into(),
+			nonce,
+		)
+		.into();
+
+		Ok(extrinsic)
+	}
 }
 
+#[cfg(feature = "unified-accounts")]
 /// Create a transaction using the given `call`.
 ///
 /// Note: Should only be used for benchmarking.
@@ -173,6 +223,66 @@ pub fn create_benchmark_extrinsic(
 		call,
 		AccountId20::from(sender.public()),
 		runtime::Signature::new(signature),
+		extra,
+	)
+}
+
+#[cfg(not(feature = "unified-accounts"))]
+/// Create a transaction using the given `call`.
+///
+/// Note: Should only be used for benchmarking.
+pub fn create_benchmark_extrinsic(
+	client: &Client,
+	sender: sr25519::Pair,
+	call: runtime::RuntimeCall,
+	nonce: u32,
+) -> runtime::UncheckedExtrinsic {
+	let genesis_hash = client
+		.block_hash(0)
+		.ok()
+		.flatten()
+		.expect("Genesis block exists; qed");
+	let best_hash = client.chain_info().best_hash;
+	let best_block = client.chain_info().best_number;
+
+	let period = runtime::BlockHashCount::get()
+		.checked_next_power_of_two()
+		.map(|c| c / 2)
+		.unwrap_or(2) as u64;
+	let extra: runtime::SignedExtra = (
+		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
+		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
+		frame_system::CheckTxVersion::<runtime::Runtime>::new(),
+		frame_system::CheckGenesis::<runtime::Runtime>::new(),
+		frame_system::CheckMortality::<runtime::Runtime>::from(Era::mortal(
+			period,
+			best_block.saturated_into(),
+		)),
+		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
+		frame_system::CheckWeight::<runtime::Runtime>::new(),
+		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
+	);
+
+	let raw_payload = runtime::SignedPayload::from_raw(
+		call.clone(),
+		extra.clone(),
+		(
+			(),
+			runtime::VERSION.spec_version,
+			runtime::VERSION.transaction_version,
+			genesis_hash,
+			best_hash,
+			(),
+			(),
+			(),
+		),
+	);
+	let signature = raw_payload.using_encoded(|e| sender.sign(e));
+
+	runtime::UncheckedExtrinsic::new_signed(
+		call,
+		AccountId32::from(sender.public()).into(),
+		runtime::Signature::Sr25519(signature),
 		extra,
 	)
 }

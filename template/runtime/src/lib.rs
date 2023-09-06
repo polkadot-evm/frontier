@@ -43,6 +43,9 @@ use pallet_grandpa::{
 };
 use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter};
 // Frontier
+#[cfg(not(feature = "unified-accounts"))]
+use fp_account as _;
+#[cfg(feature = "unified-accounts")]
 use fp_account::EthereumSignature;
 use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
@@ -50,9 +53,13 @@ use pallet_ethereum::{
 	Call::transact, PostLogContent, Transaction as EthereumTransaction, TransactionAction,
 	TransactionData,
 };
-use pallet_evm::{
-	Account as EVMAccount, EnsureAccountId20, FeeCalculator, IdentityAddressMapping, Runner,
-};
+use pallet_evm::{Account as EVMAccount, FeeCalculator, Runner};
+#[cfg(feature = "unified-accounts")]
+use pallet_evm::{EnsureAccountId20, IdentityAddressMapping};
+#[cfg(not(feature = "unified-accounts"))]
+use pallet_evm::{EnsureAddressTruncated, HashedAddressMapping};
+#[cfg(not(feature = "unified-accounts"))]
+use sp_runtime::MultiSignature;
 
 // A few exports that help ease life for downstream crates.
 pub use frame_system::Call as SystemCall;
@@ -66,8 +73,13 @@ use precompiles::FrontierPrecompiles;
 /// Type of block number.
 pub type BlockNumber = u32;
 
+#[cfg(feature = "unified-accounts")]
 /// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
 pub type Signature = EthereumSignature;
+
+#[cfg(not(feature = "unified-accounts"))]
+/// Alias to 512-bit hash when used in the context of a transaction signature on the chain.
+pub type Signature = MultiSignature;
 
 /// Some way of identifying an account on the chain. We intentionally make it equivalent
 /// to the public key of our transaction signing scheme.
@@ -329,6 +341,7 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), 0);
 }
 
+#[cfg(feature = "unified-accounts")]
 impl pallet_evm::Config for Runtime {
 	type FeeCalculator = BaseFee;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
@@ -337,6 +350,30 @@ impl pallet_evm::Config for Runtime {
 	type CallOrigin = EnsureAccountId20;
 	type WithdrawOrigin = EnsureAccountId20;
 	type AddressMapping = IdentityAddressMapping;
+	type Currency = Balances;
+	type RuntimeEvent = RuntimeEvent;
+	type PrecompilesType = FrontierPrecompiles<Self>;
+	type PrecompilesValue = PrecompilesValue;
+	type ChainId = EVMChainId;
+	type BlockGasLimit = BlockGasLimit;
+	type Runner = pallet_evm::runner::stack::Runner<Self>;
+	type OnChargeTransaction = ();
+	type OnCreate = ();
+	type FindAuthor = FindAuthorTruncated<Aura>;
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	type Timestamp = Timestamp;
+	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
+}
+
+#[cfg(not(feature = "unified-accounts"))]
+impl pallet_evm::Config for Runtime {
+	type FeeCalculator = BaseFee;
+	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
+	type WeightPerGas = WeightPerGas;
+	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
+	type CallOrigin = EnsureAddressTruncated;
+	type WithdrawOrigin = EnsureAddressTruncated;
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type Currency = Balances;
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
@@ -396,8 +433,15 @@ impl pallet_base_fee::Config for Runtime {
 	type DefaultElasticity = DefaultElasticity;
 }
 
+#[cfg(feature = "unified-accounts")]
 impl pallet_hotfix_sufficients::Config for Runtime {
 	type AddressMapping = IdentityAddressMapping;
+	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Self>;
+}
+
+#[cfg(not(feature = "unified-accounts"))]
+impl pallet_hotfix_sufficients::Config for Runtime {
+	type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Self>;
 }
 

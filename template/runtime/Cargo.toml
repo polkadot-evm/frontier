@@ -63,6 +63,7 @@ substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
 default = ["std", "with-rocksdb-weights"]
+unified-accounts = []
 with-rocksdb-weights = []
 with-paritydb-weights = []
 std = [
