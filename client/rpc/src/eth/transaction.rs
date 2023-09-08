@@ -34,7 +34,7 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{transaction_build, Eth, EthConfig},
+	eth::{transaction_build, BlockInfo, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
@@ -49,11 +49,10 @@ where
 {
 	pub async fn transaction_by_hash(&self, hash: H256) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
 		let graph = Arc::clone(&self.graph);
 
-		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -62,7 +61,7 @@ where
 		.await
 		.map_err(|err| internal_err(format!("{:?}", err)))?
 		{
-			Some((hash, index)) => (hash, index as usize),
+			Some((eth_block_hash, index)) => (eth_block_hash, index as usize),
 			None => {
 				let api = client.runtime_api();
 				let best_block = client.info().best_hash;
@@ -123,30 +122,12 @@ where
 			}
 		};
 
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some(hash) => hash,
-			_ => return Ok(None),
-		};
-
-		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
-		let statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.await;
-
-		let base_fee = client
-			.runtime_api()
-			.gas_price(substrate_hash)
-			.unwrap_or_default();
-
+		let BlockInfo {
+			block,
+			statuses,
+			base_fee,
+			..
+		} = self.block_info_by_eth_block_hash(eth_block_hash).await?;
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
 				block.transactions[index].clone(),
@@ -163,35 +144,13 @@ where
 		hash: H256,
 		index: Index,
 	) -> RpcResult<Option<Transaction>> {
-		let client = Arc::clone(&self.client);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
-		let backend = Arc::clone(&self.backend);
-
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some(hash) => hash,
-			_ => return Ok(None),
-		};
-
 		let index = index.value();
-
-		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
-		let statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.await;
-
-		let base_fee = client
-			.runtime_api()
-			.gas_price(substrate_hash)
-			.unwrap_or_default();
+		let BlockInfo {
+			block,
+			statuses,
+			base_fee,
+			..
+		} = self.block_info_by_eth_block_hash(hash).await?;
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -217,36 +176,13 @@ where
 		number: BlockNumber,
 		index: Index,
 	) -> RpcResult<Option<Transaction>> {
-		let client = Arc::clone(&self.client);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
-		let backend = Arc::clone(&self.backend);
-
-		let id = match frontier_backend_client::native_block_id::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			Some(number),
-		)
-		.await?
-		{
-			Some(id) => id,
-			None => return Ok(None),
-		};
-		let substrate_hash = client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
-
 		let index = index.value();
-		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
-		let statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.await;
-
-		let base_fee = client
-			.runtime_api()
-			.gas_price(substrate_hash)
-			.unwrap_or_default();
+		let BlockInfo {
+			block,
+			statuses,
+			base_fee,
+			..
+		} = self.block_info_by_number(number).await?;
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -267,114 +203,82 @@ where
 		}
 	}
 
-	pub async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
-		let client = Arc::clone(&self.client);
-		let overrides = Arc::clone(&self.overrides);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
-		let backend = Arc::clone(&self.backend);
-
-		let (hash, index) = match frontier_backend_client::load_transactions::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-			true,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some((hash, index)) => (hash, index as usize),
-			None => return Ok(None),
-		};
-
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some(hash) => hash,
-			_ => return Ok(None),
-		};
-
-		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-		let handler = overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&overrides.fallback);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
-		let statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.await;
-
-		let receipts = handler.current_receipts(substrate_hash);
-		let is_eip1559 = handler.is_eip1559(substrate_hash);
-
+	pub async fn transaction_receipt(
+		&self,
+		block_info: &BlockInfo<B::Hash>,
+		hash: H256,
+		index: usize,
+	) -> RpcResult<Option<Receipt>> {
+		let BlockInfo {
+			block,
+			receipts,
+			statuses,
+			substrate_hash,
+			..
+		} = block_info.clone();
 		match (block, statuses, receipts) {
 			(Some(block), Some(statuses), Some(receipts)) => {
 				let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 				let receipt = receipts[index].clone();
 
-				let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) = if !is_eip1559
-				{
-					// Pre-london frontier update stored receipts require cumulative gas calculation.
-					match receipt {
-						ethereum::ReceiptV3::Legacy(ref d) => {
-							let index = core::cmp::min(receipts.len(), index + 1);
-							let cumulative_gas: u32 = receipts[..index]
-								.iter()
-								.map(|r| match r {
-									ethereum::ReceiptV3::Legacy(d) => Ok(d.used_gas.as_u32()),
-									_ => Err(internal_err(format!(
-										"Unknown receipt for request {}",
-										hash
-									))),
-								})
-								.sum::<RpcResult<u32>>()?;
-							(
-								d.logs.clone(),
-								d.logs_bloom,
-								d.status_code,
-								U256::from(cumulative_gas),
-								d.used_gas,
-							)
+				let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) =
+					if !block_info.is_eip1559 {
+						// Pre-london frontier update stored receipts require cumulative gas calculation.
+						match receipt {
+							ethereum::ReceiptV3::Legacy(ref d) => {
+								let index = core::cmp::min(receipts.len(), index + 1);
+								let cumulative_gas: u32 = receipts[..index]
+									.iter()
+									.map(|r| match r {
+										ethereum::ReceiptV3::Legacy(d) => Ok(d.used_gas.as_u32()),
+										_ => Err(internal_err(format!(
+											"Unknown receipt for request {}",
+											hash
+										))),
+									})
+									.sum::<RpcResult<u32>>()?;
+								(
+									d.logs.clone(),
+									d.logs_bloom,
+									d.status_code,
+									U256::from(cumulative_gas),
+									d.used_gas,
+								)
+							}
+							_ => {
+								return Err(internal_err(format!(
+									"Unknown receipt for request {}",
+									hash
+								)))
+							}
 						}
-						_ => {
-							return Err(internal_err(format!(
-								"Unknown receipt for request {}",
-								hash
-							)))
-						}
-					}
-				} else {
-					match receipt {
-						ethereum::ReceiptV3::Legacy(ref d)
-						| ethereum::ReceiptV3::EIP2930(ref d)
-						| ethereum::ReceiptV3::EIP1559(ref d) => {
-							let cumulative_gas = d.used_gas;
-							let gas_used = if index > 0 {
-								let previous_receipt = receipts[index - 1].clone();
-								let previous_gas_used = match previous_receipt {
-									ethereum::ReceiptV3::Legacy(d)
-									| ethereum::ReceiptV3::EIP2930(d)
-									| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+					} else {
+						match receipt {
+							ethereum::ReceiptV3::Legacy(ref d)
+							| ethereum::ReceiptV3::EIP2930(ref d)
+							| ethereum::ReceiptV3::EIP1559(ref d) => {
+								let cumulative_gas = d.used_gas;
+								let gas_used = if index > 0 {
+									let previous_receipt = receipts[index - 1].clone();
+									let previous_gas_used = match previous_receipt {
+										ethereum::ReceiptV3::Legacy(d)
+										| ethereum::ReceiptV3::EIP2930(d)
+										| ethereum::ReceiptV3::EIP1559(d) => d.used_gas,
+									};
+									cumulative_gas.saturating_sub(previous_gas_used)
+								} else {
+									cumulative_gas
 								};
-								cumulative_gas.saturating_sub(previous_gas_used)
-							} else {
-								cumulative_gas
-							};
-							(
-								d.logs.clone(),
-								d.logs_bloom,
-								d.status_code,
-								cumulative_gas,
-								gas_used,
-							)
+								(
+									d.logs.clone(),
+									d.logs_bloom,
+									d.status_code,
+									cumulative_gas,
+									gas_used,
+								)
+							}
 						}
-					}
-				};
+					};
 
 				let status = statuses[index].clone();
 				let mut cumulative_receipts = receipts;
@@ -383,7 +287,8 @@ where
 				let effective_gas_price = match transaction {
 					EthereumTransaction::Legacy(t) => t.gas_price,
 					EthereumTransaction::EIP2930(t) => t.gas_price,
-					EthereumTransaction::EIP1559(t) => client
+					EthereumTransaction::EIP1559(t) => self
+						.client
 						.runtime_api()
 						.gas_price(substrate_hash)
 						.unwrap_or_default()

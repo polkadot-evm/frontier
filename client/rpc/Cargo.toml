@@ -52,14 +52,13 @@ fc-api = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
-fp-ethereum = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
-tempfile = "3.7.0"
+tempfile = "3.8.0"
 # Substrate
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }

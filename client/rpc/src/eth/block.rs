@@ -33,7 +33,7 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{rich_block_build, Eth, EthConfig},
+	eth::{rich_block_build, BlockInfo, Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
@@ -43,34 +43,17 @@ where
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
-	BE: Backend<B>,
+	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
-		let client = Arc::clone(&self.client);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
-		let backend = Arc::clone(&self.backend);
-
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			hash,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some(hash) => hash,
-			_ => return Ok(None),
-		};
-
-		let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
-		let statuses = block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
-			.await;
-
-		let base_fee = client.runtime_api().gas_price(substrate_hash).ok();
+		let BlockInfo {
+			block,
+			statuses,
+			substrate_hash,
+			base_fee,
+			..
+		} = self.block_info_by_eth_block_hash(hash).await?;
 
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => {
@@ -79,7 +62,7 @@ where
 					statuses.into_iter().map(Option::Some).collect(),
 					Some(hash),
 					full,
-					base_fee,
+					Some(base_fee),
 					false,
 				);
 
@@ -203,26 +186,8 @@ where
 	}
 
 	pub async fn block_transaction_count_by_hash(&self, hash: H256) -> RpcResult<Option<U256>> {
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			hash,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
-		{
-			Some(hash) => hash,
-			_ => return Ok(None),
-		};
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-		let block = self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback)
-			.current_block(substrate_hash);
-
-		match block {
+		let blockinfo = self.block_info_by_eth_block_hash(hash).await?;
+		match blockinfo.block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
 			None => Ok(None),
 		}
@@ -239,32 +204,34 @@ where
 			)));
 		}
 
-		let id = match frontier_backend_client::native_block_id::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			Some(number),
-		)
-		.await?
-		{
-			Some(id) => id,
-			None => return Ok(None),
-		};
-		let substrate_hash = self
-			.client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-		let block = self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback)
-			.current_block(substrate_hash);
-
-		match block {
+		let block_info = self.block_info_by_number(number).await?;
+		match block_info.block {
 			Some(block) => Ok(Some(U256::from(block.transactions.len()))),
 			None => Ok(None),
 		}
+	}
+
+	pub async fn block_transaction_receipts(
+		&self,
+		number: BlockNumber,
+	) -> RpcResult<Option<Vec<Receipt>>> {
+		let block_info = self.block_info_by_number(number).await?;
+		let Some(statuses) = block_info.clone().statuses else {
+			return Ok(None);
+		};
+
+		let mut receipts = Vec::new();
+		let transactions: Vec<(H256, usize)> = statuses
+			.iter()
+			.map(|tx| (tx.transaction_hash, tx.transaction_index as usize))
+			.collect();
+		for (hash, index) in transactions {
+			if let Some(receipt) = self.transaction_receipt(&block_info, hash, index).await? {
+				receipts.push(receipt);
+			}
+		}
+
+		Ok(Some(receipts))
 	}
 
 	pub fn block_uncles_count_by_hash(&self, _: H256) -> RpcResult<U256> {

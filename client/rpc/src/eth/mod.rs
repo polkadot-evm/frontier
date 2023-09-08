@@ -51,7 +51,7 @@ use fp_rpc::{
 	RuntimeStorageOverride, TransactionStatus,
 };
 
-use crate::{internal_err, public_key, signer::EthSigner};
+use crate::{frontier_backend_client, internal_err, public_key, signer::EthSigner};
 
 pub use self::{
 	cache::{EthBlockDataCacheTask, EthTask},
@@ -91,7 +91,16 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> {
 	_marker: PhantomData<(B, BE, EC)>,
 }
 
-impl<B: BlockT, C, P, CT, BE, A: ChainApi> Eth<B, C, P, CT, BE, A, ()> {
+impl<B, C, P, CT, BE, A, EC> Eth<B, C, P, CT, BE, A, EC>
+where
+	A: ChainApi,
+	B: BlockT,
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B> + 'static,
+	EC: EthConfig<B, C>,
+{
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
@@ -125,6 +134,117 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi> Eth<B, C, P, CT, BE, A, ()> {
 			forced_parent_hashes,
 			_marker: PhantomData,
 		}
+	}
+
+	pub async fn block_info_by_number(&self, number: BlockNumber) -> RpcResult<BlockInfo<B::Hash>> {
+		let id = match frontier_backend_client::native_block_id::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			Some(number),
+		)
+		.await?
+		{
+			Some(id) => id,
+			None => return Ok(BlockInfo::default()),
+		};
+
+		let substrate_hash = self
+			.client
+			.expect_block_hash_from_id(&id)
+			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+
+		self.block_info_by_substrate_hash(substrate_hash).await
+	}
+
+	pub async fn block_info_by_eth_block_hash(
+		&self,
+		eth_block_hash: H256,
+	) -> RpcResult<BlockInfo<B::Hash>> {
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			eth_block_hash,
+		)
+		.await
+		.map_err(|err| internal_err(format!("{:?}", err)))?
+		{
+			Some(hash) => hash,
+			_ => return Ok(BlockInfo::default()),
+		};
+
+		self.block_info_by_substrate_hash(substrate_hash).await
+	}
+
+	pub async fn block_info_by_eth_transaction_hash(
+		&self,
+		ethereum_tx_hash: H256,
+	) -> RpcResult<(BlockInfo<B::Hash>, usize)> {
+		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			ethereum_tx_hash,
+			true,
+		)
+		.await
+		.map_err(|err| internal_err(format!("{:?}", err)))?
+		{
+			Some((hash, index)) => (hash, index as usize),
+			None => return Ok((BlockInfo::default(), 0)),
+		};
+
+		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			eth_block_hash,
+		)
+		.await
+		.map_err(|err| internal_err(format!("{:?}", err)))?
+		{
+			Some(hash) => hash,
+			_ => return Ok((BlockInfo::default(), 0)),
+		};
+
+		Ok((
+			self.block_info_by_substrate_hash(substrate_hash).await?,
+			index,
+		))
+	}
+
+	pub async fn block_info_by_substrate_hash(
+		&self,
+		substrate_hash: B::Hash,
+	) -> RpcResult<BlockInfo<B::Hash>> {
+		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
+		let handler = self
+			.overrides
+			.schemas
+			.get(&schema)
+			.unwrap_or(&self.overrides.fallback);
+
+		let block = self
+			.block_data_cache
+			.current_block(schema, substrate_hash)
+			.await;
+		let receipts = handler.current_receipts(substrate_hash);
+		let statuses = self
+			.block_data_cache
+			.current_transaction_statuses(schema, substrate_hash)
+			.await;
+		let is_eip1559 = handler.is_eip1559(substrate_hash);
+		let base_fee = self
+			.client
+			.runtime_api()
+			.gas_price(substrate_hash)
+			.unwrap_or_default();
+
+		Ok(BlockInfo::new(
+			block,
+			receipts,
+			statuses,
+			substrate_hash,
+			is_eip1559,
+			base_fee,
+		))
 	}
 }
 
@@ -236,6 +356,13 @@ where
 		self.block_transaction_count_by_number(number).await
 	}
 
+	async fn block_transaction_receipts(
+		&self,
+		number: BlockNumber,
+	) -> RpcResult<Option<Vec<Receipt>>> {
+		self.block_transaction_receipts(number).await
+	}
+
 	fn block_uncles_count_by_hash(&self, hash: H256) -> RpcResult<U256> {
 		self.block_uncles_count_by_hash(hash)
 	}
@@ -286,7 +413,8 @@ where
 	}
 
 	async fn transaction_receipt(&self, hash: H256) -> RpcResult<Option<Receipt>> {
-		self.transaction_receipt(hash).await
+		let (block_info, index) = self.block_info_by_eth_transaction_hash(hash).await?;
+		self.transaction_receipt(&block_info, hash, index).await
 	}
 
 	// ########################################################################
@@ -585,5 +713,36 @@ where
 			"Cannot get header for block {:?}",
 			best_hash
 		)))
+	}
+}
+
+/// The most commonly used block information in the rpc interfaces.
+#[derive(Clone, Default)]
+pub struct BlockInfo<H> {
+	block: Option<EthereumBlock>,
+	receipts: Option<Vec<ethereum::ReceiptV3>>,
+	statuses: Option<Vec<TransactionStatus>>,
+	substrate_hash: H,
+	is_eip1559: bool,
+	base_fee: U256,
+}
+
+impl<H> BlockInfo<H> {
+	pub fn new(
+		block: Option<EthereumBlock>,
+		receipts: Option<Vec<ethereum::ReceiptV3>>,
+		statuses: Option<Vec<TransactionStatus>>,
+		substrate_hash: H,
+		is_eip1559: bool,
+		base_fee: U256,
+	) -> Self {
+		Self {
+			block,
+			receipts,
+			statuses,
+			substrate_hash,
+			is_eip1559,
+			base_fee,
+		}
 	}
 }
