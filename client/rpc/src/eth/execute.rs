@@ -76,7 +76,7 @@ where
 	pub async fn call(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumber>,
+		number_or_hash: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
 		let CallRequest {
@@ -105,7 +105,7 @@ where
 		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			number_or_hash,
 		)
 		.await?
 		{
@@ -408,7 +408,7 @@ where
 	pub async fn estimate_gas(
 		&self,
 		request: CallRequest,
-		number: Option<BlockNumber>,
+		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
@@ -420,7 +420,7 @@ where
 		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
-			number,
+			number_or_hash,
 		)
 		.await?
 		{
