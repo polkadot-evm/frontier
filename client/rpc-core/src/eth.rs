@@ -38,7 +38,7 @@ pub trait EthApi {
 
 	/// Returns an object with data about the sync status or false. (wtf?)
 	#[method(name = "eth_syncing")]
-	fn syncing(&self) -> RpcResult<SyncStatus>;
+	async fn syncing(&self) -> RpcResult<SyncStatus>;
 
 	/// Returns block author.
 	#[method(name = "eth_coinbase")]
