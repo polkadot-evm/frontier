@@ -71,7 +71,7 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000 as u128);
+	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000_u128);
 	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
@@ -147,7 +147,7 @@ fn should_default() {
 	new_test_ext(None, None).execute_with(|| {
 		assert_eq!(
 			BaseFeePerGas::<Test>::get(),
-			U256::from(100_000_000_000 as u128)
+			U256::from(100_000_000_000_u128)
 		);
 		assert_eq!(Elasticity::<Test>::get(), Permill::from_parts(125_000));
 	});

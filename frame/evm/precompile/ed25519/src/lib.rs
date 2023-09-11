@@ -90,6 +90,7 @@ mod tests {
 
 	#[test]
 	fn test_verify() -> Result<(), PrecompileFailure> {
+		#[allow(clippy::zero_prefixed_literal)]
 		let secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
 			157, 097, 177, 157, 239, 253, 090, 096, 186, 132, 074, 244, 146, 236, 044, 196, 068,
 			073, 197, 105, 123, 050, 105, 025, 112, 059, 172, 003, 028, 174, 127, 096,
