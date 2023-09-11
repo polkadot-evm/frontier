@@ -267,7 +267,6 @@ impl pallet_timestamp::Config for Runtime {
 struct ExtBuilder {}
 
 impl ExtBuilder {
-	#[cfg(test)]
 	fn build(self) -> sp_io::TestExternalities {
 		let t = frame_system::GenesisConfig::default()
 			.build_storage::<Runtime>()
@@ -281,7 +280,6 @@ impl ExtBuilder {
 	}
 }
 
-#[cfg(test)]
 fn precompiles() -> Precompiles<Runtime> {
 	PrecompilesValue::get()
 }
