@@ -325,7 +325,7 @@
 
 	<span class="doccomment">/// Returns an object with data about the sync status or false. (wtf?)
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_syncing&quot;</span>)]
-	</span><span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt;;
+	</span><span class="kw">async fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt;;
 
 	<span class="doccomment">/// Returns block author.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_coinbase&quot;</span>)]

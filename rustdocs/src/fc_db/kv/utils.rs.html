@@ -106,6 +106,8 @@
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -160,7 +162,8 @@
 	<span class="prelude-val">Ok</span>(db)
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+<span class="attr">#[allow(unused_variables)]
+#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
 </span><span class="kw">fn </span>open_kvdb_rocksdb&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	path: <span class="kw-2">&amp;</span>Path,
@@ -178,7 +181,7 @@
 	db_config.create_if_missing = create;
 
 	<span class="kw">let </span>db = kvdb_rocksdb::Database::open(<span class="kw-2">&amp;</span>db_config, path).map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, err))<span class="question-mark">?</span>;
-	<span class="comment">// write database version only after the database is succesfully opened
+	<span class="comment">// write database version only after the database is successfully opened
 	</span><span class="attr">#[cfg(not(test))]
 	</span><span class="kw">super</span>::upgrade::update_version(path).map_err(|<span class="kw">_</span>| <span class="string">&quot;Cannot update db version&quot;</span>.to_string())<span class="question-mark">?</span>;
 	<span class="kw">return </span><span class="prelude-val">Ok</span>(sp_database::as_database(db));
@@ -194,7 +197,8 @@
 	<span class="prelude-val">Err</span>(<span class="string">&quot;Missing feature flags `rocksdb`&quot;</span>.to_string())
 }
 
-<span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
+<span class="attr">#[allow(unused_variables)]
+</span><span class="kw">fn </span>open_parity_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	path: <span class="kw-2">&amp;</span>Path,
 	_source: <span class="kw-2">&amp;</span>DatabaseSource,
@@ -209,7 +213,7 @@
 	config.columns[<span class="kw">super</span>::columns::BLOCK_MAPPING <span class="kw">as </span>usize].btree_index = <span class="bool-val">true</span>;
 
 	<span class="kw">let </span>db = parity_db::Db::open_or_create(<span class="kw-2">&amp;</span>config).map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, err))<span class="question-mark">?</span>;
-	<span class="comment">// write database version only after the database is succesfully opened
+	<span class="comment">// write database version only after the database is successfully opened
 	</span><span class="attr">#[cfg(not(test))]
 	</span><span class="kw">super</span>::upgrade::update_version(path).map_err(|<span class="kw">_</span>| <span class="string">&quot;Cannot update db version&quot;</span>.to_string())<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">super</span>::parity_db_adapter::DbAdapter(db)))

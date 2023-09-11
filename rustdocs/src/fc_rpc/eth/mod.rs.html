@@ -1057,9 +1057,9 @@
 		<span class="self">self</span>.protocol_version()
 	}
 
-	<span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
-		<span class="self">self</span>.syncing()
-	}
+	<span class="kw">async fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
+		<span class="self">self</span>.syncing().<span class="kw">await
+	</span>}
 
 	<span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;H160&gt; {
 		<span class="self">self</span>.author()

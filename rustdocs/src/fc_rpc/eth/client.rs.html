@@ -106,6 +106,14 @@
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
+<a href="#109" id="109">109</a>
+<a href="#110" id="110">110</a>
+<a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -154,18 +162,26 @@
 		<span class="prelude-val">Ok</span>(<span class="number">1</span>)
 	}
 
-	<span class="kw">pub fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
+	<span class="kw">pub async fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
 		<span class="kw">if </span><span class="self">self</span>.sync.is_major_syncing() {
-			<span class="kw">let </span>block_number = U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(
-				<span class="self">self</span>.client.info().best_number,
+			<span class="kw">let </span>current_number = <span class="self">self</span>.client.info().best_number;
+			<span class="kw">let </span>current_block = U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(
+				current_number,
 			));
+			<span class="kw">let </span>highest_number = <span class="self">self
+				</span>.sync
+				.best_seen_block()
+				.<span class="kw">await
+				</span>.map_err(|_err| internal_err(<span class="string">&quot;fetching best_seen_block failed&quot;</span>))<span class="question-mark">?
+				</span>.unwrap_or(current_number);
+			<span class="kw">let </span>highest_block = U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(
+				highest_number,
+			));
+
 			<span class="prelude-val">Ok</span>(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
-				current_block: block_number,
-				<span class="comment">// TODO `highest_block` is not correct, should load `best_seen_block` from NetworkWorker,
-				// but afaik that is not currently possible in Substrate:
-				// https://github.com/paritytech/substrate/issues/7311
-				</span>highest_block: block_number,
+				current_block,
+				highest_block,
 				warp_chunks_amount: <span class="prelude-val">None</span>,
 				warp_chunks_processed: <span class="prelude-val">None</span>,
 			}))
