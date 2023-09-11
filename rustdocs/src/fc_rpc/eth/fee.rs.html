@@ -266,7 +266,7 @@
 	<span class="kw">pub async fn </span>fee_history(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block_count: U256,
-		newest_block: BlockNumberOrHash,
+		newest_block: BlockNumber,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
 	) -&gt; RpcResult&lt;FeeHistory&gt; {
 		<span class="comment">// The max supported range size is 1024 by spec.

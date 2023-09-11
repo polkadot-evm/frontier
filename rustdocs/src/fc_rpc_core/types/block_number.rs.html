@@ -230,11 +230,6 @@
 <a href="#230" id="230">230</a>
 <a href="#231" id="231">231</a>
 <a href="#232" id="232">232</a>
-<a href="#233" id="233">233</a>
-<a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -263,7 +258,7 @@
 
 <span class="doccomment">/// Represents rpc api block number param.
 </span><span class="attr">#[derive(Copy, Clone, Debug, Eq, PartialEq, Default, Hash)]
-</span><span class="kw">pub enum </span>BlockNumberOrHash {
+</span><span class="kw">pub enum </span>BlockNumber {
 	<span class="doccomment">/// Hash
 	</span>Hash {
 		<span class="doccomment">/// block hash
@@ -288,53 +283,53 @@
 	</span>Finalized,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BlockNumberOrHash {
-	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;BlockNumberOrHash, D::Error&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BlockNumber {
+	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;BlockNumber, D::Error&gt;
 	<span class="kw">where
 		</span>D: Deserializer&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
-		deserializer.deserialize_any(BlockNumberOrHashVisitor)
+		deserializer.deserialize_any(BlockNumberVisitor)
 	}
 }
 
-<span class="kw">impl </span>BlockNumberOrHash {
+<span class="kw">impl </span>BlockNumber {
 	<span class="doccomment">/// Convert block number to min block target.
 	</span><span class="kw">pub fn </span>to_min_block_num(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
 		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
-			BlockNumberOrHash::Num(<span class="kw-2">ref </span>x) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">*</span>x),
-			BlockNumberOrHash::Earliest =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
+			BlockNumber::Num(<span class="kw-2">ref </span>x) =&gt; <span class="prelude-val">Some</span>(<span class="kw-2">*</span>x),
+			BlockNumber::Earliest =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 		}
 	}
 }
 
-<span class="kw">impl </span>Serialize <span class="kw">for </span>BlockNumberOrHash {
+<span class="kw">impl </span>Serialize <span class="kw">for </span>BlockNumber {
 	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
 	<span class="kw">where
 		</span>S: Serializer,
 	{
 		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
-			BlockNumberOrHash::Hash {
+			BlockNumber::Hash {
 				hash,
 				require_canonical,
 			} =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(
 				<span class="string">&quot;{{ &#39;hash&#39;: &#39;{}&#39;, &#39;requireCanonical&#39;: &#39;{}&#39;  }}&quot;</span>,
 				hash, require_canonical
 			)),
-			BlockNumberOrHash::Num(<span class="kw-2">ref </span>x) =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, x)),
-			BlockNumberOrHash::Latest =&gt; serializer.serialize_str(<span class="string">&quot;latest&quot;</span>),
-			BlockNumberOrHash::Earliest =&gt; serializer.serialize_str(<span class="string">&quot;earliest&quot;</span>),
-			BlockNumberOrHash::Pending =&gt; serializer.serialize_str(<span class="string">&quot;pending&quot;</span>),
-			BlockNumberOrHash::Safe =&gt; serializer.serialize_str(<span class="string">&quot;safe&quot;</span>),
-			BlockNumberOrHash::Finalized =&gt; serializer.serialize_str(<span class="string">&quot;finalized&quot;</span>),
+			BlockNumber::Num(<span class="kw-2">ref </span>x) =&gt; serializer.serialize_str(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{:x}&quot;</span>, x)),
+			BlockNumber::Latest =&gt; serializer.serialize_str(<span class="string">&quot;latest&quot;</span>),
+			BlockNumber::Earliest =&gt; serializer.serialize_str(<span class="string">&quot;earliest&quot;</span>),
+			BlockNumber::Pending =&gt; serializer.serialize_str(<span class="string">&quot;pending&quot;</span>),
+			BlockNumber::Safe =&gt; serializer.serialize_str(<span class="string">&quot;safe&quot;</span>),
+			BlockNumber::Finalized =&gt; serializer.serialize_str(<span class="string">&quot;finalized&quot;</span>),
 		}
 	}
 }
 
-<span class="kw">struct </span>BlockNumberOrHashVisitor;
+<span class="kw">struct </span>BlockNumberVisitor;
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Visitor&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BlockNumberOrHashVisitor {
-	<span class="kw">type </span>Value = BlockNumberOrHash;
+<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Visitor&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>BlockNumberVisitor {
+	<span class="kw">type </span>Value = BlockNumber;
 
 	<span class="kw">fn </span>expecting(<span class="kw-2">&amp;</span><span class="self">self</span>, formatter: <span class="kw-2">&amp;mut </span>fmt::Formatter) -&gt; fmt::Result {
 		<span class="macro">write!</span>(
@@ -383,11 +378,11 @@
 		}
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(number) = block_number {
-			<span class="kw">return </span><span class="prelude-val">Ok</span>(BlockNumberOrHash::Num(number));
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(BlockNumber::Num(number));
 		}
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(hash) = block_hash {
-			<span class="kw">return </span><span class="prelude-val">Ok</span>(BlockNumberOrHash::Hash {
+			<span class="kw">return </span><span class="prelude-val">Ok</span>(BlockNumber::Hash {
 				hash,
 				require_canonical,
 			});
@@ -401,22 +396,17 @@
 		</span>E: Error,
 	{
 		<span class="kw">match </span>value {
-			<span class="string">&quot;latest&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumberOrHash::Latest),
-			<span class="string">&quot;earliest&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumberOrHash::Earliest),
-			<span class="string">&quot;pending&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumberOrHash::Pending),
-			<span class="string">&quot;safe&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumberOrHash::Safe),
-			<span class="string">&quot;finalized&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumberOrHash::Finalized),
+			<span class="string">&quot;latest&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Latest),
+			<span class="string">&quot;earliest&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Earliest),
+			<span class="string">&quot;pending&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Pending),
+			<span class="string">&quot;safe&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Safe),
+			<span class="string">&quot;finalized&quot; </span>=&gt; <span class="prelude-val">Ok</span>(BlockNumber::Finalized),
 			<span class="kw">_ if </span>value.starts_with(<span class="string">&quot;0x&quot;</span>) =&gt; u64::from_str_radix(<span class="kw-2">&amp;</span>value[<span class="number">2</span>..], <span class="number">16</span>)
-				.map(BlockNumberOrHash::Num)
+				.map(BlockNumber::Num)
 				.map_err(|e| Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Invalid block number: {}&quot;</span>, e))),
-			<span class="kw">_ </span>=&gt; value
-				.parse::&lt;u64&gt;()
-				.map(BlockNumberOrHash::Num)
-				.map_err(|<span class="kw">_</span>| {
-					Error::custom(
-						<span class="string">&quot;Invalid block number: non-decimal or missing 0x prefix&quot;</span>.to_string(),
-					)
-				}),
+			<span class="kw">_ </span>=&gt; value.parse::&lt;u64&gt;().map(BlockNumber::Num).map_err(|<span class="kw">_</span>| {
+				Error::custom(<span class="string">&quot;Invalid block number: non-decimal or missing 0x prefix&quot;</span>.to_string())
+			}),
 		}
 	}
 
@@ -431,7 +421,7 @@
 	<span class="kw">where
 		</span>E: Error,
 	{
-		<span class="prelude-val">Ok</span>(BlockNumberOrHash::Num(value))
+		<span class="prelude-val">Ok</span>(BlockNumber::Num(value))
 	}
 }
 
@@ -439,28 +429,28 @@
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
 
-	<span class="kw">fn </span>match_block_number(block_number: BlockNumberOrHash) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+	<span class="kw">fn </span>match_block_number(block_number: BlockNumber) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
 		<span class="kw">match </span>block_number {
-			BlockNumberOrHash::Num(number) =&gt; <span class="prelude-val">Some</span>(number),
-			BlockNumberOrHash::Earliest =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
-			BlockNumberOrHash::Latest =&gt; <span class="prelude-val">Some</span>(<span class="number">1000</span>),
-			BlockNumberOrHash::Safe =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
-			BlockNumberOrHash::Finalized =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
-			BlockNumberOrHash::Pending =&gt; <span class="prelude-val">Some</span>(<span class="number">1001</span>),
+			BlockNumber::Num(number) =&gt; <span class="prelude-val">Some</span>(number),
+			BlockNumber::Earliest =&gt; <span class="prelude-val">Some</span>(<span class="number">0</span>),
+			BlockNumber::Latest =&gt; <span class="prelude-val">Some</span>(<span class="number">1000</span>),
+			BlockNumber::Safe =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
+			BlockNumber::Finalized =&gt; <span class="prelude-val">Some</span>(<span class="number">999</span>),
+			BlockNumber::Pending =&gt; <span class="prelude-val">Some</span>(<span class="number">1001</span>),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
 		}
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>block_number_deserialize() {
-		<span class="kw">let </span>bn_dec: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;42&quot;&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_hex: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;0x45&quot;&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_u64: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;420&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_tag_earliest: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;earliest&quot;&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_tag_latest: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;latest&quot;&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_tag_safe: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;safe&quot;&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_tag_finalized: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;finalized&quot;&quot;#</span>).unwrap();
-		<span class="kw">let </span>bn_tag_pending: BlockNumberOrHash = serde_json::from_str(<span class="string">r#&quot;&quot;pending&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_dec: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;42&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_hex: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;0x45&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_u64: BlockNumber = serde_json::from_str(<span class="string">r#&quot;420&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_earliest: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;earliest&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_latest: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;latest&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_safe: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;safe&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_finalized: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;finalized&quot;&quot;#</span>).unwrap();
+		<span class="kw">let </span>bn_tag_pending: BlockNumber = serde_json::from_str(<span class="string">r#&quot;&quot;pending&quot;&quot;#</span>).unwrap();
 
 		<span class="macro">assert_eq!</span>(match_block_number(bn_dec).unwrap(), <span class="number">42</span>);
 		<span class="macro">assert_eq!</span>(match_block_number(bn_hex).unwrap(), <span class="number">69</span>);

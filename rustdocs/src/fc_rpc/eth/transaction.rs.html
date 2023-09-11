@@ -530,7 +530,7 @@
 
 	<span class="kw">pub async fn </span>transaction_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number: BlockNumberOrHash,
+		number: BlockNumber,
 		index: Index,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="kw">let </span>index = index.value();

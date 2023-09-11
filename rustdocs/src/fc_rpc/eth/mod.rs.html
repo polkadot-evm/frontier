@@ -746,17 +746,6 @@
 <a href="#746" id="746">746</a>
 <a href="#747" id="747">747</a>
 <a href="#748" id="748">748</a>
-<a href="#749" id="749">749</a>
-<a href="#750" id="750">750</a>
-<a href="#751" id="751">751</a>
-<a href="#752" id="752">752</a>
-<a href="#753" id="753">753</a>
-<a href="#754" id="754">754</a>
-<a href="#755" id="755">755</a>
-<a href="#756" id="756">756</a>
-<a href="#757" id="757">757</a>
-<a href="#758" id="758">758</a>
-<a href="#759" id="759">759</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -895,14 +884,11 @@
 		}
 	}
 
-	<span class="kw">pub async fn </span>block_info_by_number(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number_or_hash: BlockNumberOrHash,
-	) -&gt; RpcResult&lt;BlockInfo&lt;B::Hash&gt;&gt; {
+	<span class="kw">pub async fn </span>block_info_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;BlockInfo&lt;B::Hash&gt;&gt; {
 		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
-			<span class="prelude-val">Some</span>(number_or_hash),
+			<span class="prelude-val">Some</span>(number),
 		)
 		.<span class="kw">await</span><span class="question-mark">?
 		</span>{
@@ -1071,9 +1057,9 @@
 		<span class="self">self</span>.protocol_version()
 	}
 
-	<span class="kw">async fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
-		<span class="self">self</span>.syncing().<span class="kw">await
-	</span>}
+	<span class="kw">fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
+		<span class="self">self</span>.syncing()
+	}
 
 	<span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;H160&gt; {
 		<span class="self">self</span>.author()
@@ -1101,10 +1087,10 @@
 
 	<span class="kw">async fn </span>block_by_number(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number_or_hash: BlockNumberOrHash,
+		number: BlockNumber,
 		full: bool,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
-		<span class="self">self</span>.block_by_number(number_or_hash, full).<span class="kw">await
+		<span class="self">self</span>.block_by_number(number, full).<span class="kw">await
 	</span>}
 
 	<span class="kw">async fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
@@ -1113,24 +1099,24 @@
 
 	<span class="kw">async fn </span>block_transaction_count_by_number(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number_or_hash: BlockNumberOrHash,
+		number: BlockNumber,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt; {
-		<span class="self">self</span>.block_transaction_count_by_number(number_or_hash).<span class="kw">await
+		<span class="self">self</span>.block_transaction_count_by_number(number).<span class="kw">await
 	</span>}
 
 	<span class="kw">async fn </span>block_transaction_receipts(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number_or_hash: BlockNumberOrHash,
+		number: BlockNumber,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Receipt&gt;&gt;&gt; {
-		<span class="self">self</span>.block_transaction_receipts(number_or_hash).<span class="kw">await
+		<span class="self">self</span>.block_transaction_receipts(number).<span class="kw">await
 	</span>}
 
 	<span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;U256&gt; {
 		<span class="self">self</span>.block_uncles_count_by_hash(hash)
 	}
 
-	<span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number_or_hash: BlockNumberOrHash) -&gt; RpcResult&lt;U256&gt; {
-		<span class="self">self</span>.block_uncles_count_by_number(number_or_hash)
+	<span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;U256&gt; {
+		<span class="self">self</span>.block_uncles_count_by_number(number)
 	}
 
 	<span class="kw">fn </span>uncle_by_block_hash_and_index(
@@ -1143,10 +1129,10 @@
 
 	<span class="kw">fn </span>uncle_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number_or_hash: BlockNumberOrHash,
+		number: BlockNumber,
 		index: Index,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt; {
-		<span class="self">self</span>.uncle_by_block_number_and_index(number_or_hash, index)
+		<span class="self">self</span>.uncle_by_block_number_and_index(number, index)
 	}
 
 	<span class="comment">// ########################################################################
@@ -1167,10 +1153,10 @@
 
 	<span class="kw">async fn </span>transaction_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number_or_hash: BlockNumberOrHash,
+		number: BlockNumber,
 		index: Index,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
-		<span class="self">self</span>.transaction_by_block_number_and_index(number_or_hash, index)
+		<span class="self">self</span>.transaction_by_block_number_and_index(number, index)
 			.<span class="kw">await
 	</span>}
 
@@ -1183,37 +1169,29 @@
 	// State
 	// ########################################################################
 
-	</span><span class="kw">async fn </span>balance(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		address: H160,
-		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
-	) -&gt; RpcResult&lt;U256&gt; {
-		<span class="self">self</span>.balance(address, number_or_hash).<span class="kw">await
+	</span><span class="kw">async fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
+		<span class="self">self</span>.balance(address, number).<span class="kw">await
 	</span>}
 
 	<span class="kw">async fn </span>storage_at(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
 		index: U256,
-		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;H256&gt; {
-		<span class="self">self</span>.storage_at(address, index, number_or_hash).<span class="kw">await
+		<span class="self">self</span>.storage_at(address, index, number).<span class="kw">await
 	</span>}
 
 	<span class="kw">async fn </span>transaction_count(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
-		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;U256&gt; {
-		<span class="self">self</span>.transaction_count(address, number_or_hash).<span class="kw">await
+		<span class="self">self</span>.transaction_count(address, number).<span class="kw">await
 	</span>}
 
-	<span class="kw">async fn </span>code_at(
-		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		address: H160,
-		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
-	) -&gt; RpcResult&lt;Bytes&gt; {
-		<span class="self">self</span>.code_at(address, number_or_hash).<span class="kw">await
+	<span class="kw">async fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
+		<span class="self">self</span>.code_at(address, number).<span class="kw">await
 	</span>}
 
 	<span class="comment">// ########################################################################
@@ -1223,18 +1201,18 @@
 	</span><span class="kw">async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
-		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 		state_overrides: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H160, CallStateOverride&gt;&gt;,
 	) -&gt; RpcResult&lt;Bytes&gt; {
-		<span class="self">self</span>.call(request, number_or_hash, state_overrides).<span class="kw">await
+		<span class="self">self</span>.call(request, number, state_overrides).<span class="kw">await
 	</span>}
 
 	<span class="kw">async fn </span>estimate_gas(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
-		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
 	) -&gt; RpcResult&lt;U256&gt; {
-		<span class="self">self</span>.estimate_gas(request, number_or_hash).<span class="kw">await
+		<span class="self">self</span>.estimate_gas(request, number).<span class="kw">await
 	</span>}
 
 	<span class="comment">// ########################################################################
@@ -1248,7 +1226,7 @@
 	<span class="kw">async fn </span>fee_history(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block_count: U256,
-		newest_block: BlockNumberOrHash,
+		newest_block: BlockNumber,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
 	) -&gt; RpcResult&lt;FeeHistory&gt; {
 		<span class="self">self</span>.fee_history(block_count, newest_block, reward_percentiles)
