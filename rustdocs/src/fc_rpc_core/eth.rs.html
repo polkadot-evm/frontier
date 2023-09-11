@@ -285,6 +285,14 @@
 <a href="#285" id="285">285</a>
 <a href="#286" id="286">286</a>
 <a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
+<a href="#294" id="294">294</a>
+<a href="#295" id="295">295</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -357,7 +365,7 @@
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockByNumber&quot;</span>)]
 	</span><span class="kw">async fn </span>block_by_number(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number: BlockNumber,
+		number_or_hash: BlockNumberOrHash,
 		full: bool,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
@@ -369,14 +377,14 @@
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockTransactionCountByNumber&quot;</span>)]
 	</span><span class="kw">async fn </span>block_transaction_count_by_number(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number: BlockNumber,
+		number_or_hash: BlockNumberOrHash,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
 
 	<span class="doccomment">/// Returns the receipts of a block by number or hash.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockReceipts&quot;</span>)]
 	</span><span class="kw">async fn </span>block_transaction_receipts(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number: BlockNumber,
+		number_or_hash: BlockNumberOrHash,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Receipt&gt;&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of uncles in a block with given hash.
@@ -385,7 +393,7 @@
 
 	<span class="doccomment">/// Returns the number of uncles in a block with given block number.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleCountByBlockNumber&quot;</span>)]
-	</span><span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number: BlockNumber) -&gt; RpcResult&lt;U256&gt;;
+	</span><span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number_or_hash: BlockNumberOrHash) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns an uncles at given block and index.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleByBlockHashAndIndex&quot;</span>)]
@@ -399,7 +407,7 @@
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleByBlockNumberAndIndex&quot;</span>)]
 	</span><span class="kw">fn </span>uncle_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number: BlockNumber,
+		number_or_hash: BlockNumberOrHash,
 		index: Index,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
@@ -423,7 +431,7 @@
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByBlockNumberAndIndex&quot;</span>)]
 	</span><span class="kw">async fn </span>transaction_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		number: BlockNumber,
+		number_or_hash: BlockNumberOrHash,
 		index: Index,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
@@ -437,7 +445,11 @@
 
 	</span><span class="doccomment">/// Returns balance of the given account.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBalance&quot;</span>)]
-	</span><span class="kw">async fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt;;
+	</span><span class="kw">async fn </span>balance(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+	) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns content of the storage at given address.
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getStorageAt&quot;</span>)]
@@ -445,7 +457,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
 		index: U256,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;H256&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions sent from given address at given time (block number).
@@ -453,12 +465,16 @@
 	</span><span class="kw">async fn </span>transaction_count(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the code at given address at given time (block number).
 	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getCode&quot;</span>)]
-	</span><span class="kw">async fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt;;
+	</span><span class="kw">async fn </span>code_at(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+	) -&gt; RpcResult&lt;Bytes&gt;;
 
 	<span class="comment">// ########################################################################
 	// Execute
@@ -469,7 +485,7 @@
 	</span><span class="kw">async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 		state_overrides: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H160, CallStateOverride&gt;&gt;,
 	) -&gt; RpcResult&lt;Bytes&gt;;
 
@@ -478,7 +494,7 @@
 	</span><span class="kw">async fn </span>estimate_gas(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: CallRequest,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="comment">// ########################################################################
@@ -494,7 +510,7 @@
 	</span><span class="kw">async fn </span>fee_history(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block_count: U256,
-		newest_block: BlockNumber,
+		newest_block: BlockNumberOrHash,
 		reward_percentiles: <span class="prelude-ty">Option</span>&lt;Vec&lt;f64&gt;&gt;,
 	) -&gt; RpcResult&lt;FeeHistory&gt;;
 
