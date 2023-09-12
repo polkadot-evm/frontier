@@ -33,11 +33,11 @@ use fp_evm::{
 	PrecompileResult,
 };
 use frame_support::{
-	codec::{Decode, DecodeLimit as _},
 	dispatch::{DispatchClass, Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
 	traits::{ConstU32, Get},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
+use scale_codec::{Decode, DecodeLimit as _};
 
 // `DecodeLimit` specifies the max depth a call can use when decoding, as unbounded depth
 // can be used to overflow the stack.

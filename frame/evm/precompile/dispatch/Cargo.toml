@@ -8,6 +8,7 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
+scale-codec = { package = "parity-scale-codec", workspace = true }
 # Substrate
 frame-support = { workspace = true }
 # Frontier
@@ -15,7 +16,6 @@ fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
-scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 # Substrate
 frame-system = { workspace = true, features = ["default"] }

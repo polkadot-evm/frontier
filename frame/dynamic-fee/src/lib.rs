@@ -92,6 +92,8 @@ pub mod pallet {
 		pub _marker: PhantomData<T>,
 	}
 
+	// TODO: Just for following macro
+	use sp_runtime as _;
 	#[pallet::genesis_build]
 	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
 		fn build(&self) {

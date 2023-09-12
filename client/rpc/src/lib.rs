@@ -69,7 +69,7 @@ pub mod frontier_backend_client {
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{Block as BlockT, UniqueSaturatedInto, Zero},
+		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto, Zero},
 	};
 	use sp_state_machine::OverlayedChanges;
 	// Frontier
@@ -92,7 +92,7 @@ pub mod frontier_backend_client {
 
 		fn set_overlayed_changes(
 			client: &C,
-			overlayed_changes: &mut OverlayedChanges,
+			overlayed_changes: &mut OverlayedChanges<HashingFor<B>>,
 			block: B::Hash,
 			_version: u32,
 			address: H160,
@@ -145,7 +145,7 @@ pub mod frontier_backend_client {
 
 		fn set_overlayed_changes(
 			client: &C,
-			overlayed_changes: &mut OverlayedChanges,
+			overlayed_changes: &mut OverlayedChanges<HashingFor<B>>,
 			block: B::Hash,
 			_version: u32,
 			address: H160,

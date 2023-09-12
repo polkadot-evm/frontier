@@ -33,7 +33,7 @@ benchmarks! {
 
 		let x in 1..10000000;
 
-		use frame_benchmarking::vec;
+		use sp_std::vec;
 		use rlp::RlpStream;
 		use sp_core::{H160, U256};
 
