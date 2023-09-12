@@ -123,3 +123,4 @@ runtime-benchmarks = [
 	"pallet-evm/runtime-benchmarks",
 	"pallet-hotfix-sufficients/runtime-benchmarks",
 ]
+force-debug = [ "fp-evm/force-debug" ]
