@@ -51,14 +51,15 @@ impl StorageMeter {
 	/// Records the given amount of storage usage. The amount is added to the current usage.
 	/// If the limit is reached, an error is returned.
 	pub fn record(&mut self, amount: u64) -> Result<(), MeterError> {
-		self.usage = self.usage.checked_add(amount).ok_or_else(|| {
-			self.usage = self.limit;
-			MeterError::LimitExceeded
-		})?;
+		let usage = self
+			.usage
+			.checked_add(amount)
+			.ok_or_else(|| MeterError::LimitExceeded)?;
 
-		if self.usage > self.limit {
+		if usage > self.limit {
 			return Err(MeterError::LimitExceeded);
 		}
+		self.usage = usage;
 		Ok(())
 	}
 
@@ -143,7 +144,7 @@ mod test {
 
 		// Exceeding the limit
 		let res = meter.record(1);
-		assert_eq!(meter.usage(), limit + 1);
+		assert_eq!(meter.usage(), limit);
 		assert!(res.is_err());
 		assert_eq!(res, Err(MeterError::LimitExceeded));
 	}
@@ -204,6 +205,6 @@ mod test {
 		let res = meter.record_dynamic_opcode_cost(Opcode::SSTORE, gas_cost, target);
 		assert!(res.is_err());
 		assert_eq!(res, Err(MeterError::LimitExceeded));
-		assert_eq!(meter.usage(), 232);
+		assert_eq!(meter.usage(), 116);
 	}
 }

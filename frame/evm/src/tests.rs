@@ -709,12 +709,7 @@ mod storage_growth_test {
 				result.exit_reason,
 				crate::ExitReason::Error(crate::ExitError::OutOfGas)
 			);
-			assert_eq!(
-				result.used_gas.effective.as_u64(),
-				expected_contract_create_storage_growth_gas(
-					PROOF_SIZE_CALLEE_CONTRACT_BYTECODE_LEN
-				)
-			);
+			assert_eq!(result.used_gas.effective.as_u64(), 78485);
 			// Assert that the contract entry does not exists in the storage.
 			assert!(!AccountCodes::<Test>::contains_key(result.value));
 		});
