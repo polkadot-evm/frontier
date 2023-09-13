@@ -177,7 +177,6 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		nonce = nonce + 100;
 		await sendTransaction();
 
-		/*
 		// do not seal, get pending block
 		let pending_transactions = [];
 		{
@@ -194,7 +193,6 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		const latest_block = await context.web3.eth.getBlock("latest", false);
 		expect(pending_transactions).to.be.deep.eq(latest_block.transactions);
-		*/
 	});
 });
 
