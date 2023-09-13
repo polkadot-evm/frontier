@@ -640,7 +640,7 @@ mod test {
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 			logs.push((
-				block_number as i32,
+				block_number,
 				fc_db::sql::Log {
 					address: address_1.as_bytes().to_owned(),
 					topic_1: Some(topics_1_1.as_bytes().to_owned()),
@@ -653,7 +653,7 @@ mod test {
 				},
 			));
 			logs.push((
-				block_number as i32,
+				block_number,
 				fc_db::sql::Log {
 					address: address_2.as_bytes().to_owned(),
 					topic_1: Some(topics_2_1.as_bytes().to_owned()),
@@ -876,7 +876,7 @@ mod test {
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 			logs.push((
-				block_number as i32,
+				block_number,
 				fc_db::sql::Log {
 					address: address_1.as_bytes().to_owned(),
 					topic_1: Some(topics_1_1.as_bytes().to_owned()),
@@ -889,7 +889,7 @@ mod test {
 				},
 			));
 			logs.push((
-				block_number as i32,
+				block_number,
 				fc_db::sql::Log {
 					address: address_2.as_bytes().to_owned(),
 					topic_1: Some(topics_2_1.as_bytes().to_owned()),
@@ -1112,13 +1112,12 @@ mod test {
 		let canon = res
 			.clone()
 			.into_iter()
-			.filter_map(|it| if it.1 == 1 { Some(it) } else { None })
+			.filter(|&it| it.1 == 1)
 			.collect::<Vec<(H256, i32, i32)>>();
 		assert_eq!(canon.len(), 18);
 
 		// and 2 of which are the originally tracked as orphaned
 		let not_canon = res
-			.clone()
 			.into_iter()
 			.filter_map(|it| if it.1 == 0 { Some(it.0) } else { None })
 			.collect::<Vec<H256>>();
@@ -1188,7 +1187,7 @@ mod test {
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_block_hashes.insert(0, block_hash.clone());
+			best_block_hashes.insert(0, block_hash);
 			parent_hash = block_hash;
 		}
 
@@ -1366,7 +1365,7 @@ mod test {
 			let block_hash = block.header.hash();
 
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
+			best_block_hashes.push(block_hash);
 			parent_hash = block_hash;
 		}
 
@@ -1472,7 +1471,7 @@ mod test {
 			let block_hash = block.header.hash();
 
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
+			best_block_hashes.push(block_hash);
 			parent_hash = block_hash;
 		}
 
@@ -1589,7 +1588,7 @@ mod test {
 			let block_hash = block.header.hash();
 
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
+			best_block_hashes.push(block_hash);
 			parent_hash = block_hash;
 		}
 
@@ -1695,7 +1694,7 @@ mod test {
 			let block_hash = block.header.hash();
 
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
+			best_block_hashes.push(block_hash);
 			parent_hash = block_hash;
 		}
 
@@ -1812,7 +1811,7 @@ mod test {
 			let block_hash = block.header.hash();
 
 			executor::block_on(client.import(BlockOrigin::NetworkInitialSync, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
+			best_block_hashes.push(block_hash);
 			parent_hash = block_hash;
 		}
 
@@ -1918,7 +1917,7 @@ mod test {
 			let block_hash = block.header.hash();
 
 			executor::block_on(client.import(BlockOrigin::NetworkInitialSync, block)).unwrap();
-			best_block_hashes.push(block_hash.clone());
+			best_block_hashes.push(block_hash);
 			parent_hash = block_hash;
 		}
 

@@ -136,9 +136,8 @@ fn transaction_without_enough_gas_should_not_work() {
 
 	ext.execute_with(|| {
 		let mut transaction = eip1559_erc20_creation_transaction(alice);
-		match &mut transaction {
-			Transaction::EIP1559(t) => t.max_fee_per_gas = U256::from(11_000_000),
-			_ => {}
+		if let Transaction::EIP1559(t) = &mut transaction {
+			t.max_fee_per_gas = U256::from(11_000_000);
 		}
 
 		let call = crate::Call::<Test>::transact { transaction };

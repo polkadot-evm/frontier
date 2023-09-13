@@ -27,7 +27,7 @@ use crate::{
 fn test_hotfix_inc_account_sufficients_returns_error_if_max_addresses_exceeded() {
 	new_test_ext().execute_with(|| {
 		let max_address_count = 1000;
-		let addresses = (0..max_address_count + 1 as u64)
+		let addresses = (0..max_address_count + 1_u64)
 			.map(H160::from_low_u64_le)
 			.collect::<Vec<H160>>();
 
@@ -67,7 +67,7 @@ fn test_hotfix_inc_account_sufficients_increments_if_nonce_nonzero() {
 		let substrate_addr_2: <Test as frame_system::Config>::AccountId =
 			<Test as Config>::AddressMapping::into_account_id(addr_2);
 
-		frame_system::Pallet::<Test>::inc_account_nonce(&substrate_addr_1);
+		frame_system::Pallet::<Test>::inc_account_nonce(substrate_addr_1);
 
 		let account_1 = frame_system::Account::<Test>::get(substrate_addr_1);
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
