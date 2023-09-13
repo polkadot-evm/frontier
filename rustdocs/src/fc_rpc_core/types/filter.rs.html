@@ -766,7 +766,7 @@
 };
 <span class="kw">use </span>serde_json::{from_value, Value};
 
-<span class="kw">use </span><span class="kw">crate</span>::types::{BlockNumber, Log};
+<span class="kw">use </span><span class="kw">crate</span>::types::{BlockNumberOrHash, Log};
 
 <span class="doccomment">/// Variadic value
 </span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Hash)]
@@ -874,9 +874,9 @@
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>Filter {
 	<span class="doccomment">/// From Block
-	</span><span class="kw">pub </span>from_block: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	</span><span class="kw">pub </span>from_block: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	<span class="doccomment">/// To Block
-	</span><span class="kw">pub </span>to_block: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+	</span><span class="kw">pub </span>to_block: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	<span class="doccomment">/// Block hash
 	</span><span class="kw">pub </span>block_hash: <span class="prelude-ty">Option</span>&lt;H256&gt;,
 	<span class="doccomment">/// Address
@@ -1065,19 +1065,19 @@
 	<span class="kw">pub fn </span>filter_block_range(<span class="kw-2">&amp;</span><span class="self">self</span>, block_number: u64) -&gt; bool {
 		<span class="kw">let </span><span class="kw-2">mut </span>out = <span class="bool-val">true</span>;
 		<span class="kw">let </span>filter = <span class="self">self</span>.filter.clone().unwrap();
-		<span class="kw">if let </span><span class="prelude-val">Some</span>(BlockNumber::Num(from)) = filter.from_block {
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(BlockNumberOrHash::Num(from)) = filter.from_block {
 			<span class="kw">if </span>from &gt; block_number {
 				out = <span class="bool-val">false</span>;
 			}
 		}
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(to) = filter.to_block {
 			<span class="kw">match </span>to {
-				BlockNumber::Num(to) =&gt; {
+				BlockNumberOrHash::Num(to) =&gt; {
 					<span class="kw">if </span>to &lt; block_number {
 						out = <span class="bool-val">false</span>;
 					}
 				}
-				BlockNumber::Earliest =&gt; {
+				BlockNumberOrHash::Earliest =&gt; {
 					out = <span class="bool-val">false</span>;
 				}
 				<span class="kw">_ </span>=&gt; {}
@@ -1195,7 +1195,7 @@
 
 <span class="attr">#[derive(Clone, Debug)]
 </span><span class="kw">pub struct </span>FilterPoolItem {
-	<span class="kw">pub </span>last_poll: BlockNumber,
+	<span class="kw">pub </span>last_poll: BlockNumberOrHash,
 	<span class="kw">pub </span>filter_type: FilterType,
 	<span class="kw">pub </span>at_block: u64,
 	<span class="kw">pub </span>pending_transaction_hashes: HashSet&lt;H256&gt;,
@@ -1279,8 +1279,8 @@
 				<span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topic2), <span class="prelude-val">Some</span>(topic3)])),
 			])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
-			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
+			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
@@ -1312,8 +1312,8 @@
 				<span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topic2), <span class="prelude-val">Some</span>(topic3)])),
 			])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
-			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
+			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
@@ -1333,8 +1333,8 @@
 			address: <span class="prelude-val">None</span>,
 			topics: <span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
-			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
+			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
@@ -1367,7 +1367,7 @@
 				<span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topic2), <span class="prelude-val">Some</span>(topic3)])),
 			])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
 			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
@@ -1401,7 +1401,7 @@
 				<span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topic2), <span class="prelude-val">Some</span>(topic3)])),
 			])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
 			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
@@ -1431,8 +1431,8 @@
 				<span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topic2), <span class="prelude-val">Some</span>(topic3)])),
 			])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
-			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
+			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
@@ -1461,8 +1461,8 @@
 				<span class="prelude-val">Some</span>(VariadicValue::Multiple(<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topic2), <span class="prelude-val">Some</span>(topic3)])),
 			])),
 		};
-		<span class="kw">let </span>topics_input = <span class="kw">if let </span><span class="prelude-val">Some</span>(<span class="kw">_</span>) = <span class="kw-2">&amp;</span>filter.topics {
-			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter.clone()));
+		<span class="kw">let </span>topics_input = <span class="kw">if </span>filter.topics.is_some() {
+			<span class="kw">let </span>filtered_params = FilteredParams::new(<span class="prelude-val">Some</span>(filter));
 			<span class="prelude-val">Some</span>(filtered_params.flat_topics)
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None

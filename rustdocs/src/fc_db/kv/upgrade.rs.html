@@ -989,7 +989,7 @@
 			}
 
 			<span class="comment">// Writes version 1 to file.
-			</span><span class="kw">let _ </span>= std::fs::create_dir_all(<span class="kw-2">&amp;</span>path).expect(<span class="string">&quot;db path created&quot;</span>);
+			</span>std::fs::create_dir_all(path).expect(<span class="string">&quot;db path created&quot;</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>version_path = path.to_owned();
 			version_path.push(<span class="string">&quot;db_version&quot;</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>version_file =
@@ -999,7 +999,7 @@
 				.expect(<span class="string">&quot;write version 1&quot;</span>);
 
 			<span class="comment">// Upgrade database from version 1 to 2
-			</span><span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;</span>setting.source);
+			</span><span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), path, <span class="kw-2">&amp;</span>setting.source);
 
 			<span class="comment">// Check data after migration
 			</span><span class="kw">let </span>backend = open_frontier_backend::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client, <span class="kw-2">&amp;</span>setting)
@@ -1026,7 +1026,7 @@
 			}
 
 			<span class="comment">// Upgrade db version file
-			</span><span class="macro">assert_eq!</span>(<span class="kw">super</span>::current_version(<span class="kw-2">&amp;</span>path).expect(<span class="string">&quot;version&quot;</span>), <span class="number">2u32</span>);
+			</span><span class="macro">assert_eq!</span>(<span class="kw">super</span>::current_version(path).expect(<span class="string">&quot;version&quot;</span>), <span class="number">2u32</span>);
 		}
 	}
 
@@ -1048,10 +1048,10 @@
 			},
 		};
 		<span class="kw">let </span>path = setting.source.path().unwrap();
-		<span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>path, <span class="kw-2">&amp;</span>setting.source);
+		<span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client, path, <span class="kw-2">&amp;</span>setting.source);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>file =
-			std::fs::File::open(<span class="kw">crate</span>::kv::upgrade::version_file_path(<span class="kw-2">&amp;</span>path)).expect(<span class="string">&quot;file exist&quot;</span>);
+			std::fs::File::open(<span class="kw">crate</span>::kv::upgrade::version_file_path(path)).expect(<span class="string">&quot;file exist&quot;</span>);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>s = String::new();
 		file.read_to_string(<span class="kw-2">&amp;mut </span>s).expect(<span class="string">&quot;read file contents&quot;</span>);

@@ -546,7 +546,7 @@
 	};
 	<span class="kw">use </span>sp_state_machine::OverlayedChanges;
 	<span class="comment">// Frontier
-	</span><span class="kw">use </span>fc_rpc_core::types::BlockNumber;
+	</span><span class="kw">use </span>fc_rpc_core::types::BlockNumberOrHash;
 
 	<span class="doccomment">/// Implements a default runtime storage override.
 	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
@@ -661,26 +661,26 @@
 	<span class="kw">pub async fn </span>native_block_id&lt;B: BlockT, C&gt;(
 		client: <span class="kw-2">&amp;</span>C,
 		backend: <span class="kw-2">&amp;</span><span class="kw">dyn </span>fc_api::Backend&lt;B&gt;,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;BlockId&lt;B&gt;&gt;&gt;
 	<span class="kw">where
 		</span>B: BlockT,
 		C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	{
-		<span class="prelude-val">Ok</span>(<span class="kw">match </span>number.unwrap_or(BlockNumber::Latest) {
-			BlockNumber::Hash { hash, .. } =&gt; {
+		<span class="prelude-val">Ok</span>(<span class="kw">match </span>number.unwrap_or(BlockNumberOrHash::Latest) {
+			BlockNumberOrHash::Hash { hash, .. } =&gt; {
 				<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(hash)) = load_hash::&lt;B, C&gt;(client, backend, hash).<span class="kw">await </span>{
 					<span class="prelude-val">Some</span>(BlockId::Hash(hash))
 				} <span class="kw">else </span>{
 					<span class="prelude-val">None
 				</span>}
 			}
-			BlockNumber::Num(number) =&gt; <span class="prelude-val">Some</span>(BlockId::Number(number.unique_saturated_into())),
-			BlockNumber::Latest =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().best_hash)),
-			BlockNumber::Earliest =&gt; <span class="prelude-val">Some</span>(BlockId::Number(Zero::zero())),
-			BlockNumber::Pending =&gt; <span class="prelude-val">None</span>,
-			BlockNumber::Safe =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
-			BlockNumber::Finalized =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumberOrHash::Num(number) =&gt; <span class="prelude-val">Some</span>(BlockId::Number(number.unique_saturated_into())),
+			BlockNumberOrHash::Latest =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().best_hash)),
+			BlockNumberOrHash::Earliest =&gt; <span class="prelude-val">Some</span>(BlockId::Number(Zero::zero())),
+			BlockNumberOrHash::Pending =&gt; <span class="prelude-val">None</span>,
+			BlockNumberOrHash::Safe =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumberOrHash::Finalized =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
 		})
 	}
 

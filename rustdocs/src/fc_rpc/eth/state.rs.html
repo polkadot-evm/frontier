@@ -202,6 +202,14 @@
 <a href="#202" id="202">202</a>
 <a href="#203" id="203">203</a>
 <a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
+<a href="#207" id="207">207</a>
+<a href="#208" id="208">208</a>
+<a href="#209" id="209">209</a>
+<a href="#210" id="210">210</a>
+<a href="#211" id="211">211</a>
+<a href="#212" id="212">212</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -250,9 +258,13 @@
 	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">pub async fn </span>balance(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;U256&gt; {
-		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
-		<span class="kw">if </span>number == BlockNumber::Pending {
+	<span class="kw">pub async fn </span>balance(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+	) -&gt; RpcResult&lt;U256&gt; {
+		<span class="kw">let </span>number_or_hash = number_or_hash.unwrap_or(BlockNumberOrHash::Latest);
+		<span class="kw">if </span>number_or_hash == BlockNumberOrHash::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
 				.account_basic(<span class="self">self</span>.client.info().best_hash, address)
@@ -261,7 +273,7 @@
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
-			<span class="prelude-val">Some</span>(number),
+			<span class="prelude-val">Some</span>(number_or_hash),
 		)
 		.<span class="kw">await
 		</span>{
@@ -285,10 +297,10 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
 		index: U256,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;H256&gt; {
-		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
-		<span class="kw">if </span>number == BlockNumber::Pending {
+		<span class="kw">let </span>number_or_hash = number_or_hash.unwrap_or(BlockNumberOrHash::Latest);
+		<span class="kw">if </span>number_or_hash == BlockNumberOrHash::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
 				.storage_at(<span class="self">self</span>.client.info().best_hash, address, index)
@@ -296,7 +308,7 @@
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
-			<span class="prelude-val">Some</span>(number),
+			<span class="prelude-val">Some</span>(number_or_hash),
 		)
 		.<span class="kw">await
 		</span>{
@@ -320,9 +332,9 @@
 	<span class="kw">pub async fn </span>transaction_count(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
-		number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;U256&gt; {
-		<span class="kw">if let </span><span class="prelude-val">Some</span>(BlockNumber::Pending) = number {
+		<span class="kw">if let </span><span class="prelude-val">Some</span>(BlockNumberOrHash::Pending) = number_or_hash {
 			<span class="kw">let </span>substrate_hash = <span class="self">self</span>.client.info().best_hash;
 
 			<span class="kw">let </span>nonce = <span class="self">self
@@ -351,7 +363,7 @@
 		<span class="kw">let </span>id = <span class="kw">match </span>frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
-			number,
+			number_or_hash,
 		)
 		.<span class="kw">await</span><span class="question-mark">?
 		</span>{
@@ -372,9 +384,13 @@
 			</span>.nonce)
 	}
 
-	<span class="kw">pub async fn </span>code_at(<span class="kw-2">&amp;</span><span class="self">self</span>, address: H160, number: <span class="prelude-ty">Option</span>&lt;BlockNumber&gt;) -&gt; RpcResult&lt;Bytes&gt; {
-		<span class="kw">let </span>number = number.unwrap_or(BlockNumber::Latest);
-		<span class="kw">if </span>number == BlockNumber::Pending {
+	<span class="kw">pub async fn </span>code_at(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		address: H160,
+		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
+	) -&gt; RpcResult&lt;Bytes&gt; {
+		<span class="kw">let </span>number_or_hash = number_or_hash.unwrap_or(BlockNumberOrHash::Latest);
+		<span class="kw">if </span>number_or_hash == BlockNumberOrHash::Pending {
 			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
 				.account_code_at(<span class="self">self</span>.client.info().best_hash, address)
@@ -383,7 +399,7 @@
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
-			<span class="prelude-val">Some</span>(number),
+			<span class="prelude-val">Some</span>(number_or_hash),
 		)
 		.<span class="kw">await
 		</span>{

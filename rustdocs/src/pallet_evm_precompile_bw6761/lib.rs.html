@@ -565,7 +565,7 @@
 </span><span class="kw">use </span>ark_bw6_761::{Fq, Fr, G1Affine, G1Projective, G2Affine, G2Projective, BW6_761};
 <span class="kw">use </span>ark_ec::{pairing::Pairing, AffineRepr, CurveGroup, VariableBaseMSM};
 <span class="kw">use </span>ark_ff::{BigInteger768, PrimeField, Zero};
-<span class="kw">use </span>ark_std::ops::Mul;
+<span class="kw">use </span>ark_std::{ops::Mul, vec::Vec};
 
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fp_evm::{
@@ -574,8 +574,15 @@
 };
 
 <span class="doccomment">/// Gas discount table for BW6-761 G1 and G2 multi exponentiation operations.
-</span><span class="comment">// TODO::to be estimated
-</span><span class="kw">const </span>BW6761_MULTIEXP_DISCOUNT_TABLE: [u16; <span class="number">128</span>] = [<span class="number">0u16</span>; <span class="number">128</span>];
+</span><span class="kw">const </span>BW6761_MULTIEXP_DISCOUNT_TABLE: [u16; <span class="number">128</span>] = [
+	<span class="number">1266</span>, <span class="number">733</span>, <span class="number">561</span>, <span class="number">474</span>, <span class="number">422</span>, <span class="number">387</span>, <span class="number">362</span>, <span class="number">344</span>, <span class="number">329</span>, <span class="number">318</span>, <span class="number">308</span>, <span class="number">300</span>, <span class="number">296</span>, <span class="number">289</span>, <span class="number">283</span>, <span class="number">279</span>, <span class="number">275</span>, <span class="number">272</span>, <span class="number">269</span>,
+	<span class="number">266</span>, <span class="number">265</span>, <span class="number">260</span>, <span class="number">259</span>, <span class="number">256</span>, <span class="number">255</span>, <span class="number">254</span>, <span class="number">252</span>, <span class="number">251</span>, <span class="number">250</span>, <span class="number">249</span>, <span class="number">249</span>, <span class="number">220</span>, <span class="number">228</span>, <span class="number">225</span>, <span class="number">223</span>, <span class="number">219</span>, <span class="number">216</span>, <span class="number">214</span>,
+	<span class="number">212</span>, <span class="number">209</span>, <span class="number">209</span>, <span class="number">205</span>, <span class="number">203</span>, <span class="number">202</span>, <span class="number">200</span>, <span class="number">198</span>, <span class="number">196</span>, <span class="number">199</span>, <span class="number">195</span>, <span class="number">192</span>, <span class="number">192</span>, <span class="number">191</span>, <span class="number">190</span>, <span class="number">187</span>, <span class="number">186</span>, <span class="number">185</span>, <span class="number">184</span>,
+	<span class="number">184</span>, <span class="number">181</span>, <span class="number">181</span>, <span class="number">181</span>, <span class="number">180</span>, <span class="number">178</span>, <span class="number">179</span>, <span class="number">176</span>, <span class="number">177</span>, <span class="number">176</span>, <span class="number">175</span>, <span class="number">174</span>, <span class="number">173</span>, <span class="number">171</span>, <span class="number">171</span>, <span class="number">170</span>, <span class="number">170</span>, <span class="number">169</span>, <span class="number">168</span>,
+	<span class="number">168</span>, <span class="number">167</span>, <span class="number">167</span>, <span class="number">166</span>, <span class="number">165</span>, <span class="number">167</span>, <span class="number">166</span>, <span class="number">166</span>, <span class="number">165</span>, <span class="number">165</span>, <span class="number">164</span>, <span class="number">164</span>, <span class="number">163</span>, <span class="number">163</span>, <span class="number">162</span>, <span class="number">162</span>, <span class="number">160</span>, <span class="number">163</span>, <span class="number">159</span>,
+	<span class="number">162</span>, <span class="number">159</span>, <span class="number">160</span>, <span class="number">159</span>, <span class="number">159</span>, <span class="number">158</span>, <span class="number">158</span>, <span class="number">158</span>, <span class="number">158</span>, <span class="number">157</span>, <span class="number">157</span>, <span class="number">156</span>, <span class="number">155</span>, <span class="number">155</span>, <span class="number">156</span>, <span class="number">155</span>, <span class="number">155</span>, <span class="number">154</span>, <span class="number">155</span>,
+	<span class="number">154</span>, <span class="number">153</span>, <span class="number">153</span>, <span class="number">153</span>, <span class="number">152</span>, <span class="number">152</span>, <span class="number">152</span>, <span class="number">152</span>, <span class="number">151</span>, <span class="number">151</span>, <span class="number">151</span>, <span class="number">151</span>, <span class="number">151</span>, <span class="number">150</span>,
+];
 
 <span class="doccomment">/// Encode Fq as `96` bytes by performing Big-Endian encoding of the corresponding (unsigned) integer.
 </span><span class="kw">fn </span>encode_fq(field: Fq) -&gt; [u8; <span class="number">96</span>] {
@@ -722,8 +729,7 @@
 </span><span class="kw">pub struct </span>Bw6761G1Add;
 
 <span class="kw">impl </span>Bw6761G1Add {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>GAS_COST: u64 = <span class="number">0</span>;
+	<span class="kw">const </span>GAS_COST: u64 = <span class="number">180</span>;
 }
 
 <span class="kw">impl </span>Precompile <span class="kw">for </span>Bw6761G1Add {
@@ -760,8 +766,7 @@
 </span><span class="kw">pub struct </span>Bw6761G1Mul;
 
 <span class="kw">impl </span>Bw6761G1Mul {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>GAS_COST: u64 = <span class="number">0</span>;
+	<span class="kw">const </span>GAS_COST: u64 = <span class="number">64_000</span>;
 }
 
 <span class="kw">impl </span>Precompile <span class="kw">for </span>Bw6761G1Mul {
@@ -798,8 +803,7 @@
 </span><span class="kw">pub struct </span>Bw6761G1MultiExp;
 
 <span class="kw">impl </span>Bw6761G1MultiExp {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>MULTIPLIER: u64 = <span class="number">1_000</span>;
+	<span class="kw">const </span>MULTIPLIER: u64 = <span class="number">1_000</span>;
 
 	<span class="doccomment">/// Returns the gas required to execute the pre-compiled contract.
 	</span><span class="kw">fn </span>calculate_gas_cost(input_len: usize) -&gt; u64 {
@@ -870,8 +874,7 @@
 </span><span class="kw">pub struct </span>Bw6761G2Add;
 
 <span class="kw">impl </span>Bw6761G2Add {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>GAS_COST: u64 = <span class="number">0</span>;
+	<span class="kw">const </span>GAS_COST: u64 = <span class="number">180</span>;
 }
 
 <span class="kw">impl </span>Precompile <span class="kw">for </span>Bw6761G2Add {
@@ -908,8 +911,7 @@
 </span><span class="kw">pub struct </span>Bw6761G2Mul;
 
 <span class="kw">impl </span>Bw6761G2Mul {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>GAS_COST: u64 = <span class="number">0</span>;
+	<span class="kw">const </span>GAS_COST: u64 = <span class="number">64_000</span>;
 }
 
 <span class="kw">impl </span>Precompile <span class="kw">for </span>Bw6761G2Mul {
@@ -946,8 +948,7 @@
 </span><span class="kw">pub struct </span>Bw6761G2MultiExp;
 
 <span class="kw">impl </span>Bw6761G2MultiExp {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>MULTIPLIER: u64 = <span class="number">1_000</span>;
+	<span class="kw">const </span>MULTIPLIER: u64 = <span class="number">1_000</span>;
 
 	<span class="doccomment">/// Returns the gas required to execute the pre-compiled contract.
 	</span><span class="kw">fn </span>calculate_gas_cost(input_len: usize) -&gt; u64 {
@@ -1018,9 +1019,8 @@
 </span><span class="kw">pub struct </span>Bw6761Pairing;
 
 <span class="kw">impl </span>Bw6761Pairing {
-	<span class="comment">// TODO::to be estimated
-	</span><span class="kw">const </span>BASE_GAS: u64 = <span class="number">0</span>;
-	<span class="kw">const </span>PER_PAIR_GAS: u64 = <span class="number">0</span>;
+	<span class="kw">const </span>BASE_GAS: u64 = <span class="number">120_000</span>;
+	<span class="kw">const </span>PER_PAIR_GAS: u64 = <span class="number">320_000</span>;
 }
 
 <span class="kw">impl </span>Precompile <span class="kw">for </span>Bw6761Pairing {

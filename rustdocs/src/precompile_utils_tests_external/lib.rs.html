@@ -438,17 +438,6 @@
 <a href="#438" id="438">438</a>
 <a href="#439" id="439">439</a>
 <a href="#440" id="440">440</a>
-<a href="#441" id="441">441</a>
-<a href="#442" id="442">442</a>
-<a href="#443" id="443">443</a>
-<a href="#444" id="444">444</a>
-<a href="#445" id="445">445</a>
-<a href="#446" id="446">446</a>
-<a href="#447" id="447">447</a>
-<a href="#448" id="448">448</a>
-<a href="#449" id="449">449</a>
-<a href="#450" id="450">450</a>
-<a href="#451" id="451">451</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -468,436 +457,425 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
-</span><span class="attr">#[cfg(test)]
-</span><span class="kw">mod </span>tests {
-	<span class="kw">use </span>std::{cell::RefCell, rc::Rc};
+</span><span class="attr">#![cfg(test)]
 
-	<span class="kw">use </span>evm::Context;
-	<span class="kw">use </span>fp_evm::{ExitReason, ExitRevert, PrecompileFailure, PrecompileHandle};
-	<span class="kw">use </span>frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
-	<span class="kw">use </span>pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
-	<span class="kw">use </span>precompile_utils::{
-		precompile_set::<span class="kw-2">*</span>,
-		solidity::{codec::Writer, revert::revert},
-		testing::<span class="kw-2">*</span>,
-		EvmResult,
+</span><span class="kw">use </span>std::{cell::RefCell, rc::Rc};
+
+<span class="comment">// Substrate
+</span><span class="kw">use </span>frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
+<span class="kw">use </span>sp_core::{H160, H256, U256};
+<span class="kw">use </span>sp_runtime::{
+	traits::{BlakeTwo256, IdentityLookup},
+	Perbill,
+};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_evm::{ExitReason, ExitRevert, PrecompileFailure, PrecompileHandle};
+<span class="kw">use </span>pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
+<span class="kw">use </span>precompile_utils::{
+	precompile_set::<span class="kw-2">*</span>,
+	solidity::{codec::Writer, revert::revert},
+	testing::<span class="kw-2">*</span>,
+	EvmResult,
+};
+
+<span class="kw">pub type </span>AccountId = MockAccount;
+<span class="kw">pub type </span>Balance = u128;
+<span class="kw">pub type </span>BlockNumber = u32;
+
+<span class="kw">type </span>UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic&lt;Runtime&gt;;
+<span class="kw">type </span>Block = frame_system::mocking::MockBlock&lt;Runtime&gt;;
+
+<span class="macro">construct_runtime!</span>(
+	<span class="kw">pub enum </span>Runtime <span class="kw">where
+		</span>Block = Block,
+		NodeBlock = Block,
+		UncheckedExtrinsic = UncheckedExtrinsic,
+	{
+		System: frame_system::{Pallet, Call, Config, Storage, Event&lt;T&gt;},
+		Balances: pallet_balances::{Pallet, Call, Storage, Event&lt;T&gt;},
+		Evm: pallet_evm::{Pallet, Call, Storage, Event&lt;T&gt;},
+		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+	}
+);
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>BlockHashCount: u32 = <span class="number">250</span>;
+	<span class="kw">pub const </span>MaximumBlockWeight: Weight = Weight::from_parts(<span class="number">1024</span>, <span class="number">1</span>);
+	<span class="kw">pub const </span>MaximumBlockLength: u32 = <span class="number">2 </span>* <span class="number">1024</span>;
+	<span class="kw">pub const </span>AvailableBlockRatio: Perbill = Perbill::one();
+	<span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">42</span>;
+}
+
+<span class="kw">impl </span>frame_system::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>BaseCallFilter = Everything;
+	<span class="kw">type </span>BlockWeights = ();
+	<span class="kw">type </span>BlockLength = ();
+	<span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
+	<span class="kw">type </span>RuntimeCall = RuntimeCall;
+	<span class="kw">type </span>Index = u64;
+	<span class="kw">type </span>BlockNumber = BlockNumber;
+	<span class="kw">type </span>Hash = H256;
+	<span class="kw">type </span>Hashing = BlakeTwo256;
+	<span class="kw">type </span>AccountId = AccountId;
+	<span class="kw">type </span>Lookup = IdentityLookup&lt;<span class="self">Self</span>::AccountId&gt;;
+	<span class="kw">type </span>Header = sp_runtime::generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
+	<span class="kw">type </span>BlockHashCount = BlockHashCount;
+	<span class="kw">type </span>DbWeight = ();
+	<span class="kw">type </span>Version = ();
+	<span class="kw">type </span>PalletInfo = PalletInfo;
+	<span class="kw">type </span>AccountData = pallet_balances::AccountData&lt;Balance&gt;;
+	<span class="kw">type </span>OnNewAccount = ();
+	<span class="kw">type </span>OnKilledAccount = ();
+	<span class="kw">type </span>SystemWeightInfo = ();
+	<span class="kw">type </span>SS58Prefix = SS58Prefix;
+	<span class="kw">type </span>OnSetCode = ();
+	<span class="kw">type </span>MaxConsumers = frame_support::traits::ConstU32&lt;<span class="number">16</span>&gt;;
+}
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>ExistentialDeposit: u128 = <span class="number">0</span>;
+}
+<span class="kw">impl </span>pallet_balances::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>WeightInfo = ();
+	<span class="kw">type </span>Balance = Balance;
+	<span class="kw">type </span>DustRemoval = ();
+	<span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
+	<span class="kw">type </span>AccountStore = System;
+	<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">4</span>];
+	<span class="kw">type </span>RuntimeHoldReason = ();
+	<span class="kw">type </span>FreezeIdentifier = ();
+	<span class="kw">type </span>MaxLocks = ();
+	<span class="kw">type </span>MaxReserves = ();
+	<span class="kw">type </span>MaxHolds = ();
+	<span class="kw">type </span>MaxFreezes = ();
+}
+
+<span class="attr">#[derive(Debug, Clone)]
+</span><span class="kw">pub struct </span>MockPrecompile;
+
+<span class="attr">#[precompile_utils::precompile]
+</span><span class="kw">impl </span>MockPrecompile {
+	<span class="comment">// a3cab0dd
+	</span><span class="attr">#[precompile::public(<span class="string">&quot;subcall()&quot;</span>)]
+	</span><span class="kw">fn </span>subcall(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult {
+		<span class="kw">match </span>handle.call(
+			handle.code_address(),
+			<span class="prelude-val">None</span>,
+			<span class="comment">// calls subcallLayer2()
+			</span>Writer::new_with_selector(<span class="number">0x0b93381bu32</span>).build(),
+			<span class="prelude-val">None</span>,
+			<span class="bool-val">false</span>,
+			<span class="kw-2">&amp;</span>evm::Context {
+				caller: handle.code_address(),
+				address: handle.code_address(),
+				apparent_value: <span class="number">0</span>.into(),
+			},
+		) {
+			(ExitReason::Succeed(<span class="kw">_</span>), <span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
+			(ExitReason::Revert(<span class="kw">_</span>), v) =&gt; <span class="prelude-val">Err</span>(PrecompileFailure::Revert {
+				exit_status: ExitRevert::Reverted,
+				output: v,
+			}),
+			<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(revert(<span class="string">&quot;unexpected error&quot;</span>)),
+		}
+	}
+
+	<span class="comment">// 0b93381b
+	</span><span class="attr">#[precompile::public(<span class="string">&quot;success()&quot;</span>)]
+	</span><span class="kw">fn </span>success(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult {
+		<span class="prelude-val">Ok</span>(())
+	}
+}
+
+<span class="kw">struct </span>MockPrecompileHandle;
+<span class="kw">impl </span>PrecompileHandle <span class="kw">for </span>MockPrecompileHandle {
+	<span class="kw">fn </span>call(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		<span class="kw">_</span>: H160,
+		<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;evm::Transfer&gt;,
+		<span class="kw">_</span>: Vec&lt;u8&gt;,
+		<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		<span class="kw">_</span>: bool,
+		<span class="kw">_</span>: <span class="kw-2">&amp;</span>evm::Context,
+	) -&gt; (ExitReason, Vec&lt;u8&gt;) {
+		<span class="macro">unimplemented!</span>()
+	}
+
+	<span class="kw">fn </span>record_cost(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(), evm::ExitError&gt; {
+		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="kw">fn </span>record_external_cost(
+		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
+		_ref_time: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		_proof_size: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(), fp_evm::ExitError&gt; {
+		<span class="prelude-val">Ok</span>(())
+	}
+
+	<span class="kw">fn </span>refund_external_cost(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _ref_time: <span class="prelude-ty">Option</span>&lt;u64&gt;, _proof_size: <span class="prelude-ty">Option</span>&lt;u64&gt;) {}
+
+	<span class="kw">fn </span>remaining_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
+		<span class="macro">unimplemented!</span>()
+	}
+
+	<span class="kw">fn </span>log(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw">_</span>: H160, <span class="kw">_</span>: Vec&lt;H256&gt;, <span class="kw">_</span>: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), evm::ExitError&gt; {
+		<span class="macro">unimplemented!</span>()
+	}
+
+	<span class="kw">fn </span>code_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; H160 {
+		<span class="macro">unimplemented!</span>()
+	}
+
+	<span class="kw">fn </span>input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[u8] {
+		<span class="macro">unimplemented!</span>()
+	}
+
+	<span class="kw">fn </span>context(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>evm::Context {
+		<span class="macro">unimplemented!</span>()
+	}
+
+	<span class="kw">fn </span>is_static(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
+		<span class="bool-val">true
+	</span>}
+
+	<span class="kw">fn </span>gas_limit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+		<span class="macro">unimplemented!</span>()
+	}
+}
+
+<span class="kw">pub type </span>Precompiles&lt;R&gt; = PrecompileSetBuilder&lt;
+	R,
+	(
+		PrecompileAt&lt;AddressU64&lt;<span class="number">1</span>&gt;, MockPrecompile&gt;,
+		PrecompileAt&lt;AddressU64&lt;<span class="number">2</span>&gt;, MockPrecompile, CallableByContract&gt;,
+		PrecompileAt&lt;AddressU64&lt;<span class="number">3</span>&gt;, MockPrecompile, CallableByPrecompile&gt;,
+		PrecompileAt&lt;AddressU64&lt;<span class="number">4</span>&gt;, MockPrecompile, SubcallWithMaxNesting&lt;<span class="number">1</span>&gt;&gt;,
+	),
+&gt;;
+
+<span class="kw">pub type </span>PCall = MockPrecompileCall;
+
+<span class="kw">const </span>MAX_POV_SIZE: u64 = <span class="number">5 </span>* <span class="number">1024 </span>* <span class="number">1024</span>;
+
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub </span>BlockGasLimit: U256 = U256::from(u64::MAX);
+	<span class="kw">pub </span>PrecompilesValue: Precompiles&lt;Runtime&gt; = Precompiles::new();
+	<span class="kw">pub const </span>WeightPerGas: Weight = Weight::from_parts(<span class="number">1</span>, <span class="number">0</span>);
+	<span class="kw">pub </span>GasLimitPovSizeRatio: u64 = {
+		<span class="kw">let </span>block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
+		block_gas_limit.saturating_div(MAX_POV_SIZE)
 	};
-	<span class="kw">use </span>sp_core::{H160, H256, U256};
-	<span class="kw">use </span>sp_runtime::{
-		traits::{BlakeTwo256, IdentityLookup},
-		Perbill,
-	};
+}
 
-	<span class="kw">pub type </span>AccountId = MockAccount;
-	<span class="kw">pub type </span>Balance = u128;
-	<span class="kw">pub type </span>BlockNumber = u32;
+<span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>FeeCalculator = ();
+	<span class="kw">type </span>GasWeightMapping = pallet_evm::FixedGasWeightMapping&lt;<span class="self">Self</span>&gt;;
+	<span class="kw">type </span>WeightPerGas = WeightPerGas;
+	<span class="kw">type </span>BlockHashMapping = pallet_evm::SubstrateBlockHashMapping&lt;<span class="self">Self</span>&gt;;
+	<span class="kw">type </span>CallOrigin = EnsureAddressRoot&lt;AccountId&gt;;
+	<span class="kw">type </span>WithdrawOrigin = EnsureAddressNever&lt;AccountId&gt;;
+	<span class="kw">type </span>AddressMapping = AccountId;
+	<span class="kw">type </span>Currency = Balances;
+	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
+	<span class="kw">type </span>PrecompilesType = Precompiles&lt;Runtime&gt;;
+	<span class="kw">type </span>PrecompilesValue = PrecompilesValue;
+	<span class="kw">type </span>ChainId = ();
+	<span class="kw">type </span>BlockGasLimit = BlockGasLimit;
+	<span class="kw">type </span>Runner = pallet_evm::runner::stack::Runner&lt;<span class="self">Self</span>&gt;;
+	<span class="kw">type </span>OnChargeTransaction = ();
+	<span class="kw">type </span>OnCreate = ();
+	<span class="kw">type </span>FindAuthor = ();
+	<span class="kw">type </span>GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	<span class="kw">type </span>Timestamp = Timestamp;
+	<span class="kw">type </span>WeightInfo = pallet_evm::weights::SubstrateWeight&lt;Runtime&gt;;
+}
 
-	<span class="kw">type </span>UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic&lt;Runtime&gt;;
-	<span class="kw">type </span>Block = frame_system::mocking::MockBlock&lt;Runtime&gt;;
+<span class="macro">parameter_types! </span>{
+	<span class="kw">pub const </span>MinimumPeriod: u64 = <span class="number">5</span>;
+}
+<span class="kw">impl </span>pallet_timestamp::Config <span class="kw">for </span>Runtime {
+	<span class="kw">type </span>Moment = u64;
+	<span class="kw">type </span>OnTimestampSet = ();
+	<span class="kw">type </span>MinimumPeriod = MinimumPeriod;
+	<span class="kw">type </span>WeightInfo = ();
+}
 
-	<span class="macro">construct_runtime!</span>(
-		<span class="kw">pub enum </span>Runtime <span class="kw">where
-			</span>Block = Block,
-			NodeBlock = Block,
-			UncheckedExtrinsic = UncheckedExtrinsic,
+<span class="attr">#[derive(Default)]
+</span><span class="kw">struct </span>ExtBuilder {}
+
+<span class="kw">impl </span>ExtBuilder {
+	<span class="kw">fn </span>build(<span class="self">self</span>) -&gt; sp_io::TestExternalities {
+		<span class="kw">let </span>t = frame_system::GenesisConfig::default()
+			.build_storage::&lt;Runtime&gt;()
+			.expect(<span class="string">&quot;Frame system builds valid default genesis config&quot;</span>);
+
+		<span class="kw">let </span><span class="kw-2">mut </span>ext = sp_io::TestExternalities::new(t);
+		ext.execute_with(|| {
+			System::set_block_number(<span class="number">1</span>);
+		});
+		ext
+	}
+}
+
+<span class="kw">fn </span>precompiles() -&gt; Precompiles&lt;Runtime&gt; {
+	PrecompilesValue::get()
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>default_checks_succeed_when_called_by_eoa() {
+	ExtBuilder::default().build().execute_with(|| {
+		precompiles()
+			.prepare_test(Alice, H160::from_low_u64_be(<span class="number">1</span>), PCall::success {})
+			.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
+			.execute_returns(())
+	})
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>default_checks_revert_when_called_by_precompile() {
+	ExtBuilder::default().build().execute_with(|| {
+		precompiles()
+			.prepare_test(
+				H160::from_low_u64_be(<span class="number">1</span>),
+				H160::from_low_u64_be(<span class="number">1</span>),
+				PCall::success {},
+			)
+			.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
+			.execute_reverts(|r| r == <span class="string">b&quot;Function not callable by precompiles&quot;</span>)
+	})
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>default_checks_revert_when_called_by_contract() {
+	ExtBuilder::default().build().execute_with(|| {
+		pallet_evm::Pallet::&lt;Runtime&gt;::create_account(
+			Alice.into(),
+			<span class="macro">hex_literal::hex!</span>(<span class="string">&quot;1460006000fd&quot;</span>).to_vec(),
+		);
+
+		precompiles()
+			.prepare_test(Alice, H160::from_low_u64_be(<span class="number">1</span>), PCall::success {})
+			.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
+			.execute_reverts(|r| r == <span class="string">b&quot;Function not callable by smart contracts&quot;</span>)
+	})
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>default_checks_revert_when_doing_subcall() {
+	ExtBuilder::default().build().execute_with(|| {
+		precompiles()
+			.prepare_test(Alice, H160::from_low_u64_be(<span class="number">1</span>), PCall::subcall {})
+			.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
+			.execute_reverts(|r| r == <span class="string">b&quot;subcalls disabled for this precompile&quot;</span>)
+	})
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>callable_by_contract_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		pallet_evm::Pallet::&lt;Runtime&gt;::create_account(
+			Alice.into(),
+			<span class="macro">hex_literal::hex!</span>(<span class="string">&quot;1460006000fd&quot;</span>).to_vec(),
+		);
+
+		precompiles()
+			.prepare_test(Alice, H160::from_low_u64_be(<span class="number">2</span>), PCall::success {})
+			.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
+			.execute_returns(())
+	})
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>callable_by_precompile_works() {
+	ExtBuilder::default().build().execute_with(|| {
+		precompiles()
+			.prepare_test(
+				H160::from_low_u64_be(<span class="number">3</span>),
+				H160::from_low_u64_be(<span class="number">3</span>),
+				PCall::success {},
+			)
+			.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
+			.execute_returns(())
+	})
+}
+
+<span class="attr">#[test]
+</span><span class="kw">fn </span>subcalls_works_when_allowed() {
+	ExtBuilder::default().build().execute_with(|| {
+		<span class="kw">let </span>subcall_occured = Rc::new(RefCell::new(<span class="bool-val">false</span>));
 		{
-			System: frame_system::{Pallet, Call, Config, Storage, Event&lt;T&gt;},
-			Balances: pallet_balances::{Pallet, Call, Storage, Event&lt;T&gt;},
-			Evm: pallet_evm::{Pallet, Call, Storage, Event&lt;T&gt;},
-			Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
-		}
-	);
-
-	<span class="macro">parameter_types! </span>{
-		<span class="kw">pub const </span>BlockHashCount: u32 = <span class="number">250</span>;
-		<span class="kw">pub const </span>MaximumBlockWeight: Weight = Weight::from_parts(<span class="number">1024</span>, <span class="number">1</span>);
-		<span class="kw">pub const </span>MaximumBlockLength: u32 = <span class="number">2 </span>* <span class="number">1024</span>;
-		<span class="kw">pub const </span>AvailableBlockRatio: Perbill = Perbill::one();
-		<span class="kw">pub const </span>SS58Prefix: u8 = <span class="number">42</span>;
-	}
-
-	<span class="kw">impl </span>frame_system::Config <span class="kw">for </span>Runtime {
-		<span class="kw">type </span>BaseCallFilter = Everything;
-		<span class="kw">type </span>DbWeight = ();
-		<span class="kw">type </span>RuntimeOrigin = RuntimeOrigin;
-		<span class="kw">type </span>Index = u64;
-		<span class="kw">type </span>BlockNumber = BlockNumber;
-		<span class="kw">type </span>RuntimeCall = RuntimeCall;
-		<span class="kw">type </span>Hash = H256;
-		<span class="kw">type </span>Hashing = BlakeTwo256;
-		<span class="kw">type </span>AccountId = AccountId;
-		<span class="kw">type </span>Lookup = IdentityLookup&lt;<span class="self">Self</span>::AccountId&gt;;
-		<span class="kw">type </span>Header = sp_runtime::generic::Header&lt;BlockNumber, BlakeTwo256&gt;;
-		<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-		<span class="kw">type </span>BlockHashCount = BlockHashCount;
-		<span class="kw">type </span>Version = ();
-		<span class="kw">type </span>PalletInfo = PalletInfo;
-		<span class="kw">type </span>AccountData = pallet_balances::AccountData&lt;Balance&gt;;
-		<span class="kw">type </span>OnNewAccount = ();
-		<span class="kw">type </span>OnKilledAccount = ();
-		<span class="kw">type </span>SystemWeightInfo = ();
-		<span class="kw">type </span>BlockWeights = ();
-		<span class="kw">type </span>BlockLength = ();
-		<span class="kw">type </span>SS58Prefix = SS58Prefix;
-		<span class="kw">type </span>OnSetCode = ();
-		<span class="kw">type </span>MaxConsumers = frame_support::traits::ConstU32&lt;<span class="number">16</span>&gt;;
-	}
-	<span class="macro">parameter_types! </span>{
-		<span class="kw">pub const </span>ExistentialDeposit: u128 = <span class="number">0</span>;
-	}
-	<span class="kw">impl </span>pallet_balances::Config <span class="kw">for </span>Runtime {
-		<span class="kw">type </span>MaxReserves = ();
-		<span class="kw">type </span>ReserveIdentifier = [u8; <span class="number">4</span>];
-		<span class="kw">type </span>MaxLocks = ();
-		<span class="kw">type </span>Balance = Balance;
-		<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-		<span class="kw">type </span>DustRemoval = ();
-		<span class="kw">type </span>ExistentialDeposit = ExistentialDeposit;
-		<span class="kw">type </span>AccountStore = System;
-		<span class="kw">type </span>WeightInfo = ();
-		<span class="kw">type </span>FreezeIdentifier = ();
-		<span class="kw">type </span>MaxHolds = ();
-		<span class="kw">type </span>MaxFreezes = ();
-		<span class="kw">type </span>RuntimeHoldReason = ();
-	}
-
-	<span class="attr">#[derive(Debug, Clone)]
-	</span><span class="kw">pub struct </span>MockPrecompile;
-
-	<span class="attr">#[precompile_utils::precompile]
-	</span><span class="kw">impl </span>MockPrecompile {
-		<span class="comment">// a3cab0dd
-		</span><span class="attr">#[precompile::public(<span class="string">&quot;subcall()&quot;</span>)]
-		</span><span class="kw">fn </span>subcall(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult {
-			<span class="kw">match </span>handle.call(
-				handle.code_address(),
-				<span class="prelude-val">None</span>,
-				<span class="comment">// calls subcallLayer2()
-				</span>Writer::new_with_selector(<span class="number">0x0b93381bu32</span>).build(),
-				<span class="prelude-val">None</span>,
-				<span class="bool-val">false</span>,
-				<span class="kw-2">&amp;</span>Context {
-					caller: handle.code_address(),
-					address: handle.code_address(),
-					apparent_value: <span class="number">0</span>.into(),
-				},
-			) {
-				(ExitReason::Succeed(<span class="kw">_</span>), <span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
-				(ExitReason::Revert(<span class="kw">_</span>), v) =&gt; <span class="prelude-val">Err</span>(PrecompileFailure::Revert {
-					exit_status: ExitRevert::Reverted,
-					output: v,
-				}),
-				<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(revert(<span class="string">&quot;unexpected error&quot;</span>)),
-			}
-		}
-
-		<span class="comment">// 0b93381b
-		</span><span class="attr">#[precompile::public(<span class="string">&quot;success()&quot;</span>)]
-		</span><span class="kw">fn </span>success(<span class="kw">_</span>: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; EvmResult {
-			<span class="prelude-val">Ok</span>(())
-		}
-	}
-
-	<span class="kw">struct </span>MockPrecompileHandle;
-	<span class="kw">impl </span>PrecompileHandle <span class="kw">for </span>MockPrecompileHandle {
-		<span class="kw">fn </span>call(
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-			<span class="kw">_</span>: sp_core::H160,
-			<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;evm::Transfer&gt;,
-			<span class="kw">_</span>: Vec&lt;u8&gt;,
-			<span class="kw">_</span>: <span class="prelude-ty">Option</span>&lt;u64&gt;,
-			<span class="kw">_</span>: bool,
-			<span class="kw">_</span>: <span class="kw-2">&amp;</span>evm::Context,
-		) -&gt; (evm::ExitReason, Vec&lt;u8&gt;) {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>record_cost(<span class="kw-2">&amp;mut </span><span class="self">self</span>, <span class="kw">_</span>: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(), evm::ExitError&gt; {
-			<span class="prelude-val">Ok</span>(())
-		}
-
-		<span class="kw">fn </span>remaining_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; u64 {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>log(
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-			<span class="kw">_</span>: sp_core::H160,
-			<span class="kw">_</span>: Vec&lt;sp_core::H256&gt;,
-			<span class="kw">_</span>: Vec&lt;u8&gt;,
-		) -&gt; <span class="prelude-ty">Result</span>&lt;(), evm::ExitError&gt; {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>code_address(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; sp_core::H160 {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>input(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>[u8] {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>context(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>evm::Context {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>is_static(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-			<span class="bool-val">true
-		</span>}
-
-		<span class="kw">fn </span>gas_limit(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
-			<span class="macro">unimplemented!</span>()
-		}
-
-		<span class="kw">fn </span>record_external_cost(
-			<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-			_ref_time: <span class="prelude-ty">Option</span>&lt;u64&gt;,
-			_proof_size: <span class="prelude-ty">Option</span>&lt;u64&gt;,
-		) -&gt; <span class="prelude-ty">Result</span>&lt;(), fp_evm::ExitError&gt; {
-			<span class="prelude-val">Ok</span>(())
-		}
-
-		<span class="kw">fn </span>refund_external_cost(<span class="kw-2">&amp;mut </span><span class="self">self</span>, _ref_time: <span class="prelude-ty">Option</span>&lt;u64&gt;, _proof_size: <span class="prelude-ty">Option</span>&lt;u64&gt;) {}
-	}
-
-	<span class="kw">pub type </span>Precompiles&lt;R&gt; = PrecompileSetBuilder&lt;
-		R,
-		(
-			PrecompileAt&lt;AddressU64&lt;<span class="number">1</span>&gt;, MockPrecompile&gt;,
-			PrecompileAt&lt;AddressU64&lt;<span class="number">2</span>&gt;, MockPrecompile, CallableByContract&gt;,
-			PrecompileAt&lt;AddressU64&lt;<span class="number">3</span>&gt;, MockPrecompile, CallableByPrecompile&gt;,
-			PrecompileAt&lt;AddressU64&lt;<span class="number">4</span>&gt;, MockPrecompile, SubcallWithMaxNesting&lt;<span class="number">1</span>&gt;&gt;,
-		),
-	&gt;;
-
-	<span class="kw">pub type </span>PCall = MockPrecompileCall;
-
-	<span class="kw">const </span>MAX_POV_SIZE: u64 = <span class="number">5 </span>* <span class="number">1024 </span>* <span class="number">1024</span>;
-
-	<span class="macro">parameter_types! </span>{
-		<span class="kw">pub </span>BlockGasLimit: U256 = U256::from(u64::MAX);
-		<span class="kw">pub </span>PrecompilesValue: Precompiles&lt;Runtime&gt; = Precompiles::new();
-		<span class="kw">pub const </span>WeightPerGas: Weight = Weight::from_parts(<span class="number">1</span>, <span class="number">0</span>);
-		<span class="kw">pub </span>GasLimitPovSizeRatio: u64 = {
-			<span class="kw">let </span>block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
-			block_gas_limit.saturating_div(MAX_POV_SIZE)
-		};
-	}
-
-	<span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
-		<span class="kw">type </span>FeeCalculator = ();
-		<span class="kw">type </span>GasWeightMapping = pallet_evm::FixedGasWeightMapping&lt;<span class="self">Self</span>&gt;;
-		<span class="kw">type </span>WeightPerGas = WeightPerGas;
-		<span class="kw">type </span>CallOrigin = EnsureAddressRoot&lt;AccountId&gt;;
-		<span class="kw">type </span>WithdrawOrigin = EnsureAddressNever&lt;AccountId&gt;;
-		<span class="kw">type </span>AddressMapping = AccountId;
-		<span class="kw">type </span>Currency = Balances;
-		<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-		<span class="kw">type </span>Runner = pallet_evm::runner::stack::Runner&lt;<span class="self">Self</span>&gt;;
-		<span class="kw">type </span>PrecompilesType = Precompiles&lt;Runtime&gt;;
-		<span class="kw">type </span>PrecompilesValue = PrecompilesValue;
-		<span class="kw">type </span>ChainId = ();
-		<span class="kw">type </span>OnChargeTransaction = ();
-		<span class="kw">type </span>BlockGasLimit = BlockGasLimit;
-		<span class="kw">type </span>BlockHashMapping = pallet_evm::SubstrateBlockHashMapping&lt;<span class="self">Self</span>&gt;;
-		<span class="kw">type </span>FindAuthor = ();
-		<span class="kw">type </span>OnCreate = ();
-		<span class="kw">type </span>GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-		<span class="kw">type </span>Timestamp = Timestamp;
-		<span class="kw">type </span>WeightInfo = pallet_evm::weights::SubstrateWeight&lt;Runtime&gt;;
-	}
-
-	<span class="macro">parameter_types! </span>{
-		<span class="kw">pub const </span>MinimumPeriod: u64 = <span class="number">5</span>;
-	}
-	<span class="kw">impl </span>pallet_timestamp::Config <span class="kw">for </span>Runtime {
-		<span class="kw">type </span>Moment = u64;
-		<span class="kw">type </span>OnTimestampSet = ();
-		<span class="kw">type </span>MinimumPeriod = MinimumPeriod;
-		<span class="kw">type </span>WeightInfo = ();
-	}
-
-	<span class="kw">struct </span>ExtBuilder;
-
-	<span class="kw">impl </span>Default <span class="kw">for </span>ExtBuilder {
-		<span class="kw">fn </span>default() -&gt; ExtBuilder {
-			ExtBuilder
-		}
-	}
-
-	<span class="kw">impl </span>ExtBuilder {
-		<span class="attr">#[cfg(test)]
-		</span><span class="kw">fn </span>build(<span class="self">self</span>) -&gt; sp_io::TestExternalities {
-			<span class="kw">let </span>t = frame_system::GenesisConfig::default()
-				.build_storage::&lt;Runtime&gt;()
-				.expect(<span class="string">&quot;Frame system builds valid default genesis config&quot;</span>);
-
-			<span class="kw">let </span><span class="kw-2">mut </span>ext = sp_io::TestExternalities::new(t);
-			ext.execute_with(|| {
-				System::set_block_number(<span class="number">1</span>);
-			});
-			ext
-		}
-	}
-
-	<span class="attr">#[cfg(test)]
-	</span><span class="kw">fn </span>precompiles() -&gt; Precompiles&lt;Runtime&gt; {
-		PrecompilesValue::get()
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>default_checks_succeed_when_called_by_eoa() {
-		ExtBuilder::default().build().execute_with(|| {
+			<span class="kw">let </span>subcall_occured = Rc::clone(<span class="kw-2">&amp;</span>subcall_occured);
 			precompiles()
-				.prepare_test(Alice, H160::from_low_u64_be(<span class="number">1</span>), PCall::success {})
-				.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
-				.execute_returns(())
-		})
-	}
+				.prepare_test(Alice, H160::from_low_u64_be(<span class="number">4</span>), PCall::subcall {})
+				.with_subcall_handle(<span class="kw">move </span>|Subcall { .. }| {
+					<span class="kw-2">*</span>subcall_occured.borrow_mut() = <span class="bool-val">true</span>;
+					SubcallOutput::succeed()
+				})
+				.execute_returns(());
+		}
+		<span class="macro">assert!</span>(<span class="kw-2">*</span>subcall_occured.borrow());
+	})
+}
 
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>default_checks_revert_when_called_by_precompile() {
-		ExtBuilder::default().build().execute_with(|| {
-			precompiles()
-				.prepare_test(
-					H160::from_low_u64_be(<span class="number">1</span>),
-					H160::from_low_u64_be(<span class="number">1</span>),
-					PCall::success {},
-				)
-				.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
-				.execute_reverts(|r| r == <span class="string">b&quot;Function not callable by precompiles&quot;</span>)
-		})
-	}
+<span class="attr">#[test]
+</span><span class="kw">fn </span>get_address_type_works_for_eoa() {
+	ExtBuilder::default().build().execute_with(|| {
+		<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
+		<span class="macro">assert_eq!</span>(
+			AddressType::EOA,
+			get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
+		);
+	})
+}
 
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>default_checks_revert_when_called_by_contract() {
-		ExtBuilder::default().build().execute_with(|| {
-			pallet_evm::Pallet::&lt;Runtime&gt;::create_account(
-				Alice.into(),
-				<span class="macro">hex_literal::hex!</span>(<span class="string">&quot;1460006000fd&quot;</span>).to_vec(),
-			);
+<span class="attr">#[test]
+</span><span class="kw">fn </span>get_address_type_works_for_precompile() {
+	ExtBuilder::default().build().execute_with(|| {
+		<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
+		pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(addr, <span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>]);
+		<span class="macro">assert_eq!</span>(
+			AddressType::Precompile,
+			get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
+		);
+	})
+}
 
-			precompiles()
-				.prepare_test(Alice, H160::from_low_u64_be(<span class="number">1</span>), PCall::success {})
-				.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
-				.execute_reverts(|r| r == <span class="string">b&quot;Function not callable by smart contracts&quot;</span>)
-		})
-	}
+<span class="attr">#[test]
+</span><span class="kw">fn </span>get_address_type_works_for_smart_contract() {
+	ExtBuilder::default().build().execute_with(|| {
+		<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
 
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>default_checks_revert_when_doing_subcall() {
-		ExtBuilder::default().build().execute_with(|| {
-			precompiles()
-				.prepare_test(Alice, H160::from_low_u64_be(<span class="number">1</span>), PCall::subcall {})
-				.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
-				.execute_reverts(|r| r == <span class="string">b&quot;subcalls disabled for this precompile&quot;</span>)
-		})
-	}
+		<span class="comment">// length &gt; 5
+		</span>pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(
+			addr,
+			<span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>, <span class="number">0xff</span>, <span class="number">0xff</span>],
+		);
+		<span class="macro">assert_eq!</span>(
+			AddressType::Contract,
+			get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
+		);
 
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>callable_by_contract_works() {
-		ExtBuilder::default().build().execute_with(|| {
-			pallet_evm::Pallet::&lt;Runtime&gt;::create_account(
-				Alice.into(),
-				<span class="macro">hex_literal::hex!</span>(<span class="string">&quot;1460006000fd&quot;</span>).to_vec(),
-			);
+		<span class="comment">// length &lt; 5
+		</span>pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(addr, <span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>]);
+		<span class="macro">assert_eq!</span>(
+			AddressType::Contract,
+			get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
+		);
+	})
+}
 
-			precompiles()
-				.prepare_test(Alice, H160::from_low_u64_be(<span class="number">2</span>), PCall::success {})
-				.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
-				.execute_returns(())
-		})
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>callable_by_precompile_works() {
-		ExtBuilder::default().build().execute_with(|| {
-			precompiles()
-				.prepare_test(
-					H160::from_low_u64_be(<span class="number">3</span>),
-					H160::from_low_u64_be(<span class="number">3</span>),
-					PCall::success {},
-				)
-				.with_subcall_handle(|Subcall { .. }| <span class="macro">panic!</span>(<span class="string">&quot;there should be no subcall&quot;</span>))
-				.execute_returns(())
-		})
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>subcalls_works_when_allowed() {
-		ExtBuilder::default().build().execute_with(|| {
-			<span class="kw">let </span>subcall_occured = Rc::new(RefCell::new(<span class="bool-val">false</span>));
-			{
-				<span class="kw">let </span>subcall_occured = Rc::clone(<span class="kw-2">&amp;</span>subcall_occured);
-				precompiles()
-					.prepare_test(Alice, H160::from_low_u64_be(<span class="number">4</span>), PCall::subcall {})
-					.with_subcall_handle(<span class="kw">move </span>|Subcall { .. }| {
-						<span class="kw-2">*</span>subcall_occured.borrow_mut() = <span class="bool-val">true</span>;
-						SubcallOutput::succeed()
-					})
-					.execute_returns(());
-			}
-			<span class="macro">assert!</span>(<span class="kw-2">*</span>subcall_occured.borrow());
-		})
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>get_address_type_works_for_eoa() {
-		ExtBuilder::default().build().execute_with(|| {
-			<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
-			<span class="macro">assert_eq!</span>(
-				AddressType::EOA,
-				get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
-			);
-		})
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>get_address_type_works_for_precompile() {
-		ExtBuilder::default().build().execute_with(|| {
-			<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
-			pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(addr, <span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>]);
-			<span class="macro">assert_eq!</span>(
-				AddressType::Precompile,
-				get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
-			);
-		})
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>get_address_type_works_for_smart_contract() {
-		ExtBuilder::default().build().execute_with(|| {
-			<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
-
-			<span class="comment">// length &gt; 5
-			</span>pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(
-				addr,
-				<span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>, <span class="number">0xff</span>, <span class="number">0xff</span>],
-			);
-			<span class="macro">assert_eq!</span>(
-				AddressType::Contract,
-				get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
-			);
-
-			<span class="comment">// length &lt; 5
-			</span>pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(addr, <span class="macro">vec!</span>[<span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0x60</span>]);
-			<span class="macro">assert_eq!</span>(
-				AddressType::Contract,
-				get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
-			);
-		})
-	}
-
-	<span class="attr">#[test]
-	</span><span class="kw">fn </span>get_address_type_works_for_unknown() {
-		ExtBuilder::default().build().execute_with(|| {
-			<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
-			pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(addr, <span class="macro">vec!</span>[<span class="number">0x11</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>]);
-			<span class="macro">assert_eq!</span>(
-				AddressType::Unknown,
-				get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
-			);
-		})
-	}
+<span class="attr">#[test]
+</span><span class="kw">fn </span>get_address_type_works_for_unknown() {
+	ExtBuilder::default().build().execute_with(|| {
+		<span class="kw">let </span>addr = H160::repeat_byte(<span class="number">0x1d</span>);
+		pallet_evm::AccountCodes::&lt;Runtime&gt;::insert(addr, <span class="macro">vec!</span>[<span class="number">0x11</span>, <span class="number">0x00</span>, <span class="number">0x60</span>, <span class="number">0x00</span>, <span class="number">0xfd</span>]);
+		<span class="macro">assert_eq!</span>(
+			AddressType::Unknown,
+			get_address_type::&lt;Runtime&gt;(<span class="kw-2">&amp;mut </span>MockPrecompileHandle, addr).expect(<span class="string">&quot;OOG&quot;</span>)
+		);
+	})
 }
 </code></pre></div></section></main></body></html>

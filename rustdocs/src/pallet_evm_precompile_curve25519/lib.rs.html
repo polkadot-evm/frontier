@@ -383,12 +383,12 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_sum() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
 		<span class="kw">let </span>s1 = Scalar::from(<span class="number">999u64</span>);
-		<span class="kw">let </span>p1 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s1;
+		<span class="kw">let </span>p1 = constants::RISTRETTO_BASEPOINT_POINT * s1;
 
 		<span class="kw">let </span>s2 = Scalar::from(<span class="number">333u64</span>);
-		<span class="kw">let </span>p2 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s2;
+		<span class="kw">let </span>p2 = constants::RISTRETTO_BASEPOINT_POINT * s2;
 
-		<span class="kw">let </span>vec = <span class="macro">vec!</span>[p1.clone(), p2.clone()];
+		<span class="kw">let </span>vec = <span class="macro">vec!</span>[p1, p2];
 		<span class="kw">let </span><span class="kw-2">mut </span>input = <span class="macro">vec!</span>[];
 		input.extend_from_slice(<span class="kw-2">&amp;</span>p1.compress().to_bytes());
 		input.extend_from_slice(<span class="kw-2">&amp;</span>p2.compress().to_bytes());
@@ -429,8 +429,8 @@
 	</span><span class="kw">fn </span>test_scalar_mul() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
 		<span class="kw">let </span>s1 = Scalar::from(<span class="number">999u64</span>);
 		<span class="kw">let </span>s2 = Scalar::from(<span class="number">333u64</span>);
-		<span class="kw">let </span>p1 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s1;
-		<span class="kw">let </span>p2 = <span class="kw-2">&amp;</span>constants::RISTRETTO_BASEPOINT_POINT * <span class="kw-2">&amp;</span>s2;
+		<span class="kw">let </span>p1 = constants::RISTRETTO_BASEPOINT_POINT * s1;
+		<span class="kw">let </span>p2 = constants::RISTRETTO_BASEPOINT_POINT * s2;
 
 		<span class="kw">let </span><span class="kw-2">mut </span>input = <span class="macro">vec!</span>[];
 		input.extend_from_slice(<span class="kw-2">&amp;</span>s1.to_bytes());

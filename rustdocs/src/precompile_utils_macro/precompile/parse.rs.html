@@ -1164,7 +1164,7 @@
 			</span>.selector_to_variant
 			.insert(selector, method_name.clone())
 		{
-			<span class="kw">let </span>msg = <span class="macro">format!</span>(<span class="string">&quot;Selector collision with method {}&quot;</span>, previous.to_string());
+			<span class="kw">let </span>msg = <span class="macro">format!</span>(<span class="string">&quot;Selector collision with method {previous}&quot;</span>);
 			<span class="kw">return </span><span class="prelude-val">Err</span>(syn::Error::new(signature_lit.span(), msg));
 		}
 

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"struct":["Bls12377G1Add","Bls12377G1Mul","Bls12377G1MultiExp","Bls12377G2Add","Bls12377G2Mul","Bls12377G2MultiExp","Bls12377Pairing"]};
+window.SIDEBAR_ITEMS = {"struct":["Bls12377G1Add","Bls12377G1Mul","Bls12377G1MultiExp","Bls12377G2Add","Bls12377G2Mul","Bls12377G2MultiExp","Bls12377MapG1","Bls12377MapG2","Bls12377Pairing"]};

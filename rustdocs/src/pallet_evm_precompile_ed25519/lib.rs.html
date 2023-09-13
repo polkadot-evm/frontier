@@ -158,6 +158,7 @@
 <a href="#158" id="158">158</a>
 <a href="#159" id="159">159</a>
 <a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -250,7 +251,8 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_verify() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
-		<span class="kw">let </span>secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
+		<span class="attr">#[allow(clippy::zero_prefixed_literal)]
+		</span><span class="kw">let </span>secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
 			<span class="number">157</span>, <span class="number">097</span>, <span class="number">177</span>, <span class="number">157</span>, <span class="number">239</span>, <span class="number">253</span>, <span class="number">090</span>, <span class="number">096</span>, <span class="number">186</span>, <span class="number">132</span>, <span class="number">074</span>, <span class="number">244</span>, <span class="number">146</span>, <span class="number">236</span>, <span class="number">044</span>, <span class="number">196</span>, <span class="number">068</span>,
 			<span class="number">073</span>, <span class="number">197</span>, <span class="number">105</span>, <span class="number">123</span>, <span class="number">050</span>, <span class="number">105</span>, <span class="number">025</span>, <span class="number">112</span>, <span class="number">059</span>, <span class="number">172</span>, <span class="number">003</span>, <span class="number">028</span>, <span class="number">174</span>, <span class="number">127</span>, <span class="number">096</span>,
 		];
