@@ -41,7 +41,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 
 		expect(getStorage0.result).to.be.eq("0x0000000000000000000000000000000000000000000000000000000000000000");
 
-		/*
 		const tx1 = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -80,7 +79,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		]);
 
 		expect(getStorage1.result).to.be.eq(expectedStorage);
-		*/
 	});
 
 	it("SSTORE cost should properly take into account transaction initial value", async function () {
