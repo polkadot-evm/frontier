@@ -39,8 +39,8 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 			BigInt(TRANFER_VALUE)
 		).toString();
 		const expectedTestBalance = (Number(TRANFER_VALUE) - EXISTENTIAL_DEPOSIT).toString();
-		// expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT, "pending")).to.equal(expectedGenesisBalance);
-		// expect(await context.web3.eth.getBalance(TEST_ACCOUNT, "pending")).to.equal(expectedTestBalance);
+		expect(await context.web3.eth.getBalance(GENESIS_ACCOUNT, "pending")).to.equal(expectedGenesisBalance);
+		expect(await context.web3.eth.getBalance(TEST_ACCOUNT, "pending")).to.equal(expectedTestBalance);
 
 		await createAndFinalizeBlock(context.web3);
 
