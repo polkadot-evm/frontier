@@ -113,7 +113,7 @@ fn dispatch_validator_works_well() {
 			) -> Option<PrecompileFailure> {
 				match call {
 					RuntimeCall::System(frame_system::Call::remark { remark: _ }) => {
-						return Some(PrecompileFailure::Error {
+						Some(PrecompileFailure::Error {
 							exit_status: ExitError::Other("This call is not allowed".into()),
 						})
 					}

@@ -65,7 +65,7 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000 as u128);
+	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000_u128);
 	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
@@ -105,16 +105,14 @@ pub fn new_test_ext(base_fee: Option<U256>, elasticity: Option<Permill>) -> Test
 		(Some(base_fee), Some(elasticity)) => {
 			pallet_base_fee::GenesisConfig::<Test>::new(base_fee, elasticity)
 		}
-		(None, Some(elasticity)) => {
-			let mut config = pallet_base_fee::GenesisConfig::<Test>::default();
-			config.elasticity = elasticity;
-			config
-		}
-		(Some(base_fee), None) => {
-			let mut config = pallet_base_fee::GenesisConfig::<Test>::default();
-			config.base_fee_per_gas = base_fee;
-			config
-		}
+		(None, Some(elasticity)) => pallet_base_fee::GenesisConfig::<Test> {
+			elasticity,
+			..Default::default()
+		},
+		(Some(base_fee), None) => pallet_base_fee::GenesisConfig::<Test> {
+			base_fee_per_gas: base_fee,
+			..Default::default()
+		},
 		(None, None) => pallet_base_fee::GenesisConfig::<Test>::default(),
 	}
 	.assimilate_storage(&mut t)
@@ -137,7 +135,7 @@ fn should_default() {
 	new_test_ext(None, None).execute_with(|| {
 		assert_eq!(
 			BaseFeePerGas::<Test>::get(),
-			U256::from(100_000_000_000 as u128)
+			U256::from(100_000_000_000_u128)
 		);
 		assert_eq!(Elasticity::<Test>::get(), Permill::from_parts(125_000));
 	});

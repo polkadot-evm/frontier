@@ -18,10 +18,17 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 
 // Arkworks
-use ark_bls12_377::{Bls12_377, Fq, Fq2, Fr, G1Affine, G1Projective, G2Affine, G2Projective};
-use ark_ec::{pairing::Pairing, AffineRepr, CurveGroup, VariableBaseMSM};
+use ark_bls12_377::{
+	g1::Config as G1Config, g2::Config as G2Config, Bls12_377, Fq, Fq2, Fr, G1Affine, G1Projective,
+	G2Affine, G2Projective,
+};
+use ark_ec::{
+	hashing::{curve_maps::wb::WBMap, map_to_curve_hasher::MapToCurve, HashToCurveError},
+	pairing::Pairing,
+	AffineRepr, CurveGroup, VariableBaseMSM,
+};
 use ark_ff::{BigInteger384, PrimeField, Zero};
-use ark_std::ops::Mul;
+use ark_std::{ops::Mul, vec::Vec};
 
 // Frontier
 use fp_evm::{
@@ -122,6 +129,32 @@ fn extract_fq(bytes: [u8; 64]) -> Result<Fq, PrecompileFailure> {
 		}),
 		Some(c) => Ok(c),
 	}
+}
+
+fn read_fq(input: &[u8], offset: usize) -> Result<Fq, PrecompileFailure> {
+	let mut buf = [0u8; 64];
+	read_input(input, &mut buf, offset);
+	extract_fq(buf)
+}
+
+fn read_fq2(input: &[u8], offset: usize) -> Result<Fq2, PrecompileFailure> {
+	let mut x_buf = [0u8; 64];
+	let mut y_buf = [0u8; 64];
+	read_input(input, &mut x_buf, offset);
+	read_input(input, &mut y_buf, offset + 64);
+	let px = extract_fq(x_buf)?;
+	let py = extract_fq(y_buf)?;
+	Ok(Fq2::new(px, py))
+}
+
+fn map_to_curve_g1(fq: Fq) -> Result<G1Affine, HashToCurveError> {
+	let m2c = WBMap::<G1Config>::new()?;
+	m2c.map_to_curve(fq)
+}
+
+fn map_to_curve_g2(fq2: Fq2) -> Result<G2Affine, HashToCurveError> {
+	let m2c = WBMap::<G2Config>::new()?;
+	m2c.map_to_curve(fq2)
 }
 
 /// Decode G1 given encoded (x, y) coordinates in 128 bytes returns a valid G1 Point.
@@ -483,8 +516,8 @@ pub struct Bls12377Pairing;
 
 impl Bls12377Pairing {
 	/// https://eips.ethereum.org/EIPS/eip-2539#pairing-operation
-	const BASE_GAS: u64 = 65000;
-	const PER_PAIR_GAS: u64 = 55000;
+	const BASE_GAS: u64 = 65_000;
+	const PER_PAIR_GAS: u64 = 55_000;
 }
 
 impl Precompile for Bls12377Pairing {
@@ -541,6 +574,84 @@ impl Precompile for Bls12377Pairing {
 			output[31] = 1;
 		}
 
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: output.to_vec(),
+		})
+	}
+}
+
+/// Bls12377MapG1 implements EIP-2539 MapG1 precompile.
+pub struct Bls12377MapG1;
+
+impl Bls12377MapG1 {
+	const GAS_COST: u64 = 5_500;
+}
+
+impl Precompile for Bls12377MapG1 {
+	/// Implements EIP-2539 Map_To_G1 precompile.
+	/// > Field-to-curve call expects `64` bytes an an input that is interpreted as a an element of the base field.
+	/// > Output of this call is `128` bytes and is G1 point following respective encoding rules.
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		handle.record_cost(Bls12377MapG1::GAS_COST)?;
+
+		let input = handle.input();
+		if input.len() != 64 {
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("invalid input length".into()),
+			});
+		}
+
+		let fq = read_fq(input, 0)?;
+		let g1 = match map_to_curve_g1(fq) {
+			Ok(point) => point,
+			Err(_) => {
+				return Err(PrecompileFailure::Error {
+					exit_status: ExitError::Other("map to curve failed".into()),
+				})
+			}
+		};
+
+		let output = encode_g1(g1);
+		Ok(PrecompileOutput {
+			exit_status: ExitSucceed::Returned,
+			output: output.to_vec(),
+		})
+	}
+}
+
+/// Bls12377MapG2 implements EIP-2539 MapG2 precompile.
+pub struct Bls12377MapG2;
+
+impl Bls12377MapG2 {
+	const GAS_COST: u64 = 75_000;
+}
+
+impl Precompile for Bls12377MapG2 {
+	/// Implements EIP-2539 Map_FP2_TO_G2 precompile logic.
+	/// > Field-to-curve call expects `128` bytes an an input that is interpreted as a an element of the quadratic extension field.
+	/// > Output of this call is `256` bytes and is G2 point following respective encoding rules.
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		handle.record_cost(Bls12377MapG2::GAS_COST)?;
+
+		let input = handle.input();
+		if input.len() != 64 {
+			return Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("invalid input length".into()),
+			});
+		}
+
+		let fq2 = read_fq2(input, 0)?;
+		let g2 = match map_to_curve_g2(fq2) {
+			Ok(point) => point,
+			Err(_) => {
+				return Err(PrecompileFailure::Error {
+					exit_status: ExitError::Other("map to curve failed".into()),
+				})
+			}
+		};
+
+		let output = encode_g2(g2);
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
 			output: output.to_vec(),

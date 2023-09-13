@@ -19,7 +19,7 @@
 
 #![cfg(test)]
 
-use sp_std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 // Substrate
 use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
@@ -83,6 +83,7 @@ impl frame_system::Config for Runtime {
 	type OnSetCode = ();
 	type MaxConsumers = frame_support::traits::ConstU32<16>;
 }
+
 parameter_types! {
 	pub const ExistentialDeposit: u128 = 0;
 }
@@ -253,16 +254,10 @@ impl pallet_timestamp::Config for Runtime {
 	type WeightInfo = ();
 }
 
-struct ExtBuilder;
-
-impl Default for ExtBuilder {
-	fn default() -> ExtBuilder {
-		ExtBuilder
-	}
-}
+#[derive(Default)]
+struct ExtBuilder {}
 
 impl ExtBuilder {
-	#[cfg(test)]
 	fn build(self) -> sp_io::TestExternalities {
 		let t = frame_system::GenesisConfig::<Runtime>::default()
 			.build_storage()
@@ -276,7 +271,6 @@ impl ExtBuilder {
 	}
 }
 
-#[cfg(test)]
 fn precompiles() -> Precompiles<Runtime> {
 	PrecompilesValue::get()
 }

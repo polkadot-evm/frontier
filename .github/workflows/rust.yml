@@ -15,7 +15,7 @@ jobs:
     name: 'Run Rust tests'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
@@ -28,13 +28,13 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
-      run: cargo test --locked --verbose --all
+      run: cargo test --release --locked --verbose --all
 
   integration:
     name: 'Run integration tests'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
@@ -67,7 +67,7 @@ jobs:
     name: 'Run lints'
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Rust Setup
       uses: actions-rs/toolchain@v1
       with:
@@ -85,10 +85,10 @@ jobs:
         if taplo --version &> /dev/null; then
           echo "taplo-cli is already installed"
         else
-          cargo install taplo-cli
+          cargo install taplo-cli --locked
         fi
         taplo fmt --check
     - name: Rustfmt
       run: cargo fmt --all -- --check
     - name: Clippy
-      run: cargo clippy --all --features runtime-benchmarks,try-runtime -- -D warnings
+      run: cargo clippy --release --all --tests --features runtime-benchmarks,try-runtime -- -D warnings

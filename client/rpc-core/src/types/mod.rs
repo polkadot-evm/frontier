@@ -44,7 +44,7 @@ pub use self::txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransac
 pub use self::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
-	block_number::BlockNumber,
+	block_number::BlockNumberOrHash,
 	bytes::Bytes,
 	call_request::{CallRequest, CallStateOverride},
 	fee::{FeeHistory, FeeHistoryCache, FeeHistoryCacheItem, FeeHistoryCacheLimit},

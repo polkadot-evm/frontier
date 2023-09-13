@@ -115,12 +115,12 @@ mod tests {
 	#[test]
 	fn test_sum() -> Result<(), PrecompileFailure> {
 		let s1 = Scalar::from(999u64);
-		let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
+		let p1 = constants::RISTRETTO_BASEPOINT_POINT * s1;
 
 		let s2 = Scalar::from(333u64);
-		let p2 = &constants::RISTRETTO_BASEPOINT_POINT * &s2;
+		let p2 = constants::RISTRETTO_BASEPOINT_POINT * s2;
 
-		let vec = vec![p1.clone(), p2.clone()];
+		let vec = vec![p1, p2];
 		let mut input = vec![];
 		input.extend_from_slice(&p1.compress().to_bytes());
 		input.extend_from_slice(&p2.compress().to_bytes());
@@ -161,8 +161,8 @@ mod tests {
 	fn test_scalar_mul() -> Result<(), PrecompileFailure> {
 		let s1 = Scalar::from(999u64);
 		let s2 = Scalar::from(333u64);
-		let p1 = &constants::RISTRETTO_BASEPOINT_POINT * &s1;
-		let p2 = &constants::RISTRETTO_BASEPOINT_POINT * &s2;
+		let p1 = constants::RISTRETTO_BASEPOINT_POINT * s1;
+		let p2 = constants::RISTRETTO_BASEPOINT_POINT * s2;
 
 		let mut input = vec![];
 		input.extend_from_slice(&s1.to_bytes());
