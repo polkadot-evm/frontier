@@ -139,6 +139,8 @@
 <a href="#139" id="139">139</a>
 <a href="#140" id="140">140</a>
 <a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -158,7 +160,7 @@
 
 // Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 #[cfg(test)]
 </span><span class="kw">mod </span>tests;
@@ -226,13 +228,15 @@
 	}
 
 	<span class="attr">#[pallet::genesis_config]
-	#[derive(Default)]
-	</span><span class="kw">pub struct </span>GenesisConfig {
+	#[derive(frame_support::DefaultNoBound)]
+	</span><span class="kw">pub struct </span>GenesisConfig&lt;T&gt; {
 		<span class="kw">pub </span>min_gas_price: U256,
+		<span class="attr">#[serde(skip)]
+		</span><span class="kw">pub </span>_marker: PhantomData&lt;T&gt;,
 	}
 
 	<span class="attr">#[pallet::genesis_build]
-	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
+	</span><span class="kw">impl</span>&lt;T: Config&gt; BuildGenesisConfig <span class="kw">for </span>GenesisConfig&lt;T&gt; {
 		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
 			MinGasPrice::&lt;T&gt;::put(<span class="self">self</span>.min_gas_price);
 		}

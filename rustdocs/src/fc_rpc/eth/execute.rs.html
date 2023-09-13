@@ -1050,6 +1050,9 @@
 <a href="#1050" id="1050">1050</a>
 <a href="#1051" id="1051">1051</a>
 <a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
+<a href="#1055" id="1055">1055</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1077,10 +1080,12 @@
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
-<span class="kw">use </span>sp_api::{ApiExt, CallApiAt, CallApiAtParams, ProvideRuntimeApi, StorageTransactionCache};
+<span class="kw">use </span>sp_api::{
+	ApiExt, CallApiAt, CallApiAtParams, CallContext, Extensions, ProvideRuntimeApi,
+	StorageTransactionCache,
+};
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
-<span class="kw">use </span>sp_core::ExecutionContext;
 <span class="kw">use </span>sp_io::hashing::{blake2_128, twox_128};
 <span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, DispatchError, SaturatedConversion};
 <span class="kw">use </span>sp_state_machine::OverlayedChanges;
@@ -1295,8 +1300,9 @@
 						arguments: encoded_params,
 						overlayed_changes: <span class="kw-2">&amp;</span>RefCell::new(overlayed_changes),
 						storage_transaction_cache: <span class="kw-2">&amp;</span>storage_transaction_cache,
-						context: ExecutionContext::OffchainCall(<span class="prelude-val">None</span>),
+						call_context: CallContext::Offchain,
 						recorder: <span class="kw-2">&amp;</span><span class="prelude-val">None</span>,
+						extensions: <span class="kw-2">&amp;</span>RefCell::new(Extensions::new()),
 					};
 
 					<span class="kw">let </span>value = <span class="kw">if </span>api_version == <span class="number">4 </span>{

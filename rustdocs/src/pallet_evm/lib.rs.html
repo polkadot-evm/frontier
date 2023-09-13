@@ -1046,6 +1046,8 @@
 <a href="#1046" id="1046">1046</a>
 <a href="#1047" id="1047">1047</a>
 <a href="#1048" id="1048">1048</a>
+<a href="#1049" id="1049">1049</a>
+<a href="#1050" id="1050">1050</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1100,7 +1102,7 @@
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
-#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, deny(unused_crate_dependencies))]
+#![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
@@ -1135,7 +1137,7 @@
 <span class="kw">use </span>frame_system::RawOrigin;
 <span class="kw">use </span>sp_core::{Decode, Encode, Hasher, H160, H256, U256};
 <span class="kw">use </span>sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
+	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
 <span class="kw">use </span>sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
@@ -1559,13 +1561,15 @@
 	}
 
 	<span class="attr">#[pallet::genesis_config]
-	#[derive(Default)]
-	</span><span class="kw">pub struct </span>GenesisConfig {
+	#[derive(frame_support::DefaultNoBound)]
+	</span><span class="kw">pub struct </span>GenesisConfig&lt;T&gt; {
 		<span class="kw">pub </span>accounts: BTreeMap&lt;H160, GenesisAccount&gt;,
+		<span class="attr">#[serde(skip)]
+		</span><span class="kw">pub </span>_marker: PhantomData&lt;T&gt;,
 	}
 
 	<span class="attr">#[pallet::genesis_build]
-	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig
+	</span><span class="kw">impl</span>&lt;T: Config&gt; BuildGenesisConfig <span class="kw">for </span>GenesisConfig&lt;T&gt;
 	<span class="kw">where
 		</span>U256: UniqueSaturatedInto&lt;BalanceOf&lt;T&gt;&gt;,
 	{
@@ -1780,7 +1784,7 @@
 </span><span class="kw">pub struct </span>SubstrateBlockHashMapping&lt;T&gt;(sp_std::marker::PhantomData&lt;T&gt;);
 <span class="kw">impl</span>&lt;T: Config&gt; BlockHashMapping <span class="kw">for </span>SubstrateBlockHashMapping&lt;T&gt; {
 	<span class="kw">fn </span>block_hash(number: u32) -&gt; H256 {
-		<span class="kw">let </span>number = T::BlockNumber::from(number);
+		<span class="kw">let </span>number = &lt;NumberFor&lt;T::Block&gt;&gt;::from(number);
 		H256::from_slice(frame_system::Pallet::&lt;T&gt;::block_hash(number).as_ref())
 	}
 }

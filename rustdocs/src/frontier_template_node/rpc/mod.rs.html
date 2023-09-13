@@ -129,7 +129,7 @@
 <span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Runtime
-</span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Index};
+</span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
 
 <span class="kw">mod </span>eth;
 <span class="kw">pub use </span><span class="self">self</span>::eth::{create_eth, overrides_handle, EthDeps};
@@ -172,7 +172,7 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
 	</span>C: CallApiAt&lt;Block&gt; + ProvideRuntimeApi&lt;Block&gt;,
-	C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Index&gt;,
+	C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;,
 	C::Api: sp_block_builder::BlockBuilder&lt;Block&gt;,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;,

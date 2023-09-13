@@ -66,6 +66,8 @@
 <a href="#66" id="66">66</a>
 <a href="#67" id="67">67</a>
 <a href="#68" id="68">68</a>
+<a href="#69" id="69">69</a>
+<a href="#70" id="70">70</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -94,7 +96,7 @@
 
 </span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 </span><span class="kw">pub use </span>pallet::<span class="kw-2">*</span>;
 
@@ -122,13 +124,15 @@
 	</span><span class="kw">pub type </span>ChainId&lt;T&gt; = StorageValue&lt;<span class="kw">_</span>, u64, ValueQuery&gt;;
 
 	<span class="attr">#[pallet::genesis_config]
-	#[derive(Default)]
-	</span><span class="kw">pub struct </span>GenesisConfig {
+	#[derive(frame_support::DefaultNoBound)]
+	</span><span class="kw">pub struct </span>GenesisConfig&lt;T&gt; {
 		<span class="kw">pub </span>chain_id: u64,
+		<span class="attr">#[serde(skip)]
+		</span><span class="kw">pub </span>_marker: PhantomData&lt;T&gt;,
 	}
 
 	<span class="attr">#[pallet::genesis_build]
-	</span><span class="kw">impl</span>&lt;T: Config&gt; GenesisBuild&lt;T&gt; <span class="kw">for </span>GenesisConfig {
+	</span><span class="kw">impl</span>&lt;T: Config&gt; BuildGenesisConfig <span class="kw">for </span>GenesisConfig&lt;T&gt; {
 		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
 			ChainId::&lt;T&gt;::put(<span class="self">self</span>.chain_id);
 		}

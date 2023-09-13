@@ -89,7 +89,7 @@
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
 <span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
 <span class="comment">// Local
-</span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Index};
+</span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
 <span class="kw">use </span><span class="kw">crate</span>::eth::EthCompatRuntimeApiCollection;
 
@@ -152,7 +152,7 @@
 	+ EthCompatRuntimeApiCollection
 	+ sp_consensus_aura::AuraApi&lt;Block, AuraId&gt;
 	+ sp_consensus_grandpa::GrandpaApi&lt;Block&gt;
-	+ frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Index&gt;
+	+ frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
 	+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt;
 <span class="kw">where
 	</span>&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
@@ -165,7 +165,7 @@
 		+ EthCompatRuntimeApiCollection
 		+ sp_consensus_aura::AuraApi&lt;Block, AuraId&gt;
 		+ sp_consensus_grandpa::GrandpaApi&lt;Block&gt;
-		+ frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Index&gt;
+		+ frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
 		+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt;,
 	&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
 {

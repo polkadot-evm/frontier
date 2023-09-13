@@ -269,6 +269,12 @@
 <a href="#269" id="269">269</a>
 <a href="#270" id="270">270</a>
 <a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, str::FromStr};
 
 <span class="kw">use </span>hex_literal::hex;
@@ -461,6 +467,7 @@
 		</span>system: SystemConfig {
 			<span class="comment">// Add Wasm runtime to storage.
 			</span>code: wasm_binary.to_vec(),
+			..Default::default()
 		},
 		sudo: SudoConfig {
 			<span class="comment">// Assign network admin rights.
@@ -486,10 +493,14 @@
 				.iter()
 				.map(|x| (x.<span class="number">1</span>.clone(), <span class="number">1</span>))
 				.collect(),
+			..Default::default()
 		},
 
 		<span class="comment">// EVM compatibility
-		</span>evm_chain_id: EVMChainIdConfig { chain_id },
+		</span>evm_chain_id: EVMChainIdConfig {
+			chain_id,
+			..Default::default()
+		},
 		evm: EVMConfig {
 			accounts: {
 				<span class="kw">let </span><span class="kw-2">mut </span>map = BTreeMap::new();
@@ -534,6 +545,7 @@
 				);
 				map
 			},
+			..Default::default()
 		},
 		ethereum: Default::default(),
 		dynamic_fee: Default::default(),

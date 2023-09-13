@@ -707,6 +707,20 @@
 <a href="#707" id="707">707</a>
 <a href="#708" id="708">708</a>
 <a href="#709" id="709">709</a>
+<a href="#710" id="710">710</a>
+<a href="#711" id="711">711</a>
+<a href="#712" id="712">712</a>
+<a href="#713" id="713">713</a>
+<a href="#714" id="714">714</a>
+<a href="#715" id="715">715</a>
+<a href="#716" id="716">716</a>
+<a href="#717" id="717">717</a>
+<a href="#718" id="718">718</a>
+<a href="#719" id="719">719</a>
+<a href="#720" id="720">720</a>
+<a href="#721" id="721">721</a>
+<a href="#722" id="722">722</a>
+<a href="#723" id="723">723</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span>std::{cell::RefCell, path::Path, sync::Arc, time::Duration};
@@ -714,12 +728,13 @@
 <span class="kw">use </span>futures::{channel::mpsc, prelude::<span class="kw-2">*</span>};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>prometheus_endpoint::Registry;
-<span class="kw">use </span>sc_client_api::{BlockBackend, StateBackendFor};
+<span class="kw">use </span>sc_client_api::{Backend, BlockBackend, StateBackendFor};
 <span class="kw">use </span>sc_consensus::BasicQueue;
 <span class="kw">use </span>sc_executor::NativeExecutionDispatch;
 <span class="kw">use </span>sc_network_common::sync::warp::WarpSyncParams;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
+<span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
 <span class="kw">use </span>sp_api::{ConstructRuntimeApi, TransactionFor};
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
 <span class="kw">use </span>sp_core::U256;
@@ -1052,11 +1067,23 @@
 		})<span class="question-mark">?</span>;
 
 	<span class="kw">if </span>config.offchain_worker.enabled {
-		sc_service::build_offchain_workers(
-			<span class="kw-2">&amp;</span>config,
-			task_manager.spawn_handle(),
-			client.clone(),
-			network.clone(),
+		task_manager.spawn_handle().spawn(
+			<span class="string">&quot;offchain-workers-runner&quot;</span>,
+			<span class="string">&quot;offchain-worker&quot;</span>,
+			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
+				runtime_api_provider: client.clone(),
+				is_validator: config.role.is_authority(),
+				keystore: <span class="prelude-val">Some</span>(keystore_container.keystore()),
+				offchain_db: backend.offchain_storage(),
+				transaction_pool: <span class="prelude-val">Some</span>(OffchainTransactionPoolFactory::new(
+					transaction_pool.clone(),
+				)),
+				network_provider: network.clone(),
+				enable_http_requests: <span class="bool-val">true</span>,
+				custom_extensions: |<span class="kw">_</span>| <span class="macro">vec!</span>[],
+			})
+			.run(client.clone(), task_manager.spawn_handle())
+			.boxed(),
 		);
 	}
 
@@ -1189,7 +1216,7 @@
 		<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
 			task_manager.spawn_handle(),
 			client.clone(),
-			transaction_pool,
+			transaction_pool.clone(),
 			prometheus_registry.as_ref(),
 			telemetry.as_ref().map(|x| x.handle()),
 		);
@@ -1269,6 +1296,7 @@
 				prometheus_registry,
 				shared_voter_state: sc_consensus_grandpa::SharedVoterState::empty(),
 				telemetry: telemetry.as_ref().map(|x| x.handle()),
+				offchain_tx_pool_factory: OffchainTransactionPoolFactory::new(transaction_pool),
 			})<span class="question-mark">?</span>;
 
 		<span class="comment">// the GRANDPA voter task is considered infallible, i.e.
