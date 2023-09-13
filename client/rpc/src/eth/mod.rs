@@ -24,6 +24,7 @@ mod fee;
 mod filter;
 pub mod format;
 mod mining;
+pub mod pending;
 mod state;
 mod submit;
 mod transaction;
@@ -37,11 +38,12 @@ use jsonrpsee::core::{async_trait, RpcResult};
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_sync::SyncingService;
 use sc_transaction_pool::{ChainApi, Pool};
-use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
-use sp_api::{ApiRef, CallApiAt, Core, HeaderT, ProvideRuntimeApi};
+use sc_transaction_pool_api::TransactionPool;
+use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
+use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
@@ -71,7 +73,7 @@ impl<B: BlockT, C> EthConfig<B, C> for () {
 }
 
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> {
+pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC: EthConfig<B, C>> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -88,17 +90,20 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> {
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
 	forced_parent_hashes: Option<BTreeMap<H256, H256>>,
-	_marker: PhantomData<(B, BE, EC)>,
+	/// Something that can create the inherent data providers for pending state.
+	pending_create_inherent_data_providers: CIDP,
+	pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
+	_marker: PhantomData<(BE, EC)>,
 }
 
-impl<B, C, P, CT, BE, A, EC> Eth<B, C, P, CT, BE, A, EC>
+impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
-	A: ChainApi,
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
+	A: ChainApi<Block = B>,
 	EC: EthConfig<B, C>,
 {
 	pub fn new(
@@ -116,6 +121,8 @@ where
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
 		forced_parent_hashes: Option<BTreeMap<H256, H256>>,
+		pending_create_inherent_data_providers: CIDP,
+		pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
 	) -> Self {
 		Self {
 			client,
@@ -132,6 +139,8 @@ where
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			pending_create_inherent_data_providers,
+			pending_consensus_data_provider,
 			_marker: PhantomData,
 		}
 	}
@@ -251,8 +260,13 @@ where
 	}
 }
 
-impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC> {
-	pub fn replace_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, A, EC2> {
+impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+where
+	B: BlockT,
+	A: ChainApi<Block = B>,
+	EC: EthConfig<B, C>,
+{
+	pub fn replace_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, A, CIDP, EC2> {
 		let Self {
 			client,
 			pool,
@@ -268,6 +282,8 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			pending_create_inherent_data_providers,
+			pending_consensus_data_provider,
 			_marker: _,
 		} = self;
 
@@ -286,13 +302,15 @@ impl<B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			pending_create_inherent_data_providers,
+			pending_consensus_data_provider,
 			_marker: PhantomData,
 		}
 	}
 }
 
 #[async_trait]
-impl<B, C, P, CT, BE, A, EC> EthApiServer for Eth<B, C, P, CT, BE, A, EC>
+impl<B, C, P, CT, BE, A, CIDP, EC> EthApiServer for Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
 	B: BlockT,
 	C: CallApiAt<B> + ProvideRuntimeApi<B>,
@@ -302,6 +320,7 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	A: ChainApi<Block = B> + 'static,
+	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 	EC: EthConfig<B, C>,
 {
 	// ########################################################################
@@ -686,45 +705,6 @@ fn transaction_build(
 	transaction.public_key = pubkey.as_ref().map(H512::from);
 
 	transaction
-}
-
-fn pending_runtime_api<'a, B: BlockT, C, BE, A: ChainApi>(
-	client: &'a C,
-	graph: &'a Pool<A>,
-) -> RpcResult<ApiRef<'a, C::Api>>
-where
-	B: BlockT,
-	C: ProvideRuntimeApi<B>,
-	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
-	BE: Backend<B>,
-	A: ChainApi<Block = B> + 'static,
-{
-	// In case of Pending, we need an overlayed state to query over.
-	let api = client.runtime_api();
-	let best_hash = client.info().best_hash;
-	// Get all transactions in the ready queue.
-	let xts: Vec<<B as BlockT>::Extrinsic> = graph
-		.validated_pool()
-		.ready()
-		.map(|in_pool_tx| in_pool_tx.data().clone())
-		.collect::<Vec<<B as BlockT>::Extrinsic>>();
-	// Manually initialize the overlay.
-	if let Ok(Some(header)) = client.header(best_hash) {
-		let parent_hash = *header.parent_hash();
-		api.initialize_block(parent_hash, &header)
-			.map_err(|e| internal_err(format!("Runtime api access error: {:?}", e)))?;
-		// Apply the ready queue to the best block's state.
-		for xt in xts {
-			let _ = api.apply_extrinsic(best_hash, xt);
-		}
-		Ok(api)
-	} else {
-		Err(internal_err(format!(
-			"Cannot get header for block {:?}",
-			best_hash
-		)))
-	}
 }
 
 /// The most commonly used block information in the rpc interfaces.
