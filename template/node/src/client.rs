@@ -3,7 +3,7 @@ use sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch, NativeVersion
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_runtime::traits::BlakeTwo256;
 // Local
-use frontier_template_runtime::{opaque::Block, AccountId, Balance, Index};
+use frontier_template_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
 use crate::eth::EthCompatRuntimeApiCollection;
 
@@ -66,7 +66,7 @@ pub trait RuntimeApiCollection:
 	+ EthCompatRuntimeApiCollection
 	+ sp_consensus_aura::AuraApi<Block, AuraId>
 	+ sp_consensus_grandpa::GrandpaApi<Block>
-	+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index>
+	+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce>
 	+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>
 where
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
@@ -79,7 +79,7 @@ where
 		+ EthCompatRuntimeApiCollection
 		+ sp_consensus_aura::AuraApi<Block, AuraId>
 		+ sp_consensus_grandpa::GrandpaApi<Block>
-		+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Index>
+		+ frame_system_rpc_runtime_api::AccountNonceApi<Block, AccountId, Nonce>
 		+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi<Block, Balance>,
 	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {

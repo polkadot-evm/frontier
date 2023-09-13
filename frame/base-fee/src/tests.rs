@@ -18,7 +18,6 @@
 use frame_support::{
 	assert_ok,
 	dispatch::DispatchClass,
-	pallet_prelude::GenesisBuild,
 	parameter_types,
 	traits::{ConstU32, OnFinalize},
 	weights::Weight,
@@ -26,17 +25,13 @@ use frame_support::{
 use sp_core::{H256, U256};
 use sp_io::TestExternalities;
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	Permill,
+	BuildStorage, Permill,
 };
 
 use super::*;
 use crate as pallet_base_fee;
 use crate::BaseFeeThreshold as BaseFeeThresholdT;
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -50,13 +45,12 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u64;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
+	type Block = frame_system::mocking::MockBlock<Self>;
 	type BlockHashCount = BlockHashCount;
 	type DbWeight = ();
 	type Version = ();
@@ -96,35 +90,29 @@ impl Config for Test {
 }
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+	pub enum Test {
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Event},
 	}
 );
 
 pub fn new_test_ext(base_fee: Option<U256>, elasticity: Option<Permill>) -> TestExternalities {
-	let mut t = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut t = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	match (base_fee, elasticity) {
 		(Some(base_fee), Some(elasticity)) => {
 			pallet_base_fee::GenesisConfig::<Test>::new(base_fee, elasticity)
 		}
-		(None, Some(elasticity)) => {
-			let mut config = pallet_base_fee::GenesisConfig::<Test>::default();
-			config.elasticity = elasticity;
-			config
-		}
-		(Some(base_fee), None) => {
-			let mut config = pallet_base_fee::GenesisConfig::<Test>::default();
-			config.base_fee_per_gas = base_fee;
-			config
-		}
+		(None, Some(elasticity)) => pallet_base_fee::GenesisConfig::<Test> {
+			elasticity,
+			..Default::default()
+		},
+		(Some(base_fee), None) => pallet_base_fee::GenesisConfig::<Test> {
+			base_fee_per_gas: base_fee,
+			..Default::default()
+		},
 		(None, None) => pallet_base_fee::GenesisConfig::<Test>::default(),
 	}
 	.assimilate_storage(&mut t)

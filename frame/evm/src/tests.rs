@@ -22,8 +22,9 @@ use crate::mock::*;
 
 use frame_support::{
 	assert_ok,
-	traits::{GenesisBuild, LockIdentifier, LockableCurrency, WithdrawReasons},
+	traits::{LockIdentifier, LockableCurrency, WithdrawReasons},
 };
+use sp_runtime::BuildStorage;
 use std::{collections::BTreeMap, str::FromStr};
 
 mod proof_size_test {
@@ -628,8 +629,8 @@ type Balances = pallet_balances::Pallet<Test>;
 type EVM = Pallet<Test>;
 
 pub fn new_test_ext() -> sp_io::TestExternalities {
-	let mut t = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut t = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	let mut accounts = BTreeMap::new();
@@ -674,7 +675,14 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
-	GenesisBuild::<Test>::assimilate_storage(&crate::GenesisConfig { accounts }, &mut t).unwrap();
+
+	crate::GenesisConfig::<Test> {
+		accounts,
+		..Default::default()
+	}
+	.assimilate_storage(&mut t)
+	.unwrap();
+
 	t.into()
 }
 
