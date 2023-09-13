@@ -34,13 +34,15 @@ use crate::{
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
+impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
+	A: ChainApi<Block = B>,
+	EC: EthConfig<B, C>,
 {
 	pub fn protocol_version(&self) -> RpcResult<u64> {
 		Ok(1)

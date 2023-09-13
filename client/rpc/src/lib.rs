@@ -37,7 +37,10 @@ mod web3;
 #[cfg(feature = "txpool")]
 pub use self::txpool::TxPool;
 pub use self::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
+	eth::{
+		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
+		EthTask,
+	},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},

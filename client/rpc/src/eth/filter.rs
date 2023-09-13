@@ -680,7 +680,7 @@ where
 	Ok(())
 }
 
-async fn filter_range_logs<B: BlockT, C, BE>(
+async fn filter_range_logs<B, C, BE>(
 	client: &C,
 	block_data_cache: &EthBlockDataCacheTask<B>,
 	ret: &mut Vec<Log>,

@@ -384,41 +384,68 @@ where
 
 	// for ethereum-compatibility rpc.
 	config.rpc_id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
-	let eth_rpc_params = crate::rpc::EthDeps {
-		client: client.clone(),
-		pool: transaction_pool.clone(),
-		graph: transaction_pool.pool().clone(),
-		converter: Some(TransactionConverter),
-		is_authority: config.role.is_authority(),
-		enable_dev_signer: eth_config.enable_dev_signer,
-		network: network.clone(),
-		sync: sync_service.clone(),
-		frontier_backend: match frontier_backend.clone() {
-			fc_db::Backend::KeyValue(b) => Arc::new(b),
-			fc_db::Backend::Sql(b) => Arc::new(b),
-		},
-		overrides: overrides.clone(),
-		block_data_cache: Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+
+	let rpc_builder = {
+		let client = client.clone();
+		let pool = transaction_pool.clone();
+		let network = network.clone();
+		let sync_service = sync_service.clone();
+
+		let is_authority = role.is_authority();
+		let enable_dev_signer = eth_config.enable_dev_signer;
+		let max_past_logs = eth_config.max_past_logs;
+		let execute_gas_limit_multiplier = eth_config.execute_gas_limit_multiplier;
+		let filter_pool = filter_pool.clone();
+		let frontier_backend = frontier_backend.clone();
+		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
+		let overrides = overrides.clone();
+		let fee_history_cache = fee_history_cache.clone();
+		let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 			task_manager.spawn_handle(),
 			overrides.clone(),
 			eth_config.eth_log_block_cache,
 			eth_config.eth_statuses_cache,
 			prometheus_registry.clone(),
-		)),
-		filter_pool: filter_pool.clone(),
-		max_past_logs: eth_config.max_past_logs,
-		fee_history_cache: fee_history_cache.clone(),
-		fee_history_cache_limit,
-		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
-		forced_parent_hashes: None,
-	};
+		));
 
-	let rpc_builder = {
-		let client = client.clone();
-		let pool = transaction_pool.clone();
-		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
+		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
+		let target_gas_price = eth_config.target_gas_price;
+		let pending_create_inherent_data_providers = move |_, ()| async move {
+			let current = sp_timestamp::InherentDataProvider::from_system_time();
+			let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
+			let timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
+			let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+				*timestamp,
+				slot_duration,
+			);
+			let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+			Ok((slot, timestamp, dynamic_fee))
+		};
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
+			let eth_deps = crate::rpc::EthDeps {
+				client: client.clone(),
+				pool: pool.clone(),
+				graph: pool.pool().clone(),
+				converter: Some(TransactionConverter),
+				is_authority,
+				enable_dev_signer,
+				network: network.clone(),
+				sync: sync_service.clone(),
+				frontier_backend: match frontier_backend.clone() {
+					fc_db::Backend::KeyValue(b) => Arc::new(b),
+					fc_db::Backend::Sql(b) => Arc::new(b),
+				},
+				overrides: overrides.clone(),
+				block_data_cache: block_data_cache.clone(),
+				filter_pool: filter_pool.clone(),
+				max_past_logs,
+				fee_history_cache: fee_history_cache.clone(),
+				fee_history_cache_limit,
+				execute_gas_limit_multiplier,
+				forced_parent_hashes: None,
+				pending_create_inherent_data_providers,
+			};
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -428,9 +455,8 @@ where
 				} else {
 					None
 				},
-				eth: eth_rpc_params.clone(),
+				eth: eth_deps,
 			};
-
 			crate::rpc::create_full(
 				deps,
 				subscription_task_executor,
