@@ -471,6 +471,9 @@
 <a href="#471" id="471">471</a>
 <a href="#472" id="472">472</a>
 <a href="#473" id="473">473</a>
+<a href="#474" id="474">474</a>
+<a href="#475" id="475">475</a>
+<a href="#476" id="476">476</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -510,7 +513,10 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
 </span><span class="kw">pub use </span><span class="self">self</span>::txpool::TxPool;
 <span class="kw">pub use </span><span class="self">self</span>::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
+	eth::{
+		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
+		EthTask,
+	},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},

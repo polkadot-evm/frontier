@@ -1053,6 +1053,10 @@
 <a href="#1053" id="1053">1053</a>
 <a href="#1054" id="1054">1054</a>
 <a href="#1055" id="1055">1055</a>
+<a href="#1056" id="1056">1056</a>
+<a href="#1057" id="1057">1057</a>
+<a href="#1058" id="1058">1058</a>
+<a href="#1059" id="1059">1059</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1086,6 +1090,7 @@
 };
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
 <span class="kw">use </span>sp_io::hashing::{blake2_128, twox_128};
 <span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, DispatchError, SaturatedConversion};
 <span class="kw">use </span>sp_state_machine::OverlayedChanges;
@@ -1096,7 +1101,7 @@
 <span class="kw">use </span>fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
 
 <span class="kw">use crate</span>::{
-	eth::{pending_runtime_api, Eth, EthConfig},
+	eth::{Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
@@ -1121,14 +1126,16 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: CallApiAt&lt;B&gt; + ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt;,
+	CIDP: CreateInherentDataProviders&lt;B, ()&gt; + Send + <span class="lifetime">&#39;static</span>,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -1175,8 +1182,9 @@
 			}
 			<span class="prelude-val">None </span>=&gt; {
 				<span class="comment">// Not mapped in the db, assume pending.
-				</span><span class="kw">let </span>hash = <span class="self">self</span>.client.info().best_hash;
-				<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
+				</span><span class="kw">let </span>(hash, api) = <span class="self">self</span>.pending_runtime_api().<span class="kw">await</span>.map_err(|err| {
+					internal_err(<span class="macro">format!</span>(<span class="string">&quot;Create pending runtime api error: {err}&quot;</span>))
+				})<span class="question-mark">?</span>;
 				(hash, api)
 			}
 		};
@@ -1191,12 +1199,12 @@
 
 		<span class="kw">let </span>block = <span class="kw">if </span>api_version &gt; <span class="number">1 </span>{
 			api.current_block(substrate_hash)
-				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
 		</span>} <span class="kw">else </span>{
 			<span class="attr">#[allow(deprecated)]
 			</span><span class="kw">let </span>legacy_block = api
 				.current_block_before_version_2(substrate_hash)
-				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 			legacy_block.map(|block| block.into())
 		};
 
@@ -1242,8 +1250,8 @@
 						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(Bytes(info.value))
@@ -1262,8 +1270,8 @@
 						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(Bytes(info.value))
@@ -1318,8 +1326,8 @@
 									},
 								)
 							})
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 						error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
 						info.value
@@ -1336,8 +1344,8 @@
 									},
 								)
 							})
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 						error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>info.value)<span class="question-mark">?</span>;
 						info.value
@@ -1364,14 +1372,14 @@
 						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
 					<span class="kw">let </span>code = api
 						.account_code_at(substrate_hash, info.value)
-						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(Bytes(code))
 				} <span class="kw">else if </span>api_version &gt;= <span class="number">2 </span>&amp;&amp; api_version &lt; <span class="number">4 </span>{
 					<span class="comment">// Post-london
@@ -1387,14 +1395,14 @@
 						nonce,
 						<span class="bool-val">false</span>,
 					)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
 					<span class="kw">let </span>code = api
 						.account_code_at(substrate_hash, info.value)
-						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(Bytes(code))
 				} <span class="kw">else if </span>api_version == <span class="number">4 </span>{
 					<span class="comment">// Post-london + access list support
@@ -1417,14 +1425,14 @@
 								.collect(),
 						),
 					)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+					</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
 					<span class="kw">let </span>code = api
 						.account_code_at(substrate_hash, info.value)
-						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(Bytes(code))
 				} <span class="kw">else if </span>api_version == <span class="number">5 </span>{
 					<span class="comment">// Post-london + access list support
@@ -1447,14 +1455,14 @@
 									.collect(),
 							),
 						)
-						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-						</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+						</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 					error_on_execution_failure(<span class="kw-2">&amp;</span>info.exit_reason, <span class="kw-2">&amp;</span>[])<span class="question-mark">?</span>;
 
 					<span class="kw">let </span>code = api
 						.account_code_at(substrate_hash, info.value)
-						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+						.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 					<span class="prelude-val">Ok</span>(Bytes(code))
 				} <span class="kw">else </span>{
 					<span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>))
@@ -1490,8 +1498,9 @@
 			}
 			<span class="prelude-val">None </span>=&gt; {
 				<span class="comment">// Not mapped in the db, assume pending.
-				</span><span class="kw">let </span>hash = client.info().best_hash;
-				<span class="kw">let </span>api = pending_runtime_api(client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
+				</span><span class="kw">let </span>(hash, api) = <span class="self">self</span>.pending_runtime_api().<span class="kw">await</span>.map_err(|err| {
+					internal_err(<span class="macro">format!</span>(<span class="string">&quot;Create pending runtime api error: {err}&quot;</span>))
+				})<span class="question-mark">?</span>;
 				(hash, api)
 			}
 		};
@@ -1508,7 +1517,7 @@
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(to) = request.to {
 				<span class="kw">let </span>to_code = api
 					.account_code_at(substrate_hash, to)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 				<span class="kw">if </span>to_code.is_empty() {
 					<span class="kw">return </span><span class="prelude-val">Ok</span>(MIN_GAS_PER_TX);
 				}
@@ -1564,7 +1573,7 @@
 			<span class="kw">if </span>gas_price &gt; U256::zero() {
 				<span class="kw">let </span>balance = api
 					.account_basic(substrate_hash, from)
-					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
+					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
 					</span>.balance;
 				<span class="kw">let </span><span class="kw-2">mut </span>available = balance;
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(value) = request.value {
@@ -1641,8 +1650,8 @@
 								nonce,
 								estimate_mode,
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, info.value, info.used_gas)
 						} <span class="kw">else if </span>api_version &lt; <span class="number">4 </span>{
@@ -1660,8 +1669,8 @@
 								nonce,
 								estimate_mode,
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, info.value, info.used_gas)
 						} <span class="kw">else if </span>api_version == <span class="number">4 </span>{
@@ -1686,8 +1695,8 @@
 										.collect(),
 								),
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, info.value, info.used_gas)
 						} <span class="kw">else </span>{
@@ -1711,8 +1720,8 @@
 										.collect(),
 								),
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, info.value, info.used_gas.effective)
 						}
@@ -1731,8 +1740,8 @@
 								nonce,
 								estimate_mode,
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, Vec::new(), info.used_gas)
 						} <span class="kw">else if </span>api_version &lt; <span class="number">4 </span>{
@@ -1749,8 +1758,8 @@
 								nonce,
 								estimate_mode,
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, Vec::new(), info.used_gas)
 						} <span class="kw">else if </span>api_version == <span class="number">4 </span>{
@@ -1774,8 +1783,8 @@
 										.collect(),
 								),
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, Vec::new(), info.used_gas)
 						} <span class="kw">else </span>{
@@ -1798,8 +1807,8 @@
 										.collect(),
 								),
 							)
-							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {:?}&quot;</span>, err)))<span class="question-mark">?
-							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+							.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
+							</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;execution fatal: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
 
 							(info.exit_reason, Vec::new(), info.used_gas.effective)
 						}
@@ -1865,8 +1874,7 @@
 					<span class="kw">match </span>exit_reason {
 						ExitReason::Succeed(<span class="kw">_</span>) =&gt; {
 							<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
-								<span class="string">&quot;gas required exceeds allowance {}&quot;</span>,
-								cap
+								<span class="string">&quot;gas required exceeds allowance {cap}&quot;</span>,
 							)))
 						}
 						<span class="comment">// The execution has been done with block gas limit, so it is not a lack of gas from the user.
@@ -2019,13 +2027,13 @@
 <span class="kw">pub fn </span>error_on_execution_failure(reason: <span class="kw-2">&amp;</span>ExitReason, data: <span class="kw-2">&amp;</span>[u8]) -&gt; RpcResult&lt;()&gt; {
 	<span class="kw">match </span>reason {
 		ExitReason::Succeed(<span class="kw">_</span>) =&gt; <span class="prelude-val">Ok</span>(()),
-		ExitReason::Error(e) =&gt; {
-			<span class="kw">if </span><span class="kw-2">*</span>e == ExitError::OutOfGas {
+		ExitReason::Error(err) =&gt; {
+			<span class="kw">if </span><span class="kw-2">*</span>err == ExitError::OutOfGas {
 				<span class="comment">// `ServerError(0)` will be useful in estimate gas
 				</span><span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;out of gas&quot;</span>));
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(
-				<span class="macro">format!</span>(<span class="string">&quot;evm error: {:?}&quot;</span>, e),
+				<span class="macro">format!</span>(<span class="string">&quot;evm error: {err:?}&quot;</span>),
 				<span class="kw-2">&amp;</span>[],
 			))
 		}
@@ -2044,14 +2052,14 @@
 				<span class="kw">if </span>data.len() &gt;= message_end {
 					<span class="kw">let </span>body: <span class="kw-2">&amp;</span>[u8] = <span class="kw-2">&amp;</span>data[MESSAGE_START..message_end];
 					<span class="kw">if let </span><span class="prelude-val">Ok</span>(reason) = std::str::from_utf8(body) {
-						message = <span class="macro">format!</span>(<span class="string">&quot;{} {}&quot;</span>, message, reason);
+						message = <span class="macro">format!</span>(<span class="string">&quot;{message} {reason}&quot;</span>);
 					}
 				}
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(message, data))
 		}
-		ExitReason::Fatal(e) =&gt; <span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(
-			<span class="macro">format!</span>(<span class="string">&quot;evm fatal: {:?}&quot;</span>, e),
+		ExitReason::Fatal(err) =&gt; <span class="prelude-val">Err</span>(<span class="kw">crate</span>::internal_err_with_data(
+			<span class="macro">format!</span>(<span class="string">&quot;evm fatal: {err:?}&quot;</span>),
 			<span class="kw-2">&amp;</span>[],
 		)),
 	}

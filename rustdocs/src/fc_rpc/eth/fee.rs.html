@@ -211,6 +211,8 @@
 <a href="#211" id="211">211</a>
 <a href="#212" id="212">212</a>
 <a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -246,13 +248,15 @@
 	frontier_backend_client, internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt;,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>block_hash = <span class="self">self</span>.client.info().best_hash;

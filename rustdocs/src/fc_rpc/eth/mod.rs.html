@@ -737,26 +737,6 @@
 <a href="#737" id="737">737</a>
 <a href="#738" id="738">738</a>
 <a href="#739" id="739">739</a>
-<a href="#740" id="740">740</a>
-<a href="#741" id="741">741</a>
-<a href="#742" id="742">742</a>
-<a href="#743" id="743">743</a>
-<a href="#744" id="744">744</a>
-<a href="#745" id="745">745</a>
-<a href="#746" id="746">746</a>
-<a href="#747" id="747">747</a>
-<a href="#748" id="748">748</a>
-<a href="#749" id="749">749</a>
-<a href="#750" id="750">750</a>
-<a href="#751" id="751">751</a>
-<a href="#752" id="752">752</a>
-<a href="#753" id="753">753</a>
-<a href="#754" id="754">754</a>
-<a href="#755" id="755">755</a>
-<a href="#756" id="756">756</a>
-<a href="#757" id="757">757</a>
-<a href="#758" id="758">758</a>
-<a href="#759" id="759">759</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -783,6 +763,7 @@
 <span class="kw">mod </span>filter;
 <span class="kw">pub mod </span>format;
 <span class="kw">mod </span>mining;
+<span class="kw">pub mod </span>pending;
 <span class="kw">mod </span>state;
 <span class="kw">mod </span>submit;
 <span class="kw">mod </span>transaction;
@@ -796,11 +777,12 @@
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
 <span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_transaction_pool::{ChainApi, Pool};
-<span class="kw">use </span>sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
-<span class="kw">use </span>sp_api::{ApiRef, CallApiAt, Core, HeaderT, ProvideRuntimeApi};
+<span class="kw">use </span>sc_transaction_pool_api::TransactionPool;
+<span class="kw">use </span>sp_api::{CallApiAt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_core::hashing::keccak_256;
+<span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
 <span class="kw">use </span>sp_runtime::traits::{Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthApiServer};
@@ -830,7 +812,7 @@
 }
 
 <span class="doccomment">/// Eth API implementation.
-</span><span class="kw">pub struct </span>Eth&lt;B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; {
+</span><span class="kw">pub struct </span>Eth&lt;B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC: EthConfig&lt;B, C&gt;&gt; {
 	pool: Arc&lt;P&gt;,
 	graph: Arc&lt;Pool&lt;A&gt;&gt;,
 	client: Arc&lt;C&gt;,
@@ -847,17 +829,20 @@
 	/// block.gas_limit * execute_gas_limit_multiplier
 	</span>execute_gas_limit_multiplier: u64,
 	forced_parent_hashes: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H256, H256&gt;&gt;,
-	_marker: PhantomData&lt;(B, BE, EC)&gt;,
+	<span class="doccomment">/// Something that can create the inherent data providers for pending state.
+	</span>pending_create_inherent_data_providers: CIDP,
+	pending_consensus_data_provider: <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>pending::ConsensusDataProvider&lt;B&gt;&gt;&gt;,
+	_marker: PhantomData&lt;(BE, EC)&gt;,
 }
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, EC&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
-	</span>A: ChainApi,
-	B: BlockT,
+	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt;,
 	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub fn </span>new(
@@ -875,6 +860,8 @@
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
 		forced_parent_hashes: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H256, H256&gt;&gt;,
+		pending_create_inherent_data_providers: CIDP,
+		pending_consensus_data_provider: <span class="prelude-ty">Option</span>&lt;Box&lt;<span class="kw">dyn </span>pending::ConsensusDataProvider&lt;B&gt;&gt;&gt;,
 	) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
 			client,
@@ -891,6 +878,8 @@
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			pending_create_inherent_data_providers,
+			pending_consensus_data_provider,
 			_marker: PhantomData,
 		}
 	}
@@ -1010,8 +999,13 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;B: BlockT, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt; {
-	<span class="kw">pub fn </span>replace_config&lt;EC2: EthConfig&lt;B, C&gt;&gt;(<span class="self">self</span>) -&gt; Eth&lt;B, C, P, CT, BE, A, EC2&gt; {
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
+<span class="kw">where
+	</span>B: BlockT,
+	A: ChainApi&lt;Block = B&gt;,
+	EC: EthConfig&lt;B, C&gt;,
+{
+	<span class="kw">pub fn </span>replace_config&lt;EC2: EthConfig&lt;B, C&gt;&gt;(<span class="self">self</span>) -&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC2&gt; {
 		<span class="kw">let </span><span class="self">Self </span>{
 			client,
 			pool,
@@ -1027,6 +1021,8 @@
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			pending_create_inherent_data_providers,
+			pending_consensus_data_provider,
 			_marker: <span class="kw">_</span>,
 		} = <span class="self">self</span>;
 
@@ -1045,13 +1041,15 @@
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			pending_create_inherent_data_providers,
+			pending_consensus_data_provider,
 			_marker: PhantomData,
 		}
 	}
 }
 
 <span class="attr">#[async_trait]
-</span><span class="kw">impl</span>&lt;B, C, P, CT, BE, A, EC&gt; EthApiServer <span class="kw">for </span>Eth&lt;B, C, P, CT, BE, A, EC&gt;
+</span><span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; EthApiServer <span class="kw">for </span>Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: CallApiAt&lt;B&gt; + ProvideRuntimeApi&lt;B&gt;,
@@ -1061,6 +1059,7 @@
 	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	CIDP: CreateInherentDataProviders&lt;B, ()&gt; + Send + <span class="lifetime">&#39;static</span>,
 	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="comment">// ########################################################################
@@ -1445,45 +1444,6 @@
 	</span>transaction.public_key = pubkey.as_ref().map(H512::from);
 
 	transaction
-}
-
-<span class="kw">fn </span>pending_runtime_api&lt;<span class="lifetime">&#39;a</span>, B: BlockT, C, BE, A: ChainApi&gt;(
-	client: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>C,
-	graph: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>Pool&lt;A&gt;,
-) -&gt; RpcResult&lt;ApiRef&lt;<span class="lifetime">&#39;a</span>, C::Api&gt;&gt;
-<span class="kw">where
-	</span>B: BlockT,
-	C: ProvideRuntimeApi&lt;B&gt;,
-	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
-	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
-	BE: Backend&lt;B&gt;,
-	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
-{
-	<span class="comment">// In case of Pending, we need an overlayed state to query over.
-	</span><span class="kw">let </span>api = client.runtime_api();
-	<span class="kw">let </span>best_hash = client.info().best_hash;
-	<span class="comment">// Get all transactions in the ready queue.
-	</span><span class="kw">let </span>xts: Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; = graph
-		.validated_pool()
-		.ready()
-		.map(|in_pool_tx| in_pool_tx.data().clone())
-		.collect::&lt;Vec&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt;&gt;();
-	<span class="comment">// Manually initialize the overlay.
-	</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(best_hash) {
-		<span class="kw">let </span>parent_hash = <span class="kw-2">*</span>header.parent_hash();
-		api.initialize_block(parent_hash, <span class="kw-2">&amp;</span>header)
-			.map_err(|e| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Runtime api access error: {:?}&quot;</span>, e)))<span class="question-mark">?</span>;
-		<span class="comment">// Apply the ready queue to the best block&#39;s state.
-		</span><span class="kw">for </span>xt <span class="kw">in </span>xts {
-			<span class="kw">let _ </span>= api.apply_extrinsic(best_hash, xt);
-		}
-		<span class="prelude-val">Ok</span>(api)
-	} <span class="kw">else </span>{
-		<span class="prelude-val">Err</span>(internal_err(<span class="macro">format!</span>(
-			<span class="string">&quot;Cannot get header for block {:?}&quot;</span>,
-			best_hash
-		)))
-	}
 }
 
 <span class="doccomment">/// The most commonly used block information in the rpc interfaces.

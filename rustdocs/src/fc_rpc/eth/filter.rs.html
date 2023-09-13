@@ -1503,7 +1503,7 @@
 	<span class="prelude-val">Ok</span>(())
 }
 
-<span class="kw">async fn </span>filter_range_logs&lt;B: BlockT, C, BE&gt;(
+<span class="kw">async fn </span>filter_range_logs&lt;B, C, BE&gt;(
 	client: <span class="kw-2">&amp;</span>C,
 	block_data_cache: <span class="kw-2">&amp;</span>EthBlockDataCacheTask&lt;B&gt;,
 	ret: <span class="kw-2">&amp;mut </span>Vec&lt;Log&gt;,

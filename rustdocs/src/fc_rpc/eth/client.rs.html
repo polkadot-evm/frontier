@@ -114,6 +114,8 @@
 <a href="#114" id="114">114</a>
 <a href="#115" id="115">115</a>
 <a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -150,13 +152,15 @@
 	internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt;,
+	A: ChainApi&lt;Block = B&gt;,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;u64&gt; {
 		<span class="prelude-val">Ok</span>(<span class="number">1</span>)

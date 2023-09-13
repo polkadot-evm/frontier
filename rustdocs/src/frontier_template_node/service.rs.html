@@ -721,6 +721,32 @@
 <a href="#721" id="721">721</a>
 <a href="#722" id="722">722</a>
 <a href="#723" id="723">723</a>
+<a href="#724" id="724">724</a>
+<a href="#725" id="725">725</a>
+<a href="#726" id="726">726</a>
+<a href="#727" id="727">727</a>
+<a href="#728" id="728">728</a>
+<a href="#729" id="729">729</a>
+<a href="#730" id="730">730</a>
+<a href="#731" id="731">731</a>
+<a href="#732" id="732">732</a>
+<a href="#733" id="733">733</a>
+<a href="#734" id="734">734</a>
+<a href="#735" id="735">735</a>
+<a href="#736" id="736">736</a>
+<a href="#737" id="737">737</a>
+<a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span>std::{cell::RefCell, path::Path, sync::Arc, time::Duration};
@@ -1107,41 +1133,68 @@
 
 	<span class="comment">// for ethereum-compatibility rpc.
 	</span>config.rpc_id_provider = <span class="prelude-val">Some</span>(Box::new(fc_rpc::EthereumSubIdProvider));
-	<span class="kw">let </span>eth_rpc_params = <span class="kw">crate</span>::rpc::EthDeps {
-		client: client.clone(),
-		pool: transaction_pool.clone(),
-		graph: transaction_pool.pool().clone(),
-		converter: <span class="prelude-val">Some</span>(TransactionConverter),
-		is_authority: config.role.is_authority(),
-		enable_dev_signer: eth_config.enable_dev_signer,
-		network: network.clone(),
-		sync: sync_service.clone(),
-		frontier_backend: <span class="kw">match </span>frontier_backend.clone() {
-			fc_db::Backend::KeyValue(b) =&gt; Arc::new(b),
-			fc_db::Backend::Sql(b) =&gt; Arc::new(b),
-		},
-		overrides: overrides.clone(),
-		block_data_cache: Arc::new(fc_rpc::EthBlockDataCacheTask::new(
+
+	<span class="kw">let </span>rpc_builder = {
+		<span class="kw">let </span>client = client.clone();
+		<span class="kw">let </span>pool = transaction_pool.clone();
+		<span class="kw">let </span>network = network.clone();
+		<span class="kw">let </span>sync_service = sync_service.clone();
+
+		<span class="kw">let </span>is_authority = role.is_authority();
+		<span class="kw">let </span>enable_dev_signer = eth_config.enable_dev_signer;
+		<span class="kw">let </span>max_past_logs = eth_config.max_past_logs;
+		<span class="kw">let </span>execute_gas_limit_multiplier = eth_config.execute_gas_limit_multiplier;
+		<span class="kw">let </span>filter_pool = filter_pool.clone();
+		<span class="kw">let </span>frontier_backend = frontier_backend.clone();
+		<span class="kw">let </span>pubsub_notification_sinks = pubsub_notification_sinks.clone();
+		<span class="kw">let </span>overrides = overrides.clone();
+		<span class="kw">let </span>fee_history_cache = fee_history_cache.clone();
+		<span class="kw">let </span>block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 			task_manager.spawn_handle(),
 			overrides.clone(),
 			eth_config.eth_log_block_cache,
 			eth_config.eth_statuses_cache,
 			prometheus_registry.clone(),
-		)),
-		filter_pool: filter_pool.clone(),
-		max_past_logs: eth_config.max_past_logs,
-		fee_history_cache: fee_history_cache.clone(),
-		fee_history_cache_limit,
-		execute_gas_limit_multiplier: eth_config.execute_gas_limit_multiplier,
-		forced_parent_hashes: <span class="prelude-val">None</span>,
-	};
+		));
 
-	<span class="kw">let </span>rpc_builder = {
-		<span class="kw">let </span>client = client.clone();
-		<span class="kw">let </span>pool = transaction_pool.clone();
-		<span class="kw">let </span>pubsub_notification_sinks = pubsub_notification_sinks.clone();
+		<span class="kw">let </span>slot_duration = sc_consensus_aura::slot_duration(<span class="kw-2">&amp;*</span>client)<span class="question-mark">?</span>;
+		<span class="kw">let </span>target_gas_price = eth_config.target_gas_price;
+		<span class="kw">let </span>pending_create_inherent_data_providers = <span class="kw">move </span>|<span class="kw">_</span>, ()| <span class="kw">async move </span>{
+			<span class="kw">let </span>current = sp_timestamp::InherentDataProvider::from_system_time();
+			<span class="kw">let </span>next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
+			<span class="kw">let </span>timestamp = sp_timestamp::InherentDataProvider::new(next_slot.into());
+			<span class="kw">let </span>slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
+				<span class="kw-2">*</span>timestamp,
+				slot_duration,
+			);
+			<span class="kw">let </span>dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
+			<span class="prelude-val">Ok</span>((slot, timestamp, dynamic_fee))
+		};
 
 		Box::new(<span class="kw">move </span>|deny_unsafe, subscription_task_executor| {
+			<span class="kw">let </span>eth_deps = <span class="kw">crate</span>::rpc::EthDeps {
+				client: client.clone(),
+				pool: pool.clone(),
+				graph: pool.pool().clone(),
+				converter: <span class="prelude-val">Some</span>(TransactionConverter),
+				is_authority,
+				enable_dev_signer,
+				network: network.clone(),
+				sync: sync_service.clone(),
+				frontier_backend: <span class="kw">match </span>frontier_backend.clone() {
+					fc_db::Backend::KeyValue(b) =&gt; Arc::new(b),
+					fc_db::Backend::Sql(b) =&gt; Arc::new(b),
+				},
+				overrides: overrides.clone(),
+				block_data_cache: block_data_cache.clone(),
+				filter_pool: filter_pool.clone(),
+				max_past_logs,
+				fee_history_cache: fee_history_cache.clone(),
+				fee_history_cache_limit,
+				execute_gas_limit_multiplier,
+				forced_parent_hashes: <span class="prelude-val">None</span>,
+				pending_create_inherent_data_providers,
+			};
 			<span class="kw">let </span>deps = <span class="kw">crate</span>::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -1151,9 +1204,8 @@
 				} <span class="kw">else </span>{
 					<span class="prelude-val">None
 				</span>},
-				eth: eth_rpc_params.clone(),
+				eth: eth_deps,
 			};
-
 			<span class="kw">crate</span>::rpc::create_full(
 				deps,
 				subscription_task_executor,

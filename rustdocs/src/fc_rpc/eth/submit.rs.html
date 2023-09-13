@@ -283,6 +283,9 @@
 <a href="#283" id="283">283</a>
 <a href="#284" id="284">284</a>
 <a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -311,6 +314,7 @@
 <span class="kw">use </span>sp_api::{ApiExt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
 <span class="kw">use </span>sp_runtime::{
 	generic::BlockId, traits::Block <span class="kw">as </span>BlockT, transaction_validity::TransactionSource,
 };
@@ -323,7 +327,7 @@
 	internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt;,
@@ -332,7 +336,9 @@
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 	CT: ConvertTransaction&lt;&lt;B <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + <span class="lifetime">&#39;static</span>,
-	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt;,
+	CIDP: CreateInherentDataProviders&lt;B, ()&gt; + Send + <span class="lifetime">&#39;static</span>,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; RpcResult&lt;H256&gt; {
 		<span class="kw">let </span>from = <span class="kw">match </span>request.from {

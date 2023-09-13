@@ -109,6 +109,9 @@
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! A collection of node-specific RPC methods.
 
 </span><span class="kw">use </span>std::sync::Arc;
@@ -119,6 +122,7 @@
 </span><span class="kw">use </span>sc_client_api::{
 	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
+	AuxStore, UsageProvider,
 };
 <span class="kw">use </span>sc_consensus_manual_seal::rpc::EngineCommand;
 <span class="kw">use </span>sc_rpc::SubscriptionTaskExecutor;
@@ -127,6 +131,8 @@
 <span class="kw">use </span>sc_transaction_pool::ChainApi;
 <span class="kw">use </span>sp_api::{CallApiAt, ProvideRuntimeApi};
 <span class="kw">use </span>sp_blockchain::{Error <span class="kw">as </span>BlockChainError, HeaderBackend, HeaderMetadata};
+<span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
+<span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Runtime
 </span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Hash, Nonce};
@@ -135,7 +141,7 @@
 <span class="kw">pub use </span><span class="self">self</span>::eth::{create_eth, overrides_handle, EthDeps};
 
 <span class="doccomment">/// Full client dependencies.
-</span><span class="kw">pub struct </span>FullDeps&lt;C, P, A: ChainApi, CT&gt; {
+</span><span class="kw">pub struct </span>FullDeps&lt;C, P, A: ChainApi, CT, CIDP&gt; {
 	<span class="doccomment">/// The client instance to use.
 	</span><span class="kw">pub </span>client: Arc&lt;C&gt;,
 	<span class="doccomment">/// Transaction pool instance.
@@ -145,7 +151,7 @@
 	<span class="doccomment">/// Manual seal command sink
 	</span><span class="kw">pub </span>command_sink: <span class="prelude-ty">Option</span>&lt;mpsc::Sender&lt;EngineCommand&lt;Hash&gt;&gt;&gt;,
 	<span class="doccomment">/// Ethereum-compatibility specific dependencies.
-	</span><span class="kw">pub </span>eth: EthDeps&lt;C, P, A, CT, Block&gt;,
+	</span><span class="kw">pub </span>eth: EthDeps&lt;Block, C, P, A, CT, CIDP&gt;,
 }
 
 <span class="kw">pub struct </span>DefaultEthConfig&lt;C, BE&gt;(std::marker::PhantomData&lt;(C, BE)&gt;);
@@ -161,8 +167,8 @@
 }
 
 <span class="doccomment">/// Instantiate all Full RPC extensions.
-</span><span class="kw">pub fn </span>create_full&lt;C, P, BE, A, CT&gt;(
-	deps: FullDeps&lt;C, P, A, CT&gt;,
+</span><span class="kw">pub fn </span>create_full&lt;C, P, BE, A, CT, CIDP&gt;(
+	deps: FullDeps&lt;C, P, A, CT, CIDP&gt;,
 	subscription_task_executor: SubscriptionTaskExecutor,
 	pubsub_notification_sinks: Arc&lt;
 		fc_mapping_sync::EthereumBlockNotificationSinks&lt;
@@ -172,18 +178,18 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;RpcModule&lt;()&gt;, Box&lt;<span class="kw">dyn </span>std::error::Error + Send + Sync&gt;&gt;
 <span class="kw">where
 	</span>C: CallApiAt&lt;Block&gt; + ProvideRuntimeApi&lt;Block&gt;,
-	C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;,
 	C::Api: sp_block_builder::BlockBuilder&lt;Block&gt;,
+	C::Api: sp_consensus_aura::AuraApi&lt;Block, AuraId&gt;,
+	C::Api: substrate_frame_rpc_system::AccountNonceApi&lt;Block, AccountId, Nonce&gt;,
 	C::Api: pallet_transaction_payment_rpc::TransactionPaymentRuntimeApi&lt;Block, Balance&gt;,
 	C::Api: fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;,
 	C::Api: fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
-	C: BlockchainEvents&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-	C: HeaderBackend&lt;Block&gt;
-		+ HeaderMetadata&lt;Block, Error = BlockChainError&gt;
-		+ StorageProvider&lt;Block, BE&gt;,
+	C: HeaderBackend&lt;Block&gt; + HeaderMetadata&lt;Block, Error = BlockChainError&gt; + <span class="lifetime">&#39;static</span>,
+	C: BlockchainEvents&lt;Block&gt; + AuxStore + UsageProvider&lt;Block&gt; + StorageProvider&lt;Block, BE&gt;,
 	BE: Backend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
 	P: TransactionPool&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = Block&gt; + <span class="lifetime">&#39;static</span>,
+	CIDP: CreateInherentDataProviders&lt;Block, ()&gt; + Send + <span class="lifetime">&#39;static</span>,
 	CT: fp_rpc::ConvertTransaction&lt;&lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic&gt; + Send + Sync + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">use </span>pallet_transaction_payment_rpc::{TransactionPayment, TransactionPaymentApiServer};
@@ -211,7 +217,7 @@
 	}
 
 	<span class="comment">// Ethereum compatibility RPCs
-	</span><span class="kw">let </span>io = create_eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, DefaultEthConfig&lt;C, BE&gt;&gt;(
+	</span><span class="kw">let </span>io = create_eth::&lt;<span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, <span class="kw">_</span>, DefaultEthConfig&lt;C, BE&gt;&gt;(
 		io,
 		eth,
 		subscription_task_executor,

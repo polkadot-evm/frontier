@@ -210,6 +210,14 @@
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
 <a href="#212" id="212">212</a>
+<a href="#213" id="213">213</a>
+<a href="#214" id="214">214</a>
+<a href="#215" id="215">215</a>
+<a href="#216" id="216">216</a>
+<a href="#217" id="217">217</a>
+<a href="#218" id="218">218</a>
+<a href="#219" id="219">219</a>
+<a href="#220" id="220">220</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -238,17 +246,18 @@
 <span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
+<span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
 <span class="kw">use crate</span>::{
-	eth::{pending_runtime_api, Eth, EthConfig},
+	eth::{Eth, EthConfig},
 	frontier_backend_client, internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt;,
@@ -256,7 +265,9 @@
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	P: TransactionPool&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
-	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt;,
+	CIDP: CreateInherentDataProviders&lt;B, ()&gt; + Send + <span class="lifetime">&#39;static</span>,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub async fn </span>balance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
@@ -265,10 +276,13 @@
 	) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>number_or_hash = number_or_hash.unwrap_or(BlockNumberOrHash::Latest);
 		<span class="kw">if </span>number_or_hash == BlockNumberOrHash::Pending {
-			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
+			<span class="kw">let </span>(hash, api) = <span class="self">self
+				</span>.pending_runtime_api()
+				.<span class="kw">await
+				</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Create pending runtime api error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
-				.account_basic(<span class="self">self</span>.client.info().best_hash, address)
-				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {:?}&quot;</span>, err)))<span class="question-mark">?
+				.account_basic(hash, address)
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Fetch account balances failed: {err}&quot;</span>)))<span class="question-mark">?
 				</span>.balance)
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
@@ -280,13 +294,13 @@
 			<span class="kw">let </span>substrate_hash = <span class="self">self
 				</span>.client
 				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {id}&quot;</span>)))<span class="question-mark">?</span>;
 
 			<span class="prelude-val">Ok</span>(<span class="self">self
 				</span>.client
 				.runtime_api()
 				.account_basic(substrate_hash, address)
-				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {:?}&quot;</span>, err)))<span class="question-mark">?
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Fetch account balances failed: {:?}&quot;</span>, err)))<span class="question-mark">?
 				</span>.balance)
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Ok</span>(U256::zero())
@@ -301,10 +315,11 @@
 	) -&gt; RpcResult&lt;H256&gt; {
 		<span class="kw">let </span>number_or_hash = number_or_hash.unwrap_or(BlockNumberOrHash::Latest);
 		<span class="kw">if </span>number_or_hash == BlockNumberOrHash::Pending {
-			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
-			<span class="prelude-val">Ok</span>(api
-				.storage_at(<span class="self">self</span>.client.info().best_hash, address, index)
-				.unwrap_or_default())
+			<span class="kw">let </span>(hash, api) = <span class="self">self
+				</span>.pending_runtime_api()
+				.<span class="kw">await
+				</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Create pending runtime api error: {err}&quot;</span>)))<span class="question-mark">?</span>;
+			<span class="prelude-val">Ok</span>(api.storage_at(hash, address, index).unwrap_or_default())
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
 			<span class="self">self</span>.client.as_ref(),
 			<span class="self">self</span>.backend.as_ref(),
@@ -315,7 +330,7 @@
 			<span class="kw">let </span>substrate_hash = <span class="self">self
 				</span>.client
 				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {id}&quot;</span>)))<span class="question-mark">?</span>;
 			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
 			<span class="prelude-val">Ok</span>(<span class="self">self
 				</span>.overrides
@@ -341,9 +356,7 @@
 				</span>.client
 				.runtime_api()
 				.account_basic(substrate_hash, address)
-				.map_err(|err| {
-					internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime account basic failed: {:?}&quot;</span>, err))
-				})<span class="question-mark">?
+				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Fetch account nonce failed: {err}&quot;</span>)))<span class="question-mark">?
 				</span>.nonce;
 
 			<span class="kw">let </span><span class="kw-2">mut </span>current_nonce = nonce;
@@ -374,13 +387,13 @@
 		<span class="kw">let </span>substrate_hash = <span class="self">self
 			</span>.client
 			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+			.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {id}&quot;</span>)))<span class="question-mark">?</span>;
 
 		<span class="prelude-val">Ok</span>(<span class="self">self
 			</span>.client
 			.runtime_api()
 			.account_basic(substrate_hash, address)
-			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime account basic failed: {:?}&quot;</span>, err)))<span class="question-mark">?
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Fetch account nonce failed: {err}&quot;</span>)))<span class="question-mark">?
 			</span>.nonce)
 	}
 
@@ -391,9 +404,12 @@
 	) -&gt; RpcResult&lt;Bytes&gt; {
 		<span class="kw">let </span>number_or_hash = number_or_hash.unwrap_or(BlockNumberOrHash::Latest);
 		<span class="kw">if </span>number_or_hash == BlockNumberOrHash::Pending {
-			<span class="kw">let </span>api = pending_runtime_api(<span class="self">self</span>.client.as_ref(), <span class="self">self</span>.graph.as_ref())<span class="question-mark">?</span>;
+			<span class="kw">let </span>(hash, api) = <span class="self">self
+				</span>.pending_runtime_api()
+				.<span class="kw">await
+				</span>.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Create pending runtime api error: {err}&quot;</span>)))<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(api
-				.account_code_at(<span class="self">self</span>.client.info().best_hash, address)
+				.account_code_at(hash, address)
 				.unwrap_or_default()
 				.into())
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(id)) = frontier_backend_client::native_block_id::&lt;B, C&gt;(
@@ -406,7 +422,7 @@
 			<span class="kw">let </span>substrate_hash = <span class="self">self
 				</span>.client
 				.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {}&quot;</span>, id)))<span class="question-mark">?</span>;
+				.map_err(|<span class="kw">_</span>| internal_err(<span class="macro">format!</span>(<span class="string">&quot;Expect block number from id: {id}&quot;</span>)))<span class="question-mark">?</span>;
 			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), substrate_hash);
 
 			<span class="prelude-val">Ok</span>(<span class="self">self

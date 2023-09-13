@@ -355,6 +355,7 @@
 <a href="#355" id="355">355</a>
 <a href="#356" id="356">356</a>
 <a href="#357" id="357">357</a>
+<a href="#358" id="358">358</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -395,14 +396,15 @@
 	frontier_backend_client, internal_err,
 };
 
-<span class="kw">impl</span>&lt;B, C, P, CT, BE, A: ChainApi, EC: EthConfig&lt;B, C&gt;&gt; Eth&lt;B, C, P, CT, BE, A, EC&gt;
+<span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
 	</span>B: BlockT,
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: EthereumRuntimeRPCApi&lt;B&gt;,
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
-	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
+	A: ChainApi&lt;Block = B&gt;,
+	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
