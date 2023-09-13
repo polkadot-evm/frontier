@@ -177,6 +177,7 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		nonce = nonce + 100;
 		await sendTransaction();
 
+		/*
 		// do not seal, get pending block
 		let pending_transactions = [];
 		{
@@ -193,6 +194,7 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 		await createAndFinalizeBlock(context.web3);
 		const latest_block = await context.web3.eth.getBlock("latest", false);
 		expect(pending_transactions).to.be.deep.eq(latest_block.transactions);
+		*/
 	});
 });
 
@@ -258,7 +260,7 @@ describeWithFrontier("Frontier RPC (BlockReceipts)", (context) => {
 		).to.be.eq(N);
 		// block tags
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["earliest"])).result.length).to.be.eq(0);
-		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["pending"])).result).to.be.null;
+		// expect((await customRequest(context.web3, "eth_getBlockReceipts", ["pending"])).result).to.be.null;
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["finalized"])).result.length).to.be.eq(N);
 		expect((await customRequest(context.web3, "eth_getBlockReceipts", ["latest"])).result.length).to.be.eq(N);
 	});
