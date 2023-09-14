@@ -6284,7 +6284,7 @@ dependencies = [
  "quote",
  "sp-core-hashing",
  "sp-std",
- "syn 1.0.109",
+ "syn 2.0.28",
  "trybuild",
 ]
 

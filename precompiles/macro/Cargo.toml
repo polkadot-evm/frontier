@@ -19,7 +19,7 @@ prettyplease = "0.2.12"
 proc-macro2 = "1.0"
 quote = "1.0"
 sp-core-hashing = { workspace = true }
-syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
+syn = { version = "2.0", features = ["extra-traits", "fold", "full", "visit"] }
 
 [dev-dependencies]
 macrotest = "1.0.9"
