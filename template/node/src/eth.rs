@@ -7,12 +7,11 @@ use std::{
 
 use futures::{future, prelude::*};
 // Substrate
-use sc_client_api::{BlockchainEvents, StateBackendFor};
+use sc_client_api::BlockchainEvents;
 use sc_executor::NativeExecutionDispatch;
 use sc_network_sync::SyncingService;
 use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sp_api::ConstructRuntimeApi;
-use sp_runtime::traits::BlakeTwo256;
 // Frontier
 pub use fc_consensus::FrontierBlockImport;
 use fc_rpc::{EthTask, OverrideHandle};
@@ -113,17 +112,13 @@ pub trait EthCompatRuntimeApiCollection:
 	sp_api::ApiExt<Block>
 	+ fp_rpc::ConvertTransactionRuntimeApi<Block>
 	+ fp_rpc::EthereumRuntimeRPCApi<Block>
-where
-	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
 {
 }
 
-impl<Api> EthCompatRuntimeApiCollection for Api
-where
+impl<Api> EthCompatRuntimeApiCollection for Api where
 	Api: sp_api::ApiExt<Block>
 		+ fp_rpc::ConvertTransactionRuntimeApi<Block>
-		+ fp_rpc::EthereumRuntimeRPCApi<Block>,
-	<Self as sp_api::ApiExt<Block>>::StateBackend: sp_api::StateBackend<BlakeTwo256>,
+		+ fp_rpc::EthereumRuntimeRPCApi<Block>
 {
 }
 
@@ -145,8 +140,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 ) where
 	RuntimeApi: ConstructRuntimeApi<Block, FullClient<RuntimeApi, Executor>>,
 	RuntimeApi: Send + Sync + 'static,
-	RuntimeApi::RuntimeApi:
-		EthCompatRuntimeApiCollection<StateBackend = StateBackendFor<FullBackend, Block>>,
+	RuntimeApi::RuntimeApi: EthCompatRuntimeApiCollection,
 	Executor: NativeExecutionDispatch + 'static,
 {
 	// Spawn main mapping sync worker background task.
