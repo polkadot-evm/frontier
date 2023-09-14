@@ -25,11 +25,12 @@ use crate::{evm::handle::using_precompile_handle, solidity::revert::revert};
 use core::marker::PhantomData;
 use fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
 use frame_support::{
-	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
+	dispatch::{GetDispatchInfo, PostDispatchInfo},
 	pallet_prelude::*,
 	traits::Get,
 };
 use pallet_evm::GasWeightMapping;
+use sp_runtime::traits::Dispatchable;
 
 #[derive(Debug)]
 pub enum TryDispatchError {

@@ -19,7 +19,6 @@
 
 use ethereum::{TransactionAction, TransactionSignature};
 use frame_support::{
-	dispatch::Dispatchable,
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
@@ -29,7 +28,7 @@ use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 use rlp::RlpStream;
 use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
+	traits::{BlakeTwo256, Dispatchable, IdentityLookup},
 	AccountId32, BuildStorage,
 };
 
