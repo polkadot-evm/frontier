@@ -23,13 +23,15 @@ pub mod types;
 mod eth;
 mod eth_pubsub;
 mod net;
+#[cfg(feature = "txpool")]
 mod txpool;
 mod web3;
 
+#[cfg(feature = "txpool")]
+pub use self::txpool::TxPoolApiServer;
 pub use self::{
 	eth::{EthApiServer, EthFilterApiServer},
 	eth_pubsub::EthPubSubApiServer,
 	net::NetApiServer,
-	txpool::TxPoolApiServer,
 	web3::Web3ApiServer,
 };

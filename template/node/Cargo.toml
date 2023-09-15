@@ -36,6 +36,7 @@ sc-executor = { workspace = true }
 sc-network = { workspace = true }
 sc-network-common = { workspace = true }
 sc-network-sync = { workspace = true }
+sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
 sc-rpc-api = { workspace = true }
 sc-service = { workspace = true }
@@ -68,6 +69,7 @@ frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 
 # Frontier
+fc-api = { workspace = true }
 fc-cli = { workspace = true }
 fc-consensus = { workspace = true }
 fc-db = { workspace = true }
@@ -89,6 +91,7 @@ default = [
 	"with-rocksdb-weights",
 	"rocksdb",
 	"sql",
+	"txpool",
 ]
 rocksdb = [
 	"sc-cli/rocksdb",
@@ -104,6 +107,7 @@ sql = [
 ]
 with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
 with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
+txpool = ["fc-rpc/txpool"]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",

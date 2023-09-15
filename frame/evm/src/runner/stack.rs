@@ -1290,6 +1290,8 @@ mod tests {
 			&config,
 			&MockPrecompileSet,
 			false,
+			None,
+			None,
 			|_| {
 				let res = Runner::<Test>::execute(
 					H160::default(),
@@ -1300,6 +1302,8 @@ mod tests {
 					&config,
 					&MockPrecompileSet,
 					false,
+					None,
+					None,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
 				assert_matches!(
@@ -1330,6 +1334,8 @@ mod tests {
 			&config,
 			&MockPrecompileSet,
 			false,
+			None,
+			None,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);
 		assert!(res.is_ok());

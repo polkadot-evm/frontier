@@ -34,7 +34,7 @@ std = [
 	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
-	"frame-benchmarking/std",
+	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
 	"sp-core/std",

@@ -84,6 +84,19 @@ impl From<[u8; 20]> for AccountId20 {
 	}
 }
 
+impl<'a> TryFrom<&'a [u8]> for AccountId20 {
+	type Error = ();
+	fn try_from(x: &'a [u8]) -> Result<AccountId20, ()> {
+		if x.len() == 20 {
+			let mut data = [0; 20];
+			data.copy_from_slice(x);
+			Ok(AccountId20(data))
+		} else {
+			Err(())
+		}
+	}
+}
+
 impl From<AccountId20> for [u8; 20] {
 	fn from(val: AccountId20) -> Self {
 		val.0
@@ -102,6 +115,30 @@ impl From<AccountId20> for H160 {
 	}
 }
 
+impl AsRef<[u8]> for AccountId20 {
+	fn as_ref(&self) -> &[u8] {
+		&self.0[..]
+	}
+}
+
+impl AsMut<[u8]> for AccountId20 {
+	fn as_mut(&mut self) -> &mut [u8] {
+		&mut self.0[..]
+	}
+}
+
+impl AsRef<[u8; 20]> for AccountId20 {
+	fn as_ref(&self) -> &[u8; 20] {
+		&self.0
+	}
+}
+
+impl AsMut<[u8; 20]> for AccountId20 {
+	fn as_mut(&mut self) -> &mut [u8; 20] {
+		&mut self.0
+	}
+}
+
 impl From<ecdsa::Public> for AccountId20 {
 	fn from(pk: ecdsa::Public) -> Self {
 		let decompressed = libsecp256k1::PublicKey::parse_compressed(&pk.0)
@@ -111,6 +148,14 @@ impl From<ecdsa::Public> for AccountId20 {
 		m.copy_from_slice(&decompressed[1..65]);
 		let account = H160::from(H256::from(keccak_256(&m)));
 		Self(account.into())
+	}
+}
+
+impl From<[u8; 32]> for AccountId20 {
+	fn from(bytes: [u8; 32]) -> Self {
+		let mut buffer = [0u8; 20];
+		buffer.copy_from_slice(&bytes[..20]);
+		Self(buffer)
 	}
 }
 

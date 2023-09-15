@@ -1,0 +1,20 @@
+[package]
+name = "fc-api"
+version = "1.0.0-dev"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Frontier client interfaces"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+async-trait = { workspace = true }
+scale-codec = { package = "parity-scale-codec", workspace = true }
+# Substrate
+sp-core = { workspace = true, features = ["default"] }
+sp-runtime = { workspace = true, features = ["default"] }
+# Frontier
+fp-storage = { workspace = true, features = ["default"] }

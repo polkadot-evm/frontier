@@ -43,7 +43,7 @@ pub use self::{
 	},
 	validation::{
 		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
-		InvalidEvmTransactionError,
+		TransactionValidationError,
 	},
 };
 

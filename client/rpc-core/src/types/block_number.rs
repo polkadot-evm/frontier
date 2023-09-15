@@ -26,7 +26,7 @@ use serde::{
 
 /// Represents rpc api block number param.
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Default, Hash)]
-pub enum BlockNumber {
+pub enum BlockNumberOrHash {
 	/// Hash
 	Hash {
 		/// block hash
@@ -51,53 +51,53 @@ pub enum BlockNumber {
 	Finalized,
 }
 
-impl<'a> Deserialize<'a> for BlockNumber {
-	fn deserialize<D>(deserializer: D) -> Result<BlockNumber, D::Error>
+impl<'a> Deserialize<'a> for BlockNumberOrHash {
+	fn deserialize<D>(deserializer: D) -> Result<BlockNumberOrHash, D::Error>
 	where
 		D: Deserializer<'a>,
 	{
-		deserializer.deserialize_any(BlockNumberVisitor)
+		deserializer.deserialize_any(BlockNumberOrHashVisitor)
 	}
 }
 
-impl BlockNumber {
+impl BlockNumberOrHash {
 	/// Convert block number to min block target.
 	pub fn to_min_block_num(&self) -> Option<u64> {
 		match *self {
-			BlockNumber::Num(ref x) => Some(*x),
-			BlockNumber::Earliest => Some(0),
+			BlockNumberOrHash::Num(ref x) => Some(*x),
+			BlockNumberOrHash::Earliest => Some(0),
 			_ => None,
 		}
 	}
 }
 
-impl Serialize for BlockNumber {
+impl Serialize for BlockNumberOrHash {
 	fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
 	where
 		S: Serializer,
 	{
 		match *self {
-			BlockNumber::Hash {
+			BlockNumberOrHash::Hash {
 				hash,
 				require_canonical,
 			} => serializer.serialize_str(&format!(
 				"{{ 'hash': '{}', 'requireCanonical': '{}'  }}",
 				hash, require_canonical
 			)),
-			BlockNumber::Num(ref x) => serializer.serialize_str(&format!("0x{:x}", x)),
-			BlockNumber::Latest => serializer.serialize_str("latest"),
-			BlockNumber::Earliest => serializer.serialize_str("earliest"),
-			BlockNumber::Pending => serializer.serialize_str("pending"),
-			BlockNumber::Safe => serializer.serialize_str("safe"),
-			BlockNumber::Finalized => serializer.serialize_str("finalized"),
+			BlockNumberOrHash::Num(ref x) => serializer.serialize_str(&format!("0x{:x}", x)),
+			BlockNumberOrHash::Latest => serializer.serialize_str("latest"),
+			BlockNumberOrHash::Earliest => serializer.serialize_str("earliest"),
+			BlockNumberOrHash::Pending => serializer.serialize_str("pending"),
+			BlockNumberOrHash::Safe => serializer.serialize_str("safe"),
+			BlockNumberOrHash::Finalized => serializer.serialize_str("finalized"),
 		}
 	}
 }
 
-struct BlockNumberVisitor;
+struct BlockNumberOrHashVisitor;
 
-impl<'a> Visitor<'a> for BlockNumberVisitor {
-	type Value = BlockNumber;
+impl<'a> Visitor<'a> for BlockNumberOrHashVisitor {
+	type Value = BlockNumberOrHash;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
 		write!(
@@ -146,11 +146,11 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 		}
 
 		if let Some(number) = block_number {
-			return Ok(BlockNumber::Num(number));
+			return Ok(BlockNumberOrHash::Num(number));
 		}
 
 		if let Some(hash) = block_hash {
-			return Ok(BlockNumber::Hash {
+			return Ok(BlockNumberOrHash::Hash {
 				hash,
 				require_canonical,
 			});
@@ -164,17 +164,22 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 		E: Error,
 	{
 		match value {
-			"latest" => Ok(BlockNumber::Latest),
-			"earliest" => Ok(BlockNumber::Earliest),
-			"pending" => Ok(BlockNumber::Pending),
-			"safe" => Ok(BlockNumber::Safe),
-			"finalized" => Ok(BlockNumber::Finalized),
+			"latest" => Ok(BlockNumberOrHash::Latest),
+			"earliest" => Ok(BlockNumberOrHash::Earliest),
+			"pending" => Ok(BlockNumberOrHash::Pending),
+			"safe" => Ok(BlockNumberOrHash::Safe),
+			"finalized" => Ok(BlockNumberOrHash::Finalized),
 			_ if value.starts_with("0x") => u64::from_str_radix(&value[2..], 16)
-				.map(BlockNumber::Num)
+				.map(BlockNumberOrHash::Num)
 				.map_err(|e| Error::custom(format!("Invalid block number: {}", e))),
-			_ => value.parse::<u64>().map(BlockNumber::Num).map_err(|_| {
-				Error::custom("Invalid block number: non-decimal or missing 0x prefix".to_string())
-			}),
+			_ => value
+				.parse::<u64>()
+				.map(BlockNumberOrHash::Num)
+				.map_err(|_| {
+					Error::custom(
+						"Invalid block number: non-decimal or missing 0x prefix".to_string(),
+					)
+				}),
 		}
 	}
 
@@ -189,7 +194,7 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 	where
 		E: Error,
 	{
-		Ok(BlockNumber::Num(value))
+		Ok(BlockNumberOrHash::Num(value))
 	}
 }
 
@@ -197,28 +202,28 @@ impl<'a> Visitor<'a> for BlockNumberVisitor {
 mod tests {
 	use super::*;
 
-	fn match_block_number(block_number: BlockNumber) -> Option<u64> {
+	fn match_block_number(block_number: BlockNumberOrHash) -> Option<u64> {
 		match block_number {
-			BlockNumber::Num(number) => Some(number),
-			BlockNumber::Earliest => Some(0),
-			BlockNumber::Latest => Some(1000),
-			BlockNumber::Safe => Some(999),
-			BlockNumber::Finalized => Some(999),
-			BlockNumber::Pending => Some(1001),
+			BlockNumberOrHash::Num(number) => Some(number),
+			BlockNumberOrHash::Earliest => Some(0),
+			BlockNumberOrHash::Latest => Some(1000),
+			BlockNumberOrHash::Safe => Some(999),
+			BlockNumberOrHash::Finalized => Some(999),
+			BlockNumberOrHash::Pending => Some(1001),
 			_ => None,
 		}
 	}
 
 	#[test]
 	fn block_number_deserialize() {
-		let bn_dec: BlockNumber = serde_json::from_str(r#""42""#).unwrap();
-		let bn_hex: BlockNumber = serde_json::from_str(r#""0x45""#).unwrap();
-		let bn_u64: BlockNumber = serde_json::from_str(r#"420"#).unwrap();
-		let bn_tag_earliest: BlockNumber = serde_json::from_str(r#""earliest""#).unwrap();
-		let bn_tag_latest: BlockNumber = serde_json::from_str(r#""latest""#).unwrap();
-		let bn_tag_safe: BlockNumber = serde_json::from_str(r#""safe""#).unwrap();
-		let bn_tag_finalized: BlockNumber = serde_json::from_str(r#""finalized""#).unwrap();
-		let bn_tag_pending: BlockNumber = serde_json::from_str(r#""pending""#).unwrap();
+		let bn_dec: BlockNumberOrHash = serde_json::from_str(r#""42""#).unwrap();
+		let bn_hex: BlockNumberOrHash = serde_json::from_str(r#""0x45""#).unwrap();
+		let bn_u64: BlockNumberOrHash = serde_json::from_str(r#"420"#).unwrap();
+		let bn_tag_earliest: BlockNumberOrHash = serde_json::from_str(r#""earliest""#).unwrap();
+		let bn_tag_latest: BlockNumberOrHash = serde_json::from_str(r#""latest""#).unwrap();
+		let bn_tag_safe: BlockNumberOrHash = serde_json::from_str(r#""safe""#).unwrap();
+		let bn_tag_finalized: BlockNumberOrHash = serde_json::from_str(r#""finalized""#).unwrap();
+		let bn_tag_pending: BlockNumberOrHash = serde_json::from_str(r#""pending""#).unwrap();
 
 		assert_eq!(match_block_number(bn_dec).unwrap(), 42);
 		assert_eq!(match_block_number(bn_hex).unwrap(), 69);

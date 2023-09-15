@@ -34,30 +34,40 @@ use crate::{
 	internal_err,
 };
 
-impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
+impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
+	A: ChainApi<Block = B>,
+	EC: EthConfig<B, C>,
 {
 	pub fn protocol_version(&self) -> RpcResult<u64> {
 		Ok(1)
 	}
 
-	pub fn syncing(&self) -> RpcResult<SyncStatus> {
+	pub async fn syncing(&self) -> RpcResult<SyncStatus> {
 		if self.sync.is_major_syncing() {
-			let block_number = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
-				self.client.info().best_number,
+			let current_number = self.client.info().best_number;
+			let current_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+				current_number,
 			));
+			let highest_number = self
+				.sync
+				.best_seen_block()
+				.await
+				.map_err(|_err| internal_err("fetching best_seen_block failed"))?
+				.unwrap_or(current_number);
+			let highest_block = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
+				highest_number,
+			));
+
 			Ok(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
-				current_block: block_number,
-				// TODO `highest_block` is not correct, should load `best_seen_block` from NetworkWorker,
-				// but afaik that is not currently possible in Substrate:
-				// https://github.com/paritytech/substrate/issues/7311
-				highest_block: block_number,
+				current_block,
+				highest_block,
 				warp_chunks_amount: None,
 				warp_chunks_processed: None,
 			}))
