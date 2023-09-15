@@ -22,7 +22,7 @@ use evm::{
 };
 use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
 use sp_core::{H160, H256};
-use sp_std::collections::btree_map::BTreeMap;
+use sp_std::collections::btree_set::BTreeSet;
 
 /// An error that is returned when the storage limit has been exceeded.
 #[derive(Debug, PartialEq)]
@@ -35,7 +35,7 @@ pub enum MeterError {
 pub struct StorageMeter {
 	usage: u64,
 	limit: u64,
-	recorded_new_entries: BTreeMap<(H160, H256), ()>,
+	recorded_new_entries: BTreeSet<(H160, H256)>,
 }
 
 impl StorageMeter {
@@ -44,7 +44,7 @@ impl StorageMeter {
 		Self {
 			usage: 0,
 			limit,
-			recorded_new_entries: BTreeMap::new(),
+			recorded_new_entries: BTreeSet::new(),
 		}
 	}
 
@@ -54,7 +54,7 @@ impl StorageMeter {
 		let usage = self
 			.usage
 			.checked_add(amount)
-			.ok_or_else(|| MeterError::LimitExceeded)?;
+			.ok_or(MeterError::LimitExceeded)?;
 
 		if usage > self.limit {
 			return Err(MeterError::LimitExceeded);
@@ -81,10 +81,10 @@ impl StorageMeter {
 				StorageTarget::Slot(address, index) => (address, index),
 				_ => return Ok(()),
 			};
-			let recorded = self.recorded_new_entries.contains_key(&(address, index));
+			let recorded = self.recorded_new_entries.contains(&(address, index));
 			if !recorded && original == H256::default() && !new.is_zero() {
 				self.record(ACCOUNT_STORAGE_PROOF_SIZE)?;
-				self.recorded_new_entries.insert((address, index), ());
+				self.recorded_new_entries.insert((address, index));
 			}
 		}
 		Ok(())
