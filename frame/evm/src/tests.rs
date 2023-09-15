@@ -656,7 +656,7 @@ mod storage_growth_test {
 				gas_limit, true,
 			)),
 			Some(0),
-			&<Test as Config>::config(),
+			<Test as Config>::config(),
 		)
 	}
 
@@ -681,7 +681,7 @@ mod storage_growth_test {
 			true, // must be validated
 			None,
 			Some(0),
-			&<Test as Config>::config(),
+			<Test as Config>::config(),
 		)
 	}
 
