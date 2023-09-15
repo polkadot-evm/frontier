@@ -59,9 +59,10 @@ where
 	Runtime::RuntimeCall: Dispatchable<PostInfo = PostDispatchInfo> + GetDispatchInfo,
 {
 	#[inline(always)]
-	pub fn record_weight_v2_cost(
+	pub fn record_external_cost(
 		handle: &mut impl PrecompileHandle,
 		weight: Weight,
+		storage_growth: u64,
 	) -> Result<(), ExitError> {
 		// Make sure there is enough gas.
 		let remaining_gas = handle.remaining_gas();
@@ -72,7 +73,7 @@ where
 
 		// Make sure there is enough remaining weight
 		// TODO: record ref time when precompile will be benchmarked
-		handle.record_external_cost(None, Some(weight.proof_size()))
+		handle.record_external_cost(None, Some(weight.proof_size()), Some(storage_growth))
 	}
 
 	#[inline(always)]
@@ -102,6 +103,7 @@ where
 		handle: &mut impl PrecompileHandle,
 		origin: <Runtime::RuntimeCall as Dispatchable>::RuntimeOrigin,
 		call: Call,
+		storage_growth: u64,
 	) -> Result<PostDispatchInfo, TryDispatchError>
 	where
 		Runtime::RuntimeCall: From<Call>,
@@ -109,7 +111,8 @@ where
 		let call = Runtime::RuntimeCall::from(call);
 		let dispatch_info = call.get_dispatch_info();
 
-		Self::record_weight_v2_cost(handle, dispatch_info.weight).map_err(TryDispatchError::Evm)?;
+		Self::record_external_cost(handle, dispatch_info.weight, storage_growth)
+			.map_err(TryDispatchError::Evm)?;
 
 		// Dispatch call.
 		// It may be possible to not record gas cost if the call returns Pays::No.
