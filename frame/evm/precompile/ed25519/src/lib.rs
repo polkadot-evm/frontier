@@ -21,8 +21,8 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::convert::TryFrom;
-use ed25519_dalek::{PublicKey, Signature, Verifier};
+
+use ed25519_dalek::{Signature, Verifier, VerifyingKey};
 use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 
 pub struct Ed25519Verify;
@@ -44,7 +44,7 @@ impl LinearCostPrecompile for Ed25519Verify {
 		let mut buf = [0u8; 4];
 
 		let msg = &i[0..32];
-		let pk = PublicKey::from_bytes(&i[32..64]).map_err(|_| PrecompileFailure::Error {
+		let pk = VerifyingKey::try_from(&i[32..64]).map_err(|_| PrecompileFailure::Error {
 			exit_status: ExitError::Other("Public key recover failed".into()),
 		})?;
 		let sig = Signature::try_from(&i[64..128]).map_err(|_| PrecompileFailure::Error {
@@ -65,7 +65,7 @@ impl LinearCostPrecompile for Ed25519Verify {
 #[cfg(test)]
 mod tests {
 	use super::*;
-	use ed25519_dalek::{Keypair, SecretKey, Signer};
+	use ed25519_dalek::{Signer, SigningKey};
 
 	#[test]
 	fn test_empty_input() -> Result<(), PrecompileFailure> {
@@ -96,14 +96,8 @@ mod tests {
 			073, 197, 105, 123, 050, 105, 025, 112, 059, 172, 003, 028, 174, 127, 096,
 		];
 
-		let secret_key =
-			SecretKey::from_bytes(&secret_key_bytes).expect("Failed to generate secretkey");
-		let public_key = (&secret_key).into();
-
-		let keypair = Keypair {
-			secret: secret_key,
-			public: public_key,
-		};
+		let keypair = SigningKey::from_bytes(&secret_key_bytes);
+		let public_key = keypair.verifying_key();
 
 		let msg: &[u8] = b"abcdefghijklmnopqrstuvwxyz123456";
 		assert_eq!(msg.len(), 32);

@@ -34,7 +34,6 @@ sc-consensus-grandpa = { workspace = true }
 sc-consensus-manual-seal = { workspace = true }
 sc-executor = { workspace = true }
 sc-network = { workspace = true }
-sc-network-common = { workspace = true }
 sc-network-sync = { workspace = true }
 sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
@@ -56,7 +55,6 @@ sp-session = { workspace = true, features = ["default"] }
 sp-state-machine = { workspace = true, features = ["default"] }
 sp-timestamp = { workspace = true, features = ["default"] }
 sp-transaction-pool = { workspace = true, features = ["default"] }
-sp-trie = { workspace = true, features = ["default"] }
 # These dependencies are used for RPC
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }

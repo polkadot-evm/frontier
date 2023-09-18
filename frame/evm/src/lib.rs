@@ -68,11 +68,13 @@ pub mod weights;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
+use hash_db::Hasher;
 use impl_trait_for_tuples::impl_for_tuples;
+use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, MaxEncodedLen, Pays, PostDispatchInfo},
+	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
 		tokens::{
 			currency::Currency,
@@ -85,7 +87,7 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
-use sp_core::{Decode, Encode, Hasher, H160, H256, U256};
+use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,

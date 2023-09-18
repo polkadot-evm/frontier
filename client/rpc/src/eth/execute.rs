@@ -25,15 +25,15 @@ use scale_codec::{Decode, Encode};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
-use sp_api::{
-	ApiExt, CallApiAt, CallApiAtParams, CallContext, Extensions, ProvideRuntimeApi,
-	StorageTransactionCache,
-};
+use sp_api::{ApiExt, CallApiAt, CallApiAtParams, CallContext, Extensions, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_inherents::CreateInherentDataProviders;
 use sp_io::hashing::{blake2_128, twox_128};
-use sp_runtime::{traits::Block as BlockT, DispatchError, SaturatedConversion};
+use sp_runtime::{
+	traits::{Block as BlockT, HashingFor},
+	DispatchError, SaturatedConversion,
+};
 use sp_state_machine::OverlayedChanges;
 // Frontier
 use fc_rpc_core::types::*;
@@ -241,14 +241,11 @@ where
 						api_version,
 						state_overrides,
 					)?;
-					let storage_transaction_cache =
-						RefCell::<StorageTransactionCache<B, C::StateBackend>>::default();
 					let params = CallApiAtParams {
 						at: substrate_hash,
 						function: "EthereumRuntimeRPCApi_call",
 						arguments: encoded_params,
 						overlayed_changes: &RefCell::new(overlayed_changes),
-						storage_transaction_cache: &storage_transaction_cache,
 						call_context: CallContext::Offchain,
 						recorder: &None,
 						extensions: &RefCell::new(Extensions::new()),
@@ -888,7 +885,7 @@ where
 		block_hash: B::Hash,
 		api_version: u32,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
-	) -> RpcResult<OverlayedChanges> {
+	) -> RpcResult<OverlayedChanges<HashingFor<B>>> {
 		let mut overlayed_changes = OverlayedChanges::default();
 		if let Some(state_overrides) = state_overrides {
 			for (address, state_override) in state_overrides {
