@@ -635,7 +635,7 @@ impl Precompile for Bls12377MapG2 {
 		handle.record_cost(Bls12377MapG2::GAS_COST)?;
 
 		let input = handle.input();
-		if input.len() != 64 {
+		if input.len() != 128 {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other("invalid input length".into()),
 			});
