@@ -7,7 +7,7 @@ USes HashedAddressMapping for the address.</p>
     C: StorageProvider&lt;B, BE&gt; + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Send.html" title="trait core::marker::Send">Send</a> + <a class="trait" href="https://doc.rust-lang.org/nightly/core/marker/trait.Sync.html" title="trait core::marker::Sync">Sync</a>,
     BE: Backend&lt;B&gt;,</span></h3></section></summary><div class="impl-items"><section id="method.is_enabled" class="method trait-impl"><a class="srclink rightside" href="../../src/fc_rpc/lib.rs.html#145-147">source</a><a href="#method.is_enabled" class="anchor">§</a><h4 class="code-header">fn <a href="../../fp_rpc/trait.RuntimeStorageOverride.html#tymethod.is_enabled" class="fn">is_enabled</a>() -&gt; <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.bool.html">bool</a></h4></section><section id="method.set_overlayed_changes" class="method trait-impl"><a class="srclink rightside" href="../../src/fc_rpc/lib.rs.html#149-178">source</a><a href="#method.set_overlayed_changes" class="anchor">§</a><h4 class="code-header">fn <a href="../../fp_rpc/trait.RuntimeStorageOverride.html#tymethod.set_overlayed_changes" class="fn">set_overlayed_changes</a>(
     client: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.reference.html">&amp;C</a>,
-    overlayed_changes: &amp;mut OverlayedChanges,
+    overlayed_changes: &amp;mut OverlayedChanges&lt;HashingFor&lt;B&gt;&gt;,
     block: B::Hash,
     _version: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u32.html">u32</a>,
     address: H160,

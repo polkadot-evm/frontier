@@ -548,7 +548,7 @@
 	<span class="kw">use </span>sp_io::hashing::{blake2_128, twox_128};
 	<span class="kw">use </span>sp_runtime::{
 		generic::BlockId,
-		traits::{Block <span class="kw">as </span>BlockT, UniqueSaturatedInto, Zero},
+		traits::{Block <span class="kw">as </span>BlockT, HashingFor, UniqueSaturatedInto, Zero},
 	};
 	<span class="kw">use </span>sp_state_machine::OverlayedChanges;
 	<span class="comment">// Frontier
@@ -571,7 +571,7 @@
 
 		<span class="kw">fn </span>set_overlayed_changes(
 			client: <span class="kw-2">&amp;</span>C,
-			overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+			overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges&lt;HashingFor&lt;B&gt;&gt;,
 			block: B::Hash,
 			_version: u32,
 			address: H160,
@@ -624,7 +624,7 @@
 
 		<span class="kw">fn </span>set_overlayed_changes(
 			client: <span class="kw-2">&amp;</span>C,
-			overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges,
+			overlayed_changes: <span class="kw-2">&amp;mut </span>OverlayedChanges&lt;HashingFor&lt;B&gt;&gt;,
 			block: B::Hash,
 			_version: u32,
 			address: H160,

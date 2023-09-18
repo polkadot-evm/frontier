@@ -124,7 +124,6 @@
 <a href="#124" id="124">124</a>
 <a href="#125" id="125">125</a>
 <a href="#126" id="126">126</a>
-<a href="#127" id="127">127</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -207,7 +206,7 @@
 <span class="kw">impl</span>&lt;B, I, C&gt; FrontierBlockImport&lt;B, I, C&gt;
 <span class="kw">where
 	</span>B: BlockT,
-	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt;,
+	I: BlockImport&lt;B&gt;,
 	I::Error: Into&lt;ConsensusError&gt;,
 	C: ProvideRuntimeApi&lt;B&gt;,
 	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
@@ -225,13 +224,12 @@
 </span><span class="kw">impl</span>&lt;B, I, C&gt; BlockImport&lt;B&gt; <span class="kw">for </span>FrontierBlockImport&lt;B, I, C&gt;
 <span class="kw">where
 	</span>B: BlockT,
-	I: BlockImport&lt;B, Transaction = sp_api::TransactionFor&lt;C, B&gt;&gt; + Send + Sync,
+	I: BlockImport&lt;B&gt; + Send + Sync,
 	I::Error: Into&lt;ConsensusError&gt;,
 	C: ProvideRuntimeApi&lt;B&gt; + Send + Sync,
 	C::Api: BlockBuilderApi&lt;B&gt; + EthereumRuntimeRPCApi&lt;B&gt;,
 {
 	<span class="kw">type </span>Error = ConsensusError;
-	<span class="kw">type </span>Transaction = sp_api::TransactionFor&lt;C, B&gt;;
 
 	<span class="kw">async fn </span>check_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
@@ -242,7 +240,7 @@
 
 	<span class="kw">async fn </span>import_block(
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
-		block: BlockImportParams&lt;B, <span class="self">Self</span>::Transaction&gt;,
+		block: BlockImportParams&lt;B&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;ImportResult, <span class="self">Self</span>::Error&gt; {
 		<span class="comment">// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate

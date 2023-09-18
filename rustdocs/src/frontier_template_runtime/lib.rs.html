@@ -1188,11 +1188,10 @@
 
 <span class="kw">impl </span>pallet_grandpa::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
-
 	<span class="kw">type </span>WeightInfo = ();
 	<span class="kw">type </span>MaxAuthorities = ConstU32&lt;<span class="number">32</span>&gt;;
+	<span class="kw">type </span>MaxNominators = ConstU32&lt;<span class="number">0</span>&gt;;
 	<span class="kw">type </span>MaxSetIdSessionEntries = ();
-
 	<span class="kw">type </span>KeyOwnerProof = sp_core::Void;
 	<span class="kw">type </span>EquivocationReportSystem = ();
 }
@@ -1886,7 +1885,8 @@
 		<span class="kw">fn </span>dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;frame_benchmarking::BenchmarkBatch&gt;, sp_runtime::RuntimeString&gt; {
-			<span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+			<span class="kw">use </span>frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark};
+			<span class="kw">use </span>frame_support::traits::TrackedStorageKey;
 
 			<span class="kw">use </span>pallet_evm::Pallet <span class="kw">as </span>PalletEvmBench;
 			<span class="kw">use </span>pallet_hotfix_sufficients::Pallet <span class="kw">as </span>PalletHotfixSufficientsBench;

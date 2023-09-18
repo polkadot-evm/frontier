@@ -727,26 +727,6 @@
 <a href="#727" id="727">727</a>
 <a href="#728" id="728">728</a>
 <a href="#729" id="729">729</a>
-<a href="#730" id="730">730</a>
-<a href="#731" id="731">731</a>
-<a href="#732" id="732">732</a>
-<a href="#733" id="733">733</a>
-<a href="#734" id="734">734</a>
-<a href="#735" id="735">735</a>
-<a href="#736" id="736">736</a>
-<a href="#737" id="737">737</a>
-<a href="#738" id="738">738</a>
-<a href="#739" id="739">739</a>
-<a href="#740" id="740">740</a>
-<a href="#741" id="741">741</a>
-<a href="#742" id="742">742</a>
-<a href="#743" id="743">743</a>
-<a href="#744" id="744">744</a>
-<a href="#745" id="745">745</a>
-<a href="#746" id="746">746</a>
-<a href="#747" id="747">747</a>
-<a href="#748" id="748">748</a>
-<a href="#749" id="749">749</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! Service and ServiceFactory implementation. Specialized wrapper over substrate service.
 
 </span><span class="kw">use </span>std::{cell::RefCell, path::Path, sync::Arc, time::Duration};
@@ -754,18 +734,16 @@
 <span class="kw">use </span>futures::{channel::mpsc, prelude::<span class="kw-2">*</span>};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>prometheus_endpoint::Registry;
-<span class="kw">use </span>sc_client_api::{Backend, BlockBackend, StateBackendFor};
+<span class="kw">use </span>sc_client_api::{Backend, BlockBackend};
 <span class="kw">use </span>sc_consensus::BasicQueue;
 <span class="kw">use </span>sc_executor::NativeExecutionDispatch;
-<span class="kw">use </span>sc_network_common::sync::warp::WarpSyncParams;
+<span class="kw">use </span>sc_network_sync::warp::WarpSyncParams;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
-<span class="kw">use </span>sp_api::{ConstructRuntimeApi, TransactionFor};
+<span class="kw">use </span>sp_api::ConstructRuntimeApi;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityPair <span class="kw">as </span>AuraPair;
 <span class="kw">use </span>sp_core::U256;
-<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
-<span class="kw">use </span>sp_trie::PrefixedMemoryDB;
 <span class="comment">// Runtime
 </span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, Hash, TransactionConverter};
 
@@ -782,14 +760,18 @@
 	eth::{db_config_dir, EthConfiguration},
 };
 
-<span class="kw">type </span>BasicImportQueue&lt;Client&gt; = sc_consensus::DefaultImportQueue&lt;Block, Client&gt;;
+<span class="kw">type </span>BasicImportQueue = sc_consensus::DefaultImportQueue&lt;Block&gt;;
 <span class="kw">type </span>FullPool&lt;Client&gt; = sc_transaction_pool::FullPool&lt;Block, Client&gt;;
 <span class="kw">type </span>FullSelectChain = sc_consensus::LongestChain&lt;FullBackend, Block&gt;;
 
 <span class="kw">type </span>GrandpaBlockImport&lt;Client&gt; =
 	sc_consensus_grandpa::GrandpaBlockImport&lt;FullBackend, Block, Client, FullSelectChain&gt;;
 <span class="kw">type </span>GrandpaLinkHalf&lt;Client&gt; = sc_consensus_grandpa::LinkHalf&lt;Block, Client, FullSelectChain&gt;;
-<span class="kw">type </span>BoxBlockImport&lt;Client&gt; = sc_consensus::BoxBlockImport&lt;Block, TransactionFor&lt;Client, Block&gt;&gt;;
+<span class="kw">type </span>BoxBlockImport = sc_consensus::BoxBlockImport&lt;Block&gt;;
+
+<span class="doccomment">/// The minimum period of blocks on which justifications will be
+/// imported and generated.
+</span><span class="kw">const </span>GRANDPA_JUSTIFICATION_PERIOD: u32 = <span class="number">512</span>;
 
 <span class="kw">pub fn </span>new_partial&lt;RuntimeApi, Executor, BIQ&gt;(
 	config: <span class="kw-2">&amp;</span>Configuration,
@@ -800,11 +782,11 @@
 		FullClient&lt;RuntimeApi, Executor&gt;,
 		FullBackend,
 		FullSelectChain,
-		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+		BasicImportQueue,
 		FullPool&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 		(
 			<span class="prelude-ty">Option</span>&lt;Telemetry&gt;,
-			BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+			BoxBlockImport,
 			GrandpaLinkHalf&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 			FrontierBackend,
 			Arc&lt;fc_rpc::OverrideHandle&lt;Block&gt;&gt;,
@@ -815,8 +797,7 @@
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi: BaseRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;
-		+ EthCompatRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: BaseRuntimeApiCollection + EthCompatRuntimeApiCollection,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 	BIQ: FnOnce(
 		Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
@@ -825,13 +806,7 @@
 		<span class="kw-2">&amp;</span>TaskManager,
 		<span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 		GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;
-		(
-			BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-			BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-		),
-		ServiceError,
-	&gt;,
+	) -&gt; <span class="prelude-ty">Result</span>&lt;(BasicImportQueue, BoxBlockImport), ServiceError&gt;,
 {
 	<span class="kw">let </span>telemetry = config
 		.telemetry_endpoints
@@ -864,6 +839,7 @@
 	<span class="kw">let </span>select_chain = sc_consensus::LongestChain::new(backend.clone());
 	<span class="kw">let </span>(grandpa_block_import, grandpa_link) = sc_consensus_grandpa::block_import(
 		client.clone(),
+		GRANDPA_JUSTIFICATION_PERIOD,
 		<span class="kw-2">&amp;</span>client,
 		select_chain.clone(),
 		telemetry.as_ref().map(|x| x.handle()),
@@ -942,18 +918,11 @@
 	task_manager: <span class="kw-2">&amp;</span>TaskManager,
 	telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 	grandpa_block_import: GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;
-	(
-		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-		BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	),
-	ServiceError,
-&gt;
+) -&gt; <span class="prelude-ty">Result</span>&lt;(BasicImportQueue, BoxBlockImport), ServiceError&gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi:
-		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">let </span>frontier_block_import =
@@ -998,18 +967,11 @@
 	task_manager: <span class="kw-2">&amp;</span>TaskManager,
 	_telemetry: <span class="prelude-ty">Option</span>&lt;TelemetryHandle&gt;,
 	_grandpa_block_import: GrandpaBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-) -&gt; <span class="prelude-ty">Result</span>&lt;
-	(
-		BasicImportQueue&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-		BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	),
-	ServiceError,
-&gt;
+) -&gt; <span class="prelude-ty">Result</span>&lt;(BasicImportQueue, BoxBlockImport), ServiceError&gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi:
-		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(client.clone(), client);
@@ -1032,8 +994,7 @@
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi:
-		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">let </span>build_import_queue = <span class="kw">if </span>sealing.is_some() {
@@ -1323,7 +1284,7 @@
 		<span class="kw">let </span>grandpa_config = sc_consensus_grandpa::Config {
 			<span class="comment">// FIXME #1578 make this available through chainspec
 			</span>gossip_duration: Duration::from_millis(<span class="number">333</span>),
-			justification_period: <span class="number">512</span>,
+			justification_generation_period: GRANDPA_JUSTIFICATION_PERIOD,
 			name: <span class="prelude-val">Some</span>(name),
 			observer_enabled: <span class="bool-val">false</span>,
 			keystore,
@@ -1368,7 +1329,7 @@
 	client: Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	transaction_pool: Arc&lt;FullPool&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;&gt;,
 	select_chain: FullSelectChain,
-	block_import: BoxBlockImport&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
+	block_import: BoxBlockImport,
 	task_manager: <span class="kw-2">&amp;</span>TaskManager,
 	prometheus_registry: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Registry&gt;,
 	telemetry: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>Telemetry&gt;,
@@ -1377,8 +1338,7 @@
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi:
-		RuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: RuntimeApiCollection,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
 	<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
@@ -1475,7 +1435,7 @@
 	(
 		Arc&lt;Client&gt;,
 		Arc&lt;FullBackend&gt;,
-		BasicQueue&lt;Block, PrefixedMemoryDB&lt;BlakeTwo256&gt;&gt;,
+		BasicQueue&lt;Block&gt;,
 		TaskManager,
 		FrontierBackend,
 	),

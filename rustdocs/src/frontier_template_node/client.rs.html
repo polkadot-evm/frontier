@@ -75,19 +75,9 @@
 <a href="#75" id="75">75</a>
 <a href="#76" id="76">76</a>
 <a href="#77" id="77">77</a>
-<a href="#78" id="78">78</a>
-<a href="#79" id="79">79</a>
-<a href="#80" id="80">80</a>
-<a href="#81" id="81">81</a>
-<a href="#82" id="82">82</a>
-<a href="#83" id="83">83</a>
-<a href="#84" id="84">84</a>
-<a href="#85" id="85">85</a>
-<a href="#86" id="86">86</a>
 </pre></div><pre class="rust"><code><span class="comment">// Substrate
 </span><span class="kw">use </span>sc_executor::{NativeElseWasmExecutor, NativeExecutionDispatch, NativeVersion};
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
-<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
 <span class="comment">// Local
 </span><span class="kw">use </span>frontier_template_runtime::{opaque::Block, AccountId, Balance, Nonce};
 
@@ -129,20 +119,16 @@
 	+ sp_offchain::OffchainWorkerApi&lt;Block&gt;
 	+ sp_session::SessionKeys&lt;Block&gt;
 	+ sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
-<span class="kw">where
-	</span>&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
 {
 }
 
-<span class="kw">impl</span>&lt;Api&gt; BaseRuntimeApiCollection <span class="kw">for </span>Api
-<span class="kw">where
+<span class="kw">impl</span>&lt;Api&gt; BaseRuntimeApiCollection <span class="kw">for </span>Api <span class="kw">where
 	</span>Api: sp_api::ApiExt&lt;Block&gt;
 		+ sp_api::Metadata&lt;Block&gt;
 		+ sp_block_builder::BlockBuilder&lt;Block&gt;
 		+ sp_offchain::OffchainWorkerApi&lt;Block&gt;
 		+ sp_session::SessionKeys&lt;Block&gt;
-		+ sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;,
-	&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
+		+ sp_transaction_pool::runtime_api::TaggedTransactionQueue&lt;Block&gt;
 {
 }
 
@@ -154,20 +140,16 @@
 	+ sp_consensus_grandpa::GrandpaApi&lt;Block&gt;
 	+ frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
 	+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt;
-<span class="kw">where
-	</span>&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
 {
 }
 
-<span class="kw">impl</span>&lt;Api&gt; RuntimeApiCollection <span class="kw">for </span>Api
-<span class="kw">where
+<span class="kw">impl</span>&lt;Api&gt; RuntimeApiCollection <span class="kw">for </span>Api <span class="kw">where
 	</span>Api: BaseRuntimeApiCollection
 		+ EthCompatRuntimeApiCollection
 		+ sp_consensus_aura::AuraApi&lt;Block, AuraId&gt;
 		+ sp_consensus_grandpa::GrandpaApi&lt;Block&gt;
 		+ frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Nonce&gt;
-		+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt;,
-	&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
+		+ pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;Block, Balance&gt;
 {
 }
 </code></pre></div></section></main></body></html>

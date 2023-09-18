@@ -209,12 +209,6 @@
 <a href="#209" id="209">209</a>
 <a href="#210" id="210">210</a>
 <a href="#211" id="211">211</a>
-<a href="#212" id="212">212</a>
-<a href="#213" id="213">213</a>
-<a href="#214" id="214">214</a>
-<a href="#215" id="215">215</a>
-<a href="#216" id="216">216</a>
-<a href="#217" id="217">217</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{
 	collections::BTreeMap,
 	path::PathBuf,
@@ -224,12 +218,11 @@
 
 <span class="kw">use </span>futures::{future, prelude::<span class="kw-2">*</span>};
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sc_client_api::{BlockchainEvents, StateBackendFor};
+</span><span class="kw">use </span>sc_client_api::BlockchainEvents;
 <span class="kw">use </span>sc_executor::NativeExecutionDispatch;
 <span class="kw">use </span>sc_network_sync::SyncingService;
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, TaskManager};
 <span class="kw">use </span>sp_api::ConstructRuntimeApi;
-<span class="kw">use </span>sp_runtime::traits::BlakeTwo256;
 <span class="comment">// Frontier
 </span><span class="kw">pub use </span>fc_consensus::FrontierBlockImport;
 <span class="kw">use </span>fc_rpc::{EthTask, OverrideHandle};
@@ -330,17 +323,13 @@
 	sp_api::ApiExt&lt;Block&gt;
 	+ fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;
 	+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
-<span class="kw">where
-	</span>&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
 {
 }
 
-<span class="kw">impl</span>&lt;Api&gt; EthCompatRuntimeApiCollection <span class="kw">for </span>Api
-<span class="kw">where
+<span class="kw">impl</span>&lt;Api&gt; EthCompatRuntimeApiCollection <span class="kw">for </span>Api <span class="kw">where
 	</span>Api: sp_api::ApiExt&lt;Block&gt;
 		+ fp_rpc::ConvertTransactionRuntimeApi&lt;Block&gt;
-		+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;,
-	&lt;<span class="self">Self </span><span class="kw">as </span>sp_api::ApiExt&lt;Block&gt;&gt;::StateBackend: sp_api::StateBackend&lt;BlakeTwo256&gt;,
+		+ fp_rpc::EthereumRuntimeRPCApi&lt;Block&gt;
 {
 }
 
@@ -362,8 +351,7 @@
 ) <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
-	RuntimeApi::RuntimeApi:
-		EthCompatRuntimeApiCollection&lt;StateBackend = StateBackendFor&lt;FullBackend, Block&gt;&gt;,
+	RuntimeApi::RuntimeApi: EthCompatRuntimeApiCollection,
 	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
 {
 	<span class="comment">// Spawn main mapping sync worker background task.

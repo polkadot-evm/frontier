@@ -148,6 +148,11 @@
 <a href="#148" id="148">148</a>
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -171,15 +176,20 @@
 //! - Substrate call dispatch.
 //! - Substrate DB read and write costs
 
-</span><span class="kw">use crate</span>::{evm::handle::using_precompile_handle, solidity::revert::revert};
-<span class="kw">use </span>core::marker::PhantomData;
-<span class="kw">use </span>fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
-<span class="kw">use </span>frame_support::{
-	dispatch::{Dispatchable, GetDispatchInfo, PostDispatchInfo},
-	pallet_prelude::<span class="kw-2">*</span>,
+</span><span class="kw">use </span>core::marker::PhantomData;
+
+<span class="comment">// Substrate
+</span><span class="kw">use </span>frame_support::{
+	dispatch::{GetDispatchInfo, PostDispatchInfo},
 	traits::Get,
+	weights::Weight,
 };
+<span class="kw">use </span>sp_runtime::{traits::Dispatchable, DispatchError};
+<span class="comment">// Frontier
+</span><span class="kw">use </span>fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
 <span class="kw">use </span>pallet_evm::GasWeightMapping;
+
+<span class="kw">use crate</span>::{evm::handle::using_precompile_handle, solidity::revert::revert};
 
 <span class="attr">#[derive(Debug)]
 </span><span class="kw">pub enum </span>TryDispatchError {
