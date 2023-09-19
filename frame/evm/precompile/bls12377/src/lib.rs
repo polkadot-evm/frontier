@@ -604,7 +604,7 @@ impl Precompile for Bls12377MapG1 {
 
 		let fq = read_fq(input, 0)?;
 		let g1 = match map_to_curve_g1(fq) {
-			Ok(point) => point,
+			Ok(point) => point.clear_cofactor(),
 			Err(_) => {
 				return Err(PrecompileFailure::Error {
 					exit_status: ExitError::Other("map to curve failed".into()),
@@ -643,7 +643,7 @@ impl Precompile for Bls12377MapG2 {
 
 		let fq2 = read_fq2(input, 0)?;
 		let g2 = match map_to_curve_g2(fq2) {
-			Ok(point) => point,
+			Ok(point) => point.clear_cofactor(),
 			Err(_) => {
 				return Err(PrecompileFailure::Error {
 					exit_status: ExitError::Other("map to curve failed".into()),
