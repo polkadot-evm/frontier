@@ -1267,7 +1267,7 @@
 
 		<span class="kw">let </span>fq = read_fq(input, <span class="number">0</span>)<span class="question-mark">?</span>;
 		<span class="kw">let </span>g1 = <span class="kw">match </span>map_to_curve_g1(fq) {
-			<span class="prelude-val">Ok</span>(point) =&gt; point,
+			<span class="prelude-val">Ok</span>(point) =&gt; point.clear_cofactor(),
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
 					exit_status: ExitError::Other(<span class="string">&quot;map to curve failed&quot;</span>.into()),
@@ -1298,7 +1298,7 @@
 		handle.record_cost(Bls12377MapG2::GAS_COST)<span class="question-mark">?</span>;
 
 		<span class="kw">let </span>input = handle.input();
-		<span class="kw">if </span>input.len() != <span class="number">64 </span>{
+		<span class="kw">if </span>input.len() != <span class="number">128 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
 				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
 			});
@@ -1306,7 +1306,7 @@
 
 		<span class="kw">let </span>fq2 = read_fq2(input, <span class="number">0</span>)<span class="question-mark">?</span>;
 		<span class="kw">let </span>g2 = <span class="kw">match </span>map_to_curve_g2(fq2) {
-			<span class="prelude-val">Ok</span>(point) =&gt; point,
+			<span class="prelude-val">Ok</span>(point) =&gt; point.clear_cofactor(),
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
 					exit_status: ExitError::Other(<span class="string">&quot;map to curve failed&quot;</span>.into()),
