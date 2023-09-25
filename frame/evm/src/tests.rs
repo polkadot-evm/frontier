@@ -1233,7 +1233,7 @@ fn eip3607_transaction_from_contract() {
 			true,  // must be validated
 			false,
 			None,
-			None
+			None,
 			&<Test as Config>::config().clone(),
 		)
 		.is_ok());
