@@ -18,7 +18,6 @@
 use frame_support::{
 	assert_ok,
 	dispatch::DispatchClass,
-	pallet_prelude::GenesisBuild,
 	parameter_types,
 	traits::{ConstU32, OnFinalize},
 	weights::Weight,
@@ -26,16 +25,13 @@ use frame_support::{
 use sp_core::{H256, U256};
 use sp_io::TestExternalities;
 use sp_runtime::{
-	testing::Header,
 	traits::{BlakeTwo256, IdentityLookup},
-	Permill,
+	BuildStorage, Permill,
 };
 
 use super::*;
 use crate as pallet_base_fee;
-
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test>;
-type Block = frame_system::mocking::MockBlock<Test>;
+use crate::BaseFeeThreshold as BaseFeeThresholdT;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
@@ -43,19 +39,18 @@ parameter_types! {
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 impl frame_system::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u64;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type RuntimeEvent = RuntimeEvent;
+	type Block = frame_system::mocking::MockBlock<Self>;
 	type BlockHashCount = BlockHashCount;
 	type DbWeight = ();
 	type Version = ();
@@ -70,12 +65,12 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
-	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000 as u128);
+	pub DefaultBaseFeePerGas: U256 = U256::from(100_000_000_000_u128);
 	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
 }
 
 pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
+impl BaseFeeThresholdT for BaseFeeThreshold {
 	fn lower() -> Permill {
 		Permill::zero()
 	}
@@ -95,35 +90,29 @@ impl Config for Test {
 }
 
 frame_support::construct_runtime!(
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+	pub enum Test {
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		BaseFee: pallet_base_fee::{Pallet, Call, Storage, Event},
 	}
 );
 
 pub fn new_test_ext(base_fee: Option<U256>, elasticity: Option<Permill>) -> TestExternalities {
-	let mut t = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut t = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	match (base_fee, elasticity) {
 		(Some(base_fee), Some(elasticity)) => {
 			pallet_base_fee::GenesisConfig::<Test>::new(base_fee, elasticity)
 		}
-		(None, Some(elasticity)) => {
-			let mut config = pallet_base_fee::GenesisConfig::<Test>::default();
-			config.elasticity = elasticity;
-			config
-		}
-		(Some(base_fee), None) => {
-			let mut config = pallet_base_fee::GenesisConfig::<Test>::default();
-			config.base_fee_per_gas = base_fee;
-			config
-		}
+		(None, Some(elasticity)) => pallet_base_fee::GenesisConfig::<Test> {
+			elasticity,
+			..Default::default()
+		},
+		(Some(base_fee), None) => pallet_base_fee::GenesisConfig::<Test> {
+			base_fee_per_gas: base_fee,
+			..Default::default()
+		},
 		(None, None) => pallet_base_fee::GenesisConfig::<Test>::default(),
 	}
 	.assimilate_storage(&mut t)
@@ -132,12 +121,21 @@ pub fn new_test_ext(base_fee: Option<U256>, elasticity: Option<Permill>) -> Test
 	TestExternalities::new(t)
 }
 
+pub fn get_lowest_base_fee() -> U256 {
+	let default_base_fee = DefaultBaseFeePerGas::get();
+	default_base_fee
+		.checked_mul(U256::from(BaseFeeThreshold::ideal().deconstruct()))
+		.unwrap_or(default_base_fee)
+		.checked_div(U256::from(1_000_000))
+		.unwrap_or(default_base_fee)
+}
+
 #[test]
 fn should_default() {
 	new_test_ext(None, None).execute_with(|| {
 		assert_eq!(
 			BaseFeePerGas::<Test>::get(),
-			U256::from(100_000_000_000 as u128)
+			U256::from(100_000_000_000_u128)
 		);
 		assert_eq!(Elasticity::<Test>::get(), Permill::from_parts(125_000));
 	});
@@ -158,12 +156,11 @@ fn should_not_overflow_u256() {
 }
 
 #[test]
-fn should_handle_zero() {
+fn should_fallback_to_default_value() {
 	let base_fee = U256::zero();
 	new_test_ext(Some(base_fee), None).execute_with(|| {
-		let init = BaseFeePerGas::<Test>::get();
 		BaseFee::on_finalize(System::block_number());
-		assert_eq!(BaseFeePerGas::<Test>::get(), init);
+		assert_eq!(BaseFeePerGas::<Test>::get(), get_lowest_base_fee());
 	});
 }
 
@@ -175,11 +172,7 @@ fn should_handle_consecutive_empty_blocks() {
 			BaseFee::on_finalize(System::block_number());
 			System::set_block_number(System::block_number() + 1);
 		}
-		assert_eq!(
-			BaseFeePerGas::<Test>::get(),
-			// 8 is the lowest number which's 12.5% is >= 1.
-			U256::from(7)
-		);
+		assert_eq!(BaseFeePerGas::<Test>::get(), get_lowest_base_fee());
 	});
 	let zero_elasticity = Permill::zero();
 	new_test_ext(Some(base_fee), Some(zero_elasticity)).execute_with(|| {

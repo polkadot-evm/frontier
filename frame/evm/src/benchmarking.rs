@@ -33,9 +33,9 @@ benchmarks! {
 
 		let x in 1..10000000;
 
-		use frame_benchmarking::vec;
 		use rlp::RlpStream;
 		use sp_core::{H160, U256};
+		use sp_std::vec;
 
 		// contract bytecode below is for:
 		//
@@ -89,6 +89,8 @@ benchmarks! {
 			Vec::new(),
 			is_transactional,
 			validate,
+			None,
+			None,
 			T::config(),
 		);
 		assert!(create_runner_results.is_ok(), "create() failed");
@@ -126,6 +128,8 @@ benchmarks! {
 			is_transactional,
 			validate,
 			is_free,
+			None,
+			None,
 			T::config(),
 		);
 		assert!(call_runner_results.is_ok(), "call() failed");

@@ -18,40 +18,33 @@
 //! Test utilities
 
 use ethereum::{TransactionAction, TransactionSignature};
+use rlp::RlpStream;
+// Substrate
 use frame_support::{
-	dispatch::Dispatchable,
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
 	ConsensusEngineId, PalletId,
 };
-use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
-use rlp::RlpStream;
 use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
-	testing::Header,
-	traits::{BlakeTwo256, IdentityLookup},
-	AccountId32,
+	traits::{BlakeTwo256, Dispatchable, IdentityLookup},
+	AccountId32, BuildStorage,
 };
+// Frontier
+use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 
 use super::*;
 use crate::IntermediateStateRoot;
 
 pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
 
-type UncheckedExtrinsic = frame_system::mocking::MockUncheckedExtrinsic<Test, (), SignedExtra>;
-type Block = frame_system::mocking::MockBlock<Test>;
-
 frame_support::construct_runtime! {
-	pub enum Test where
-		Block = Block,
-		NodeBlock = Block,
-		UncheckedExtrinsic = UncheckedExtrinsic,
-	{
-		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+	pub enum Test {
+		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
-		EVM: pallet_evm::{Pallet, Call, Storage, Config, Event<T>},
+		EVM: pallet_evm::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Ethereum: crate::{Pallet, Call, Storage, Event, Origin},
 	}
 }
@@ -61,19 +54,18 @@ parameter_types! {
 }
 
 impl frame_system::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;
 	type BlockWeights = ();
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
-	type Index = u64;
-	type BlockNumber = u64;
+	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
 	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
-	type Header = Header;
-	type RuntimeEvent = RuntimeEvent;
+	type Block = frame_system::mocking::MockBlock<Self>;
 	type BlockHashCount = BlockHashCount;
 	type DbWeight = ();
 	type Version = ();
@@ -102,7 +94,7 @@ impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
 	type ReserveIdentifier = ();
-	type HoldIdentifier = ();
+	type RuntimeHoldReason = ();
 	type FreezeIdentifier = ();
 	type MaxLocks = MaxLocks;
 	type MaxReserves = ();
@@ -138,11 +130,15 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 	}
 }
 
+const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const ChainId: u64 = 42;
 	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
-	pub const BlockGasLimit: U256 = U256::MAX;
+	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 	pub const WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
@@ -174,6 +170,7 @@ impl pallet_evm::Config for Test {
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
 	type FreeCalls = ();
+	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 }
@@ -252,7 +249,7 @@ pub struct AccountInfo {
 }
 
 fn address_build(seed: u8) -> AccountInfo {
-	let private_key = H256::from_slice(&[(seed + 1) as u8; 32]); //H256::from_low_u64_be((i + 1) as u64);
+	let private_key = H256::from_slice(&[(seed + 1); 32]); //H256::from_low_u64_be((i + 1) as u64);
 	let secret_key = libsecp256k1::SecretKey::parse_slice(&private_key[..]).unwrap();
 	let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
 	let address = H160::from(H256::from(keccak_256(public_key)));
@@ -271,8 +268,8 @@ fn address_build(seed: u8) -> AccountInfo {
 // our desired mockup.
 pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
 	// sc_cli::init_logger("");
-	let mut ext = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut ext = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	let pairs = (0..accounts_len)
@@ -297,8 +294,8 @@ pub fn new_test_ext_with_initial_balance(
 	initial_balance: u64,
 ) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
 	// sc_cli::init_logger("");
-	let mut ext = frame_system::GenesisConfig::default()
-		.build_storage::<Test>()
+	let mut ext = frame_system::GenesisConfig::<Test>::default()
+		.build_storage()
 		.unwrap();
 
 	let pairs = (0..accounts_len)

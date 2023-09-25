@@ -21,7 +21,7 @@
 use ark_bw6_761::{Fq, Fr, G1Affine, G1Projective, G2Affine, G2Projective, BW6_761};
 use ark_ec::{pairing::Pairing, AffineRepr, CurveGroup, VariableBaseMSM};
 use ark_ff::{BigInteger768, PrimeField, Zero};
-use ark_std::ops::Mul;
+use ark_std::{ops::Mul, vec::Vec};
 
 // Frontier
 use fp_evm::{
@@ -30,8 +30,15 @@ use fp_evm::{
 };
 
 /// Gas discount table for BW6-761 G1 and G2 multi exponentiation operations.
-// TODO::to be estimated
-const BW6761_MULTIEXP_DISCOUNT_TABLE: [u16; 128] = [0u16; 128];
+const BW6761_MULTIEXP_DISCOUNT_TABLE: [u16; 128] = [
+	1266, 733, 561, 474, 422, 387, 362, 344, 329, 318, 308, 300, 296, 289, 283, 279, 275, 272, 269,
+	266, 265, 260, 259, 256, 255, 254, 252, 251, 250, 249, 249, 220, 228, 225, 223, 219, 216, 214,
+	212, 209, 209, 205, 203, 202, 200, 198, 196, 199, 195, 192, 192, 191, 190, 187, 186, 185, 184,
+	184, 181, 181, 181, 180, 178, 179, 176, 177, 176, 175, 174, 173, 171, 171, 170, 170, 169, 168,
+	168, 167, 167, 166, 165, 167, 166, 166, 165, 165, 164, 164, 163, 163, 162, 162, 160, 163, 159,
+	162, 159, 160, 159, 159, 158, 158, 158, 158, 157, 157, 156, 155, 155, 156, 155, 155, 154, 155,
+	154, 153, 153, 153, 152, 152, 152, 152, 151, 151, 151, 151, 151, 150,
+];
 
 /// Encode Fq as `96` bytes by performing Big-Endian encoding of the corresponding (unsigned) integer.
 fn encode_fq(field: Fq) -> [u8; 96] {
@@ -178,8 +185,7 @@ fn decode_g2(input: &[u8], offset: usize) -> Result<G2Projective, PrecompileFail
 pub struct Bw6761G1Add;
 
 impl Bw6761G1Add {
-	// TODO::to be estimated
-	const GAS_COST: u64 = 0;
+	const GAS_COST: u64 = 180;
 }
 
 impl Precompile for Bw6761G1Add {
@@ -216,8 +222,7 @@ impl Precompile for Bw6761G1Add {
 pub struct Bw6761G1Mul;
 
 impl Bw6761G1Mul {
-	// TODO::to be estimated
-	const GAS_COST: u64 = 0;
+	const GAS_COST: u64 = 64_000;
 }
 
 impl Precompile for Bw6761G1Mul {
@@ -254,7 +259,6 @@ impl Precompile for Bw6761G1Mul {
 pub struct Bw6761G1MultiExp;
 
 impl Bw6761G1MultiExp {
-	// TODO::to be estimated
 	const MULTIPLIER: u64 = 1_000;
 
 	/// Returns the gas required to execute the pre-compiled contract.
@@ -326,8 +330,7 @@ impl Precompile for Bw6761G1MultiExp {
 pub struct Bw6761G2Add;
 
 impl Bw6761G2Add {
-	// TODO::to be estimated
-	const GAS_COST: u64 = 0;
+	const GAS_COST: u64 = 180;
 }
 
 impl Precompile for Bw6761G2Add {
@@ -364,8 +367,7 @@ impl Precompile for Bw6761G2Add {
 pub struct Bw6761G2Mul;
 
 impl Bw6761G2Mul {
-	// TODO::to be estimated
-	const GAS_COST: u64 = 0;
+	const GAS_COST: u64 = 64_000;
 }
 
 impl Precompile for Bw6761G2Mul {
@@ -402,7 +404,6 @@ impl Precompile for Bw6761G2Mul {
 pub struct Bw6761G2MultiExp;
 
 impl Bw6761G2MultiExp {
-	// TODO::to be estimated
 	const MULTIPLIER: u64 = 1_000;
 
 	/// Returns the gas required to execute the pre-compiled contract.
@@ -474,9 +475,8 @@ impl Precompile for Bw6761G2MultiExp {
 pub struct Bw6761Pairing;
 
 impl Bw6761Pairing {
-	// TODO::to be estimated
-	const BASE_GAS: u64 = 0;
-	const PER_PAIR_GAS: u64 = 0;
+	const BASE_GAS: u64 = 120_000;
+	const PER_PAIR_GAS: u64 = 320_000;
 }
 
 impl Precompile for Bw6761Pairing {

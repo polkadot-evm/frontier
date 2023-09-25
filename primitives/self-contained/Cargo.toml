@@ -23,10 +23,15 @@ default = ["std"]
 std = [
 	"scale-codec/std",
 	"scale-info/std",
-	"serde",
+	"serde/std",
 	# Substrate
 	"frame-support/std",
 	"sp-runtime/std",
+]
+serde = [
+	"dep:serde",
+	"scale-info/serde",
+	"sp-runtime/serde",
 ]
 try-runtime = [
 	"sp-runtime/try-runtime",

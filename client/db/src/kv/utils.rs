@@ -29,12 +29,6 @@ pub fn open_database<Block: BlockT, C: HeaderBackend<Block>>(
 	config: &DatabaseSettings,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
 	let db: Arc<dyn Database<DbHash>> = match &config.source {
-		DatabaseSource::ParityDb { path } => {
-			open_parity_db::<Block, C>(client, path, &config.source)?
-		}
-		DatabaseSource::RocksDb { path, .. } => {
-			open_kvdb_rocksdb::<Block, C>(client, path, true, &config.source)?
-		}
 		DatabaseSource::Auto {
 			paritydb_path,
 			rocksdb_path,
@@ -46,12 +40,20 @@ pub fn open_database<Block: BlockT, C: HeaderBackend<Block>>(
 				Err(_) => open_parity_db::<Block, C>(client, paritydb_path, &config.source)?,
 			}
 		}
-		_ => return Err("Missing feature flags `parity-db`".to_string()),
+		#[cfg(feature = "rocksdb")]
+		DatabaseSource::RocksDb { path, .. } => {
+			open_kvdb_rocksdb::<Block, C>(client, path, true, &config.source)?
+		}
+		DatabaseSource::ParityDb { path } => {
+			open_parity_db::<Block, C>(client, path, &config.source)?
+		}
+		_ => return Err("Supported db sources: `auto` | `rocksdb` | `paritydb`".to_string()),
 	};
 	Ok(db)
 }
 
-#[cfg(feature = "kvdb-rocksdb")]
+#[allow(unused_variables)]
+#[cfg(feature = "rocksdb")]
 fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: &Path,
@@ -69,23 +71,23 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	db_config.create_if_missing = create;
 
 	let db = kvdb_rocksdb::Database::open(&db_config, path).map_err(|err| format!("{}", err))?;
-	// write database version only after the database is succesfully opened
+	// write database version only after the database is successfully opened
 	#[cfg(not(test))]
 	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	return Ok(sp_database::as_database(db));
 }
 
-#[cfg(not(feature = "kvdb-rocksdb"))]
+#[cfg(not(feature = "rocksdb"))]
 fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	_client: Arc<C>,
 	_path: &Path,
 	_create: bool,
 	_source: &DatabaseSource,
 ) -> Result<Arc<dyn Database<DbHash>>, String> {
-	Err("Missing feature flags `kvdb-rocksdb`".to_string())
+	Err("Missing feature flags `rocksdb`".to_string())
 }
 
-#[cfg(feature = "parity-db")]
+#[allow(unused_variables)]
 fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: &Path,
@@ -101,17 +103,8 @@ fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	config.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
 	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
-	// write database version only after the database is succesfully opened
+	// write database version only after the database is successfully opened
 	#[cfg(not(test))]
 	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
 	Ok(Arc::new(super::parity_db_adapter::DbAdapter(db)))
-}
-
-#[cfg(not(feature = "parity-db"))]
-fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
-	_client: Arc<C>,
-	_path: &Path,
-	_source: &DatabaseSource,
-) -> Result<Arc<dyn Database<DbHash>>, String> {
-	Err("Missing feature flags `parity-db`".to_string())
 }

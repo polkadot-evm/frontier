@@ -28,14 +28,18 @@ mod tests;
 
 use alloc::format;
 use core::marker::PhantomData;
+
+use scale_codec::{Decode, DecodeLimit};
+// Substrate
+use frame_support::{
+	dispatch::{DispatchClass, GetDispatchInfo, Pays, PostDispatchInfo},
+	traits::{ConstU32, Get},
+};
+use sp_runtime::traits::Dispatchable;
+// Frontier
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 	PrecompileResult,
-};
-use frame_support::{
-	codec::{Decode, DecodeLimit as _},
-	dispatch::{DispatchClass, Dispatchable, GetDispatchInfo, Pays, PostDispatchInfo},
-	traits::{ConstU32, Get},
 };
 use pallet_evm::{AddressMapping, GasWeightMapping};
 
@@ -81,14 +85,28 @@ where
 			return Err(err);
 		}
 
+		handle
+			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
+
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
 				if post_info.pays_fee(&info) == Pays::Yes {
-					let cost = T::GasWeightMapping::weight_to_gas(
-						post_info.actual_weight.unwrap_or(info.weight),
-					);
-
+					let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
+					let cost = T::GasWeightMapping::weight_to_gas(actual_weight);
 					handle.record_cost(cost)?;
+
+					handle.refund_external_cost(
+						Some(
+							info.weight
+								.ref_time()
+								.saturating_sub(actual_weight.ref_time()),
+						),
+						Some(
+							info.weight
+								.proof_size()
+								.saturating_sub(actual_weight.proof_size()),
+						),
+					);
 				}
 
 				Ok(PrecompileOutput {

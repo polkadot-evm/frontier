@@ -80,7 +80,7 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 impl<B, I, C> FrontierBlockImport<B, I, C>
 where
 	B: BlockT,
-	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>>,
+	I: BlockImport<B>,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
@@ -98,13 +98,12 @@ where
 impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C>
 where
 	B: BlockT,
-	I: BlockImport<B, Transaction = sp_api::TransactionFor<C, B>> + Send + Sync,
+	I: BlockImport<B> + Send + Sync,
 	I::Error: Into<ConsensusError>,
 	C: ProvideRuntimeApi<B> + Send + Sync,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
 {
 	type Error = ConsensusError;
-	type Transaction = sp_api::TransactionFor<C, B>;
 
 	async fn check_block(
 		&mut self,
@@ -115,7 +114,7 @@ where
 
 	async fn import_block(
 		&mut self,
-		block: BlockImportParams<B, Self::Transaction>,
+		block: BlockImportParams<B>,
 	) -> Result<ImportResult, Self::Error> {
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate

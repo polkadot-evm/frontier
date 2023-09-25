@@ -30,16 +30,25 @@ mod eth;
 mod eth_pubsub;
 mod net;
 mod signer;
+#[cfg(feature = "txpool")]
+mod txpool;
 mod web3;
 
+#[cfg(feature = "txpool")]
+pub use self::txpool::TxPool;
 pub use self::{
-	eth::{format, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter, EthTask},
+	eth::{
+		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
+		EthTask,
+	},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
 pub use ethereum::TransactionV2 as EthereumTransaction;
+#[cfg(feature = "txpool")]
+pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
 	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
 };
@@ -63,11 +72,11 @@ pub mod frontier_backend_client {
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{Block as BlockT, UniqueSaturatedInto, Zero},
+		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto, Zero},
 	};
 	use sp_state_machine::OverlayedChanges;
 	// Frontier
-	use fc_rpc_core::types::BlockNumber;
+	use fc_rpc_core::types::BlockNumberOrHash;
 
 	/// Implements a default runtime storage override.
 	/// It assumes that the balances and nonces are stored in pallet `system.account`, and
@@ -86,7 +95,7 @@ pub mod frontier_backend_client {
 
 		fn set_overlayed_changes(
 			client: &C,
-			overlayed_changes: &mut OverlayedChanges,
+			overlayed_changes: &mut OverlayedChanges<HashingFor<B>>,
 			block: B::Hash,
 			_version: u32,
 			address: H160,
@@ -139,7 +148,7 @@ pub mod frontier_backend_client {
 
 		fn set_overlayed_changes(
 			client: &C,
-			overlayed_changes: &mut OverlayedChanges,
+			overlayed_changes: &mut OverlayedChanges<HashingFor<B>>,
 			block: B::Hash,
 			_version: u32,
 			address: H160,
@@ -181,33 +190,33 @@ pub mod frontier_backend_client {
 
 	pub async fn native_block_id<B: BlockT, C>(
 		client: &C,
-		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
-		number: Option<BlockNumber>,
+		backend: &dyn fc_api::Backend<B>,
+		number: Option<BlockNumberOrHash>,
 	) -> RpcResult<Option<BlockId<B>>>
 	where
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
 	{
-		Ok(match number.unwrap_or(BlockNumber::Latest) {
-			BlockNumber::Hash { hash, .. } => {
+		Ok(match number.unwrap_or(BlockNumberOrHash::Latest) {
+			BlockNumberOrHash::Hash { hash, .. } => {
 				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash).await {
 					Some(BlockId::Hash(hash))
 				} else {
 					None
 				}
 			}
-			BlockNumber::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
-			BlockNumber::Latest => Some(BlockId::Hash(client.info().best_hash)),
-			BlockNumber::Earliest => Some(BlockId::Number(Zero::zero())),
-			BlockNumber::Pending => None,
-			BlockNumber::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
-			BlockNumber::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
+			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
+			BlockNumberOrHash::Earliest => Some(BlockId::Number(Zero::zero())),
+			BlockNumberOrHash::Pending => None,
+			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumberOrHash::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
 		})
 	}
 
 	pub async fn load_hash<B: BlockT, C>(
 		client: &C,
-		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+		backend: &dyn fc_api::Backend<B>,
 		hash: H256,
 	) -> RpcResult<Option<B::Hash>>
 	where
@@ -244,7 +253,7 @@ pub mod frontier_backend_client {
 
 	pub async fn load_transactions<B: BlockT, C>(
 		client: &C,
-		backend: &(dyn fc_db::BackendReader<B> + Send + Sync),
+		backend: &dyn fc_api::Backend<B>,
 		transaction_hash: H256,
 		only_canonical: bool,
 	) -> RpcResult<Option<(H256, u32)>>
@@ -259,7 +268,7 @@ pub mod frontier_backend_client {
 
 		transaction_metadata
 			.iter()
-			.find(|meta| is_canon::<B, C>(client, meta.block_hash))
+			.find(|meta| is_canon::<B, C>(client, meta.substrate_block_hash))
 			.map_or_else(
 				|| {
 					if !only_canonical && transaction_metadata.len() > 0 {

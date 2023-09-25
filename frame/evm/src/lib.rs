@@ -52,7 +52,7 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![cfg_attr(feature = "runtime-benchmarks", deny(unused_crate_dependencies))]
+#![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -65,6 +65,14 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
+pub use evm::{
+	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+};
+use hash_db::Hasher;
+use impl_trait_for_tuples::impl_for_tuples;
+use scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_info::TypeInfo;
+// Substrate
 use frame_support::{
 	dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{
@@ -83,21 +91,17 @@ use impl_trait_for_tuples::impl_for_tuples;
 use scale_info::TypeInfo;
 use sp_core::{Decode, Encode, Hasher, RuntimeDebug, H160, H256, U256};
 use sp_runtime::{
-	traits::{BadOrigin, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32,
+	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
+	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::{cmp::min, vec, vec::Vec};
-
-pub use evm::{
-	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
-};
+use sp_std::{cmp::min, vec, collections::btree_map::BTreeMap, vec::Vec};
+// Frontier
 use fp_account::AccountId20;
-#[cfg(feature = "std")]
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, EvmFreeCall, ExecutionInfo, FeeCalculator, InvalidEvmTransactionError,
+	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator, InvalidEvmTransactionError
 	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult, PrecompileSet, Vicinity,
+	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
 };
 
 pub use self::{
@@ -166,6 +170,9 @@ pub mod pallet {
 		/// Decide if user can send a free call or not
 		type FreeCalls: EvmFreeCall;
 
+		/// Gas limit Pov size ratio.
+		type GasLimitPovSizeRatio: Get<u64>;
+
 		/// Get the timestamp for the current block.
 		type Timestamp: Time;
 
@@ -233,6 +240,9 @@ pub mod pallet {
 				access_list,
 				true,
 				false,
+				None,
+				None,
+				T::config(),
 			) {
 				Ok(result) => Ok(result.info),
 				Err(e) => Err(e),
@@ -272,6 +282,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -308,10 +320,18 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -350,6 +370,8 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
+				None,
+				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -386,10 +408,18 @@ pub mod pallet {
 			}
 
 			Ok(PostDispatchInfo {
-				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
-					true,
-				)),
+				actual_weight: {
+					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+						info.used_gas.standard.unique_saturated_into(),
+						true,
+					);
+					if let Some(weight_info) = info.weight_info {
+						if let Some(proof_size_usage) = weight_info.proof_size_usage {
+							*gas_to_weight.proof_size_mut() = proof_size_usage;
+						}
+					}
+					Some(gas_to_weight)
+				},
 				pays_fee: Pays::No,
 			})
 		}
@@ -436,30 +466,32 @@ pub mod pallet {
 		TransactionMustComeFromEOA,
 	}
 
-	impl<T> From<InvalidEvmTransactionError> for Error<T> {
-		fn from(validation_error: InvalidEvmTransactionError) -> Self {
+	impl<T> From<TransactionValidationError> for Error<T> {
+		fn from(validation_error: TransactionValidationError) -> Self {
 			match validation_error {
-				InvalidEvmTransactionError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
-				InvalidEvmTransactionError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
-				InvalidEvmTransactionError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
-				InvalidEvmTransactionError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
-				InvalidEvmTransactionError::BalanceTooLow => Error::<T>::BalanceLow,
-				InvalidEvmTransactionError::TxNonceTooLow => Error::<T>::InvalidNonce,
-				InvalidEvmTransactionError::TxNonceTooHigh => Error::<T>::InvalidNonce,
-				InvalidEvmTransactionError::InvalidPaymentInput => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
+				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
+				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
+				TransactionValidationError::TxNonceTooLow => Error::<T>::InvalidNonce,
+				TransactionValidationError::TxNonceTooHigh => Error::<T>::InvalidNonce,
+				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
+				TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
 				_ => Error::<T>::Undefined,
 			}
 		}
 	}
 
 	#[pallet::genesis_config]
-	#[cfg_attr(feature = "std", derive(Default))]
-	pub struct GenesisConfig {
-		pub accounts: std::collections::BTreeMap<H160, GenesisAccount>,
+	#[derive(frame_support::DefaultNoBound)]
+	pub struct GenesisConfig<T> {
+		pub accounts: BTreeMap<H160, GenesisAccount>,
+		#[serde(skip)]
+		pub _marker: PhantomData<T>,
 	}
 
 	#[pallet::genesis_build]
-	impl<T: Config> GenesisBuild<T> for GenesisConfig
+	impl<T: Config> BuildGenesisConfig for GenesisConfig<T>
 	where
 		U256: UniqueSaturatedInto<BalanceOf<T>>,
 	{
@@ -509,7 +541,17 @@ pub type BalanceOf<T> =
 type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
-#[derive(Debug, Clone, Copy, Eq, PartialEq, Encode, Decode, TypeInfo)]
+#[derive(
+	Debug,
+	Clone,
+	Copy,
+	Eq,
+	PartialEq,
+	Encode,
+	Decode,
+	TypeInfo,
+	MaxEncodedLen
+)]
 pub struct CodeMetadata {
 	pub size: u64,
 	pub hash: H256,
@@ -664,7 +706,7 @@ pub trait BlockHashMapping {
 pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
 impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 	fn block_hash(number: u32) -> H256 {
-		let number = T::BlockNumber::from(number);
+		let number = <NumberFor<T::Block>>::from(number);
 		H256::from_slice(frame_system::Pallet::<T>::block_hash(number).as_ref())
 	}
 }
@@ -686,6 +728,13 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 					.base_extrinsic,
 			);
 		}
+		// Apply a gas to proof size ratio based on BlockGasLimit
+		let ratio = T::GasLimitPovSizeRatio::get();
+		if ratio > 0 {
+			let proof_size = gas.saturating_div(ratio);
+			*weight.proof_size_mut() = proof_size;
+		}
+
 		weight
 	}
 	fn weight_to_gas(weight: Weight) -> u64 {

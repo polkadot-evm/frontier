@@ -33,13 +33,15 @@ use crate::{
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, A: ChainApi, EC: EthConfig<B, C>> Eth<B, C, P, CT, BE, A, EC>
+impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
+	A: ChainApi<Block = B>,
+	EC: EthConfig<B, C>,
 {
 	pub fn gas_price(&self) -> RpcResult<U256> {
 		let block_hash = self.client.info().best_hash;
@@ -53,7 +55,7 @@ where
 	pub async fn fee_history(
 		&self,
 		block_count: U256,
-		newest_block: BlockNumber,
+		newest_block: BlockNumberOrHash,
 		reward_percentiles: Option<Vec<f64>>,
 	) -> RpcResult<FeeHistory> {
 		// The max supported range size is 1024 by spec.
@@ -72,7 +74,9 @@ where
 		.await?
 		{
 			let Ok(number) = self.client.expect_block_number_from_id(&id) else {
-				return Err(internal_err(format!("Failed to retrieve block number at {id}")));
+				return Err(internal_err(format!(
+					"Failed to retrieve block number at {id}"
+				)));
 			};
 			// Highest and lowest block number within the requested range.
 			let highest = UniqueSaturatedInto::<u64>::unique_saturated_into(number);
@@ -148,7 +152,8 @@ where
 						.unwrap_or(default_elasticity)
 						.deconstruct();
 					let elasticity = elasticity as f64 / 1_000_000f64;
-					let last_fee_per_gas = last_fee_per_gas.as_u64() as f64;
+					let last_fee_per_gas =
+						UniqueSaturatedInto::<u64>::unique_saturated_into(*last_fee_per_gas) as f64;
 					if last_gas_used > &0.5 {
 						// Increase base gas
 						let increase = ((last_gas_used - 0.5) * 2f64) * elasticity;

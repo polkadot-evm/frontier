@@ -11,17 +11,17 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - name: Rust Setup
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
-          toolchain: 1.68.2
+          toolchain: nightly-2023-05-23
           target: wasm32-unknown-unknown
           override: true
           components: rust-docs
       - name: Install protoc
-        uses: arduino/setup-protoc@v1
+        uses: arduino/setup-protoc@v2
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 

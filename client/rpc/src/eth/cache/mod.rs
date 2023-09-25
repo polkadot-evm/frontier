@@ -338,19 +338,19 @@ where
 			let base_fee = client.runtime_api().gas_price(hash).unwrap_or_default();
 			let receipts = handler.current_receipts(hash);
 			let mut result = FeeHistoryCacheItem {
-				base_fee: if base_fee > U256::from(u64::MAX) { u64::MAX } else { base_fee.low_u64() },
+				base_fee: UniqueSaturatedInto::<u64>::unique_saturated_into(base_fee),
 				gas_used_ratio: 0f64,
 				rewards: Vec::new(),
 			};
 			if let (Some(block), Some(receipts)) = (block, receipts) {
-				block_number = Some(block.header.number.as_u64());
-				let gas_used = block.header.gas_used.as_u64() as f64;
-				let gas_limit = block.header.gas_limit.as_u64() as f64;
+				block_number = Some(UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.number));
+				let gas_used = UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.gas_used) as f64;
+				let gas_limit = UniqueSaturatedInto::<u64>::unique_saturated_into(block.header.gas_limit) as f64;
 				result.gas_used_ratio = gas_used / gas_limit;
 
 				let mut previous_cumulative_gas = U256::zero();
 				let used_gas = |current: U256, previous: &mut U256| -> u64 {
-					let r = current.saturating_sub(*previous).as_u64();
+					let r = UniqueSaturatedInto::<u64>::unique_saturated_into(current.saturating_sub(*previous));
 					*previous = current;
 					r
 				};
@@ -364,15 +364,16 @@ where
 						},
 						effective_reward: match block.transactions.get(i) {
 							Some(ethereum::TransactionV2::Legacy(t)) => {
-								t.gas_price.saturating_sub(base_fee).as_u64()
+								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
 							Some(ethereum::TransactionV2::EIP2930(t)) => {
-								t.gas_price.saturating_sub(base_fee).as_u64()
+								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(ethereum::TransactionV2::EIP1559(t)) => t
-								.max_priority_fee_per_gas
-								.min(t.max_fee_per_gas.saturating_sub(base_fee))
-								.as_u64(),
+							Some(ethereum::TransactionV2::EIP1559(t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
+									t
+										.max_priority_fee_per_gas
+										.min(t.max_fee_per_gas.saturating_sub(base_fee))
+							),
 							None => 0,
 						},
 					})

@@ -20,6 +20,7 @@
 #![allow(clippy::too_many_arguments)]
 
 pub mod kv;
+#[cfg(feature = "sql")]
 pub mod sql;
 
 use sp_api::BlockT;

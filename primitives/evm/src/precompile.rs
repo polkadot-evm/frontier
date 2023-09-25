@@ -16,7 +16,9 @@
 // limitations under the License.
 
 pub use evm::{
-	executor::stack::{PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileSet},
+	executor::stack::{
+		IsPrecompileResult, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileSet,
+	},
 	Context, ExitError, ExitRevert, ExitSucceed, Transfer,
 };
 use sp_std::vec::Vec;

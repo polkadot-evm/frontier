@@ -16,11 +16,11 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use lru::LruCache;
 use scale_codec::Encode;
+use schnellru::{LruMap, Unlimited};
 
 pub struct LRUCacheByteLimited<K, V> {
-	cache: LruCache<K, V>,
+	cache: LruMap<K, V, Unlimited>,
 	max_size: u64,
 	metrics: Option<LRUCacheByteLimitedMetrics>,
 	size: u64,
@@ -44,7 +44,7 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 		};
 
 		Self {
-			cache: LruCache::unbounded(),
+			cache: LruMap::new(Unlimited),
 			max_size,
 			metrics,
 			size: 0,
@@ -70,7 +70,7 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 		self.size += v.encoded_size() as u64;
 
 		while self.size > self.max_size {
-			if let Some((_, v)) = self.cache.pop_lru() {
+			if let Some((_, v)) = self.cache.pop_oldest() {
 				let v_size = v.encoded_size() as u64;
 				self.size -= v_size;
 			} else {
@@ -79,7 +79,7 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 		}
 
 		// Add entry in cache
-		self.cache.put(k, v);
+		self.cache.insert(k, v);
 		// Update metrics
 		if let Some(metrics) = &self.metrics {
 			metrics.size.set(self.size);
@@ -97,7 +97,7 @@ impl LRUCacheByteLimitedMetrics {
 	pub(crate) fn register(
 		cache_name: &'static str,
 		registry: &prometheus_endpoint::Registry,
-	) -> std::result::Result<Self, prometheus_endpoint::PrometheusError> {
+	) -> Result<Self, prometheus_endpoint::PrometheusError> {
 		Ok(Self {
 			hits: prometheus_endpoint::register(
 				prometheus::IntCounter::new(

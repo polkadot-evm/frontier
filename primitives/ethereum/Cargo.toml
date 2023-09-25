@@ -26,7 +26,6 @@ default = ["std"]
 std = [
 	"ethereum/std",
 	"ethereum-types/std",
-	"num_enum/std",
 	"scale-codec/std",
 	# Substrate
 	"frame-support/std",
