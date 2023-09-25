@@ -226,6 +226,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -281,6 +282,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -335,6 +337,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -384,6 +387,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -437,6 +441,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -505,6 +510,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&<Test as Config>::config().clone(),
@@ -563,6 +569,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&config,
@@ -604,6 +611,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
+				false,
 				Some(weight_limit),
 				Some(0),
 				&config,
