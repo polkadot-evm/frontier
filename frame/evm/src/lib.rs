@@ -87,19 +87,17 @@ use frame_support::{
 	weights::Weight,
 };
 use frame_system::RawOrigin;
-use impl_trait_for_tuples::impl_for_tuples;
-use scale_info::TypeInfo;
-use sp_core::{Decode, Encode, Hasher, RuntimeDebug, H160, H256, U256};
+use sp_core::{RuntimeDebug, H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32, DispatchErrorWithPostInfo,
+	AccountId32,
 };
 use sp_std::{cmp::min, vec, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator, InvalidEvmTransactionError
+	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator, EvmFreeCall,
 	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
 	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
 };
@@ -242,7 +240,6 @@ pub mod pallet {
 				false,
 				None,
 				None,
-				T::config(),
 			) {
 				Ok(result) => Ok(result.info),
 				Err(e) => Err(e),
@@ -857,6 +854,8 @@ impl<T: Config> Pallet<T> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		omit_fee: bool,
+		weight_limit: Option<Weight>,
+		proof_size_base_cost: Option<u64>,
 	) -> Result<PostDispatchInfoWithValue, DispatchErrorWithPostInfo> {
 		let validate = true;
 		let maybe_selector: Option<[u8; 4]> = input.get(0..4).and_then(|input| input.try_into().ok());
@@ -877,6 +876,8 @@ impl<T: Config> Pallet<T> {
 			is_transactional,
 			validate,
 			is_free || omit_fee,
+			weight_limit,
+			proof_size_base_cost,
 			T::config(),
 		) {
 			Ok(info) => info,
@@ -909,7 +910,7 @@ impl<T: Config> Pallet<T> {
 		Ok(PostDispatchInfoWithValue {
 			info: PostDispatchInfo {
 				actual_weight: Some(T::GasWeightMapping::gas_to_weight(
-					info.used_gas.unique_saturated_into(),
+					info.used_gas.standard.unique_saturated_into(),
 					true,
 				)),
 				pays_fee: Pays::No,
@@ -1130,6 +1131,8 @@ impl<T: Config> EvmCall for Pallet<T> {
 			vec![],
 			is_transactional,
 			true,
+			None,
+			None,
 		)
 	}
 }

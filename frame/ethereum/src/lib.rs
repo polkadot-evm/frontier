@@ -61,7 +61,7 @@ use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
 use fp_ethereum::ValidatedTransaction as ValidatedTransactionT;
 use fp_evm::{
-	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, TransactionValidationError,
+	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, EvmFreeCall, TransactionValidationError,
 };
 pub use fp_rpc::TransactionStatus;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
@@ -690,10 +690,6 @@ impl<T: Config> Pallet<T> {
 			exit_reason: reason,
 			extra_data,
 		});
-
-		if is_free {
-			<T as pallet_evm::Config>::FreeCalls::on_sent_free_call(&source, &target.unwrap(), &selector.unwrap());
-		}
 
 		if is_free {
 			<T as pallet_evm::Config>::FreeCalls::on_sent_free_call(&source, &target.unwrap(), &selector.unwrap());

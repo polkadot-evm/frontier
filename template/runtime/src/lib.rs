@@ -700,7 +700,9 @@ impl_runtime_apis! {
 				access_list.clone().unwrap_or_default(),
 			);
 			let (weight_limit, proof_size_base_cost) = pallet_ethereum::Pallet::<Runtime>::transaction_weight(&transaction_data);
-
+			let is_transactional = false;
+			let validate = true;
+			let evm_config = config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config());
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
@@ -711,11 +713,12 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				is_transactional,
+				validate,
 				false,
-				true,
 				weight_limit,
 				proof_size_base_cost,
-				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
+				evm_config,
 			).map_err(|err| err.error.into())
 		}
 

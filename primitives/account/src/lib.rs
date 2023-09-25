@@ -195,10 +195,6 @@ impl From<ecdsa::Signature> for EthereumSignature {
 	fn from(x: ecdsa::Signature) -> Self { EthereumSignature(x) }
 }
 
-impl From<ecdsa::Signature> for EthereumSignature {
-	fn from(x: ecdsa::Signature) -> Self { EthereumSignature(x) }
-}
-
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 #[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo, PassByInner)]
 pub struct EthereumSigner([u8; 20]);
