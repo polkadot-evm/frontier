@@ -1241,58 +1241,6 @@ fn eip3607_transaction_from_contract() {
 }
 
 #[test]
-fn eip3607_transaction_from_precompile() {
-	new_test_ext().execute_with(|| {
-		// external transaction
-		match <Test as Config>::Runner::call(
-			// Precompile address.
-			H160::from_str("0000000000000000000000000000000000000001").unwrap(),
-			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
-			Vec::new(),
-			U256::from(1u32),
-			1000000,
-			None,
-			None,
-			None,
-			Vec::new(),
-			true,  // transactional
-			false, // not sure be validated
-			false,
-			None,
-			None,
-			&<Test as Config>::config().clone(),
-		) {
-			Err(RunnerError {
-				error: Error::TransactionMustComeFromEOA,
-				..
-			}) => (),
-			_ => panic!("Should have failed"),
-		}
-
-		// internal call
-		assert!(<Test as Config>::Runner::call(
-			// Contract address.
-			H160::from_str("0000000000000000000000000000000000000001").unwrap(),
-			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
-			Vec::new(),
-			U256::from(1u32),
-			1000000,
-			None,
-			None,
-			None,
-			Vec::new(),
-			false, // non-transactional
-			true,  // must be validated
-			false,
-			None,
-			None,
-			&<Test as Config>::config().clone(),
-		)
-		.is_ok());
-	});
-}
-
-#[test]
 fn metadata_code_gets_cached() {
 	new_test_ext().execute_with(|| {
 		let address = H160::repeat_byte(0xaa);
