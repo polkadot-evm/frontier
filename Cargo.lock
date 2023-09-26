@@ -3287,6 +3287,7 @@ dependencies = [
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
+ "pallet-evm-tx-replay",
  "pallet-grandpa",
  "pallet-hotfix-sufficients",
  "pallet-sudo",
@@ -5956,6 +5957,28 @@ dependencies = [
  "serde",
  "serde_json",
  "sp-core",
+]
+
+[[package]]
+name = "pallet-evm-tx-replay"
+version = "0.1.0"
+dependencies = [
+ "ethereum",
+ "fp-ethereum",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "hex",
+ "pallet-balances",
+ "pallet-ethereum",
+ "pallet-evm",
+ "pallet-timestamp",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
 ]
 
 [[package]]

@@ -58,6 +58,8 @@ pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-hotfix-sufficients = { workspace = true }
 
+pallet-evm-tx-replay = { workspace = true }
+
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
 
@@ -109,6 +111,7 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",
+	"pallet-evm-tx-replay/std",
 	"pallet-hotfix-sufficients/std",
 ]
 runtime-benchmarks = [

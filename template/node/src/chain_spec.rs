@@ -96,6 +96,7 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 					// Pre-funded accounts
 					vec![
+						AccountId::from(hex!("5e2157a078D15821dafb0D53aa8b08CBD31bdD65")),
 						AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
 						AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
 						AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth
@@ -143,6 +144,7 @@ pub fn local_testnet_config() -> ChainSpec {
 				AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")),
 				// Pre-funded accounts
 				vec![
+					AccountId::from(hex!("5e2157a078D15821dafb0D53aa8b08CBD31bdD65")),
 					AccountId::from(hex!("f24FF3a9CF04c71Dbc94D0b566f7A27B94566cac")), // Alith
 					AccountId::from(hex!("3Cd0A705a2DC65e5b1E1205896BaA2be8A07c6e0")), // Baltathar
 					AccountId::from(hex!("798d4Ba9baf0064Ec19eB4F0a1a45785ae9D6DFc")), // Charleth

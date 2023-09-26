@@ -17,6 +17,7 @@ members = [
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
 	"client/api",
+	"frame/evm-tx-replay",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
@@ -168,6 +169,7 @@ fp-storage = { version = "2.0.0", path = "primitives/storage", default-features 
 pallet-base-fee = { version = "1.0.0", path = "frame/base-fee", default-features = false }
 pallet-dynamic-fee = { version = "4.0.0-dev", path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-features = false }
+pallet-evm-tx-replay = { version = "0.1.0", path = "frame/evm-tx-replay", default-features = false }
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
 pallet-evm-chain-id = { version = "1.0.0-dev", path = "frame/evm-chain-id", default-features = false }
 pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evm/precompile/modexp", default-features = false }
@@ -186,17 +188,4 @@ ark-bw6-761 = { version = "0.4.0", default-features = false }
 ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
-
-[profile.release]
-# Substrate runtime requires unwinding.
-panic = "unwind"
-
-[profile.production]
-inherits = "release"
-
-# Sacrifice compile speed for execution speed by using optimization flags:
-
-# https://doc.rust-lang.org/rustc/linker-plugin-lto.html
-lto = "fat"
-# https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
-codegen-units = 1
+parity-scale-codec = { version = "3.0.0", default-features = false, features = ["derive"] }

@@ -321,7 +321,7 @@ const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
 
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+	pub const GasLimitPovSizeRatio: u64 = 0;
 	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
 	pub WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), 0);
 }
@@ -369,8 +369,8 @@ impl pallet_dynamic_fee::Config for Runtime {
 }
 
 parameter_types! {
-	pub DefaultBaseFeePerGas: U256 = U256::from(1_000_000_000);
-	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
+	pub DefaultBaseFeePerGas: U256 = (0).into();
+	pub DefaultElasticity: Permill = Permill::zero();
 }
 
 pub struct BaseFeeThreshold;
@@ -391,6 +391,11 @@ impl pallet_base_fee::Config for Runtime {
 	type Threshold = BaseFeeThreshold;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
 	type DefaultElasticity = DefaultElasticity;
+}
+
+impl pallet_evm_tx_replay::Config for Runtime {
+	type RuntimeEvent = RuntimeEvent;
+	type WeightInfo = ();
 }
 
 impl pallet_hotfix_sufficients::Config for Runtime {
@@ -414,6 +419,7 @@ construct_runtime!(
 		DynamicFee: pallet_dynamic_fee,
 		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
+		EvmTxReplay: pallet_evm_tx_replay,
 	}
 );
 

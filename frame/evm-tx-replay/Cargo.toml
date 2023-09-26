@@ -1,0 +1,57 @@
+[package]
+name = "pallet-evm-tx-replay"
+description = "todo"
+version = "0.1.0"
+authors = { workspace = true }
+edition = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+ethereum = { version = "0.14.0", features = [
+	"with-codec",
+], default-features = false }
+parity-scale-codec = { workspace = true }
+scale-info = { workspace = true }
+frame-benchmarking = { workspace = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-std = { workspace = true }
+pallet-ethereum = { workspace = true }
+pallet-evm = { workspace = true }
+sp-io = { workspace = true }
+sp-runtime = { workspace = true }
+fp-ethereum = { workspace = true }
+hex = { version = "0.4", default-features = false }
+
+[dev-dependencies]
+pallet-balances = { workspace = true }
+pallet-timestamp = { workspace = true }
+
+
+[features]
+default = ["std"]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"pallet-ethereum/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+]
+std = [
+	"hex/std",
+	"parity-scale-codec/std",
+	"scale-info/std",
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
+	"ethereum/std",
+	"pallet-evm/std",
+	"pallet-ethereum/std",
+	"sp-core/std",
+	"sp-io/std",
+	"sp-runtime/std",
+	"fp-ethereum/std",
+	"pallet-balances/std",
+]
+try-runtime = ["frame-support/try-runtime"]
