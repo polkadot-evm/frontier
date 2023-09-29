@@ -354,6 +354,9 @@ where
 		validate: bool,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
+
+		log::info!("Call into frontier: source: {} target: {}, value: {}", source, target, value);
+
 		if validate {
 			Self::validate(
 				source,

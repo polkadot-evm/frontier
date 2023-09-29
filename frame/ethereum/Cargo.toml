@@ -31,7 +31,9 @@ fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-storage = { workspace = true }
+sp-staking = { workspace = true }
 pallet-evm = { workspace = true }
+sp-core = { workspace = true }
 
 [dev-dependencies]
 hex = "0.4.3"
