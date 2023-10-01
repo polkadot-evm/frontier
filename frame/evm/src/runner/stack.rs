@@ -791,7 +791,7 @@ where
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		if <Suicided<T>>::get(&address).is_some() {
+		if <Suicided<T>>::contains_key(&address)) {
 			return H256::default();
 		}
 
