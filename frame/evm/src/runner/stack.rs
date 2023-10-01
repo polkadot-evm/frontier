@@ -50,7 +50,7 @@ use fp_evm::{
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
 	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError,
+	OnCreate, Pallet, RunnerError, Suicided,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -791,6 +791,10 @@ where
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
+		if <Suicided<T>>::get(&address).is_some() {
+			return H256::default();
+		}
+
 		<AccountStorages<T>>::get(address, index)
 	}
 
