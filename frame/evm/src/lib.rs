@@ -799,11 +799,10 @@ impl<T: Config> Pallet<T> {
 			// Remember to call `dec_sufficients` when clearing Suicided.
 			<Suicided<T>>::insert(address, ());
 
-			// Pre-EIP161, we make sure the account nonce is at least one.
-			if !T::config().create_increase_nonce {
-				let account_id = T::AddressMapping::into_account_id(*address);
-				frame_system::Pallet::<T>::inc_account_nonce(&account_id);
-			}
+			// In theory, we can always have pre-EIP161 contracts, so we
+			// make sure the account nonce is at least one.
+			let account_id = T::AddressMapping::into_account_id(*address);
+			frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
