@@ -50,7 +50,7 @@ use fp_evm::{
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
 	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError, Suicided,
+	OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
