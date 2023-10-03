@@ -5884,6 +5884,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-precompile-clear-storage"
+version = "2.0.0-dev"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "pallet-balances",
+ "pallet-evm",
+ "pallet-timestamp",
+ "pallet-utility",
+ "parity-scale-codec",
+ "precompile-utils",
+ "scale-info",
+ "sp-core",
+ "sp-io",
+ "sp-runtime",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-evm-precompile-curve25519"
 version = "1.0.0-dev"
 dependencies = [
