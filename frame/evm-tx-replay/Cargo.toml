@@ -24,6 +24,7 @@ pallet-evm = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 fp-ethereum = { workspace = true }
+fp-evm = { workspace = true }
 hex = { version = "0.4", default-features = false }
 
 [dev-dependencies]

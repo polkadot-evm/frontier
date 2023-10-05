@@ -5965,6 +5965,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum",
  "fp-ethereum",
+ "fp-evm",
  "frame-benchmarking",
  "frame-support",
  "frame-system",
