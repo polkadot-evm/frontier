@@ -811,7 +811,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Create an account.
 	pub fn create_account(address: H160, code: Vec<u8>) {
-		if <Suicided<T>>::contains_key(&address) {
+		if <Suicided<T>>::contains_key(address) {
 			// This branch should never trigger, because when Suicided
 			// contains an address, then its nonce will be at least one,
 			// which causes CreateCollision error in EVM, but we add it
