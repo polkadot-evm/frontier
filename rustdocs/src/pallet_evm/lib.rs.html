@@ -1050,6 +1050,20 @@
 <a href="#1050" id="1050">1050</a>
 <a href="#1051" id="1051">1051</a>
 <a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
+<a href="#1055" id="1055">1055</a>
+<a href="#1056" id="1056">1056</a>
+<a href="#1057" id="1057">1057</a>
+<a href="#1058" id="1058">1058</a>
+<a href="#1059" id="1059">1059</a>
+<a href="#1060" id="1060">1060</a>
+<a href="#1061" id="1061">1061</a>
+<a href="#1062" id="1062">1062</a>
+<a href="#1063" id="1063">1063</a>
+<a href="#1064" id="1064">1064</a>
+<a href="#1065" id="1065">1065</a>
+<a href="#1066" id="1066">1066</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1613,6 +1627,9 @@
 	<span class="attr">#[pallet::storage]
 	</span><span class="kw">pub type </span>AccountStorages&lt;T: Config&gt; =
 		StorageDoubleMap&lt;<span class="kw">_</span>, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery&gt;;
+
+	<span class="attr">#[pallet::storage]
+	</span><span class="kw">pub type </span>Suicided&lt;T: Config&gt; = StorageMap&lt;<span class="kw">_</span>, Blake2_128Concat, H160, (), OptionQuery&gt;;
 }
 
 <span class="doccomment">/// Type alias for currency balance.
@@ -1845,18 +1862,29 @@
 	<span class="doccomment">/// Remove an account.
 	</span><span class="kw">pub fn </span>remove_account(address: <span class="kw-2">&amp;</span>H160) {
 		<span class="kw">if </span>&lt;AccountCodes&lt;T&gt;&gt;::contains_key(address) {
-			<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>address);
-			<span class="kw">let _ </span>= frame_system::Pallet::&lt;T&gt;::dec_sufficients(<span class="kw-2">&amp;</span>account_id);
+			<span class="comment">// Remember to call `dec_sufficients` when clearing Suicided.
+			</span>&lt;Suicided&lt;T&gt;&gt;::insert(address, ());
+
+			<span class="comment">// In theory, we can always have pre-EIP161 contracts, so we
+			// make sure the account nonce is at least one.
+			</span><span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>address);
+			frame_system::Pallet::&lt;T&gt;::inc_account_nonce(<span class="kw-2">&amp;</span>account_id);
 		}
 
 		&lt;AccountCodes&lt;T&gt;&gt;::remove(address);
 		&lt;AccountCodesMetadata&lt;T&gt;&gt;::remove(address);
-		<span class="attr">#[allow(deprecated)]
-		</span><span class="kw">let _ </span>= &lt;AccountStorages&lt;T&gt;&gt;::remove_prefix(address, <span class="prelude-val">None</span>);
 	}
 
 	<span class="doccomment">/// Create an account.
 	</span><span class="kw">pub fn </span>create_account(address: H160, code: Vec&lt;u8&gt;) {
+		<span class="kw">if </span>&lt;Suicided&lt;T&gt;&gt;::contains_key(address) {
+			<span class="comment">// This branch should never trigger, because when Suicided
+			// contains an address, then its nonce will be at least one,
+			// which causes CreateCollision error in EVM, but we add it
+			// here for safeguard.
+			</span><span class="kw">return</span>;
+		}
+
 		<span class="kw">if </span>code.is_empty() {
 			<span class="kw">return</span>;
 		}
