@@ -156,7 +156,7 @@ where
 		let maybe_weight_info =
 			WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
 				|_| RunnerError {
-					error: Error::<T>::Undefined,
+					error: Error::<T>::GasLimitTooLow,
 					weight,
 				},
 			)?;
