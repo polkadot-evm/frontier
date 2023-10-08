@@ -40,8 +40,48 @@ where
 	#[precompile::public("batchSome(address[])")]
 	fn clear_suicided_storage(
 		handle: &mut impl PrecompileHandle,
-		contracts: BoundedVec<Address, GetArrayLimit>,
+		addresses: BoundedVec<Address, GetArrayLimit>,
 	) -> EvmResult {
-		todo!()
+		let addresses: Vec<_> = addresses.into();
+
+		let mut refounded_gas = 0;
+
+		// Ensure that all provided addresses are
+		for address in &addresses {
+			// Read Suicided storage item
+			// Suicided: Blake2128(16) + H160(20)
+			handle.record_db_read::<Runtime>(36)?;
+			if !pallet_evm::Pallet::<Runtime>::is_account_suicided(&address.0) {
+				return Err(revert("NotSuicided"));
+			}
+
+			let mut iter = pallet_evm::Pallet::<Runtime>::iter_account_storages(&address.0).drain();
+
+			'inner: loop {
+				// Read AccountStorages item
+				// AccountStorages: Blake2128(16) + H160(20) + Blake2128(16) + H256(32) + H256(32)
+				if refounded_gas > RuntimeHelper::<Runtime>::db_read_gas_cost() {
+					refounded_gas -= RuntimeHelper::<Runtime>::db_read_gas_cost();
+				} else {
+					handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
+				}
+				handle.record_external_cost(None, Some(116 as u64))?;
+
+				if iter.next().is_none() {
+					// We can't know the exact size of the iterator without consuming it,
+					// so we're forced to perform an extra iteration at the end, which is
+					// why we refund the cost of this empty iteration.
+					handle.refund_external_cost(None, Some(116 as u64));
+					refounded_gas += RuntimeHelper::<Runtime>::db_read_gas_cost();
+
+					// TODO remove account
+					break 'inner;
+				}
+			}
+		}
+
+		// TODO refund gas
+
+		Ok(())
 	}
 }
