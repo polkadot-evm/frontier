@@ -29,7 +29,9 @@
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
+mod events;
 
+use sp_std::str::FromStr;
 use ethereum_types::{Address, Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
@@ -62,6 +64,8 @@ use frame_support::traits::Currency;
 use sp_core::crypto::AccountId32;
 use sp_runtime::traits::StaticLookup;
 pub use fp_rpc::TransactionStatus;
+
+use ethabi::Event as EthAbiEvent;
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
@@ -810,7 +814,8 @@ fn hook_staking(sender: Address, res: &CallInfo, value: U256) {
 		// dev
 		// let validator: AccountId32 = AccountId32::from([0xbe,0x5d,0xdb,0x15,0x79,0xb7,0x2e,0x84,0x52,0x4f,0xc2,0x9e,0x78,0x60,0x9e,0x3c,0xaf,0x42,0xe8,0x5a,0xa1,0x18,0xeb,0xfe,0x0b,0x0a,0xd4,0x04,0xb5,0xbd,0xd2,0x5f]);
 		// release
-		let validator: AccountId32 = AccountId32::from([0x24,0xa1,0xbe,0xe3,0x13,0x8f,0xd6,0x7f,0x3d,0x19,0x56,0xf8,0xc2,0x83,0x33,0x53,0x7d,0x1d,0xcd,0x38,0xa4,0x82,0x57,0xeb,0xdb,0xec,0xfb,0x77,0xd7,0x44,0xf7,0x41]);
+		let validator: AccountId32 = AccountId32::from(
+			[0x24,0xa1,0xbe,0xe3,0x13,0x8f,0xd6,0x7f,0x3d,0x19,0x56,0xf8,0xc2,0x83,0x33,0x53,0x7d,0x1d,0xcd,0x38,0xa4,0x82,0x57,0xeb,0xdb,0xec,0xfb,0x77,0xd7,0x44,0xf7,0x41]);
 
 	let staking_account = <T as Config>::AddressMapping::into_account_id(sender);
 		log::info!("Sender: {:?}, staking: {:?} ", sender, staking_account);
@@ -832,9 +837,13 @@ fn hook_staking(sender: Address, res: &CallInfo, value: U256) {
 				log if log.topics.contains(&nominate_topic) => {
 					log::info!("Nominated: staking_log: {:?}", staking_log);
 					let validator_clone = validator.clone();
+
+					let raw_log = ethabi::RawLog::from((log.topics.clone(), log.data.clone()));
+					let validators = events::nominated::parse_log(raw_log).unwrap().param1.iter().map(|validator| array_bytes::hex_n_into::<AccountId32, 32>(validator).unwrap()).collect();
+
 					<T as Config>::Staking::nominate(
 						&staking_account,
-						vec![validator_clone],
+						validators,
 					).unwrap();
 				}
 				log if log.topics.contains(&bond_extra_topic) => {

@@ -35,6 +35,10 @@ sp-staking = { workspace = true }
 pallet-evm = { workspace = true }
 sp-core = { workspace = true }
 
+
+ethabi = {version = "18.0.0",  default-features = false }
+array-bytes = { version = "4.1" }
+
 [dev-dependencies]
 hex = "0.4.3"
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
@@ -69,6 +73,7 @@ std = [
 	"fp-self-contained/std",
 	"fp-storage/std",
 	"pallet-evm/std",
+	"sp-core/std"
 ]
 runtime-benchmarks = [
 	"frame-support/runtime-benchmarks",
