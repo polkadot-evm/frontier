@@ -92,6 +92,7 @@ use frame_support::{
 	},
 	weights::Weight,
 };
+use frame_support::traits::tokens::WithdrawConsequence;
 use frame_system::RawOrigin;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
@@ -939,6 +940,8 @@ pub trait OnChargeEVMTransaction<T: Config> {
 	/// need to be secured.
 	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>>;
 
+	fn can_withdraw(who: &H160, amount: U256) -> Result<(), Error<T>>;
+
 	/// After the transaction was executed the actual fee can be calculated.
 	/// This function should refund any overpaid fees and optionally deposit
 	/// the corrected amount, and handles the base fee rationing using the provided
@@ -992,6 +995,20 @@ where
 		)
 		.map_err(|_| Error::<T>::BalanceLow)?;
 		Ok(Some(imbalance))
+	}
+
+	fn can_withdraw(who: &H160, amount: U256) -> Result<(), Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let amount = amount.unique_saturated_into();
+		let new_free = C::free_balance(&account_id).saturating_sub(amount);
+		C::ensure_can_withdraw(
+			&account_id,
+			amount,
+			WithdrawReasons::FEE, // note that this is ignored in ensure_can_withdraw()
+			new_free,
+		)
+		.map_err(|_| Error::<T>::BalanceLow)?;
+		Ok(())
 	}
 
 	fn correct_and_deposit_fee(
@@ -1087,6 +1104,15 @@ where
 		Ok(Some(imbalance))
 	}
 
+	fn can_withdraw(who: &H160, amount: U256) -> Result<(), Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let amount = amount.unique_saturated_into();
+		if let WithdrawConsequence::Success = F::can_withdraw(&account_id, amount) {
+			return Ok(());
+		}
+		Err(Error::<T>::BalanceLow)
+	}
+
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
@@ -1159,6 +1185,10 @@ where
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
 		<EVMFungibleAdapter<T::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
+	}
+
+	fn can_withdraw(who: &H160, amount: U256) -> Result<(), Error<T>> {
+		EVMFungibleAdapter::<T::Currency, ()>::can_withdraw(who, amount)
 	}
 }
 
