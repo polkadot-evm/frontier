@@ -525,7 +525,7 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+		let check_transaction = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
@@ -536,12 +536,19 @@ impl<T: Config> Pallet<T> {
 			transaction_data.clone().into(),
 			weight_limit,
 			proof_size_base_cost,
-		)
-		.validate_in_pool_for(&who)
-		.and_then(|v| v.with_chain_id())
-		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_balance_for(&who))
-		.map_err(|e| e.0)?;
+		);
+		check_transaction
+			.validate_in_pool_for(&who)
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance_for(&who))
+			.map_err(|e| e.0)?;
+
+		use pallet_evm::OnChargeEVMTransaction;
+		let max_withdraw = check_transaction.max_withdraw_amount()
+			.map_err(|e| e.0)?;
+		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
+			.map_err(|_| InvalidTransaction::Payment)?;
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
@@ -893,7 +900,7 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+		let check_transaction = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
@@ -904,12 +911,19 @@ impl<T: Config> Pallet<T> {
 			transaction_data.into(),
 			weight_limit,
 			proof_size_base_cost,
-		)
-		.validate_in_block_for(&who)
-		.and_then(|v| v.with_chain_id())
-		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_balance_for(&who))
-		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+		);
+		check_transaction
+			.validate_in_block_for(&who)
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance_for(&who))
+			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+
+		use pallet_evm::OnChargeEVMTransaction;
+		let max_withdraw = check_transaction.max_withdraw_amount()
+			.map_err(|e| e.0)?;
+		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
+			.map_err(|_| InvalidTransaction::Payment)?;
 
 		Ok(())
 	}
