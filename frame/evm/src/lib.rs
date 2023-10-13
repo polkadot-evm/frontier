@@ -926,6 +926,8 @@ pub trait OnChargeEVMTransaction<T: Config> {
 	/// need to be secured.
 	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>>;
 
+	fn can_withdraw(who: &H160, amount: U256) -> Result<(), Error<T>>;
+
 	/// After the transaction was executed the actual fee can be calculated.
 	/// This function should refund any overpaid fees and optionally deposit
 	/// the corrected amount, and handles the base fee rationing using the provided
@@ -979,6 +981,20 @@ where
 		)
 		.map_err(|_| Error::<T>::BalanceLow)?;
 		Ok(Some(imbalance))
+	}
+
+	fn can_withdraw(who: &H160, amount: U256) -> Result<(), Error<T>> {
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let amount = amount.unique_saturated_into();
+		let new_free = C::free_balance(&account_id).saturating_sub(amount);
+		C::ensure_can_withdraw(
+			&account_id,
+			amount,
+			WithdrawReasons::FEE, // note that this is ignored in ensure_can_withdraw()
+			new_free,
+		)
+		.map_err(|_| Error::<T>::BalanceLow)?;
+		Ok(())
 	}
 
 	fn correct_and_deposit_fee(
@@ -1060,6 +1076,13 @@ U256: UniqueSaturatedInto<BalanceOf<T>>,
 		fee: U256,
 	) -> Result<Self::LiquidityInfo, Error<T>> {
 		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::withdraw_fee(who, fee)
+	}
+
+	fn can_withdraw(
+		who: &H160,
+		amount: U256,
+	) -> Result<(), Error<T>> {
+		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::can_withdraw(who, amount)
 	}
 
 	fn correct_and_deposit_fee(
