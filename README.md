@@ -1,16 +1,21 @@
-# Frontier
+# Polkadot Frontier
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/paritytech/frontier/rust.yml)](https://github.com/paritytech/frontier/actions)
 [![Matrix](https://img.shields.io/matrix/frontier:matrix.org)](https://matrix.to/#/#frontier:matrix.org)
 
-Frontier is Substrate's Ethereum compatibility layer. It allows you to run
-unmodified Ethereum dapps.
+Frontier is the EVM backbone of Polkadot.
 
-The goal of Ethereum compatibility layer is to be able to:
+## Features
 
-* Run a normal web3 application via the compatibility layer, using local nodes,
-  where an extra bridge binary is acceptable.
-* Be able to import state from Ethereum mainnet.
+Frontier provides a compatibility layer of EVM, so that you can run any Ethereum
+dapps on Polkadot, unmodified. Using Frontier, you get access to all of the
+Ethereum RPC APIs you are already familiar with, and therefore you can continue
+to develop your dapps in your favourite Ethereum developer tools. As a bonus,
+you can even run many Ethereum L2s inside Frontier!
+
+Frontier is also a migration framework. Besides the common strategy of direct
+state export/import and transaction-level replays, Frontier's Pre-Log Wrapper
+Block feature provides a possible method for a zero-downtime live migration.
 
 ## Releases
 
