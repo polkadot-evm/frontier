@@ -492,12 +492,16 @@ pub mod pallet {
 		GasLimitTooLow,
 		/// Gas limit is too high.
 		GasLimitTooHigh,
-		/// Undefined error.
-		Undefined,
+		/// The chain id is invalid.
+		InvalidChainId,
+		/// the signature is invalid.
+		InvalidSignature,
 		/// EVM reentrancy
 		Reentrancy,
 		/// EIP-3607,
 		TransactionMustComeFromEOA,
+		/// Undefined error.
+		Undefined,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
@@ -511,7 +515,9 @@ pub mod pallet {
 				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
 				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
 				TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
-				_ => Error::<T>::Undefined,
+				TransactionValidationError::InvalidChainId => Error::<T>::InvalidChainId,
+				TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
+				TransactionValidationError::UnknownError => Error::<T>::Undefined,
 			}
 		}
 	}
