@@ -429,6 +429,8 @@
 <a href="#429" id="429">429</a>
 <a href="#430" id="430">430</a>
 <a href="#431" id="431">431</a>
+<a href="#432" id="432">432</a>
+<a href="#433" id="433">433</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -650,6 +652,7 @@
 		<span class="kw">let </span>block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
 		block_gas_limit.saturating_div(MAX_POV_SIZE)
 	};
+	<span class="kw">pub </span>SuicideQuickClearLimit: u32 = <span class="number">0</span>;
 }
 
 <span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
@@ -671,6 +674,7 @@
 	<span class="kw">type </span>OnCreate = ();
 	<span class="kw">type </span>FindAuthor = ();
 	<span class="kw">type </span>GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	<span class="kw">type </span>SuicideQuickClearLimit = SuicideQuickClearLimit;
 	<span class="kw">type </span>Timestamp = Timestamp;
 	<span class="kw">type </span>WeightInfo = pallet_evm::weights::SubstrateWeight&lt;Runtime&gt;;
 }

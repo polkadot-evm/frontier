@@ -959,6 +959,8 @@
 <a href="#959" id="959">959</a>
 <a href="#960" id="960">960</a>
 <a href="#961" id="961">961</a>
+<a href="#962" id="962">962</a>
+<a href="#963" id="963">963</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
@@ -1285,6 +1287,7 @@
 	<span class="kw">pub const </span>GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 	<span class="kw">pub </span>PrecompilesValue: FrontierPrecompiles&lt;Runtime&gt; = FrontierPrecompiles::&lt;<span class="kw">_</span>&gt;::new();
 	<span class="kw">pub </span>WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), <span class="number">0</span>);
+	<span class="kw">pub </span>SuicideQuickClearLimit: u32 = <span class="number">0</span>;
 }
 
 <span class="kw">impl </span>pallet_evm::Config <span class="kw">for </span>Runtime {
@@ -1306,6 +1309,7 @@
 	<span class="kw">type </span>OnCreate = ();
 	<span class="kw">type </span>FindAuthor = FindAuthorTruncated&lt;Aura&gt;;
 	<span class="kw">type </span>GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	<span class="kw">type </span>SuicideQuickClearLimit = SuicideQuickClearLimit;
 	<span class="kw">type </span>Timestamp = Timestamp;
 	<span class="kw">type </span>WeightInfo = pallet_evm::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
 }
