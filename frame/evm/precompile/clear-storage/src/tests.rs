@@ -19,6 +19,7 @@ use crate::{
 	mock::{ExtBuilder, PCall, Precompiles, PrecompilesValue, Runtime},
 	ENTRY_LIMIT,
 };
+use pallet_evm::AddressMapping;
 use precompile_utils::testing::*;
 use rlp::RlpStream;
 use sp_core::{keccak_256, H160, H256};
@@ -39,7 +40,10 @@ fn precompiles() -> Precompiles<Runtime> {
 // Helper function that creates a contract with `num_entries` storage entries
 fn mock_contract_with_entries(nonce: u64, num_entries: u32) -> H160 {
 	let contract_address = contract_address(Alice.into(), nonce);
-
+	let account_id =
+		<Runtime as pallet_evm::Config>::AddressMapping::into_account_id(contract_address);
+	let _ = frame_system::Pallet::<Runtime>::inc_sufficients(&account_id);
+	
 	// Add num_entries storage entries to the suicided contract
 	for i in 0..num_entries {
 		pallet_evm::AccountStorages::<Runtime>::insert(
@@ -315,10 +319,7 @@ fn test_clear_suicided_no_storage_entries() {
 					Alice,
 					Precompile1,
 					PCall::clear_suicided_storage {
-						addresses: vec![
-							contract_address1.into(),
-						]
-						.into(),
+						addresses: vec![contract_address1.into()].into(),
 					},
 				)
 				.execute_returns(());
