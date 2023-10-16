@@ -30,6 +30,8 @@ sp-core = { workspace = true, features = ["default"] }
 sp-io = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
 sp-std = { workspace = true, features = ["default"] }
+rlp = { workspace = true }
+
 # Frontier
 precompile-utils = { workspace = true, features = [ "std", "testing" ] }
 

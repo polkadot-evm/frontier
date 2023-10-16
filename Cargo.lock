@@ -5896,6 +5896,7 @@ dependencies = [
  "pallet-utility",
  "parity-scale-codec",
  "precompile-utils",
+ "rlp",
  "scale-info",
  "sp-core",
  "sp-io",
