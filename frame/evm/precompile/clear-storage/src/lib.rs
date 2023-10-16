@@ -24,8 +24,8 @@ pub const ARRAY_LIMIT: u32 = 1_000;
 pub const ENTRY_LIMIT: u32 = 1_000;
 
 use core::marker::PhantomData;
-use precompile_utils::{prelude::*, EvmResult};
 use pallet_evm::AddressMapping;
+use precompile_utils::{prelude::*, EvmResult};
 use sp_runtime::traits::ConstU32;
 #[cfg(test)]
 mod mock;
@@ -62,13 +62,6 @@ where
 
 			let mut iter = pallet_evm::Pallet::<Runtime>::iter_account_storages(&address.0).drain();
 
-			// Contract has no storage entries
-			if iter.next().is_none() {
-				handle.record_db_read::<Runtime>(116)?;
-				Self::clear_suicided_contract(address);
-				continue 'inner;
-			}
-			
 			// Delete a maximum of `ENTRY_LIMIT` entries in AccountStorages prefixed with `address`
 			while iter.next().is_some() {
 				handle.record_db_read::<Runtime>(116)?;
@@ -78,6 +71,7 @@ where
 				deleted_entries += 1;
 				if deleted_entries >= ENTRY_LIMIT {
 					if iter.next().is_none() {
+						handle.record_db_read::<Runtime>(116)?;
 						Self::clear_suicided_contract(address);
 					}
 					break 'inner;
@@ -95,11 +89,10 @@ where
 	}
 
 	fn clear_suicided_contract(address: Address) {
-		// Remove the suicided account
+		// Remove the address from the list of suicided contracts
 		pallet_evm::Suicided::<Runtime>::remove(&address.0);
 		// Decrement the sufficients of the account
 		let account_id = Runtime::AddressMapping::into_account_id(address.0);
 		let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);
 	}
 }
-
