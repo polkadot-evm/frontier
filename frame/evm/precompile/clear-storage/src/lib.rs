@@ -70,6 +70,9 @@ where
 
 				deleted_entries += 1;
 				if deleted_entries >= ENTRY_LIMIT {
+					if iter.next().is_none() {
+						Self::clear_suicided_contract(address);
+					}
 					break 'inner;
 				}
 			}
@@ -78,11 +81,18 @@ where
 			handle.record_db_read::<Runtime>(116)?;
 
 			// Remove the suicided account
-			pallet_evm::Suicided::<Runtime>::remove(&address.0);
-			let account_id = Runtime::AddressMapping::into_account_id(address.0);
-			let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);
+			Self::clear_suicided_contract(address);
 		}
 
 		Ok(())
 	}
+
+	fn clear_suicided_contract(address: Address) {
+		// Remove the suicided account
+		pallet_evm::Suicided::<Runtime>::remove(&address.0);
+		// Decrement the sufficients of the account
+		let account_id = Runtime::AddressMapping::into_account_id(address.0);
+		let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);
+	}
 }
+
