@@ -52,7 +52,6 @@ where
 		let addresses: Vec<_> = addresses.into();
 		let mut deleted_entries = 0;
 
-		// Ensure that all provided addresses are
 		'inner: for address in addresses {
 			// Read Suicided storage item
 			// Suicided: Blake2128(16) + H160(20)
@@ -62,6 +61,14 @@ where
 			}
 
 			let mut iter = pallet_evm::Pallet::<Runtime>::iter_account_storages(&address.0).drain();
+
+			// Contract has no storage entries
+			if iter.next().is_none() {
+				handle.record_db_read::<Runtime>(116)?;
+				Self::clear_suicided_contract(address);
+				continue 'inner;
+			}
+			
 			// Delete a maximum of `ENTRY_LIMIT` entries in AccountStorages prefixed with `address`
 			while iter.next().is_some() {
 				handle.record_db_read::<Runtime>(116)?;

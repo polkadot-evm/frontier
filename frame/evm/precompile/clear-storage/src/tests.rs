@@ -289,3 +289,87 @@ fn test_clear_suicided_mixed_suicided_and_non_suicided() {
 				});
 		})
 }
+
+// Test that the precompile can handle suicided contracts that have no storage entries
+#[test]
+fn test_clear_suicided_no_storage_entries() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 10000000000000000000)])
+		.build()
+		.execute_with(|| {
+			let contract_address1 = mock_contract_with_entries(1, 0);
+			let contract_address2 = mock_contract_with_entries(1, 500);
+			let contract_address3 = mock_contract_with_entries(1, 0);
+			let contract_address4 = mock_contract_with_entries(1, 400);
+			let contract_address5 = mock_contract_with_entries(1, 100);
+
+			// Add contract to the suicided contracts
+			pallet_evm::Suicided::<Runtime>::insert(contract_address1, ());
+			pallet_evm::Suicided::<Runtime>::insert(contract_address2, ());
+			pallet_evm::Suicided::<Runtime>::insert(contract_address3, ());
+			pallet_evm::Suicided::<Runtime>::insert(contract_address4, ());
+			pallet_evm::Suicided::<Runtime>::insert(contract_address5, ());
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile1,
+					PCall::clear_suicided_storage {
+						addresses: vec![
+							contract_address1.into(),
+						]
+						.into(),
+					},
+				)
+				.execute_returns(());
+
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address1).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address1),
+				false
+			);
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address2).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address2),
+				false
+			);
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address3).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address3),
+				false
+			);
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address4).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address4),
+				false
+			);
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address4).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address4),
+				false
+			);
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address5).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address5),
+				false
+			);
+		})
+}
