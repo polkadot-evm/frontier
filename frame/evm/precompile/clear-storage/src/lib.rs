@@ -21,14 +21,21 @@
 extern crate alloc;
 
 pub const ARRAY_LIMIT: u32 = 1_000;
+pub const ENTRY_LIMIT: u32 = 1_000;
 
 use core::marker::PhantomData;
 use precompile_utils::{prelude::*, EvmResult};
+use pallet_evm::AddressMapping;
 use sp_runtime::traits::ConstU32;
+#[cfg(test)]
+mod mock;
+
+#[cfg(test)]
+mod tests;
 
 type GetArrayLimit = ConstU32<ARRAY_LIMIT>;
 
-/// Storage cleanner precompile.
+/// Storage cleaner precompile.
 #[derive(Debug, Clone)]
 pub struct StorageCleanerPrecompile<Runtime>(PhantomData<Runtime>);
 
@@ -37,50 +44,44 @@ impl<Runtime> StorageCleanerPrecompile<Runtime>
 where
 	Runtime: pallet_evm::Config,
 {
-	#[precompile::public("batchSome(address[])")]
+	#[precompile::public("batchSome(address[],uint256[])")]
 	fn clear_suicided_storage(
 		handle: &mut impl PrecompileHandle,
 		addresses: BoundedVec<Address, GetArrayLimit>,
 	) -> EvmResult {
 		let addresses: Vec<_> = addresses.into();
-
-		let mut refounded_gas = 0;
+		let mut deleted_entries = 0;
 
 		// Ensure that all provided addresses are
-		for address in &addresses {
+		'inner: for address in addresses {
 			// Read Suicided storage item
 			// Suicided: Blake2128(16) + H160(20)
 			handle.record_db_read::<Runtime>(36)?;
 			if !pallet_evm::Pallet::<Runtime>::is_account_suicided(&address.0) {
-				return Err(revert("NotSuicided"));
+				return Err(revert(format!("NotSuicided: {}", address.0)));
 			}
 
 			let mut iter = pallet_evm::Pallet::<Runtime>::iter_account_storages(&address.0).drain();
+			// Delete a maximum of `ENTRY_LIMIT` entries in AccountStorages prefixed with `address`
+			while iter.next().is_some() {
+				handle.record_db_read::<Runtime>(116)?;
+				// Record the gas cost of deleting the storage item
+				handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
 
-			'inner: loop {
-				// Read AccountStorages item
-				// AccountStorages: Blake2128(16) + H160(20) + Blake2128(16) + H256(32) + H256(32)
-				if refounded_gas > RuntimeHelper::<Runtime>::db_read_gas_cost() {
-					refounded_gas -= RuntimeHelper::<Runtime>::db_read_gas_cost();
-				} else {
-					handle.record_cost(RuntimeHelper::<Runtime>::db_read_gas_cost())?;
-				}
-				handle.record_external_cost(None, Some(116 as u64))?;
-
-				if iter.next().is_none() {
-					// We can't know the exact size of the iterator without consuming it,
-					// so we're forced to perform an extra iteration at the end, which is
-					// why we refund the cost of this empty iteration.
-					handle.refund_external_cost(None, Some(116 as u64));
-					refounded_gas += RuntimeHelper::<Runtime>::db_read_gas_cost();
-
-					// TODO remove account
+				deleted_entries += 1;
+				if deleted_entries >= ENTRY_LIMIT {
 					break 'inner;
 				}
 			}
-		}
 
-		// TODO refund gas
+			// Record the cost of the iteration when `iter.next()` returned `None`
+			handle.record_db_read::<Runtime>(116)?;
+
+			// Remove the suicided account
+			pallet_evm::Suicided::<Runtime>::remove(&address.0);
+			let account_id = Runtime::AddressMapping::into_account_id(address.0);
+			let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);
+		}
 
 		Ok(())
 	}

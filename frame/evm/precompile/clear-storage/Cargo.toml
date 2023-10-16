@@ -11,6 +11,7 @@ repository = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 # Substrate
 frame-support = { workspace = true }
+frame-system = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
 # Frontier
