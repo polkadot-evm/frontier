@@ -98,9 +98,10 @@ use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
-	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
+	Account, CallInfo, CheckEvmTransaction, CreateInfo, ExecutionInfoV2 as ExecutionInfo,
+	FeeCalculator, IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
+	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+	TransactionValidationError, Vicinity,
 };
 
 pub use self::{
@@ -182,6 +183,12 @@ pub mod pallet {
 		fn config() -> &'static EvmConfig {
 			&SHANGHAI_CONFIG
 		}
+
+		// Called when transaction info for validation is created
+		type OnCheckEvmTransaction<E: From<TransactionValidationError>>: OnCheckEvmTransaction<
+			Self,
+			E,
+		>;
 	}
 
 	#[pallet::call]
@@ -581,7 +588,7 @@ pub type BalanceOf<T> =
 	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> =
+pub type NegativeImbalanceOf<C, T> =
 	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
 
 #[derive(
@@ -1087,5 +1094,15 @@ impl<T> OnCreate<T> for Tuple {
 		for_tuples!(#(
 			Tuple::on_create(owner, contract);
 		)*)
+	}
+}
+
+pub trait OnCheckEvmTransaction<T: Config, E: From<TransactionValidationError>> {
+	fn on_check_evm_transaction(v: &mut CheckEvmTransaction<E>, origin: &H160) -> Result<(), E>;
+}
+
+impl<T: Config, E: From<TransactionValidationError>> OnCheckEvmTransaction<T, E> for () {
+	fn on_check_evm_transaction(_v: &mut CheckEvmTransaction<E>, _origin: &H160) -> Result<(), E> {
+		Ok(())
 	}
 }

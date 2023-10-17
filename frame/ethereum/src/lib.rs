@@ -65,7 +65,9 @@ use fp_evm::{
 };
 pub use fp_rpc::TransactionStatus;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
-use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
+use pallet_evm::{
+	BlockHashMapping, FeeCalculator, GasWeightMapping, OnCheckEvmTransaction, Runner,
+};
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
@@ -494,7 +496,8 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+		let mut v = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+			who.clone(),
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
@@ -505,12 +508,18 @@ impl<T: Config> Pallet<T> {
 			transaction_data.clone().into(),
 			weight_limit,
 			proof_size_base_cost,
+		);
+
+		T::OnCheckEvmTransaction::<InvalidTransactionWrapper>::on_check_evm_transaction(
+			&mut v, &origin,
 		)
-		.validate_in_pool_for(&who)
-		.and_then(|v| v.with_chain_id())
-		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_balance_for(&who))
 		.map_err(|e| e.0)?;
+
+		v.validate_in_pool_for()
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance())
+			.map_err(|e| e.0)?;
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
@@ -862,7 +871,8 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+		let mut v = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+			who,
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
@@ -873,12 +883,18 @@ impl<T: Config> Pallet<T> {
 			transaction_data.into(),
 			weight_limit,
 			proof_size_base_cost,
+		);
+
+		T::OnCheckEvmTransaction::<InvalidTransactionWrapper>::on_check_evm_transaction(
+			&mut v, &origin,
 		)
-		.validate_in_block_for(&who)
-		.and_then(|v| v.with_chain_id())
-		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_balance_for(&who))
 		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+
+		v.validate_in_block()
+			.and_then(|v| v.with_chain_id())
+			.and_then(|v| v.with_base_fee())
+			.and_then(|v| v.with_balance())
+			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		Ok(())
 	}
