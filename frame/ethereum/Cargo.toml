@@ -61,7 +61,6 @@ std = [
 	"fp-ethereum/std",
 	"fp-evm/std",
 	"fp-rpc/std",
-	"fp-self-contained/std",
 	"fp-storage/std",
 	"pallet-evm/std",
 ]
