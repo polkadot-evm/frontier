@@ -32,7 +32,6 @@ use sp_std::{boxed::Box, prelude::*, str::FromStr};
 use crate::{
 	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
 	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
-	TransactionValidationError,
 };
 
 frame_support::construct_runtime! {
@@ -156,7 +155,7 @@ impl crate::Config for Test {
 	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
-	type OnCheckEvmTransaction<E: From<TransactionValidationError>> = ();
+	type OnCheckEvmTransaction = ();
 }
 
 /// Example PrecompileSet with only Identity precompile.

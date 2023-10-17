@@ -46,18 +46,17 @@ pub struct CheckEvmTransactionConfig<'config> {
 }
 
 #[derive(Debug)]
-pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
+pub struct CheckEvmTransaction<'config> {
 	pub who: Account,
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
 	pub weight_limit: Option<Weight>,
 	pub proof_size_base_cost: Option<u64>,
-	_marker: sp_std::marker::PhantomData<E>,
 }
 
 /// Transaction validation errors
 #[repr(u8)]
-#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive, Debug)]
+#[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive, Debug, PartialEq)]
 pub enum TransactionValidationError {
 	/// The transaction gas limit is too low
 	GasLimitTooLow,
@@ -84,7 +83,7 @@ pub enum TransactionValidationError {
 	UnknownError,
 }
 
-impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, E> {
+impl<'config> CheckEvmTransaction<'config> {
 	pub fn new(
 		who: Account,
 		config: CheckEvmTransactionConfig<'config>,
@@ -98,49 +97,48 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			transaction,
 			weight_limit,
 			proof_size_base_cost,
-			_marker: Default::default(),
 		}
 	}
 
-	pub fn validate_in_pool_for(&self) -> Result<&Self, E> {
+	pub fn validate_in_pool(&self) -> Result<&Self, TransactionValidationError> {
 		if self.transaction.nonce < self.who.nonce {
-			return Err(TransactionValidationError::TxNonceTooLow.into());
+			return Err(TransactionValidationError::TxNonceTooLow);
 		}
 		self.validate_common()
 	}
 
-	pub fn validate_in_block(&self) -> Result<&Self, E> {
+	pub fn validate_in_block(&self) -> Result<&Self, TransactionValidationError> {
 		if self.transaction.nonce > self.who.nonce {
-			return Err(TransactionValidationError::TxNonceTooHigh.into());
+			return Err(TransactionValidationError::TxNonceTooHigh);
 		} else if self.transaction.nonce < self.who.nonce {
-			return Err(TransactionValidationError::TxNonceTooLow.into());
+			return Err(TransactionValidationError::TxNonceTooLow);
 		}
 		self.validate_common()
 	}
 
-	pub fn with_chain_id(&self) -> Result<&Self, E> {
+	pub fn with_chain_id(&self) -> Result<&Self, TransactionValidationError> {
 		// Chain id matches the one in the signature.
 		if let Some(chain_id) = self.transaction.chain_id {
 			if chain_id != self.config.chain_id {
-				return Err(TransactionValidationError::InvalidChainId.into());
+				return Err(TransactionValidationError::InvalidChainId);
 			}
 		}
 		Ok(self)
 	}
 
-	pub fn with_base_fee(&self) -> Result<&Self, E> {
+	pub fn with_base_fee(&self) -> Result<&Self, TransactionValidationError> {
 		// Get fee data from either a legacy or typed transaction input.
 		let (gas_price, _) = self.transaction_fee_input()?;
 		if self.config.is_transactional || gas_price > U256::zero() {
 			// Transaction max fee is at least the current base fee.
 			if gas_price < self.config.base_fee {
-				return Err(TransactionValidationError::GasPriceTooLow.into());
+				return Err(TransactionValidationError::GasPriceTooLow);
 			}
 		}
 		Ok(self)
 	}
 
-	pub fn with_balance(&self) -> Result<&Self, E> {
+	pub fn with_balance(&self) -> Result<&Self, TransactionValidationError> {
 		// Get fee data from either a legacy or typed transaction input.
 		let (max_fee_per_gas, _) = self.transaction_fee_input()?;
 
@@ -157,7 +155,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if self.who.balance < total_payment {
-				return Err(TransactionValidationError::BalanceTooLow.into());
+				return Err(TransactionValidationError::BalanceTooLow);
 			}
 		}
 		Ok(self)
@@ -166,7 +164,9 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	// Returns the max_fee_per_gas (or gas_price for legacy txns) as well as an optional
 	// effective_gas_price for EIP-1559 transactions. effective_gas_price represents
 	// the total (fee + tip) that would be paid given the current base_fee.
-	pub fn transaction_fee_input(&self) -> Result<(U256, Option<U256>), E> {
+	pub fn transaction_fee_input(
+		&self,
+	) -> Result<(U256, Option<U256>), TransactionValidationError> {
 		match (
 			self.transaction.gas_price,
 			self.transaction.max_fee_per_gas,
@@ -181,7 +181,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			// EIP-1559 tip.
 			(None, Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
 				if max_priority_fee_per_gas > max_fee_per_gas {
-					return Err(TransactionValidationError::PriorityFeeTooHigh.into());
+					return Err(TransactionValidationError::PriorityFeeTooHigh);
 				}
 				let effective_gas_price = self
 					.config
@@ -193,7 +193,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			}
 			_ => {
 				if self.config.is_transactional {
-					Err(TransactionValidationError::InvalidFeeInput.into())
+					Err(TransactionValidationError::InvalidFeeInput)
 				} else {
 					// Allow non-set fee input for non-transactional calls.
 					Ok((U256::zero(), None))
@@ -202,7 +202,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		}
 	}
 
-	pub fn validate_common(&self) -> Result<&Self, E> {
+	pub fn validate_common(&self) -> Result<&Self, TransactionValidationError> {
 		if self.config.is_transactional {
 			// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
 			// Validate the weight limit can afford recording the proof size cost.
@@ -234,12 +234,12 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			};
 
 			if gasometer.record_transaction(transaction_cost).is_err() {
-				return Err(TransactionValidationError::GasLimitTooLow.into());
+				return Err(TransactionValidationError::GasLimitTooLow);
 			}
 
 			// Transaction gas limit is within the upper bound block gas limit.
 			if self.transaction.gas_limit > self.config.block_gas_limit {
-				return Err(TransactionValidationError::GasLimitTooHigh.into());
+				return Err(TransactionValidationError::GasLimitTooHigh);
 			}
 		}
 
@@ -251,40 +251,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 mod tests {
 	use super::*;
 
-	#[derive(Debug, PartialEq)]
-	pub enum TestError {
-		GasLimitTooLow,
-		GasLimitTooHigh,
-		GasPriceTooLow,
-		PriorityFeeTooHigh,
-		BalanceTooLow,
-		TxNonceTooLow,
-		TxNonceTooHigh,
-		InvalidFeeInput,
-		InvalidChainId,
-		InvalidSignature,
-		UnknownError,
-	}
-
 	static SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
-
-	impl From<TransactionValidationError> for TestError {
-		fn from(e: TransactionValidationError) -> Self {
-			match e {
-				TransactionValidationError::GasLimitTooLow => TestError::GasLimitTooLow,
-				TransactionValidationError::GasLimitTooHigh => TestError::GasLimitTooHigh,
-				TransactionValidationError::GasPriceTooLow => TestError::GasPriceTooLow,
-				TransactionValidationError::PriorityFeeTooHigh => TestError::PriorityFeeTooHigh,
-				TransactionValidationError::BalanceTooLow => TestError::BalanceTooLow,
-				TransactionValidationError::TxNonceTooLow => TestError::TxNonceTooLow,
-				TransactionValidationError::TxNonceTooHigh => TestError::TxNonceTooHigh,
-				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
-				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
-				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
-				TransactionValidationError::UnknownError => TestError::UnknownError,
-			}
-		}
-	}
 
 	struct TestCase {
 		pub blockchain_gas_limit: U256,
@@ -324,7 +291,7 @@ mod tests {
 		}
 	}
 
-	fn test_env<'config>(input: TestCase) -> CheckEvmTransaction<'config, TestError> {
+	fn test_env<'config>(input: TestCase) -> CheckEvmTransaction<'config> {
 		let TestCase {
 			blockchain_gas_limit,
 			blockchain_base_fee,
@@ -341,7 +308,7 @@ mod tests {
 			proof_size_base_cost,
 			who,
 		} = input;
-		CheckEvmTransaction::<TestError>::new(
+		CheckEvmTransaction::new(
 			who,
 			CheckEvmTransactionConfig {
 				evm_config: &SHANGHAI_CONFIG,
@@ -371,7 +338,7 @@ mod tests {
 	fn default_transaction<'config>(
 		who: Account,
 		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			is_transactional,
@@ -382,7 +349,7 @@ mod tests {
 	fn transaction_gas_limit_low<'config>(
 		who: Account,
 		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			gas_limit: U256::from(1u8),
@@ -394,7 +361,7 @@ mod tests {
 	fn transaction_gas_limit_low_proof_size<'config>(
 		who: Account,
 		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			weight_limit: Some(Weight::from_parts(1, 1)),
@@ -404,9 +371,7 @@ mod tests {
 		})
 	}
 
-	fn transaction_gas_limit_high<'config>(
-		who: Account,
-	) -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_gas_limit_high<'config>(who: Account) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			blockchain_gas_limit: U256::from(1u8),
@@ -414,7 +379,7 @@ mod tests {
 		})
 	}
 
-	fn transaction_nonce_high<'config>(who: Account) -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_nonce_high<'config>(who: Account) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			nonce: U256::from(10u8),
@@ -422,9 +387,7 @@ mod tests {
 		})
 	}
 
-	fn transaction_invalid_chain_id<'config>(
-		who: Account,
-	) -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_invalid_chain_id<'config>(who: Account) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			chain_id: Some(555u64),
@@ -435,7 +398,7 @@ mod tests {
 	fn transaction_none_fee<'config>(
 		who: Account,
 		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			max_fee_per_gas: None,
@@ -445,9 +408,7 @@ mod tests {
 		})
 	}
 
-	fn transaction_max_fee_low<'config>(
-		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_max_fee_low<'config>(is_transactional: bool) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who: Account::default(),
 			max_fee_per_gas: Some(U256::from(1u8)),
@@ -459,7 +420,7 @@ mod tests {
 
 	fn transaction_priority_fee_high<'config>(
 		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who: Account::default(),
 			max_priority_fee_per_gas: Some(U256::from(1_100_000_000)),
@@ -468,10 +429,7 @@ mod tests {
 		})
 	}
 
-	fn transaction_max_fee_high<'config>(
-		who: Account,
-		tip: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	fn transaction_max_fee_high<'config>(who: Account, tip: bool) -> CheckEvmTransaction<'config> {
 		let mut input = TestCase {
 			who,
 			max_fee_per_gas: Some(U256::from(5_000_000_000u128)),
@@ -483,7 +441,7 @@ mod tests {
 		test_env(input)
 	}
 
-	fn legacy_transaction<'config>(who: Account) -> CheckEvmTransaction<'config, TestError> {
+	fn legacy_transaction<'config>(who: Account) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			gas_price: Some(U256::from(1_000_000_000u128)),
@@ -496,7 +454,7 @@ mod tests {
 	fn invalid_transaction_mixed_fees<'config>(
 		who: Account,
 		is_transactional: bool,
-	) -> CheckEvmTransaction<'config, TestError> {
+	) -> CheckEvmTransaction<'config> {
 		test_env(TestCase {
 			who,
 			gas_price: Some(U256::from(1_000_000_000u128)),
@@ -516,7 +474,7 @@ mod tests {
 		};
 		let test = default_transaction(who, true);
 		// Pool
-		assert!(test.validate_in_pool_for().is_ok());
+		assert!(test.validate_in_pool().is_ok());
 		// Block
 		assert!(test.validate_in_block().is_ok());
 	}
@@ -530,13 +488,13 @@ mod tests {
 		};
 		let test = default_transaction(who, true);
 		// Pool
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::TxNonceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::TxNonceTooLow);
 		// Block
 		let res = test.validate_in_block();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::TxNonceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::TxNonceTooLow);
 	}
 
 	// Nonce too high succeeds in pool.
@@ -547,7 +505,7 @@ mod tests {
 			nonce: U256::from(1u8),
 		};
 		let test = transaction_nonce_high(who);
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_ok());
 	}
 
@@ -573,13 +531,13 @@ mod tests {
 		let is_transactional = true;
 		let test = transaction_gas_limit_low(who, is_transactional);
 		// Pool
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::GasLimitTooLow);
 		// Block
 		let res = test.validate_in_block();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::GasLimitTooLow);
 	}
 
 	// Gas limit too low non-transactional succeeds in pool and in block.
@@ -592,7 +550,7 @@ mod tests {
 		let is_transactional = false;
 		let test = transaction_gas_limit_low(who, is_transactional);
 		// Pool
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_ok());
 		// Block
 		let res = test.validate_in_block();
@@ -609,13 +567,13 @@ mod tests {
 		let is_transactional = true;
 		let test = transaction_gas_limit_low_proof_size(who, is_transactional);
 		// Pool
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::GasLimitTooLow);
 		// Block
 		let res = test.validate_in_block();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::GasLimitTooLow);
 	}
 
 	// Gas limit too low non-transactional succeeds in pool and in block.
@@ -628,7 +586,7 @@ mod tests {
 		let is_transactional = false;
 		let test = transaction_gas_limit_low_proof_size(who, is_transactional);
 		// Pool
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_ok());
 		// Block
 		let res = test.validate_in_block();
@@ -644,13 +602,19 @@ mod tests {
 		};
 		let test = transaction_gas_limit_high(who);
 		// Pool
-		let res = test.validate_in_pool_for();
+		let res = test.validate_in_pool();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooHigh);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::GasLimitTooHigh
+		);
 		// Block
 		let res = test.validate_in_block();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooHigh);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::GasLimitTooHigh
+		);
 	}
 
 	// Valid chain id succeeds.
@@ -669,7 +633,7 @@ mod tests {
 		let test = transaction_invalid_chain_id(who);
 		let res = test.with_chain_id();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidChainId);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::InvalidChainId);
 	}
 
 	// Valid max fee per gas succeeds.
@@ -693,7 +657,10 @@ mod tests {
 		let test = transaction_none_fee(who, true);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::InvalidFeeInput
+		);
 	}
 
 	// Non-transactional call with unset fee data succeeds.
@@ -712,12 +679,12 @@ mod tests {
 		let test = transaction_max_fee_low(true);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasPriceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::GasPriceTooLow);
 		// Non-transactional
 		let test = transaction_max_fee_low(false);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasPriceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::GasPriceTooLow);
 	}
 
 	// Priority fee too high fails.
@@ -727,12 +694,18 @@ mod tests {
 		let test = transaction_priority_fee_high(true);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::PriorityFeeTooHigh);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::PriorityFeeTooHigh
+		);
 		// Non-transactional
 		let test = transaction_priority_fee_high(false);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::PriorityFeeTooHigh);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::PriorityFeeTooHigh
+		);
 	}
 
 	// Sufficient balance succeeds.
@@ -763,12 +736,12 @@ mod tests {
 		let test = default_transaction(who.clone(), true);
 		let res = test.with_balance();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::BalanceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::BalanceTooLow);
 		// Non-transactional
 		let test = default_transaction(who, false);
 		let res = test.with_balance();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::BalanceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::BalanceTooLow);
 	}
 
 	// Fee not set on transactional fails.
@@ -781,7 +754,10 @@ mod tests {
 		let test = transaction_none_fee(who, true);
 		let res = test.with_balance();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::InvalidFeeInput
+		);
 	}
 
 	// Fee not set on non-transactional succeeds.
@@ -846,7 +822,7 @@ mod tests {
 		let test = legacy_transaction(who);
 		let res = test.with_balance();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::BalanceTooLow);
+		assert_eq!(res.unwrap_err(), TransactionValidationError::BalanceTooLow);
 	}
 
 	// Transaction with invalid fee input - mixing gas_price and max_fee_per_gas.
@@ -861,7 +837,10 @@ mod tests {
 		let test = invalid_transaction_mixed_fees(who.clone(), is_transactional);
 		let res = test.with_balance();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::InvalidFeeInput
+		);
 		// Succeeds for non-transactional.
 		let is_transactional = false;
 		let test = invalid_transaction_mixed_fees(who, is_transactional);
@@ -878,7 +857,10 @@ mod tests {
 		let test = invalid_transaction_mixed_fees(who.clone(), is_transactional);
 		let res = test.with_base_fee();
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidFeeInput);
+		assert_eq!(
+			res.unwrap_err(),
+			TransactionValidationError::InvalidFeeInput
+		);
 		// Succeeds for non-transactional.
 		let is_transactional = false;
 		let test = invalid_transaction_mixed_fees(who, is_transactional);

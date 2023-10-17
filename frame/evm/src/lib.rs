@@ -185,10 +185,7 @@ pub mod pallet {
 		}
 
 		// Called when transaction info for validation is created
-		type OnCheckEvmTransaction<E: From<TransactionValidationError>>: OnCheckEvmTransaction<
-			Self,
-			E,
-		>;
+		type OnCheckEvmTransaction: OnCheckEvmTransaction<Self>;
 	}
 
 	#[pallet::call]
@@ -1097,12 +1094,18 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
-pub trait OnCheckEvmTransaction<T: Config, E: From<TransactionValidationError>> {
-	fn on_check_evm_transaction(v: &mut CheckEvmTransaction<E>, origin: &H160) -> Result<(), E>;
+pub trait OnCheckEvmTransaction<T: Config> {
+	fn on_check_evm_transaction(
+		v: &mut CheckEvmTransaction,
+		origin: &H160,
+	) -> Result<(), TransactionValidationError>;
 }
 
-impl<T: Config, E: From<TransactionValidationError>> OnCheckEvmTransaction<T, E> for () {
-	fn on_check_evm_transaction(_v: &mut CheckEvmTransaction<E>, _origin: &H160) -> Result<(), E> {
+impl<T: Config> OnCheckEvmTransaction<T> for () {
+	fn on_check_evm_transaction(
+		_v: &mut CheckEvmTransaction,
+		_origin: &H160,
+	) -> Result<(), TransactionValidationError> {
 		Ok(())
 	}
 }
