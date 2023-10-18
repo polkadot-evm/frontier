@@ -4,7 +4,7 @@
 }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Allow to adapt a request for <code>estimate_gas</code>.
 Can be used to estimate gas of some contracts using a different function
 in the case the normal gas estimation doesn’t work.</p>
-<p>Exemple: a precompile that tries to do a subcall but succeeds regardless of the
+<p>Example: a precompile that tries to do a subcall but succeeds regardless of the
 success of the subcall. The gas estimation will thus optimize the gas limit down
 to the minimum, while we want to estimate a gas limit that will allow the subcall to
 have enough gas to succeed.</p>

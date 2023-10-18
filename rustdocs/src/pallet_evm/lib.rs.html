@@ -1083,6 +1083,12 @@
 <a href="#1083" id="1083">1083</a>
 <a href="#1084" id="1084">1084</a>
 <a href="#1085" id="1085">1085</a>
+<a href="#1086" id="1086">1086</a>
+<a href="#1087" id="1087">1087</a>
+<a href="#1088" id="1088">1088</a>
+<a href="#1089" id="1089">1089</a>
+<a href="#1090" id="1090">1090</a>
+<a href="#1091" id="1091">1091</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1577,12 +1583,16 @@
 		</span>GasLimitTooLow,
 		<span class="doccomment">/// Gas limit is too high.
 		</span>GasLimitTooHigh,
-		<span class="doccomment">/// Undefined error.
-		</span>Undefined,
+		<span class="doccomment">/// The chain id is invalid.
+		</span>InvalidChainId,
+		<span class="doccomment">/// the signature is invalid.
+		</span>InvalidSignature,
 		<span class="doccomment">/// EVM reentrancy
 		</span>Reentrancy,
 		<span class="doccomment">/// EIP-3607,
 		</span>TransactionMustComeFromEOA,
+		<span class="doccomment">/// Undefined error.
+		</span>Undefined,
 	}
 
 	<span class="kw">impl</span>&lt;T&gt; From&lt;TransactionValidationError&gt; <span class="kw">for </span>Error&lt;T&gt; {
@@ -1596,7 +1606,9 @@
 				TransactionValidationError::GasPriceTooLow =&gt; Error::&lt;T&gt;::GasPriceTooLow,
 				TransactionValidationError::PriorityFeeTooHigh =&gt; Error::&lt;T&gt;::GasPriceTooLow,
 				TransactionValidationError::InvalidFeeInput =&gt; Error::&lt;T&gt;::GasPriceTooLow,
-				<span class="kw">_ </span>=&gt; Error::&lt;T&gt;::Undefined,
+				TransactionValidationError::InvalidChainId =&gt; Error::&lt;T&gt;::InvalidChainId,
+				TransactionValidationError::InvalidSignature =&gt; Error::&lt;T&gt;::InvalidSignature,
+				TransactionValidationError::UnknownError =&gt; Error::&lt;T&gt;::Undefined,
 			}
 		}
 	}
