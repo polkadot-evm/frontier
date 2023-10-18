@@ -53,7 +53,7 @@ pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
 /// Can be used to estimate gas of some contracts using a different function
 /// in the case the normal gas estimation doesn't work.
 ///
-/// Exemple: a precompile that tries to do a subcall but succeeds regardless of the
+/// Example: a precompile that tries to do a subcall but succeeds regardless of the
 /// success of the subcall. The gas estimation will thus optimize the gas limit down
 /// to the minimum, while we want to estimate a gas limit that will allow the subcall to
 /// have enough gas to succeed.
