@@ -43,7 +43,7 @@ impl<Runtime> StorageCleanerPrecompile<Runtime>
 where
 	Runtime: pallet_evm::Config,
 {
-	#[precompile::public("batchSome(address[])")]
+	#[precompile::public("clearSuicidedStorage(addresses[])")]
 	fn clear_suicided_storage(
 		handle: &mut impl PrecompileHandle,
 		addresses: BoundedVec<Address, GetArrayLimit>,
