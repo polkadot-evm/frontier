@@ -15,10 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use crate::{
-	mock::{ExtBuilder, PCall, Precompiles, PrecompilesValue, Runtime},
-	ENTRY_LIMIT,
-};
+use crate::mock::{ExtBuilder, PCall, Precompiles, PrecompilesValue, Runtime};
 use pallet_evm::AddressMapping;
 use precompile_utils::testing::*;
 use rlp::RlpStream;
@@ -43,7 +40,7 @@ fn mock_contract_with_entries(nonce: u64, num_entries: u32) -> H160 {
 	let account_id =
 		<Runtime as pallet_evm::Config>::AddressMapping::into_account_id(contract_address);
 	let _ = frame_system::Pallet::<Runtime>::inc_sufficients(&account_id);
-	
+
 	// Add num_entries storage entries to the suicided contract
 	for i in 0..num_entries {
 		pallet_evm::AccountStorages::<Runtime>::insert(
@@ -209,50 +206,6 @@ fn test_clear_suicided_contract_multiple_addresses() {
 			assert_eq!(
 				pallet_evm::Suicided::<Runtime>::contains_key(contract_address3),
 				false
-			);
-		})
-}
-
-// Test that the precompile deletes a maximum of `ENTRY_LIMIT` entries
-#[test]
-fn test_clear_suicided_entry_limit() {
-	ExtBuilder::default()
-		.with_balances(vec![(Alice.into(), 10000000000000000000)])
-		.build()
-		.execute_with(|| {
-			let contract_address1 = mock_contract_with_entries(1, ENTRY_LIMIT);
-			let contract_address2 = mock_contract_with_entries(2, 1);
-			// Add contract to the suicided contracts
-			pallet_evm::Suicided::<Runtime>::insert(contract_address1, ());
-			pallet_evm::Suicided::<Runtime>::insert(contract_address2, ());
-
-			precompiles()
-				.prepare_test(
-					Alice,
-					Precompile1,
-					PCall::clear_suicided_storage {
-						addresses: vec![contract_address1.into(), contract_address2.into()].into(),
-					},
-				)
-				.execute_returns(());
-
-			assert_eq!(
-				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address1).count(),
-				0
-			);
-			assert_eq!(
-				pallet_evm::Suicided::<Runtime>::contains_key(contract_address1),
-				false
-			);
-
-			assert_eq!(
-				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address2).count(),
-				1
-			);
-
-			assert_eq!(
-				pallet_evm::Suicided::<Runtime>::contains_key(contract_address2),
-				true
 			);
 		})
 }

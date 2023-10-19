@@ -21,7 +21,6 @@
 extern crate alloc;
 
 pub const ARRAY_LIMIT: u32 = 1_000;
-pub const ENTRY_LIMIT: u32 = 1_000;
 
 use core::marker::PhantomData;
 use pallet_evm::AddressMapping;
@@ -50,9 +49,8 @@ where
 		addresses: BoundedVec<Address, GetArrayLimit>,
 	) -> EvmResult {
 		let addresses: Vec<_> = addresses.into();
-		let mut deleted_entries = 0;
 
-		'inner: for address in addresses {
+		for address in addresses {
 			// Read Suicided storage item
 			// Suicided: Blake2128(16) + H160(20)
 			handle.record_db_read::<Runtime>(36)?;
@@ -62,27 +60,17 @@ where
 
 			let mut iter = pallet_evm::Pallet::<Runtime>::iter_account_storages(&address.0).drain();
 
-			// Delete a maximum of `ENTRY_LIMIT` entries in AccountStorages prefixed with `address`
-			while iter.next().is_some() {
+			loop {
 				handle.record_db_read::<Runtime>(116)?;
 				// Record the gas cost of deleting the storage item
 				handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
 
-				deleted_entries += 1;
-				if deleted_entries >= ENTRY_LIMIT {
-					if iter.next().is_none() {
-						handle.record_db_read::<Runtime>(116)?;
-						Self::clear_suicided_contract(address);
-					}
-					break 'inner;
+				if iter.next().is_none() {
+					handle.refund_external_cost(None, Some(116));
+					Self::clear_suicided_contract(address);
+					break;
 				}
 			}
-
-			// Record the cost of the iteration when `iter.next()` returned `None`
-			handle.record_db_read::<Runtime>(116)?;
-
-			// Remove the suicided account
-			Self::clear_suicided_contract(address);
 		}
 
 		Ok(())
