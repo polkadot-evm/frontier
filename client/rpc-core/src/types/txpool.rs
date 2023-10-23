@@ -24,23 +24,31 @@ use serde::{Serialize, Serializer};
 
 use crate::types::Bytes;
 
+/// The entry maps an origin-address to a batch of scheduled transactions.
+/// These batches themselves are maps associating nonces with actual transactions.
 pub type TransactionMap<T> = HashMap<H160, HashMap<U256, T>>;
 
 pub trait Get {
 	fn get(hash: H256, from_address: H160, txn: &EthereumTransaction) -> Self;
 }
 
+/// The result type of `txpool` API.
 #[derive(Debug, Serialize)]
 pub struct TxPoolResult<T: Serialize> {
 	pub pending: T,
 	pub queued: T,
 }
 
+/// The textual summary of all the transactions currently pending for inclusion in the next block(s).
 #[derive(Clone, Debug)]
 pub struct Summary {
+	/// Recipient
 	pub to: Option<H160>,
+	/// Transferred value
 	pub value: U256,
+	/// Gas
 	pub gas: U256,
+	/// Gas Price
 	pub gas_price: U256,
 }
 
@@ -79,6 +87,7 @@ impl Get for Summary {
 	}
 }
 
+/// The exact details of all the transactions currently pending for inclusion in the next block(s)
 #[derive(Debug, Default, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct TxPoolTransaction {
