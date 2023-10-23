@@ -266,12 +266,6 @@
 <a href="#266" id="266">266</a>
 <a href="#267" id="267">267</a>
 <a href="#268" id="268">268</a>
-<a href="#269" id="269">269</a>
-<a href="#270" id="270">270</a>
-<a href="#271" id="271">271</a>
-<a href="#272" id="272">272</a>
-<a href="#273" id="273">273</a>
-<a href="#274" id="274">274</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -315,12 +309,6 @@
 	<span class="kw">pub </span>contract_address: <span class="prelude-ty">Option</span>&lt;H160&gt;,
 	<span class="kw">pub </span>logs: Vec&lt;Log&gt;,
 	<span class="kw">pub </span>logs_bloom: Bloom,
-}
-
-<span class="attr">#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug)]
-</span><span class="kw">pub struct </span>TxPoolResponse {
-	<span class="kw">pub </span>ready: Vec&lt;ethereum::TransactionV2&gt;,
-	<span class="kw">pub </span>future: Vec&lt;ethereum::TransactionV2&gt;,
 }
 
 <span class="kw">pub trait </span>RuntimeStorageOverride&lt;B: BlockT, C&gt;: Send + Sync {

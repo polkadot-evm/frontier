@@ -168,6 +168,15 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -194,24 +203,32 @@
 
 <span class="kw">use </span><span class="kw">crate</span>::types::Bytes;
 
-<span class="kw">pub type </span>TransactionMap&lt;T&gt; = HashMap&lt;H160, HashMap&lt;U256, T&gt;&gt;;
+<span class="doccomment">/// The entry maps an origin-address to a batch of scheduled transactions.
+/// These batches themselves are maps associating nonces with actual transactions.
+</span><span class="kw">pub type </span>TransactionMap&lt;T&gt; = HashMap&lt;H160, HashMap&lt;U256, T&gt;&gt;;
 
 <span class="kw">pub trait </span>Get {
 	<span class="kw">fn </span>get(hash: H256, from_address: H160, txn: <span class="kw-2">&amp;</span>EthereumTransaction) -&gt; <span class="self">Self</span>;
 }
 
-<span class="attr">#[derive(Debug, Serialize)]
+<span class="doccomment">/// The result type of `txpool` API.
+</span><span class="attr">#[derive(Debug, Serialize)]
 </span><span class="kw">pub struct </span>TxPoolResult&lt;T: Serialize&gt; {
 	<span class="kw">pub </span>pending: T,
 	<span class="kw">pub </span>queued: T,
 }
 
-<span class="attr">#[derive(Clone, Debug)]
+<span class="doccomment">/// The textual summary of all the transactions currently pending for inclusion in the next block(s).
+</span><span class="attr">#[derive(Clone, Debug)]
 </span><span class="kw">pub struct </span>Summary {
-	<span class="kw">pub </span>to: <span class="prelude-ty">Option</span>&lt;H160&gt;,
-	<span class="kw">pub </span>value: U256,
-	<span class="kw">pub </span>gas: U256,
-	<span class="kw">pub </span>gas_price: U256,
+	<span class="doccomment">/// Recipient
+	</span><span class="kw">pub </span>to: <span class="prelude-ty">Option</span>&lt;H160&gt;,
+	<span class="doccomment">/// Transferred value
+	</span><span class="kw">pub </span>value: U256,
+	<span class="doccomment">/// Gas
+	</span><span class="kw">pub </span>gas: U256,
+	<span class="doccomment">/// Gas Price
+	</span><span class="kw">pub </span>gas_price: U256,
 }
 
 <span class="kw">impl </span>Serialize <span class="kw">for </span>Summary {
@@ -249,7 +266,8 @@
 	}
 }
 
-<span class="attr">#[derive(Debug, Default, Clone, PartialEq, Serialize)]
+<span class="doccomment">/// The exact details of all the transactions currently pending for inclusion in the next block(s)
+</span><span class="attr">#[derive(Debug, Default, Clone, PartialEq, Serialize)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>TxPoolTransaction {
 	<span class="doccomment">/// Hash

@@ -168,13 +168,6 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
-<a href="#171" id="171">171</a>
-<a href="#172" id="172">172</a>
-<a href="#173" id="173">173</a>
-<a href="#174" id="174">174</a>
-<a href="#175" id="175">175</a>
-<a href="#176" id="176">176</a>
-<a href="#177" id="177">177</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -211,9 +204,14 @@
 	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
 	TxPoolApiServer,
 };
-<span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TxPoolResponse};
+<span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
 <span class="kw">use crate</span>::{internal_err, public_key};
+
+<span class="kw">struct </span>TxPoolTransactions {
+	ready: Vec&lt;TransactionV2&gt;,
+	future: Vec&lt;TransactionV2&gt;,
+}
 
 <span class="kw">pub struct </span>TxPool&lt;B, C, A: ChainApi&gt; {
 	client: Arc&lt;C&gt;,
@@ -239,82 +237,70 @@
 	C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="doccomment">/// Use the transaction graph interface to get the extrinsics currently in the ready and future
-	/// queues.
-	</span><span class="kw">fn </span>map_build&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;T&gt;&gt;&gt;
+	<span class="kw">fn </span>map_build&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;T&gt;&gt;&gt;
 	<span class="kw">where
 		</span>T: Get + Serialize,
 	{
-		<span class="comment">// Get the pending and queued ethereum transactions.
-		</span><span class="kw">let </span>ethereum_txns = <span class="self">self</span>.tx_pool_response()<span class="question-mark">?</span>;
-
-		<span class="comment">// Build the T response.
-		</span><span class="kw">let </span><span class="kw-2">mut </span>pending = TransactionMap::&lt;T&gt;::new();
-		<span class="kw">for </span>txn <span class="kw">in </span>ethereum_txns.ready.iter() {
-			<span class="kw">let </span>hash = txn.hash();
-			<span class="kw">let </span>nonce = <span class="kw">match </span>txn {
-				TransactionV2::Legacy(t) =&gt; t.nonce,
-				TransactionV2::EIP2930(t) =&gt; t.nonce,
-				TransactionV2::EIP1559(t) =&gt; t.nonce,
-			};
-			<span class="kw">let </span>from_address = <span class="kw">match </span>public_key(txn) {
-				<span class="prelude-val">Ok</span>(pk) =&gt; H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pk))),
-				<span class="prelude-val">Err</span>(_e) =&gt; H160::default(),
-			};
-			pending
-				.entry(from_address)
-				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
-		}
-		<span class="kw">let </span><span class="kw-2">mut </span>queued = TransactionMap::&lt;T&gt;::new();
-		<span class="kw">for </span>txn <span class="kw">in </span>ethereum_txns.future.iter() {
-			<span class="kw">let </span>hash = txn.hash();
-			<span class="kw">let </span>nonce = <span class="kw">match </span>txn {
-				TransactionV2::Legacy(t) =&gt; t.nonce,
-				TransactionV2::EIP2930(t) =&gt; t.nonce,
-				TransactionV2::EIP1559(t) =&gt; t.nonce,
-			};
-			<span class="kw">let </span>from_address = <span class="kw">match </span>public_key(txn) {
-				<span class="prelude-val">Ok</span>(pk) =&gt; H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pk))),
-				<span class="prelude-val">Err</span>(_e) =&gt; H160::default(),
-			};
-			queued
-				.entry(from_address)
-				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
-		}
+		<span class="kw">let </span>txns = <span class="self">self</span>.collect_txpool_transactions()<span class="question-mark">?</span>;
+		<span class="kw">let </span>pending = <span class="self">Self</span>::build_txn_map::&lt;<span class="lifetime">&#39;_</span>, T&gt;(txns.ready.iter());
+		<span class="kw">let </span>queued = <span class="self">Self</span>::build_txn_map::&lt;<span class="lifetime">&#39;_</span>, T&gt;(txns.future.iter());
 		<span class="prelude-val">Ok</span>(TxPoolResult { pending, queued })
 	}
 
-	<span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>tx_pool_response(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResponse&gt; {
-		<span class="comment">// Collect transactions in the ready validated pool.
-		</span><span class="kw">let </span>txs_ready = <span class="self">self
+	<span class="kw">fn </span>build_txn_map&lt;<span class="lifetime">&#39;a</span>, T&gt;(txns: <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>TransactionV2&gt;) -&gt; TransactionMap&lt;T&gt;
+	<span class="kw">where
+		</span>T: Get + Serialize,
+	{
+		<span class="kw">let </span><span class="kw-2">mut </span>result = TransactionMap::&lt;T&gt;::new();
+		<span class="kw">for </span>txn <span class="kw">in </span>txns {
+			<span class="kw">let </span>hash = txn.hash();
+			<span class="kw">let </span>nonce = <span class="kw">match </span>txn {
+				TransactionV2::Legacy(t) =&gt; t.nonce,
+				TransactionV2::EIP2930(t) =&gt; t.nonce,
+				TransactionV2::EIP1559(t) =&gt; t.nonce,
+			};
+			<span class="kw">let </span>from_address = <span class="kw">match </span>public_key(txn) {
+				<span class="prelude-val">Ok</span>(pk) =&gt; H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pk))),
+				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; H160::default(),
+			};
+			result
+				.entry(from_address)
+				.or_insert_with(HashMap::new)
+				.insert(nonce, T::get(hash, from_address, txn));
+		}
+		result
+	}
+
+	<span class="doccomment">/// Collect the extrinsics currently in the ready and future queues.
+	</span><span class="kw">fn </span>collect_txpool_transactions(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolTransactions&gt; {
+		<span class="comment">// Collect extrinsics in the ready validated pool.
+		</span><span class="kw">let </span>ready_extrinsics = <span class="self">self
 			</span>.graph
 			.validated_pool()
 			.ready()
 			.map(|in_pool_tx| in_pool_tx.data().clone())
 			.collect();
 
-		<span class="comment">// Collect transactions in the future validated pool.
-		</span><span class="kw">let </span>txs_future = <span class="self">self
+		<span class="comment">// Collect extrinsics in the future validated pool.
+		</span><span class="kw">let </span>future_extrinsics = <span class="self">self
 			</span>.graph
 			.validated_pool()
 			.futures()
 			.iter()
-			.map(|(_hash, extrinsic)| extrinsic.clone())
+			.map(|(<span class="kw">_</span>, extrinsic)| extrinsic.clone())
 			.collect();
 
 		<span class="comment">// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
 		</span><span class="kw">let </span>best_block = <span class="self">self</span>.client.info().best_hash;
 		<span class="kw">let </span>api = <span class="self">self</span>.client.runtime_api();
 		<span class="kw">let </span>ready = api
-			.extrinsic_filter(best_block, txs_ready)
-			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch ready transactions failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+			.extrinsic_filter(best_block, ready_extrinsics)
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch ready transactions failed: {err}&quot;</span>)))<span class="question-mark">?</span>;
 		<span class="kw">let </span>future = api
-			.extrinsic_filter(best_block, txs_future)
-			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch future transactions failed: {:?}&quot;</span>, err)))<span class="question-mark">?</span>;
+			.extrinsic_filter(best_block, future_extrinsics)
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch future transactions failed: {err}&quot;</span>)))<span class="question-mark">?</span>;
 
-		<span class="prelude-val">Ok</span>(TxPoolResponse { ready, future })
+		<span class="prelude-val">Ok</span>(TxPoolTransactions { ready, future })
 	}
 }
 
