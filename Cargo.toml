@@ -75,76 +75,76 @@ thiserror = "1.0"
 tokio = "1.32.0"
 
 # Substrate Client
-sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-cli = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sc-client-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-client-db = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sc-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-consensus-grandpa = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-executor = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-keystore = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-network = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-network-common = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-network-sync = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-service = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sc-utils = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
+sc-basic-authorship = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-block-builder = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-chain-spec = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-cli = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sc-client-api = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-client-db = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sc-consensus = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-consensus-grandpa = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-consensus-manual-seal = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-executor = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-keystore = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-network = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-network-common = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-network-sync = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-offchain = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-rpc = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-rpc-api = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-service = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sc-telemetry = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-transaction-pool-api = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sc-utils = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
 # Substrate Primitive
-sp-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sp-consensus = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-consensus-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-core = { version = "21.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-core-hashing = { version = "9.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-core-hashing-proc-macro = { version = "9.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-database = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sp-inherents = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-io = { version = "23.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-keyring = { version = "24.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-sp-offchain = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-runtime = { version = "24.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-runtime-interface = { version = "17.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-session = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-state-machine = { version = "0.28.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-std = { version = "8.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-storage = { version = "13.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-sp-version = { version = "22.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
+sp-api = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-block-builder = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-blockchain = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sp-consensus = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sp-consensus-aura = { version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-consensus-grandpa = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-core = { version = "21.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-core-hashing = { version = "9.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-core-hashing-proc-macro = { version = "9.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-database = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sp-inherents = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-io = { version = "23.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-keyring = { version = "24.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+sp-offchain = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-runtime = { version = "24.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-runtime-interface = { version = "17.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-session = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-state-machine = { version = "0.28.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-std = { version = "8.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-storage = { version = "13.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+sp-version = { version = "22.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
 # Substrate FRAME
-frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-frame-executive = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-frame-support = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-frame-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-frame-system-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-frame-system-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-aura = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-balances = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-grandpa = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-sudo = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
-pallet-utility = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0", default-features = false }
+frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+frame-executive = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+frame-support = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+frame-system = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+frame-system-benchmarking = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+frame-system-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-aura = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-balances = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-grandpa = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-sudo = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-timestamp = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-transaction-payment = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-transaction-payment-rpc = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+pallet-transaction-payment-rpc-runtime-api = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
+pallet-utility = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120", default-features = false }
 # Substrate Utility
-frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-prometheus-endpoint = { package = "substrate-prometheus-endpoint", version = "0.10.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
-substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.2.0" }
+frame-benchmarking-cli = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+prometheus-endpoint = { package = "substrate-prometheus-endpoint", version = "0.10.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
+substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/arturgontijo/polkadot-sdk", branch = "artur-v120" }
 
 # Frontier Client
 fc-api = { version = "1.0.0-dev", path = "client/api" }
