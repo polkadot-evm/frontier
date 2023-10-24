@@ -901,12 +901,13 @@ pub trait OnChargeEVMTransaction<T: Config> {
 /// trait (eg. the pallet_balances) using an unbalance handler (implementing
 /// `OnUnbalanced`).
 /// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
-pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+pub struct EVMCurrencyAdapter<C, E, OU>(sp_std::marker::PhantomData<(C, E, OU)>);
 
-impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
+impl<T, C, E, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, E, OU>
 where
 	T: Config,
 	C: Currency<<T as frame_system::Config>::AccountId>,
+	E: Currency<<T as frame_system::Config>::AccountId>,
 	C::PositiveImbalance: Imbalance<
 		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
 		Opposite = C::NegativeImbalance,
@@ -926,13 +927,45 @@ where
 			return Ok(None);
 		}
 		let account_id = T::AddressMapping::into_account_id(*who);
-		let imbalance = C::withdraw(
-			&account_id,
-			fee.unique_saturated_into(),
-			WithdrawReasons::FEE,
-			ExistenceRequirement::AllowDeath,
-		)
-		.map_err(|_| Error::<T>::BalanceLow)?;
+
+		if E::free_balance(who) > E::minimum_balance(){
+			log::info!("Switching to E module...");
+			let imbalance = E::withdraw(
+				&account_id,
+				fee.unique_saturated_into(),
+				WithdrawReasons::FEE,
+				ExistenceRequirement::AllowDeath,
+			)
+			.map_err(|_| Error::<T>::BalanceLow)?;
+		}else{
+			log::info!("Switching to C module...");
+			let imbalance = C::withdraw(
+				&account_id,
+				fee.unique_saturated_into(),
+				WithdrawReasons::FEE,
+				ExistenceRequirement::AllowDeath,
+			)
+			.map_err(|_| Error::<T>::BalanceLow)?;
+		}
+
+
+		//let amt = UniqueSaturatedInto::<u64>::unique_saturated_into(fee);
+		//let amt2: <E as Currency<<T as frame_system::Config>::AccountId>>::Balance = amt.try_into().unwrap_or_else(|_| panic!("failed to convert"));
+		
+		// if E::free_balance(who) > E::minimum_balance(){
+		// 	log::info!("Switching to E module...");
+		// 	match E::withdraw(who, amt2, withdraw_reason, ExistenceRequirement::KeepAlive) {
+		// 		Ok(_imbalance) => Ok(None),
+		// 		Err(_) => Err(InvalidTransaction::Payment.into()),
+		// 	}
+		// }else{
+		// 	log::info!("Switching to C module...");
+		// 	match C::withdraw(who, fee, withdraw_reason, ExistenceRequirement::KeepAlive) {
+		// 		Ok(imbalance) => Ok(Some(imbalance)),
+		// 		Err(_) => Err(InvalidTransaction::Payment.into()),
+		// 	}
+		// }
+
 		Ok(Some(imbalance))
 	}
 
