@@ -27,26 +27,26 @@ describeWithFrontier("Frontier RPC (Log filtering)", (context) => {
 
 	function getNonMatchingCases(receipt: TransactionReceipt) {
 		return [
-			// Non-existant address.
+			// Non-existent address.
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
 				address: "0x0000000000000000000000000000000000000000",
 			},
-			// Non-existant topic.
+			// Non-existent topic.
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
 				topics: ["0x0000000000000000000000000000000000000000000000000000000000000000"],
 			},
-			// Existant address + non-existant topic.
+			// Existent address + non-existent topic.
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
 				address: receipt.contractAddress,
 				topics: ["0x0000000000000000000000000000000000000000000000000000000000000000"],
 			},
-			// Non-existant address + existant topic.
+			// Non-existent address + existent topic.
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",

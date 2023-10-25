@@ -40,7 +40,7 @@ pub struct Transaction {
 	pub from: H160,
 	/// Recipient
 	pub to: Option<H160>,
-	/// Transfered value
+	/// Transferred value
 	pub value: U256,
 	/// Gas Price
 	#[serde(skip_serializing_if = "Option::is_none")]
