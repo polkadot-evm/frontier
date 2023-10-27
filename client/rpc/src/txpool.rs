@@ -18,7 +18,7 @@
 
 use std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
-use ethereum::TransactionV2;
+use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256, U256};
 use jsonrpsee::core::RpcResult;
 use serde::Serialize;
@@ -31,7 +31,7 @@ use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::{
-	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
+	types::{BuildFrom, Summary, Transaction, TransactionMap, TxPoolResult},
 	TxPoolApiServer,
 };
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -39,8 +39,8 @@ use fp_rpc::EthereumRuntimeRPCApi;
 use crate::{internal_err, public_key};
 
 struct TxPoolTransactions {
-	ready: Vec<TransactionV2>,
-	future: Vec<TransactionV2>,
+	ready: Vec<EthereumTransaction>,
+	future: Vec<EthereumTransaction>,
 }
 
 pub struct TxPool<B, C, A: ChainApi> {
@@ -69,7 +69,7 @@ where
 {
 	fn map_build<T>(&self) -> RpcResult<TxPoolResult<TransactionMap<T>>>
 	where
-		T: Get + Serialize,
+		T: BuildFrom + Serialize,
 	{
 		let txns = self.collect_txpool_transactions()?;
 		let pending = Self::build_txn_map::<'_, T>(txns.ready.iter());
@@ -77,26 +77,27 @@ where
 		Ok(TxPoolResult { pending, queued })
 	}
 
-	fn build_txn_map<'a, T>(txns: impl Iterator<Item = &'a TransactionV2>) -> TransactionMap<T>
+	fn build_txn_map<'a, T>(
+		txns: impl Iterator<Item = &'a EthereumTransaction>,
+	) -> TransactionMap<T>
 	where
-		T: Get + Serialize,
+		T: BuildFrom + Serialize,
 	{
 		let mut result = TransactionMap::<T>::new();
 		for txn in txns {
-			let hash = txn.hash();
 			let nonce = match txn {
-				TransactionV2::Legacy(t) => t.nonce,
-				TransactionV2::EIP2930(t) => t.nonce,
-				TransactionV2::EIP1559(t) => t.nonce,
+				EthereumTransaction::Legacy(t) => t.nonce,
+				EthereumTransaction::EIP2930(t) => t.nonce,
+				EthereumTransaction::EIP1559(t) => t.nonce,
 			};
-			let from_address = match public_key(txn) {
+			let from = match public_key(txn) {
 				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),
 				Err(_) => H160::default(),
 			};
 			result
-				.entry(from_address)
+				.entry(from)
 				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
+				.insert(nonce, T::build_from(from, txn));
 		}
 		result
 	}
@@ -152,8 +153,8 @@ where
 	C: HeaderBackend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<TxPoolTransaction>>> {
-		self.map_build::<TxPoolTransaction>()
+	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<Transaction>>> {
+		self.map_build::<Transaction>()
 	}
 
 	fn inspect(&self) -> RpcResult<TxPoolResult<TransactionMap<Summary>>> {
