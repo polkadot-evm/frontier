@@ -73,7 +73,7 @@ impl<B: BlockT, C> EthConfig<B, C> for () {
 }
 
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC: EthConfig<B, C>> {
+pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC> {
 	pool: Arc<P>,
 	graph: Arc<Pool<A>>,
 	client: Arc<C>,
@@ -104,7 +104,6 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
 {
 	pub fn new(
 		client: Arc<C>,

@@ -36,7 +36,7 @@ use sp_runtime::{
 };
 use sp_timestamp::TimestampInherentData;
 
-use crate::eth::{Eth, EthConfig};
+use crate::eth::Eth;
 
 const LOG_TARGET: &str = "eth-pending";
 
@@ -64,7 +64,6 @@ where
 	BE: Backend<B>,
 	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	/// Creates a pending runtime API.
 	pub(crate) async fn pending_runtime_api(&self) -> Result<(B::Hash, ApiRef<C::Api>), Error> {

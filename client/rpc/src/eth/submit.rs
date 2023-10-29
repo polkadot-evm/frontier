@@ -35,7 +35,7 @@ use fc_rpc_core::types::*;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 use crate::{
-	eth::{format, Eth, EthConfig},
+	eth::{format, Eth},
 	internal_err,
 };
 
@@ -50,7 +50,6 @@ where
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + 'static,
 	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
 		let from = match request.from {
