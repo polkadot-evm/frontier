@@ -27,8 +27,8 @@ use crate::types::{BuildFrom, Bytes};
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
 	/// EIP-2718 transaction type
-	#[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-	pub transaction_type: Option<U256>,
+	#[serde(rename = "type")]
+	pub transaction_type: U256,
 	/// Hash
 	pub hash: H256,
 	/// Nonce
@@ -86,7 +86,7 @@ impl BuildFrom for Transaction {
 		let hash = transaction.hash();
 		match transaction {
 			EthereumTransaction::Legacy(t) => Self {
-				transaction_type: Some(U256::from(0)),
+				transaction_type: U256::from(0),
 				hash,
 				nonce: t.nonce,
 				block_hash: None,
@@ -112,7 +112,7 @@ impl BuildFrom for Transaction {
 				s: U256::from(t.signature.s().as_bytes()),
 			},
 			EthereumTransaction::EIP2930(t) => Self {
-				transaction_type: Some(U256::from(1)),
+				transaction_type: U256::from(1),
 				hash,
 				nonce: t.nonce,
 				block_hash: None,
@@ -138,7 +138,7 @@ impl BuildFrom for Transaction {
 				s: U256::from(t.s.as_bytes()),
 			},
 			EthereumTransaction::EIP1559(t) => Self {
-				transaction_type: Some(U256::from(2)),
+				transaction_type: U256::from(2),
 				hash,
 				nonce: t.nonce,
 				block_hash: None,
