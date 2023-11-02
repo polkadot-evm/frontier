@@ -986,12 +986,17 @@ where
 						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 							weight_info.try_record_proof_size_or_fail(meta.size)?;
 						} else {
-							// If it does not exist, try to record `create_contract_limit` first.
-							weight_info.try_record_proof_size_or_fail(size_limit)?;
-							let meta = Pallet::<T>::account_code_metadata(address);
-							let actual_size = meta.size;
-							// Refund if applies
-							weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+							if let Some(remaining_proof_size) = weight_info.remaining_proof_size() {
+								let pre_size = remaining_proof_size.min(size_limit);
+								weight_info.try_record_proof_size_or_fail(pre_size)?;
+
+								let actual_size = Pallet::<T>::account_code_metadata(address).size;
+								if actual_size > pre_size {
+									return Err(ExitError::OutOfGas);
+								}
+								// Refund if applies
+								weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
+							}
 						}
 						recorded.account_codes.push(address);
 					}
@@ -1081,12 +1086,17 @@ where
 			if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 				weight_info.try_record_proof_size_or_fail(meta.size)?;
 			} else {
-				// If it does not exist, try to record `create_contract_limit` first.
-				weight_info.try_record_proof_size_or_fail(size_limit)?;
-				let meta = Pallet::<T>::account_code_metadata(address);
-				let actual_size = meta.size;
-				// Refund if applies
-				weight_info.refund_proof_size(size_limit.saturating_sub(actual_size));
+				if let Some(remaining_proof_size) = weight_info.remaining_proof_size() {
+					let pre_size = remaining_proof_size.min(size_limit);
+					weight_info.try_record_proof_size_or_fail(pre_size)?;
+
+					let actual_size = Pallet::<T>::account_code_metadata(address).size;
+					if actual_size > pre_size {
+						return Err(ExitError::OutOfGas);
+					}
+					// Refund if applies
+					weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
+				}
 			}
 			recorded.account_codes.push(address);
 			// Already recorded, return
