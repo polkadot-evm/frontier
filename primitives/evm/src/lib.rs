@@ -108,7 +108,7 @@ impl WeightInfo {
 			_ => return Err("must provide Some valid weight limit or None"),
 		})
 	}
-	
+
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
 		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
 		if usage > limit {
@@ -116,7 +116,7 @@ impl WeightInfo {
 		}
 		Ok(usage)
 	}
-	
+
 	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
 		if let (Some(ref_time_usage), Some(ref_time_limit)) =
 			(self.ref_time_usage, self.ref_time_limit)
@@ -157,19 +157,22 @@ impl WeightInfo {
 		}
 	}
 	pub fn remaining_proof_size(&self) -> Option<u64> {
-		if let (Some(proof_size_usage), Some(proof_size_limit)) = (self.proof_size_usage, self.proof_size_limit) {
+		if let (Some(proof_size_usage), Some(proof_size_limit)) =
+			(self.proof_size_usage, self.proof_size_limit)
+		{
 			return Some(proof_size_limit.saturating_sub(proof_size_usage));
 		}
 		None
 	}
 
 	pub fn remaining_ref_time(&self) -> Option<u64> {
-		if let (Some(ref_time_usage), Some(ref_time_limit)) = (self.ref_time_usage, self.ref_time_limit) {
+		if let (Some(ref_time_usage), Some(ref_time_limit)) =
+			(self.ref_time_usage, self.ref_time_limit)
+		{
 			return Some(ref_time_limit.saturating_sub(ref_time_usage));
 		}
 		None
 	}
-
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
