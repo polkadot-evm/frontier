@@ -63,6 +63,9 @@
 <a href="#63" id="63">63</a>
 <a href="#64" id="64">64</a>
 <a href="#65" id="65">65</a>
+<a href="#66" id="66">66</a>
+<a href="#67" id="67">67</a>
+<a href="#68" id="68">68</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -99,9 +102,10 @@
 	/// associative arrays, in which each entry maps an origin-address to a batch of scheduled
 	/// transactions. These batches themselves are maps associating nonces with actual transactions.
 	///
-	/// For details, see [txpool_content](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool#txpool-content)
+	/// For details, see [txpool_content (geth)](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool#txpool-content)
+	/// or [txpool_content (nethermind)](https://docs.nethermind.io/nethermind/ethereum-client/json-rpc/txpool#txpool_content).
 	</span><span class="attr">#[method(name = <span class="string">&quot;txpool_content&quot;</span>)]
-	</span><span class="kw">fn </span>content(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;TxPoolTransaction&gt;&gt;&gt;;
+	</span><span class="kw">fn </span>content(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;Transaction&gt;&gt;&gt;;
 
 	<span class="doccomment">/// The inspect inspection property can be queried to list a textual summary of all the
 	/// transactions currently pending for inclusion in the next block(s), as well as the ones that
@@ -113,7 +117,8 @@
 	/// transactions. These batches themselves are maps associating nonces with transactions
 	/// summary strings.
 	///
-	/// For details, see [txpool_inspect](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool#txpool-content)
+	/// For details, see [txpool_inspect (geth)](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool#txpool-inspect)
+	/// or [txpool_inspect (nethermind)](https://docs.nethermind.io/nethermind/ethereum-client/json-rpc/txpool#txpool_inspect).
 	</span><span class="attr">#[method(name = <span class="string">&quot;txpool_inspect&quot;</span>)]
 	</span><span class="kw">fn </span>inspect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;Summary&gt;&gt;&gt;;
 
@@ -124,7 +129,8 @@
 	/// The result is an object with two fields pending and queued, each of which is a counter
 	/// representing the number of transactions in that particular state.
 	///
-	/// For details, see [txpool_status](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool#txpool-status)
+	/// For details, see [txpool_status (geth)](https://geth.ethereum.org/docs/interacting-with-geth/rpc/ns-txpool#txpool-status)
+	/// or [txpool_status (nethermind)](https://docs.nethermind.io/nethermind/ethereum-client/json-rpc/txpool#txpool_status).
 	</span><span class="attr">#[method(name = <span class="string">&quot;txpool_status&quot;</span>)]
 	</span><span class="kw">fn </span>status(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;U256&gt;&gt;;
 }

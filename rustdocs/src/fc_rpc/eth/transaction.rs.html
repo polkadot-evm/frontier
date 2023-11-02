@@ -473,7 +473,7 @@
 				<span class="kw">for </span>txn <span class="kw">in </span>ethereum_transactions {
 					<span class="kw">let </span>inner_hash = txn.hash();
 					<span class="kw">if </span>hash == inner_hash {
-						<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(txn, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)));
+						<span class="kw">return </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(<span class="kw-2">&amp;</span>txn, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>)));
 					}
 				}
 				<span class="comment">// Unknown transaction.
@@ -489,9 +489,9 @@
 		} = <span class="self">self</span>.block_info_by_eth_block_hash(eth_block_hash).<span class="kw">await</span><span class="question-mark">?</span>;
 		<span class="kw">match </span>(block, statuses) {
 			(<span class="prelude-val">Some</span>(block), <span class="prelude-val">Some</span>(statuses)) =&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
-				block.transactions[index].clone(),
-				<span class="prelude-val">Some</span>(block),
-				<span class="prelude-val">Some</span>(statuses[index].clone()),
+				<span class="kw-2">&amp;</span>block.transactions[index],
+				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>block),
+				<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>statuses[index]),
 				<span class="prelude-val">Some</span>(base_fee),
 			))),
 			<span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>),
@@ -517,9 +517,9 @@
 					(block.transactions.get(index), statuses.get(index))
 				{
 					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
-						transaction.clone(),
-						<span class="prelude-val">Some</span>(block),
-						<span class="prelude-val">Some</span>(status.clone()),
+						transaction,
+						<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>block),
+						<span class="prelude-val">Some</span>(status),
 						<span class="prelude-val">Some</span>(base_fee),
 					)))
 				} <span class="kw">else </span>{
@@ -549,9 +549,9 @@
 					(block.transactions.get(index), statuses.get(index))
 				{
 					<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(transaction_build(
-						transaction.clone(),
-						<span class="prelude-val">Some</span>(block),
-						<span class="prelude-val">Some</span>(status.clone()),
+						transaction,
+						<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>block),
+						<span class="prelude-val">Some</span>(status),
 						<span class="prelude-val">Some</span>(base_fee),
 					)))
 				} <span class="kw">else </span>{

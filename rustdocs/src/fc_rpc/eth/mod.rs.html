@@ -716,27 +716,6 @@
 <a href="#716" id="716">716</a>
 <a href="#717" id="717">717</a>
 <a href="#718" id="718">718</a>
-<a href="#719" id="719">719</a>
-<a href="#720" id="720">720</a>
-<a href="#721" id="721">721</a>
-<a href="#722" id="722">722</a>
-<a href="#723" id="723">723</a>
-<a href="#724" id="724">724</a>
-<a href="#725" id="725">725</a>
-<a href="#726" id="726">726</a>
-<a href="#727" id="727">727</a>
-<a href="#728" id="728">728</a>
-<a href="#729" id="729">729</a>
-<a href="#730" id="730">730</a>
-<a href="#731" id="731">731</a>
-<a href="#732" id="732">732</a>
-<a href="#733" id="733">733</a>
-<a href="#734" id="734">734</a>
-<a href="#735" id="735">735</a>
-<a href="#736" id="736">736</a>
-<a href="#737" id="737">737</a>
-<a href="#738" id="738">738</a>
-<a href="#739" id="739">739</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -771,7 +750,7 @@
 <span class="kw">use </span>std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
 <span class="kw">use </span>ethereum::{BlockV2 <span class="kw">as </span>EthereumBlock, TransactionV2 <span class="kw">as </span>EthereumTransaction};
-<span class="kw">use </span>ethereum_types::{H160, H256, H512, H64, U256, U64};
+<span class="kw">use </span>ethereum_types::{H160, H256, H64, U256, U64};
 <span class="kw">use </span>jsonrpsee::core::{async_trait, RpcResult};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
@@ -1345,9 +1324,9 @@
 							.enumerate()
 							.map(|(index, transaction)| {
 								transaction_build(
-									transaction.clone(),
-									<span class="prelude-val">Some</span>(block.clone()),
-									<span class="prelude-val">Some</span>(statuses[index].clone().unwrap_or_default()),
+									transaction,
+									<span class="prelude-val">Some</span>(<span class="kw-2">&amp;</span>block),
+									statuses[index].as_ref(),
 									base_fee,
 								)
 							})
@@ -1371,18 +1350,31 @@
 }
 
 <span class="kw">fn </span>transaction_build(
-	ethereum_transaction: EthereumTransaction,
-	block: <span class="prelude-ty">Option</span>&lt;EthereumBlock&gt;,
-	status: <span class="prelude-ty">Option</span>&lt;TransactionStatus&gt;,
+	ethereum_transaction: <span class="kw-2">&amp;</span>EthereumTransaction,
+	block: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>EthereumBlock&gt;,
+	status: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>TransactionStatus&gt;,
 	base_fee: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 ) -&gt; Transaction {
-	<span class="kw">let </span><span class="kw-2">mut </span>transaction: Transaction = ethereum_transaction.clone().into();
+	<span class="kw">let </span>pubkey = <span class="kw">match </span>public_key(ethereum_transaction) {
+		<span class="prelude-val">Ok</span>(p) =&gt; <span class="prelude-val">Some</span>(p),
+		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">None</span>,
+	};
+	<span class="kw">let </span>from = status.map_or(
+		{
+			<span class="kw">match </span>pubkey {
+				<span class="prelude-val">Some</span>(pk) =&gt; H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pk))),
+				<span class="kw">_ </span>=&gt; H160::default(),
+			}
+		},
+		|status| status.from,
+	);
+
+	<span class="kw">let </span><span class="kw-2">mut </span>transaction: Transaction = Transaction::build_from(from, ethereum_transaction);
 
 	<span class="kw">if let </span>EthereumTransaction::EIP1559(<span class="kw">_</span>) = ethereum_transaction {
 		<span class="kw">if </span>block.is_none() &amp;&amp; status.is_none() {
 			<span class="comment">// If transaction is not mined yet, gas price is considered just max fee per gas.
-			</span>transaction.gas_price = transaction.max_fee_per_gas;
-		} <span class="kw">else </span>{
+		</span>} <span class="kw">else </span>{
 			<span class="kw">let </span>base_fee = base_fee.unwrap_or_default();
 			<span class="kw">let </span>max_priority_fee_per_gas = transaction.max_priority_fee_per_gas.unwrap_or_default();
 			<span class="kw">let </span>max_fee_per_gas = transaction.max_fee_per_gas.unwrap_or_default();
@@ -1396,52 +1388,18 @@
 		}
 	}
 
-	<span class="kw">let </span>pubkey = <span class="kw">match </span>public_key(<span class="kw-2">&amp;</span>ethereum_transaction) {
-		<span class="prelude-val">Ok</span>(p) =&gt; <span class="prelude-val">Some</span>(p),
-		<span class="prelude-val">Err</span>(_e) =&gt; <span class="prelude-val">None</span>,
-	};
-
 	<span class="comment">// Block hash.
-	</span>transaction.block_hash = block
-		.as_ref()
-		.map(|block| H256::from(keccak_256(<span class="kw-2">&amp;</span>rlp::encode(<span class="kw-2">&amp;</span>block.header))));
+	</span>transaction.block_hash = block.map(|block| block.header.hash());
 	<span class="comment">// Block number.
-	</span>transaction.block_number = block.as_ref().map(|block| block.header.number);
+	</span>transaction.block_number = block.map(|block| block.header.number);
 	<span class="comment">// Transaction index.
-	</span>transaction.transaction_index = status.as_ref().map(|status| {
+	</span>transaction.transaction_index = status.map(|status| {
 		U256::from(UniqueSaturatedInto::&lt;u32&gt;::unique_saturated_into(
 			status.transaction_index,
 		))
 	});
-	<span class="comment">// From.
-	</span>transaction.from = status.as_ref().map_or(
-		{
-			<span class="kw">match </span>pubkey {
-				<span class="prelude-val">Some</span>(pk) =&gt; H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pk))),
-				<span class="kw">_ </span>=&gt; H160::default(),
-			}
-		},
-		|status| status.from,
-	);
-	<span class="comment">// To.
-	</span>transaction.to = status.as_ref().map_or(
-		{
-			<span class="kw">let </span>action = <span class="kw">match </span>ethereum_transaction {
-				EthereumTransaction::Legacy(t) =&gt; t.action,
-				EthereumTransaction::EIP2930(t) =&gt; t.action,
-				EthereumTransaction::EIP1559(t) =&gt; t.action,
-			};
-			<span class="kw">match </span>action {
-				ethereum::TransactionAction::Call(to) =&gt; <span class="prelude-val">Some</span>(to),
-				<span class="kw">_ </span>=&gt; <span class="prelude-val">None</span>,
-			}
-		},
-		|status| status.to,
-	);
 	<span class="comment">// Creates.
-	</span>transaction.creates = status.as_ref().and_then(|status| status.contract_address);
-	<span class="comment">// Public key.
-	</span>transaction.public_key = pubkey.as_ref().map(H512::from);
+	</span>transaction.creates = status.and_then(|status| status.contract_address);
 
 	transaction
 }

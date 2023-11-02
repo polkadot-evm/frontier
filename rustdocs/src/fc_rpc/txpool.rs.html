@@ -168,6 +168,7 @@
 <a href="#168" id="168">168</a>
 <a href="#169" id="169">169</a>
 <a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -188,7 +189,7 @@
 
 </span><span class="kw">use </span>std::{collections::HashMap, marker::PhantomData, sync::Arc};
 
-<span class="kw">use </span>ethereum::TransactionV2;
+<span class="kw">use </span>ethereum::TransactionV2 <span class="kw">as </span>EthereumTransaction;
 <span class="kw">use </span>ethereum_types::{H160, H256, U256};
 <span class="kw">use </span>jsonrpsee::core::RpcResult;
 <span class="kw">use </span>serde::Serialize;
@@ -201,7 +202,7 @@
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::{
-	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
+	types::{BuildFrom, Summary, Transaction, TransactionMap, TxPoolResult},
 	TxPoolApiServer,
 };
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
@@ -209,8 +210,8 @@
 <span class="kw">use crate</span>::{internal_err, public_key};
 
 <span class="kw">struct </span>TxPoolTransactions {
-	ready: Vec&lt;TransactionV2&gt;,
-	future: Vec&lt;TransactionV2&gt;,
+	ready: Vec&lt;EthereumTransaction&gt;,
+	future: Vec&lt;EthereumTransaction&gt;,
 }
 
 <span class="kw">pub struct </span>TxPool&lt;B, C, A: ChainApi&gt; {
@@ -239,7 +240,7 @@
 {
 	<span class="kw">fn </span>map_build&lt;T&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;T&gt;&gt;&gt;
 	<span class="kw">where
-		</span>T: Get + Serialize,
+		</span>T: BuildFrom + Serialize,
 	{
 		<span class="kw">let </span>txns = <span class="self">self</span>.collect_txpool_transactions()<span class="question-mark">?</span>;
 		<span class="kw">let </span>pending = <span class="self">Self</span>::build_txn_map::&lt;<span class="lifetime">&#39;_</span>, T&gt;(txns.ready.iter());
@@ -247,26 +248,27 @@
 		<span class="prelude-val">Ok</span>(TxPoolResult { pending, queued })
 	}
 
-	<span class="kw">fn </span>build_txn_map&lt;<span class="lifetime">&#39;a</span>, T&gt;(txns: <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>TransactionV2&gt;) -&gt; TransactionMap&lt;T&gt;
+	<span class="kw">fn </span>build_txn_map&lt;<span class="lifetime">&#39;a</span>, T&gt;(
+		txns: <span class="kw">impl </span>Iterator&lt;Item = <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>EthereumTransaction&gt;,
+	) -&gt; TransactionMap&lt;T&gt;
 	<span class="kw">where
-		</span>T: Get + Serialize,
+		</span>T: BuildFrom + Serialize,
 	{
 		<span class="kw">let </span><span class="kw-2">mut </span>result = TransactionMap::&lt;T&gt;::new();
 		<span class="kw">for </span>txn <span class="kw">in </span>txns {
-			<span class="kw">let </span>hash = txn.hash();
 			<span class="kw">let </span>nonce = <span class="kw">match </span>txn {
-				TransactionV2::Legacy(t) =&gt; t.nonce,
-				TransactionV2::EIP2930(t) =&gt; t.nonce,
-				TransactionV2::EIP1559(t) =&gt; t.nonce,
+				EthereumTransaction::Legacy(t) =&gt; t.nonce,
+				EthereumTransaction::EIP2930(t) =&gt; t.nonce,
+				EthereumTransaction::EIP1559(t) =&gt; t.nonce,
 			};
-			<span class="kw">let </span>from_address = <span class="kw">match </span>public_key(txn) {
+			<span class="kw">let </span>from = <span class="kw">match </span>public_key(txn) {
 				<span class="prelude-val">Ok</span>(pk) =&gt; H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pk))),
 				<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; H160::default(),
 			};
 			result
-				.entry(from_address)
+				.entry(from)
 				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
+				.insert(nonce, T::build_from(from, txn));
 		}
 		result
 	}
@@ -322,8 +324,8 @@
 	C: HeaderBackend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt; + <span class="lifetime">&#39;static</span>,
 {
-	<span class="kw">fn </span>content(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;TxPoolTransaction&gt;&gt;&gt; {
-		<span class="self">self</span>.map_build::&lt;TxPoolTransaction&gt;()
+	<span class="kw">fn </span>content(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;Transaction&gt;&gt;&gt; {
+		<span class="self">self</span>.map_build::&lt;Transaction&gt;()
 	}
 
 	<span class="kw">fn </span>inspect(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;TxPoolResult&lt;TransactionMap&lt;Summary&gt;&gt;&gt; {
