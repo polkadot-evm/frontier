@@ -1102,7 +1102,6 @@ where
 						recorded.account_codes.push(address);
 					}
 				}
-				// (H160, H256) double map blake2 128 concat key size (68) + value 32
 				Opcode::SLOAD => {
 					weight_info.try_record_proof_size_or_fail(ACCOUNT_STORAGE_PROOF_SIZE)?;
 				}
@@ -1143,8 +1142,7 @@ where
 		} else {
 			return Ok(());
 		};
-		// Record ref_time first
-		// TODO benchmark opcodes, until this is done we do used_gas to weight conversion for ref_time
+
 		if let Some(amount) = ref_time {
 			weight_info.try_record_ref_time_or_fail(amount)?;
 		}

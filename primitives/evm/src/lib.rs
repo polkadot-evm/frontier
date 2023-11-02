@@ -135,6 +135,10 @@ impl WeightInfo {
 			(self.proof_size_usage, self.proof_size_limit)
 		{
 			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
+			println!(
+				"bear: --- record proof size: cost: {:?}, used_gas: {:?}",
+				cost, proof_size_usage
+			);
 			if proof_size_usage > proof_size_limit {
 				return Err(ExitError::OutOfGas);
 			}
