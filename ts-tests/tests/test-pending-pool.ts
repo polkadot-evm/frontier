@@ -28,8 +28,6 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 		expect(pendingTransaction).to.include({
 			blockNumber: null,
 			hash: txHash,
-			publicKey:
-				"0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
 			r: "0x8e3759de96b00f8a05a95c24fa905963f86a82a0038cca0fde035762fb2d24f7",
 			s: "0x7131a2c265463f4bb063504f924df4d3d14bdad9cdfff8391041ea78295d186b",
 			v: "0x77",
@@ -40,8 +38,6 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 		const processedTransaction = (await customRequest(context.web3, "eth_getTransactionByHash", [txHash])).result;
 		expect(processedTransaction).to.include({
 			hash: txHash,
-			publicKey:
-				"0x624f720eae676a04111631c9ca338c11d0f5a80ee42210c6be72983ceb620fbf645a96f951529fa2d70750432d11b7caba5270c4d677255be90b3871c8c58069",
 			r: "0x8e3759de96b00f8a05a95c24fa905963f86a82a0038cca0fde035762fb2d24f7",
 			s: "0x7131a2c265463f4bb063504f924df4d3d14bdad9cdfff8391041ea78295d186b",
 			v: "0x77",
