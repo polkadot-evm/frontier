@@ -62,13 +62,13 @@ fn test_clear_suicided_contract_succesfull() {
 			let contract_address = mock_contract_with_entries(1, 10);
 			// Add contract to the suicided contracts
 			pallet_evm::Suicided::<Runtime>::insert(contract_address, ());
-
 			precompiles()
 				.prepare_test(
 					Alice,
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![contract_address.into()].into(),
+						limit: u32::MAX,
 					},
 				)
 				.execute_returns(());
@@ -106,6 +106,7 @@ fn test_clear_suicided_contract_failed() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![contract_address.into()].into(),
+						limit: u32::MAX,
 					},
 				)
 				.execute_reverts(|output| {
@@ -136,6 +137,7 @@ fn test_clear_suicided_empty_input() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![].into(),
+						limit: u32::MAX,
 					},
 				)
 				.execute_returns(());
@@ -178,6 +180,7 @@ fn test_clear_suicided_contract_multiple_addresses() {
 							contract_address3.into(),
 						]
 						.into(),
+						limit: u32::MAX,
 					},
 				)
 				.execute_returns(());
@@ -239,6 +242,7 @@ fn test_clear_suicided_mixed_suicided_and_non_suicided() {
 							contract_address4.into(),
 						]
 						.into(),
+						limit: u32::MAX,
 					},
 				)
 				.execute_reverts(|output| {
@@ -273,6 +277,7 @@ fn test_clear_suicided_no_storage_entries() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![contract_address1.into()].into(),
+						limit: u32::MAX,
 					},
 				)
 				.execute_returns(());
@@ -324,6 +329,83 @@ fn test_clear_suicided_no_storage_entries() {
 			assert_eq!(
 				pallet_evm::Suicided::<Runtime>::contains_key(contract_address5),
 				false
+			);
+		})
+}
+
+// Test that the precompile deletes a maximum of `ENTRY_LIMIT` entries
+#[test]
+fn test_clear_suicided_entry_limit() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 10000000000000000000)])
+		.build()
+		.execute_with(|| {
+			let contract_address1 = mock_contract_with_entries(1, 4);
+			let contract_address2 = mock_contract_with_entries(2, 3);
+			// Add contract to the suicided contracts
+			pallet_evm::Suicided::<Runtime>::insert(contract_address1, ());
+			pallet_evm::Suicided::<Runtime>::insert(contract_address2, ());
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile1,
+					PCall::clear_suicided_storage {
+						addresses: vec![contract_address1.into(), contract_address2.into()].into(),
+						limit: 5,
+					},
+				)
+				.execute_returns(());
+
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address1).count(),
+				0
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address1),
+				false
+			);
+
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address2).count(),
+				2
+			);
+
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address2),
+				true
+			);
+		})
+}
+
+#[test]
+fn test_clear_suicided_entry_limit_1() {
+	ExtBuilder::default()
+		.with_balances(vec![(Alice.into(), 10000000000000000000)])
+		.build()
+		.execute_with(|| {
+			let contract_address1 = mock_contract_with_entries(1, 5);
+			// Add contract to the suicided contracts
+			pallet_evm::Suicided::<Runtime>::insert(contract_address1, ());
+
+			precompiles()
+				.prepare_test(
+					Alice,
+					Precompile1,
+					PCall::clear_suicided_storage {
+						addresses: vec![contract_address1.into()].into(),
+						limit: 4,
+					},
+				)
+				.execute_returns(());
+
+			assert_eq!(
+				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address1).count(),
+				1
+			);
+			assert_eq!(
+				pallet_evm::Suicided::<Runtime>::contains_key(contract_address1),
+				true
 			);
 		})
 }

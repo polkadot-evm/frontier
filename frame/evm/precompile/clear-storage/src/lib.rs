@@ -43,12 +43,14 @@ impl<Runtime> StorageCleanerPrecompile<Runtime>
 where
 	Runtime: pallet_evm::Config,
 {
-	#[precompile::public("clearSuicidedStorage(address[])")]
+	#[precompile::public("clearSuicidedStorage(address[],uint32)")]
 	fn clear_suicided_storage(
 		handle: &mut impl PrecompileHandle,
 		addresses: BoundedVec<Address, GetArrayLimit>,
+		limit: u32,
 	) -> EvmResult {
 		let addresses: Vec<_> = addresses.into();
+		let mut deleted_entries = 0;
 
 		for address in addresses {
 			// Read Suicided storage item
@@ -58,8 +60,7 @@ where
 				return Err(revert(format!("NotSuicided: {}", address.0)));
 			}
 
-			let mut iter = pallet_evm::Pallet::<Runtime>::iter_account_storages(&address.0).drain();
-
+			let mut iter = pallet_evm::AccountStorages::<Runtime>::drain_prefix(&address.0);
 			loop {
 				handle.record_db_read::<Runtime>(116)?;
 				// Record the gas cost of deleting the storage item
@@ -69,6 +70,10 @@ where
 					handle.refund_external_cost(None, Some(116));
 					Self::clear_suicided_contract(address);
 					break;
+				}
+				deleted_entries += 1;
+				if deleted_entries >= limit {
+					return Ok(());
 				}
 			}
 		}
