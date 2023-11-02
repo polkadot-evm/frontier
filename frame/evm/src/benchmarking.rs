@@ -33,9 +33,9 @@ benchmarks! {
 
 		let x in 1..10000000;
 
-		use frame_benchmarking::vec;
 		use rlp::RlpStream;
 		use sp_core::{H160, U256};
+		use sp_std::vec;
 
 		// contract bytecode below is for:
 		//

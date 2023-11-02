@@ -227,11 +227,10 @@ impl pallet_aura::Config for Runtime {
 
 impl pallet_grandpa::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-
 	type WeightInfo = ();
 	type MaxAuthorities = ConstU32<32>;
+	type MaxNominators = ConstU32<0>;
 	type MaxSetIdSessionEntries = ();
-
 	type KeyOwnerProof = sp_core::Void;
 	type EquivocationReportSystem = ();
 }
@@ -929,7 +928,8 @@ impl_runtime_apis! {
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, sp_runtime::RuntimeString> {
-			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark, TrackedStorageKey};
+			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch, add_benchmark};
+			use frame_support::traits::TrackedStorageKey;
 
 			use pallet_evm::Pallet as PalletEvmBench;
 			use pallet_hotfix_sufficients::Pallet as PalletHotfixSufficientsBench;
