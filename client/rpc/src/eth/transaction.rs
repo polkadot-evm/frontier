@@ -114,7 +114,7 @@ where
 				for txn in ethereum_transactions {
 					let inner_hash = txn.hash();
 					if hash == inner_hash {
-						return Ok(Some(transaction_build(txn, None, None, None)));
+						return Ok(Some(transaction_build(&txn, None, None, None)));
 					}
 				}
 				// Unknown transaction.
@@ -130,9 +130,9 @@ where
 		} = self.block_info_by_eth_block_hash(eth_block_hash).await?;
 		match (block, statuses) {
 			(Some(block), Some(statuses)) => Ok(Some(transaction_build(
-				block.transactions[index].clone(),
-				Some(block),
-				Some(statuses[index].clone()),
+				&block.transactions[index],
+				Some(&block),
+				Some(&statuses[index]),
 				Some(base_fee),
 			))),
 			_ => Ok(None),
@@ -158,9 +158,9 @@ where
 					(block.transactions.get(index), statuses.get(index))
 				{
 					Ok(Some(transaction_build(
-						transaction.clone(),
-						Some(block),
-						Some(status.clone()),
+						transaction,
+						Some(&block),
+						Some(status),
 						Some(base_fee),
 					)))
 				} else {
@@ -190,9 +190,9 @@ where
 					(block.transactions.get(index), statuses.get(index))
 				{
 					Ok(Some(transaction_build(
-						transaction.clone(),
-						Some(block),
-						Some(status.clone()),
+						transaction,
+						Some(&block),
+						Some(status),
 						Some(base_fee),
 					)))
 				} else {
