@@ -344,7 +344,7 @@ mod proof_size_test {
 			let reading_main_contract_len =
 				AccountCodes::<Test>::get(call_contract_address).len() as u64;
 			let expected_proof_size = reading_main_contract_len
-				+ ACCOUNT_STORAGE_PROOF_SIZE
+				+ ACCOUNT_STORAGE_PROOF_SIZE * 2
 				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
 				+ IS_EMPTY_CHECK_PROOF_SIZE
 				+ (ACCOUNT_BASIC_PROOF_SIZE * 2);

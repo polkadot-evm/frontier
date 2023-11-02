@@ -1045,7 +1045,6 @@ where
 			.create_contract_limit
 			.unwrap_or_default() as u64;
 		let (weight_info, recorded) = self.info_mut();
-		println!("bear: --- opcde: {:?}", opcode);
 
 		if let Some(weight_info) = weight_info {
 			// proof_size_limit is None indicates no need to record proof size, return directly.
