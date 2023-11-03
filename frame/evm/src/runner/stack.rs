@@ -1102,7 +1102,12 @@ where
 					}
 				}
 				Opcode::SLOAD => {
-					weight_info.try_record_proof_size_or_fail(ACCOUNT_STORAGE_PROOF_SIZE)?;
+					if let Some(AccessedStorage::AccountStorages((address, index))) =
+						accessed_storage
+					{
+						weight_info.try_record_proof_size_or_fail(ACCOUNT_STORAGE_PROOF_SIZE)?;
+						recorded.account_storages.insert((address, index), true);
+					}
 				}
 				Opcode::SSTORE => {
 					if let Some(AccessedStorage::AccountStorages((address, index))) =
