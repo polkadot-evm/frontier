@@ -28,8 +28,12 @@ jobs:
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Run tests
+      env:
+        RUSTFLAGS: "-Cdebug-assertions=y"
       run: cargo test --release --locked --verbose --all
     - name: Run tests (benchmark tests)
+      env:
+        RUSTFLAGS: "-Cdebug-assertions=y"
       run: cargo test --release --locked --verbose --all --features runtime-benchmarks
 
   integration:
