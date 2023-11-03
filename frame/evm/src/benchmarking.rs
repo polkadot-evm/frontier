@@ -69,8 +69,7 @@ benchmarks! {
 			"2eeada8e094193a364736f6c63430008030033"))
 			.expect("Bad hex string");
 
-		let caller = "1000000000000000000000000000000000000001".parse::<H160>().unwrap();
-
+		let caller = H160::default();
 		let mut nonce: u64 = 1;
 		let nonce_as_u256: U256 = nonce.into();
 
