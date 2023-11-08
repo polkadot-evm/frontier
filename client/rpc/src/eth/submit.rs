@@ -27,9 +27,7 @@ use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_inherents::CreateInherentDataProviders;
-use sp_runtime::{
-	traits::Block as BlockT, transaction_validity::TransactionSource,
-};
+use sp_runtime::{traits::Block as BlockT, transaction_validity::TransactionSource};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
