@@ -150,11 +150,7 @@ where
 		let extrinsic = self.convert_transaction(block_hash, transaction)?;
 
 		self.pool
-			.submit_one(
-				block_hash.into(),
-				TransactionSource::Local,
-				extrinsic,
-			)
+			.submit_one(block_hash.into(), TransactionSource::Local, extrinsic)
 			.map_ok(move |_| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.await
@@ -177,11 +173,7 @@ where
 		let extrinsic = self.convert_transaction(block_hash, transaction)?;
 
 		self.pool
-			.submit_one(
-				block_hash.into(),
-				TransactionSource::Local,
-				extrinsic,
-			)
+			.submit_one(block_hash.into(), TransactionSource::Local, extrinsic)
 			.map_ok(move |_| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.await
