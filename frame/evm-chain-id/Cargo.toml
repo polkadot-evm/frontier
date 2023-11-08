@@ -16,7 +16,6 @@ scale-info = { workspace = true }
 # Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-sp-runtime = { workspace = true }
 
 [features]
 default = ["std"]
@@ -26,7 +25,6 @@ std = [
 	# Substrate
 	"frame-support/std",
 	"frame-system/std",
-	"sp-runtime/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
