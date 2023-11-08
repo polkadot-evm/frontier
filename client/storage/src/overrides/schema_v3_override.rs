@@ -24,7 +24,7 @@ use scale_codec::Decode;
 use sc_client_api::backend::{Backend, StorageProvider};
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{traits::Block as BlockT, Permill};
-use sp_storage::StorageKey;
+use sc_client_api::StorageKey;
 // Frontier
 use fp_rpc::TransactionStatus;
 use fp_storage::*;

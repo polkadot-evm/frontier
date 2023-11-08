@@ -2836,7 +2836,6 @@ dependencies = [
  "sp-blockchain 23.0.0",
  "sp-io 25.0.0",
  "sp-runtime 26.0.0",
- "sp-storage 17.0.0",
 ]
 
 [[package]]

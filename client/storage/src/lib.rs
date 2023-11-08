@@ -29,7 +29,7 @@ use sc_client_api::{backend::Backend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
-use sp_storage::StorageKey;
+use sc_client_api::StorageKey;
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
