@@ -561,6 +561,9 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
+
+	#[pallet::storage]
+	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
 }
 
 /// Type alias for currency balance.
@@ -793,18 +796,29 @@ impl<T: Config> Pallet<T> {
 	/// Remove an account.
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
+			// Remember to call `dec_sufficients` when clearing Suicided.
+			<Suicided<T>>::insert(address, ());
+
+			// In theory, we can always have pre-EIP161 contracts, so we
+			// make sure the account nonce is at least one.
 			let account_id = T::AddressMapping::into_account_id(*address);
-			let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
+			frame_system::Pallet::<T>::inc_account_nonce(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
 		<AccountCodesMetadata<T>>::remove(address);
-		#[allow(deprecated)]
-		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
 
 	/// Create an account.
 	pub fn create_account(address: H160, code: Vec<u8>) {
+		if <Suicided<T>>::contains_key(address) {
+			// This branch should never trigger, because when Suicided
+			// contains an address, then its nonce will be at least one,
+			// which causes CreateCollision error in EVM, but we add it
+			// here for safeguard.
+			return;
+		}
+
 		if code.is_empty() {
 			return;
 		}
