@@ -28,11 +28,15 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-std = { workspace = true }
+sp-weights = { workspace = true }
 
 # Frontier
 evm = { workspace = true, features = ["with-codec"] }
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true, features = ["forbid-evm-reentrancy"] }
+
+# Polkadot / XCM
+xcm = { workspace = true, optional = true }
 
 [dev-dependencies]
 hex-literal = { workspace = true }
@@ -50,4 +54,5 @@ std = [
 	"sp-io/std",
 	"sp-std/std",
 ]
+codec-xcm = [ "xcm" ]
 testing = ["derive_more", "hex-literal", "scale-info", "serde", "similar-asserts", "std"]
