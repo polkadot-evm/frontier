@@ -43,3 +43,4 @@ serde = [
 	"sp-core/serde",
 	"sp-runtime/serde",
 ]
+force-debug = ["evm/force-debug"]
