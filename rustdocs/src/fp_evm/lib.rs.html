@@ -262,6 +262,28 @@
 <a href="#262" id="262">262</a>
 <a href="#263" id="263">263</a>
 <a href="#264" id="264">264</a>
+<a href="#265" id="265">265</a>
+<a href="#266" id="266">266</a>
+<a href="#267" id="267">267</a>
+<a href="#268" id="268">268</a>
+<a href="#269" id="269">269</a>
+<a href="#270" id="270">270</a>
+<a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -372,6 +394,7 @@
 			<span class="kw">_ </span>=&gt; <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;must provide Some valid weight limit or None&quot;</span>),
 		})
 	}
+
 	<span class="kw">fn </span>try_consume(<span class="kw-2">&amp;</span><span class="self">self</span>, cost: u64, limit: u64, usage: u64) -&gt; <span class="prelude-ty">Result</span>&lt;u64, ExitError&gt; {
 		<span class="kw">let </span>usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)<span class="question-mark">?</span>;
 		<span class="kw">if </span>usage &gt; limit {
@@ -379,6 +402,7 @@
 		}
 		<span class="prelude-val">Ok</span>(usage)
 	}
+
 	<span class="kw">pub fn </span>try_record_ref_time_or_fail(<span class="kw-2">&amp;mut </span><span class="self">self</span>, cost: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
 		<span class="kw">if let </span>(<span class="prelude-val">Some</span>(ref_time_usage), <span class="prelude-val">Some</span>(ref_time_limit)) =
 			(<span class="self">self</span>.ref_time_usage, <span class="self">self</span>.ref_time_limit)
@@ -391,6 +415,7 @@
 		}
 		<span class="prelude-val">Ok</span>(())
 	}
+
 	<span class="kw">pub fn </span>try_record_proof_size_or_fail(<span class="kw-2">&amp;mut </span><span class="self">self</span>, cost: u64) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
 		<span class="kw">if let </span>(<span class="prelude-val">Some</span>(proof_size_usage), <span class="prelude-val">Some</span>(proof_size_limit)) =
 			(<span class="self">self</span>.proof_size_usage, <span class="self">self</span>.proof_size_limit)
@@ -403,18 +428,37 @@
 		}
 		<span class="prelude-val">Ok</span>(())
 	}
+
 	<span class="kw">pub fn </span>refund_proof_size(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: u64) {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(proof_size_usage) = <span class="self">self</span>.proof_size_usage {
 			<span class="kw">let </span>proof_size_usage = proof_size_usage.saturating_sub(amount);
 			<span class="self">self</span>.proof_size_usage = <span class="prelude-val">Some</span>(proof_size_usage);
 		}
 	}
+
 	<span class="kw">pub fn </span>refund_ref_time(<span class="kw-2">&amp;mut </span><span class="self">self</span>, amount: u64) {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(ref_time_usage) = <span class="self">self</span>.ref_time_usage {
 			<span class="kw">let </span>ref_time_usage = ref_time_usage.saturating_sub(amount);
 			<span class="self">self</span>.ref_time_usage = <span class="prelude-val">Some</span>(ref_time_usage);
 		}
 	}
+	<span class="kw">pub fn </span>remaining_proof_size(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+		<span class="kw">if let </span>(<span class="prelude-val">Some</span>(proof_size_usage), <span class="prelude-val">Some</span>(proof_size_limit)) =
+			(<span class="self">self</span>.proof_size_usage, <span class="self">self</span>.proof_size_limit)
+		{
+			<span class="kw">return </span><span class="prelude-val">Some</span>(proof_size_limit.saturating_sub(proof_size_usage));
+		}
+		<span class="prelude-val">None
+	</span>}
+
+	<span class="kw">pub fn </span>remaining_ref_time(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u64&gt; {
+		<span class="kw">if let </span>(<span class="prelude-val">Some</span>(ref_time_usage), <span class="prelude-val">Some</span>(ref_time_limit)) =
+			(<span class="self">self</span>.ref_time_usage, <span class="self">self</span>.ref_time_limit)
+		{
+			<span class="kw">return </span><span class="prelude-val">Some</span>(ref_time_limit.saturating_sub(ref_time_usage));
+		}
+		<span class="prelude-val">None
+	</span>}
 }
 
 <span class="attr">#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]

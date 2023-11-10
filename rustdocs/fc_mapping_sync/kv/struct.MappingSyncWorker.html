@@ -4,7 +4,7 @@
     client: <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;C&gt;,
     substrate_backend: <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;BE&gt;,
     overrides: <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;<a class="struct" href="../../fc_storage/overrides/struct.OverrideHandle.html" title="struct fc_storage::overrides::OverrideHandle">OverrideHandle</a>&lt;Block&gt;&gt;,
-    frontier_backend: <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;Backend&lt;Block&gt;&gt;,
+    frontier_backend: <a class="struct" href="https://doc.rust-lang.org/nightly/alloc/sync/struct.Arc.html" title="struct alloc::sync::Arc">Arc</a>&lt;<a class="struct" href="../../fc_db/kv/struct.Backend.html" title="struct fc_db::kv::Backend">Backend</a>&lt;Block&gt;&gt;,
     retry_times: <a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.usize.html">usize</a>,
     sync_from: &lt;Block::Header as HeaderT&gt;::Number,
     strategy: <a class="enum" href="../enum.SyncStrategy.html" title="enum fc_mapping_sync::SyncStrategy">SyncStrategy</a>,
