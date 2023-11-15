@@ -60,19 +60,26 @@ where
 				return Err(revert(format!("NotSuicided: {}", address.0)));
 			}
 
-			let mut iter = pallet_evm::AccountStorages::<Runtime>::drain_prefix(&address.0);
+			let mut iter = pallet_evm::AccountStorages::<Runtime>::iter_key_prefix(address.0);
 			loop {
 				handle.record_db_read::<Runtime>(116)?;
 				// Record the gas cost of deleting the storage item
 				handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
-
-				if iter.next().is_none() {
+				// Delete the storage item
+				if let Some(key) = iter.next() {
+					pallet_evm::AccountStorages::<Runtime>::remove(address.0, &key);
+				} else {
 					handle.refund_external_cost(None, Some(116));
 					Self::clear_suicided_contract(address);
 					break;
 				}
 				deleted_entries += 1;
 				if deleted_entries >= limit {
+					handle.record_db_read::<Runtime>(116)?;
+					if iter.next().is_none() {
+						handle.refund_external_cost(None, Some(116));
+						Self::clear_suicided_contract(address);
+					}
 					return Ok(());
 				}
 			}

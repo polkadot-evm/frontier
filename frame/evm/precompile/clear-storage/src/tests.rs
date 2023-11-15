@@ -352,7 +352,7 @@ fn test_clear_suicided_entry_limit() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![contract_address1.into(), contract_address2.into()].into(),
-						limit: 5,
+						limit: 4,
 					},
 				)
 				.execute_returns(());
@@ -368,7 +368,7 @@ fn test_clear_suicided_entry_limit() {
 
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address2).count(),
-				2
+				3
 			);
 
 			assert_eq!(
