@@ -149,7 +149,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
 	/// Execute the precompile set and expect no precompile to have been executed.
 	pub fn execute_none(mut self) {
 		let res = self.execute();
-		assert!(res.is_some());
+		assert!(res.is_none());
 		self.assert_optionals();
 	}
 
