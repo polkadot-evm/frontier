@@ -69,6 +69,8 @@ where
 			..
 		} = request;
 
+		log::info!("rpc::eth_call", CallRequest);
+
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
 			(
