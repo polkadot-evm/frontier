@@ -55,6 +55,13 @@ where
 	A: ChainApi<Block = B> + 'static,
 {
 	pub fn call(&self, request: CallRequest, number: Option<BlockNumber>) -> Result<Bytes> {
+		let log_data = match request.data.clone() {
+			Some(data) => Some(hex::encode(data.0)),
+			None => None,
+		};
+
+		log::info!(target: "rpc::eth_call", "from: {:?}, to: {:?}, gas: {:?}, value: {:?}, data: {:?}, nonce: {:?}", request.from, request.to, request.gas, request.value, log_data, request.nonce);
+
 		let CallRequest {
 			from,
 			to,
@@ -68,8 +75,6 @@ where
 			access_list,
 			..
 		} = request;
-
-		log::info!("rpc::eth_call", CallRequest);
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;

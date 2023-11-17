@@ -274,6 +274,8 @@ where
 	}
 
 	pub async fn transaction_receipt(&self, hash: H256) -> Result<Option<Receipt>> {
+		log::info!(target: "rpc::eth_getTransactionReceipt", "{:?}", hash);
+
 		let client = Arc::clone(&self.client);
 		let overrides = Arc::clone(&self.overrides);
 		let block_data_cache = Arc::clone(&self.block_data_cache);

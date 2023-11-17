@@ -51,6 +51,8 @@ where
 	A: ChainApi<Block = B> + 'static,
 {
 	pub async fn send_transaction(&self, request: TransactionRequest) -> Result<H256> {
+		log::info!(target: "rpc::eth_sendTransaction", "{:?}", request);
+
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -230,6 +232,8 @@ where
 				Err(_) => return Err(internal_err("decode transaction failed")),
 			}
 		};
+
+		log::info!(target: "rpc::eth_sendRawTransaction", "{:?}", transaction);
 
 		let transaction_hash = transaction.hash();
 
