@@ -23,6 +23,7 @@ use sc_client_api::{
 	backend::{AuxStore, Backend, StorageProvider},
 	UsageProvider,
 };
+use sc_consensus_manual_seal::Error;
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ApiRef, Core, ProvideRuntimeApi};
@@ -39,21 +40,6 @@ use sp_timestamp::TimestampInherentData;
 use crate::eth::{Eth, EthConfig};
 
 const LOG_TARGET: &str = "eth-pending";
-
-/// The generated error type for creating pending runtime api.
-#[derive(Debug, thiserror::Error)]
-pub(crate) enum Error {
-	#[error("Failed to call runtime API, {0}")]
-	CallApi(#[from] sp_api::ApiError),
-	#[error("Failed to create pending inherent data, {0}")]
-	PendingInherentData(#[from] sp_inherents::Error),
-	#[error("Failed to create pending inherent data provider, {0}")]
-	PendingCreateInherentDataProvider(#[from] Box<dyn std::error::Error + Send + Sync>),
-	#[error(transparent)]
-	Backend(#[from] sp_blockchain::Error),
-	#[error(transparent)]
-	ApplyExtrinsicFailed(#[from] ApplyExtrinsicFailed),
-}
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
@@ -140,82 +126,5 @@ where
 		}
 
 		Ok((best_hash, api))
-	}
-}
-
-/// Consensus data provider, pending api uses this trait object for authoring blocks valid for any runtime.
-pub trait ConsensusDataProvider<B: BlockT>: Send + Sync {
-	/// Attempt to create a consensus digest.
-	fn create_digest(
-		&self,
-		parent: &B::Header,
-		data: &InherentData,
-	) -> Result<Digest, sp_inherents::Error>;
-}
-
-impl<B: BlockT> ConsensusDataProvider<B> for () {
-	fn create_digest(
-		&self,
-		_: &B::Header,
-		_: &InherentData,
-	) -> Result<Digest, sp_inherents::Error> {
-		Ok(Default::default())
-	}
-}
-
-pub use self::aura::AuraConsensusDataProvider;
-mod aura {
-	use super::*;
-	use sp_consensus_aura::{
-		digests::CompatibleDigestItem,
-		sr25519::{AuthorityId, AuthoritySignature},
-		AuraApi, Slot, SlotDuration,
-	};
-
-	/// Consensus data provider for Aura.
-	pub struct AuraConsensusDataProvider<B, C> {
-		// slot duration
-		slot_duration: SlotDuration,
-		// phantom data for required generics
-		_phantom: PhantomData<(B, C)>,
-	}
-
-	impl<B, C> AuraConsensusDataProvider<B, C>
-	where
-		B: BlockT,
-		C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B>,
-		C::Api: AuraApi<B, AuthorityId>,
-	{
-		/// Creates a new instance of the [`AuraConsensusDataProvider`], requires that `client`
-		/// implements [`sp_consensus_aura::AuraApi`]
-		pub fn new(client: Arc<C>) -> Self {
-			let slot_duration = sc_consensus_aura::slot_duration(&*client)
-				.expect("slot_duration is always present; qed.");
-			Self {
-				slot_duration,
-				_phantom: PhantomData,
-			}
-		}
-	}
-
-	impl<B: BlockT, C: Send + Sync> ConsensusDataProvider<B> for AuraConsensusDataProvider<B, C> {
-		fn create_digest(
-			&self,
-			_parent: &B::Header,
-			data: &InherentData,
-		) -> Result<Digest, sp_inherents::Error> {
-			let timestamp = data
-				.timestamp_inherent_data()?
-				.expect("Timestamp is always present; qed");
-
-			let digest_item =
-				<DigestItem as CompatibleDigestItem<AuthoritySignature>>::aura_pre_digest(
-					Slot::from_timestamp(timestamp, self.slot_duration),
-				);
-
-			Ok(Digest {
-				logs: vec![digest_item],
-			})
-		}
 	}
 }

@@ -92,7 +92,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC: EthConfig<B, C>> 
 	forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 	/// Something that can create the inherent data providers for pending state.
 	pending_create_inherent_data_providers: CIDP,
-	pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
+	pending_consensus_data_provider: Option<Box<dyn sc_consensus_manual_seal::ConsensusDataProvider<B, Proof = P>>>,
 	_marker: PhantomData<(BE, EC)>,
 }
 
@@ -122,7 +122,7 @@ where
 		execute_gas_limit_multiplier: u64,
 		forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 		pending_create_inherent_data_providers: CIDP,
-		pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
+		pending_consensus_data_provider: Option<Box<dyn sc_consensus_manual_seal::ConsensusDataProvider<B, Proof = P>>>,
 	) -> Self {
 		Self {
 			client,

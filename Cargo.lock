@@ -2618,7 +2618,7 @@ dependencies = [
  "sc-block-builder",
  "sc-client-api",
  "sc-client-db",
- "sc-consensus-aura",
+ "sc-consensus-manual-seal",
  "sc-network",
  "sc-network-common",
  "sc-network-sync",
@@ -2633,7 +2633,6 @@ dependencies = [
  "sp-block-builder",
  "sp-blockchain",
  "sp-consensus",
- "sp-consensus-aura",
  "sp-core",
  "sp-inherents",
  "sp-io",
@@ -2644,7 +2643,6 @@ dependencies = [
  "substrate-prometheus-endpoint",
  "substrate-test-runtime-client",
  "tempfile",
- "thiserror",
  "tokio",
 ]
 

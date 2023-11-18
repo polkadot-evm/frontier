@@ -25,13 +25,12 @@ rlp = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 schnellru = "0.2.1"
 serde = { workspace = true }
-thiserror = { workspace = true }
 tokio = { workspace = true, features = ["sync"] }
 
 # Substrate
 prometheus-endpoint = { workspace = true }
 sc-client-api = { workspace = true }
-sc-consensus-aura = { workspace = true }
+sc-consensus-manual-seal = { workspace = true }
 sc-network = { workspace = true }
 sc-network-common = { workspace = true }
 sc-network-sync = { workspace = true }
@@ -44,7 +43,6 @@ sp-api = { workspace = true, features = ["default"] }
 sp-block-builder = { workspace = true, features = ["default"] }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
-sp-consensus-aura = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 sp-inherents = { workspace = true, features = ["default"] }
 sp-io = { workspace = true, features = ["default"] }
