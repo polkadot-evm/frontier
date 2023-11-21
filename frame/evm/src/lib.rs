@@ -75,6 +75,7 @@ use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	storage::child::KillStorageResult,
 	traits::{
 		tokens::{
 			currency::Currency,
@@ -167,6 +168,9 @@ pub mod pallet {
 
 		/// Gas limit Pov size ratio.
 		type GasLimitPovSizeRatio: Get<u64>;
+
+		/// Define the quick clear limit of storage clearing when a contract suicides. Set to 0 to disable it.
+		type SuicideQuickClearLimit: Get<u32>;
 
 		/// Gas limit storage growth ratio.
 		type GasLimitStorageGrowthRatio: Get<u64>;
@@ -491,12 +495,16 @@ pub mod pallet {
 		GasLimitTooLow,
 		/// Gas limit is too high.
 		GasLimitTooHigh,
-		/// Undefined error.
-		Undefined,
+		/// The chain id is invalid.
+		InvalidChainId,
+		/// the signature is invalid.
+		InvalidSignature,
 		/// EVM reentrancy
 		Reentrancy,
 		/// EIP-3607,
 		TransactionMustComeFromEOA,
+		/// Undefined error.
+		Undefined,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
@@ -510,7 +518,9 @@ pub mod pallet {
 				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
 				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
 				TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
-				_ => Error::<T>::Undefined,
+				TransactionValidationError::InvalidChainId => Error::<T>::InvalidChainId,
+				TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
+				TransactionValidationError::UnknownError => Error::<T>::Undefined,
 			}
 		}
 	}
@@ -810,6 +820,21 @@ impl<T: Config> Pallet<T> {
 
 		<AccountCodes<T>>::remove(address);
 		<AccountCodesMetadata<T>>::remove(address);
+
+		if T::SuicideQuickClearLimit::get() > 0 {
+			#[allow(deprecated)]
+			let res = <AccountStorages<T>>::remove_prefix(address, Some(T::SuicideQuickClearLimit::get()));
+
+			match res {
+				KillStorageResult::AllRemoved(_) => {
+					<Suicided<T>>::remove(address);
+
+					let account_id = T::AddressMapping::into_account_id(*address);
+					let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
+				}
+				KillStorageResult::SomeRemaining(_) => (),
+			}
+		}
 	}
 
 	/// Create an account.

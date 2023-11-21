@@ -16,16 +16,19 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum::{AccessListItem, TransactionV2};
-use ethereum_types::{H160, H256, H512, U256, U64};
+use ethereum::{AccessListItem, TransactionAction, TransactionV2 as EthereumTransaction};
+use ethereum_types::{H160, H256, U256, U64};
 use serde::{ser::SerializeStruct, Serialize, Serializer};
 
-use crate::types::Bytes;
+use crate::types::{BuildFrom, Bytes};
 
 /// Transaction
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
+	/// EIP-2718 transaction type
+	#[serde(rename = "type")]
+	pub transaction_type: U256,
 	/// Hash
 	pub hash: H256,
 	/// Nonce
@@ -40,8 +43,10 @@ pub struct Transaction {
 	pub from: H160,
 	/// Recipient
 	pub to: Option<H160>,
-	/// Transfered value
+	/// Transferred value
 	pub value: U256,
+	/// Gas
+	pub gas: U256,
 	/// Gas Price
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub gas_price: Option<U256>,
@@ -51,114 +56,113 @@ pub struct Transaction {
 	/// The miner's tip.
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub max_priority_fee_per_gas: Option<U256>,
-	/// Gas
-	pub gas: U256,
 	/// Data
 	pub input: Bytes,
 	/// Creates contract
 	pub creates: Option<H160>,
-	/// Raw transaction data
-	pub raw: Bytes,
-	/// Public key of the signer.
-	pub public_key: Option<H512>,
 	/// The network id of the transaction, if any.
+	#[serde(skip_serializing_if = "Option::is_none")]
 	pub chain_id: Option<U64>,
-	/// The standardised V field of the signature (0 or 1).
-	pub standard_v: U256,
+	/// Pre-pay to warm storage access.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub access_list: Option<Vec<AccessListItem>>,
+	/// The parity (0 for even, 1 for odd) of the y-value of the secp256k1 signature.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub y_parity: Option<U256>,
 	/// The standardised V field of the signature.
-	pub v: U256,
+	///
+	/// For backwards compatibility, `v` is optionally provided as an alternative to `yParity`.
+	/// This field is DEPRECATED and all use of it should migrate to `yParity`.
+	#[serde(skip_serializing_if = "Option::is_none")]
+	pub v: Option<U256>,
 	/// The R field of the signature.
 	pub r: U256,
 	/// The S field of the signature.
 	pub s: U256,
-	/// Pre-pay to warm storage access.
-	#[cfg_attr(feature = "std", serde(skip_serializing_if = "Option::is_none"))]
-	pub access_list: Option<Vec<AccessListItem>>,
-	/// EIP-2718 type
-	#[serde(rename = "type", skip_serializing_if = "Option::is_none")]
-	pub transaction_type: Option<U256>,
 }
 
-impl From<TransactionV2> for Transaction {
-	fn from(transaction: TransactionV2) -> Self {
-		let serialized = ethereum::EnvelopedEncodable::encode(&transaction);
+impl BuildFrom for Transaction {
+	fn build_from(from: H160, transaction: &EthereumTransaction) -> Self {
 		let hash = transaction.hash();
-		let raw = Bytes(serialized.to_vec());
 		match transaction {
-			TransactionV2::Legacy(t) => Transaction {
+			EthereumTransaction::Legacy(t) => Self {
+				transaction_type: U256::from(0),
 				hash,
 				nonce: t.nonce,
 				block_hash: None,
 				block_number: None,
 				transaction_index: None,
-				from: H160::default(),
-				to: None,
+				from,
+				to: match t.action {
+					TransactionAction::Call(to) => Some(to),
+					TransactionAction::Create => None,
+				},
 				value: t.value,
+				gas: t.gas_limit,
 				gas_price: Some(t.gas_price),
 				max_fee_per_gas: None,
 				max_priority_fee_per_gas: None,
-				gas: t.gas_limit,
-				input: Bytes(t.clone().input),
+				input: Bytes(t.input.clone()),
 				creates: None,
-				raw,
-				public_key: None,
 				chain_id: t.signature.chain_id().map(U64::from),
-				standard_v: U256::from(t.signature.standard_v()),
-				v: U256::from(t.signature.v()),
+				access_list: None,
+				y_parity: None,
+				v: Some(U256::from(t.signature.v())),
 				r: U256::from(t.signature.r().as_bytes()),
 				s: U256::from(t.signature.s().as_bytes()),
-				access_list: None,
-				transaction_type: Some(U256::from(0)),
 			},
-			TransactionV2::EIP2930(t) => Transaction {
+			EthereumTransaction::EIP2930(t) => Self {
+				transaction_type: U256::from(1),
 				hash,
 				nonce: t.nonce,
 				block_hash: None,
 				block_number: None,
 				transaction_index: None,
-				from: H160::default(),
-				to: None,
+				from,
+				to: match t.action {
+					TransactionAction::Call(to) => Some(to),
+					TransactionAction::Create => None,
+				},
 				value: t.value,
+				gas: t.gas_limit,
 				gas_price: Some(t.gas_price),
 				max_fee_per_gas: None,
 				max_priority_fee_per_gas: None,
-				gas: t.gas_limit,
-				input: Bytes(t.clone().input),
+				input: Bytes(t.input.clone()),
 				creates: None,
-				raw,
-				public_key: None,
 				chain_id: Some(U64::from(t.chain_id)),
-				standard_v: U256::from(t.odd_y_parity as u8),
-				v: U256::from(t.odd_y_parity as u8),
+				access_list: Some(t.access_list.clone()),
+				y_parity: Some(U256::from(t.odd_y_parity as u8)),
+				v: Some(U256::from(t.odd_y_parity as u8)),
 				r: U256::from(t.r.as_bytes()),
 				s: U256::from(t.s.as_bytes()),
-				access_list: Some(t.access_list),
-				transaction_type: Some(U256::from(1)),
 			},
-			TransactionV2::EIP1559(t) => Transaction {
+			EthereumTransaction::EIP1559(t) => Self {
+				transaction_type: U256::from(2),
 				hash,
 				nonce: t.nonce,
 				block_hash: None,
 				block_number: None,
 				transaction_index: None,
-				from: H160::default(),
-				to: None,
+				from,
+				to: match t.action {
+					TransactionAction::Call(to) => Some(to),
+					TransactionAction::Create => None,
+				},
 				value: t.value,
-				gas_price: None,
+				gas: t.gas_limit,
+				// If transaction is not mined yet, gas price is considered just max fee per gas.
+				gas_price: Some(t.max_fee_per_gas),
 				max_fee_per_gas: Some(t.max_fee_per_gas),
 				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
-				gas: t.gas_limit,
-				input: Bytes(t.clone().input),
+				input: Bytes(t.input.clone()),
 				creates: None,
-				raw,
-				public_key: None,
 				chain_id: Some(U64::from(t.chain_id)),
-				standard_v: U256::from(t.odd_y_parity as u8),
-				v: U256::from(t.odd_y_parity as u8),
+				access_list: Some(t.access_list.clone()),
+				y_parity: Some(U256::from(t.odd_y_parity as u8)),
+				v: Some(U256::from(t.odd_y_parity as u8)),
 				r: U256::from(t.r.as_bytes()),
 				s: U256::from(t.s.as_bytes()),
-				access_list: Some(t.access_list),
-				transaction_type: Some(U256::from(2)),
 			},
 		}
 	}
