@@ -222,7 +222,7 @@ pub struct Bls12381G1Add;
 
 impl Bls12381G1Add {
 	/// https://eips.ethereum.org/EIPS/eip-2537#g1-addition
-	const GAS_COST: u64 = 500;
+	const GAS_COST: u64 = 600;
 }
 
 impl Precompile for Bls12381G1Add {
@@ -369,7 +369,7 @@ pub struct Bls12381G2Add;
 
 impl Bls12381G2Add {
 	/// https://eips.ethereum.org/EIPS/eip-2537#g2-addition
-	const GAS_COST: u64 = 800;
+	const GAS_COST: u64 = 4500;
 }
 
 impl Precompile for Bls12381G2Add {
@@ -407,7 +407,7 @@ pub struct Bls12381G2Mul;
 
 impl Bls12381G2Mul {
 	// https://eips.ethereum.org/EIPS/eip-2537#g2-multiplication
-	const GAS_COST: u64 = 45_000;
+	const GAS_COST: u64 = 55_000;
 }
 
 impl Precompile for Bls12381G2Mul {
@@ -516,8 +516,8 @@ pub struct Bls12381Pairing;
 
 impl Bls12381Pairing {
 	/// https://eips.ethereum.org/EIPS/eip-2537#pairing-operation
-	const BASE_GAS: u64 = 65_000;
-	const PER_PAIR_GAS: u64 = 43_000;
+	const BASE_GAS: u64 = 115000;
+	const PER_PAIR_GAS: u64 = 23000;
 }
 
 impl Precompile for Bls12381Pairing {
@@ -624,7 +624,7 @@ impl Precompile for Bls12381MapG1 {
 pub struct Bls12381MapG2;
 
 impl Bls12381MapG2 {
-	const GAS_COST: u64 = 75_000;
+	const GAS_COST: u64 = 110000;
 }
 
 impl Precompile for Bls12381MapG2 {
