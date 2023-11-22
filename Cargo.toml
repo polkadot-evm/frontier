@@ -14,6 +14,7 @@ members = [
 	"frame/evm/precompile/blake2",
 	"frame/evm/precompile/bw6761",
 	"frame/evm/precompile/bls12377",
+	"frame/evm/precompile/bls12381",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
 	"client/api",
@@ -182,6 +183,7 @@ precompile-utils = { path = "precompiles", default-features = false }
 
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
+ark-bls12-381 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-bw6-761 = { version = "0.4.0", default-features = false }
 ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
