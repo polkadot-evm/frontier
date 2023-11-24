@@ -84,7 +84,7 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
-	#[api_version(5)]
+	#[api_version(6)]
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
@@ -256,6 +256,8 @@ sp_api::decl_runtime_apis! {
 		fn pending_block(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> (Option<ethereum::BlockV2>, Option<Vec<TransactionStatus>>);
+		/// initialize the pending block
+		fn initialize_pending_block(header: &<Block as BlockT>::Header);
 	}
 
 	#[api_version(2)]
