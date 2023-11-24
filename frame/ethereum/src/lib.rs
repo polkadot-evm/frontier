@@ -381,7 +381,6 @@ impl<T: Config> Pallet<T> {
 			_ => (None, None),
 		}
 	}
-
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
 		let mut sig = [0u8; 65];
 		let mut msg = [0u8; 32];
@@ -525,8 +524,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|e| e.0)?;
 
 		use pallet_evm::OnChargeEVMTransaction;
-		let max_withdraw = check_transaction.max_withdraw_amount()
-			.map_err(|e| e.0)?;
+		let max_withdraw = check_transaction.max_withdraw_amount().map_err(|e| e.0)?;
 		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
 			.map_err(|_| InvalidTransaction::Payment)?;
 
@@ -871,7 +869,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Estimated maximal SCALE encoded size of an ethereum transaction
 	pub fn max_transaction_encoded_size(input: &[u8], access_list: &[(H160, Vec<H256>)]) -> u64 {
-		Self::proof_size_base_cost(&Transaction::EIP1559(ethereum::EIP1559Transaction{
+		Self::proof_size_base_cost(&Transaction::EIP1559(ethereum::EIP1559Transaction {
 			chain_id: 0,
 			nonce: Default::default(),
 			max_priority_fee_per_gas: Default::default(),
@@ -880,7 +878,13 @@ impl<T: Config> Pallet<T> {
 			action: ethereum::TransactionAction::Call(Default::default()),
 			value: Default::default(),
 			input: input.to_vec(),
-			access_list: access_list.iter().map(|(address, storage_keys)| AccessListItem { address: *address, storage_keys: storage_keys.to_vec() }).collect(),
+			access_list: access_list
+				.iter()
+				.map(|(address, storage_keys)| AccessListItem {
+					address: *address,
+					storage_keys: storage_keys.to_vec(),
+				})
+				.collect(),
 			odd_y_parity: false,
 			r: Default::default(),
 			s: Default::default(),
@@ -920,8 +924,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		use pallet_evm::OnChargeEVMTransaction;
-		let max_withdraw = check_transaction.max_withdraw_amount()
-			.map_err(|e| e.0)?;
+		let max_withdraw = check_transaction.max_withdraw_amount().map_err(|e| e.0)?;
 		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
 			.map_err(|_| InvalidTransaction::Payment)?;
 
