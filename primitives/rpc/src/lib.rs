@@ -239,6 +239,12 @@ sp_api::decl_runtime_apis! {
 		fn pending_block(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> (Option<ethereum::BlockV2>, Option<Vec<TransactionStatus>>);
+		/// Initialize the pending block.
+		/// The behavior should be the same as the runtime api Core_initialize_block but
+		/// for a "pending" block.
+		/// If your project don't need to have a different behavior to initialize "pending" blocks, 
+		/// you can copy your Core_initialize_block implementation.
+		fn initialize_pending_block(header: &<Block as BlockT>::Header);
 	}
 
 	#[api_version(2)]
