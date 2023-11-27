@@ -102,12 +102,12 @@ where
 		);
 
 		// Initialize the pending block header
-		match api.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_hash)? {
-			Some(version) if version >= 6 => {
-				api.initialize_pending_block(best_hash, &pending_header)?
-			}
-			_ => api.initialize_block(best_hash, &pending_header)?,
-		}
+		//match api.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_hash)? {
+			//Some(version) if version >= 6 => {
+				api.initialize_pending_block(best_hash, &pending_header)?;
+			//}
+			//_ => api.initialize_block(best_hash, &pending_header)?,
+		//}
 
 		// Apply inherents to the pending block.
 		let inherents = api.execute_in_transaction(move |api| {
