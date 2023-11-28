@@ -279,6 +279,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxReserves = ();
 	type MaxHolds = ();
 	type MaxFreezes = ();
+	type RuntimeFreezeReason = ();
 }
 
 parameter_types! {
