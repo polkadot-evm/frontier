@@ -42,10 +42,12 @@ use sp_runtime::traits::UniqueSaturatedInto;
 // Frontier
 use fp_evm::{
 	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
-	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
+	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_KEY_SIZE,
+	ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE,
+	WRITE_PROOF_SIZE,
 };
 
+use super::meter::StorageMeter;
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
 	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
@@ -239,24 +241,42 @@ where
 			origin: source,
 		};
 
+		// Compute the storage limit based on the gas limit and the storage growth ratio.
+		let storage_growth_ratio = T::GasLimitStorageGrowthRatio::get();
+		let storage_limit = if storage_growth_ratio > 0 {
+			let storage_limit = gas_limit.saturating_div(storage_growth_ratio);
+			Some(storage_limit)
+		} else {
+			None
+		};
+
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
+		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info, storage_limit);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);
 
+		// Compute the storage gas cost based on the storage growth.
+		let storage_gas = match &executor.state().storage_meter {
+			Some(storage_meter) => storage_meter.storage_to_gas(storage_growth_ratio),
+			None => 0,
+		};
+
+		let pov_gas = match executor.state().weight_info() {
+			Some(weight_info) => weight_info
+				.proof_size_usage
+				.unwrap_or_default()
+				.saturating_mul(T::GasLimitPovSizeRatio::get()),
+			None => 0,
+		};
+
 		// Post execution.
 		let used_gas = executor.used_gas();
-		let effective_gas = match executor.state().weight_info() {
-			Some(weight_info) => U256::from(core::cmp::max(
-				used_gas,
-				weight_info
-					.proof_size_usage
-					.unwrap_or_default()
-					.saturating_mul(T::GasLimitPovSizeRatio::get()),
-			)),
-			_ => used_gas.into(),
-		};
+		let effective_gas = U256::from(core::cmp::max(
+			core::cmp::max(used_gas, pov_gas),
+			storage_gas,
+		));
+
 		let actual_fee = effective_gas.saturating_mul(total_fee_per_gas);
 		let actual_base_fee = effective_gas.saturating_mul(base_fee);
 
@@ -678,6 +698,7 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	original_storage: BTreeMap<(H160, H256), H256>,
 	recorded: Recorded,
 	weight_info: Option<WeightInfo>,
+	storage_meter: Option<StorageMeter>,
 	_marker: PhantomData<T>,
 }
 
@@ -687,7 +708,9 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		vicinity: &'vicinity Vicinity,
 		metadata: StackSubstateMetadata<'config>,
 		weight_info: Option<WeightInfo>,
+		storage_limit: Option<u64>,
 	) -> Self {
+		let storage_meter = storage_limit.map(StorageMeter::new);
 		Self {
 			vicinity,
 			substate: SubstrateStackSubstate {
@@ -700,6 +723,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			original_storage: BTreeMap::new(),
 			recorded: Default::default(),
 			weight_info,
+			storage_meter,
 		}
 	}
 
@@ -998,8 +1022,18 @@ where
 				ExternalOperation::IsEmpty => {
 					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?
 				}
-				ExternalOperation::Write(_) => {
-					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?
+				ExternalOperation::Write(len) => {
+					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
+
+					if let Some(storage_meter) = self.storage_meter.as_mut() {
+						// Record the number of bytes written to storage when deploying a contract.
+						let storage_growth = ACCOUNT_CODES_KEY_SIZE
+							.saturating_add(ACCOUNT_CODES_METADATA_PROOF_SIZE)
+							.saturating_add(len.as_u64());
+						storage_meter
+							.record(storage_growth)
+							.map_err(|_| ExitError::OutOfGas)?;
+					}
 				}
 			};
 		}
@@ -1009,9 +1043,15 @@ where
 	fn record_external_dynamic_opcode_cost(
 		&mut self,
 		opcode: Opcode,
-		_gas_cost: GasCost,
+		gas_cost: GasCost,
 		target: evm::gasometer::StorageTarget,
 	) -> Result<(), ExitError> {
+		if let Some(storage_meter) = self.storage_meter.as_mut() {
+			storage_meter
+				.record_dynamic_opcode_cost(opcode, gas_cost, target)
+				.map_err(|_| ExitError::OutOfGas)?;
+		}
+
 		// If account code or storage slot is in the overlay it is already accounted for and early exit
 		let accessed_storage: Option<AccessedStorage> = match target {
 			StorageTarget::Address(address) => {
@@ -1137,7 +1177,7 @@ where
 		&mut self,
 		ref_time: Option<u64>,
 		proof_size: Option<u64>,
-		_storage_growth: Option<u64>,
+		storage_growth: Option<u64>,
 	) -> Result<(), ExitError> {
 		let weight_info = if let (Some(weight_info), _) = self.info_mut() {
 			weight_info
@@ -1150,6 +1190,13 @@ where
 		}
 		if let Some(amount) = proof_size {
 			weight_info.try_record_proof_size_or_fail(amount)?;
+		}
+		if let Some(storage_meter) = self.storage_meter.as_mut() {
+			if let Some(amount) = storage_growth {
+				storage_meter
+					.record(amount)
+					.map_err(|_| ExitError::OutOfGas)?;
+			}
 		}
 		Ok(())
 	}

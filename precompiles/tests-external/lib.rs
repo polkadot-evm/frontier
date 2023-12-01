@@ -249,6 +249,7 @@ impl pallet_evm::Config for Runtime {
 	type FindAuthor = ();
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type SuicideQuickClearLimit = SuicideQuickClearLimit;
+	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
