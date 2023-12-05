@@ -24,6 +24,7 @@ var sourcesIndex = JSON.parse('{\
 "pallet_evm_chain_id":["",[],["lib.rs"]],\
 "pallet_evm_precompile_blake2":["",[],["eip_152.rs","lib.rs"]],\
 "pallet_evm_precompile_bls12377":["",[],["lib.rs"]],\
+"pallet_evm_precompile_bls12381":["",[],["lib.rs"]],\
 "pallet_evm_precompile_bn128":["",[],["lib.rs"]],\
 "pallet_evm_precompile_bw6761":["",[],["lib.rs"]],\
 "pallet_evm_precompile_curve25519":["",[],["lib.rs"]],\
