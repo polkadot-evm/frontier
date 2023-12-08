@@ -172,6 +172,9 @@ pub mod pallet {
 		/// Define the quick clear limit of storage clearing when a contract suicides. Set to 0 to disable it.
 		type SuicideQuickClearLimit: Get<u32>;
 
+		/// Gas limit storage growth ratio.
+		type GasLimitStorageGrowthRatio: Get<u64>;
+
 		/// Get the timestamp for the current block.
 		type Timestamp: Time;
 
