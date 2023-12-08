@@ -31,11 +31,11 @@ mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
+pub use catch_exec_info::catch_exec_info;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
-pub use catch_exec_info::catch_exec_info;
 
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -361,13 +361,13 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-		/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-		fn proof_size_base_cost(transaction: &Transaction) -> u64 {
-			transaction
-				.encoded_size()
-				// pallet index + call index
-				.saturating_add(2) as u64
-		}
+	/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+	fn proof_size_base_cost(transaction: &Transaction) -> u64 {
+		transaction
+			.encoded_size()
+			// pallet index + call index
+			.saturating_add(2) as u64
+	}
 
 	pub fn transaction_weight(transaction_data: &TransactionData) -> (Option<Weight>, Option<u64>) {
 		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
