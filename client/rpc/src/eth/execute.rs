@@ -462,19 +462,6 @@ where
 			}
 		}
 
-		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
-			let details = fee_details(
-				request.gas_price,
-				request.max_fee_per_gas,
-				request.max_priority_fee_per_gas,
-			)?;
-			(
-				details.gas_price,
-				details.max_fee_per_gas,
-				details.max_priority_fee_per_gas,
-			)
-		};
-
 		let block_gas_limit = {
 			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 			let block = block_data_cache.current_block(schema, substrate_hash).await;
@@ -505,10 +492,23 @@ where
 			},
 		};
 
+		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas, fee_cap) = {
+			let details = fee_details(
+				request.gas_price,
+				request.max_fee_per_gas,
+				request.max_priority_fee_per_gas,
+			)?;
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+				details.fee_cap,
+			)
+		};
+
 		// Recap the highest gas allowance with account's balance.
 		if let Some(from) = request.from {
-			let gas_price = gas_price.unwrap_or_default();
-			if gas_price > U256::zero() {
+			if fee_cap > U256::zero() {
 				let balance = api
 					.account_basic(substrate_hash, from)
 					.map_err(|err| internal_err(format!("runtime error: {err}")))?
@@ -520,14 +520,14 @@ where
 					}
 					available -= value;
 				}
-				let allowance = available / gas_price;
+				let allowance = available / fee_cap;
 				if highest > allowance {
 					log::warn!(
 							"Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}",
 							highest,
 							balance,
 							request.value.unwrap_or_default(),
-							gas_price,
+							fee_cap,
 							allowance
 						);
 					highest = allowance;
@@ -1007,50 +1007,51 @@ struct FeeDetails {
 	gas_price: Option<U256>,
 	max_fee_per_gas: Option<U256>,
 	max_priority_fee_per_gas: Option<U256>,
+	fee_cap: U256,
 }
 
 fn fee_details(
 	request_gas_price: Option<U256>,
-	request_max_fee: Option<U256>,
-	request_priority: Option<U256>,
+	request_max_fee_per_gas: Option<U256>,
+	request_priority_fee_per_gas: Option<U256>,
 ) -> RpcResult<FeeDetails> {
-	match (request_gas_price, request_max_fee, request_priority) {
-		(gas_price, None, None) => {
-			// Legacy request, all default to gas price.
-			// A zero-set gas price is None.
-			let gas_price = if gas_price.unwrap_or_default().is_zero() {
-				None
-			} else {
-				gas_price
-			};
-			Ok(FeeDetails {
-				gas_price,
-				max_fee_per_gas: gas_price,
-				max_priority_fee_per_gas: gas_price,
-			})
+	match (
+		request_gas_price,
+		request_max_fee_per_gas,
+		request_priority_fee_per_gas,
+	) {
+		(Some(_), Some(_), Some(_)) => {
+			return Err(internal_err(
+				"both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified",
+			));
 		}
-		(_, max_fee, max_priority) => {
-			// eip-1559
-			// A zero-set max fee is None.
-			let max_fee = if max_fee.unwrap_or_default().is_zero() {
-				None
-			} else {
-				max_fee
-			};
-			// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
-			if let Some(max_priority) = max_priority {
-				let max_fee = max_fee.unwrap_or_default();
-				if max_priority > max_fee {
-					return Err(internal_err(
-						"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`",
-					));
-				}
+		// Legacy or EIP-2930 transaction.
+		(gas_price, None, None) if gas_price.is_some() => Ok(FeeDetails {
+			gas_price,
+			max_fee_per_gas: None,
+			max_priority_fee_per_gas: None,
+			fee_cap: gas_price.unwrap_or_default(),
+		}),
+		// EIP-1559 transaction
+		(None, Some(max_fee), Some(max_priority)) => {
+			if max_priority > max_fee {
+				return Err(internal_err(
+					"Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`",
+				));
 			}
 			Ok(FeeDetails {
-				gas_price: max_fee,
-				max_fee_per_gas: max_fee,
-				max_priority_fee_per_gas: max_priority,
+				gas_price: None,
+				max_fee_per_gas: Some(max_fee),
+				max_priority_fee_per_gas: Some(max_priority),
+				fee_cap: max_fee,
 			})
 		}
+		// Default to EIP-1559 transaction
+		_ => Ok(FeeDetails {
+			gas_price: None,
+			max_fee_per_gas: Some(U256::zero()),
+			max_priority_fee_per_gas: Some(U256::zero()),
+			fee_cap: U256::zero(),
+		}),
 	}
 }
