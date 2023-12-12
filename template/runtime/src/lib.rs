@@ -702,6 +702,10 @@ impl_runtime_apis! {
 			);
 			let (weight_limit, proof_size_base_cost) = pallet_ethereum::Pallet::<Runtime>::transaction_weight(&transaction_data);
 
+			log::info!(target: "rpc", "bear: --- Ready to call the runner");
+			sp_std::if_std! {
+				println!("bear: --- Ready to call the runner");
+			}
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
@@ -753,6 +757,7 @@ impl_runtime_apis! {
 			);
 			let (weight_limit, proof_size_base_cost) = pallet_ethereum::Pallet::<Runtime>::transaction_weight(&transaction_data);
 
+			log::info!(target: "rpc", "bear: --- Ready to create the runner");
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,

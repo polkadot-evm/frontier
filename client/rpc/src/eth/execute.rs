@@ -84,6 +84,7 @@ where
 		number_or_hash: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
+		log::info!(target: "rpc", "bear: --- Call request: {:?}", request);
 		let CallRequest {
 			from,
 			to,
@@ -175,6 +176,7 @@ where
 		};
 
 		let data = data.map(|d| d.0).unwrap_or_default();
+		log::debug!(target: "rpc", "bear: --- Call request: to {:?}", to);
 		match to {
 			Some(to) => {
 				if api_version == 1 {
@@ -270,6 +272,7 @@ where
 						error_on_execution_failure(&info.exit_reason, &info.value)?;
 						info.value
 					} else if api_version == 5 {
+						log::info!(target: "rpc", "bear: --- Ready for call api 5");
 						let info = self
 							.client
 							.call_api_at(params)
@@ -285,6 +288,7 @@ where
 							.map_err(|err| internal_err(format!("runtime error: {err}")))?
 							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
+						log::debug!(target: "rpc", "bear: --- Call request: result {:?}", info);
 						error_on_execution_failure(&info.exit_reason, &info.value)?;
 						info.value
 					} else {
@@ -373,6 +377,7 @@ where
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?;
 					Ok(Bytes(code))
 				} else if api_version == 5 {
+					log::info!(target: "rpc", "bear: --- Ready for call api 5");
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
 					let info = api
@@ -396,6 +401,7 @@ where
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?
 						.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
+					log::debug!(target: "rpc", "bear: --- Call request: result {:?}", info);
 					error_on_execution_failure(&info.exit_reason, &[])?;
 
 					let code = api

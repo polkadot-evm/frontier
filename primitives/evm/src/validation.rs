@@ -154,6 +154,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		if self.config.is_transactional || fee > U256::zero() {
 			let total_payment = self.transaction.value.saturating_add(fee);
 			if who.balance < total_payment {
+				log::info!(target: "rpc", "bear: --- balance too low, is_transactional: {:?}, fee: {:?}, balance: {:?}, total_payment: {:?}", self.config.is_transactional ,fee, who.balance, total_payment);
 				return Err(TransactionValidationError::BalanceTooLow.into());
 			}
 		}

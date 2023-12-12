@@ -15,6 +15,7 @@ evm = { workspace = true, features = ["with-codec"] }
 num_enum = { workspace = true, default-features = false }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
+log = { workspace = true }
 serde = { workspace = true, optional = true }
 # Substrate
 frame-support = { workspace = true }
@@ -26,6 +27,7 @@ sp-std = { workspace = true }
 default = ["std"]
 std = [
 	"evm/std",
+	"log/std",
 	"evm/with-serde",
 	"num_enum/std",
 	"serde/std",
