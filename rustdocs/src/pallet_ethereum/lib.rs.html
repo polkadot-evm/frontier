@@ -1389,7 +1389,7 @@
 		) {
 			weight_limit <span class="kw">if </span>weight_limit.proof_size() &gt; <span class="number">0 </span>=&gt; (
 				<span class="prelude-val">Some</span>(weight_limit),
-				<span class="prelude-val">Some</span>(transaction_data.proof_size_base_cost.unwrap_or_default()),
+				<span class="prelude-val">Some</span>(transaction_data.proof_size_base_cost()),
 			),
 			<span class="kw">_ </span>=&gt; (<span class="prelude-val">None</span>, <span class="prelude-val">None</span>),
 		}

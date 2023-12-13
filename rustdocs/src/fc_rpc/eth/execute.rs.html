@@ -1053,7 +1053,6 @@
 <a href="#1053" id="1053">1053</a>
 <a href="#1054" id="1054">1054</a>
 <a href="#1055" id="1055">1055</a>
-<a href="#1056" id="1056">1056</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1518,19 +1517,6 @@
 			}
 		}
 
-		<span class="kw">let </span>(gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
-			<span class="kw">let </span>details = fee_details(
-				request.gas_price,
-				request.max_fee_per_gas,
-				request.max_priority_fee_per_gas,
-			)<span class="question-mark">?</span>;
-			(
-				details.gas_price,
-				details.max_fee_per_gas,
-				details.max_priority_fee_per_gas,
-			)
-		};
-
 		<span class="kw">let </span>block_gas_limit = {
 			<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 			<span class="kw">let </span>block = block_data_cache.current_block(schema, substrate_hash).<span class="kw">await</span>;
@@ -1561,10 +1547,23 @@
 			},
 		};
 
+		<span class="kw">let </span>(gas_price, max_fee_per_gas, max_priority_fee_per_gas, fee_cap) = {
+			<span class="kw">let </span>details = fee_details(
+				request.gas_price,
+				request.max_fee_per_gas,
+				request.max_priority_fee_per_gas,
+			)<span class="question-mark">?</span>;
+			(
+				details.gas_price,
+				details.max_fee_per_gas,
+				details.max_priority_fee_per_gas,
+				details.fee_cap,
+			)
+		};
+
 		<span class="comment">// Recap the highest gas allowance with account&#39;s balance.
 		</span><span class="kw">if let </span><span class="prelude-val">Some</span>(from) = request.from {
-			<span class="kw">let </span>gas_price = gas_price.unwrap_or_default();
-			<span class="kw">if </span>gas_price &gt; U256::zero() {
+			<span class="kw">if </span>fee_cap &gt; U256::zero() {
 				<span class="kw">let </span>balance = api
 					.account_basic(substrate_hash, from)
 					.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;runtime error: {err}&quot;</span>)))<span class="question-mark">?
@@ -1576,14 +1575,14 @@
 					}
 					available -= value;
 				}
-				<span class="kw">let </span>allowance = available / gas_price;
+				<span class="kw">let </span>allowance = available / fee_cap;
 				<span class="kw">if </span>highest &gt; allowance {
 					<span class="macro">log::warn!</span>(
 							<span class="string">&quot;Gas estimation capped by limited funds original {} balance {} sent {} feecap {} fundable {}&quot;</span>,
 							highest,
 							balance,
 							request.value.unwrap_or_default(),
-							gas_price,
+							fee_cap,
 							allowance
 						);
 					highest = allowance;
@@ -2063,51 +2062,50 @@
 	gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	fee_cap: U256,
 }
 
 <span class="kw">fn </span>fee_details(
 	request_gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
-	request_max_fee: <span class="prelude-ty">Option</span>&lt;U256&gt;,
-	request_priority: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	request_max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
+	request_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 ) -&gt; RpcResult&lt;FeeDetails&gt; {
-	<span class="kw">match </span>(request_gas_price, request_max_fee, request_priority) {
-		(gas_price, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) =&gt; {
-			<span class="comment">// Legacy request, all default to gas price.
-			// A zero-set gas price is None.
-			</span><span class="kw">let </span>gas_price = <span class="kw">if </span>gas_price.unwrap_or_default().is_zero() {
-				<span class="prelude-val">None
-			</span>} <span class="kw">else </span>{
-				gas_price
-			};
-			<span class="prelude-val">Ok</span>(FeeDetails {
-				gas_price,
-				max_fee_per_gas: gas_price,
-				max_priority_fee_per_gas: gas_price,
-			})
-		}
-		(<span class="kw">_</span>, max_fee, max_priority) =&gt; {
-			<span class="comment">// eip-1559
-			// A zero-set max fee is None.
-			</span><span class="kw">let </span>max_fee = <span class="kw">if </span>max_fee.unwrap_or_default().is_zero() {
-				<span class="prelude-val">None
-			</span>} <span class="kw">else </span>{
-				max_fee
-			};
-			<span class="comment">// Ensure `max_priority_fee_per_gas` is less or equal to `max_fee_per_gas`.
-			</span><span class="kw">if let </span><span class="prelude-val">Some</span>(max_priority) = max_priority {
-				<span class="kw">let </span>max_fee = max_fee.unwrap_or_default();
-				<span class="kw">if </span>max_priority &gt; max_fee {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
-						<span class="string">&quot;Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`&quot;</span>,
-					));
-				}
+	<span class="kw">match </span>(
+		request_gas_price,
+		request_max_fee_per_gas,
+		request_priority_fee_per_gas,
+	) {
+		(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">Some</span>(<span class="kw">_</span>)) =&gt; <span class="prelude-val">Err</span>(internal_err(
+			<span class="string">&quot;both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified&quot;</span>,
+		)),
+		<span class="comment">// Legacy or EIP-2930 transaction.
+		</span>(gas_price, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>) <span class="kw">if </span>gas_price.is_some() =&gt; <span class="prelude-val">Ok</span>(FeeDetails {
+			gas_price,
+			max_fee_per_gas: <span class="prelude-val">None</span>,
+			max_priority_fee_per_gas: <span class="prelude-val">None</span>,
+			fee_cap: gas_price.unwrap_or_default(),
+		}),
+		<span class="comment">// EIP-1559 transaction
+		</span>(<span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(max_fee), <span class="prelude-val">Some</span>(max_priority)) =&gt; {
+			<span class="kw">if </span>max_priority &gt; max_fee {
+				<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(
+					<span class="string">&quot;Invalid input: `max_priority_fee_per_gas` greater than `max_fee_per_gas`&quot;</span>,
+				));
 			}
 			<span class="prelude-val">Ok</span>(FeeDetails {
-				gas_price: max_fee,
-				max_fee_per_gas: max_fee,
-				max_priority_fee_per_gas: max_priority,
+				gas_price: <span class="prelude-val">None</span>,
+				max_fee_per_gas: <span class="prelude-val">Some</span>(max_fee),
+				max_priority_fee_per_gas: <span class="prelude-val">Some</span>(max_priority),
+				fee_cap: max_fee,
 			})
 		}
+		<span class="comment">// Default to EIP-1559 transaction
+		</span><span class="kw">_ </span>=&gt; <span class="prelude-val">Ok</span>(FeeDetails {
+			gas_price: <span class="prelude-val">None</span>,
+			max_fee_per_gas: <span class="prelude-val">Some</span>(U256::zero()),
+			max_priority_fee_per_gas: <span class="prelude-val">Some</span>(U256::zero()),
+			fee_cap: U256::zero(),
+		}),
 	}
 }
 </code></pre></div></section></main></body></html>

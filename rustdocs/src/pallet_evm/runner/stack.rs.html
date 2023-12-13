@@ -1255,8 +1255,6 @@
 <a href="#1255" id="1255">1255</a>
 <a href="#1256" id="1256">1256</a>
 <a href="#1257" id="1257">1257</a>
-<a href="#1258" id="1258">1258</a>
-<a href="#1259" id="1259">1259</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1452,35 +1450,33 @@
 			});
 		}
 
-		<span class="kw">let </span>(total_fee_per_gas, _actual_priority_fee_per_gas) =
-			<span class="kw">match </span>(max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
+		<span class="kw">let </span>total_fee_per_gas = <span class="kw">if </span>is_transactional {
+			<span class="kw">match </span>(max_fee_per_gas, max_priority_fee_per_gas) {
 				<span class="comment">// Zero max_fee_per_gas for validated transactional calls exist in XCM -&gt; EVM
 				// because fees are already withdrawn in the xcm-executor.
-				</span>(<span class="prelude-val">Some</span>(max_fee), <span class="kw">_</span>, <span class="bool-val">true</span>) <span class="kw">if </span>max_fee.is_zero() =&gt; (U256::zero(), U256::zero()),
+				</span>(<span class="prelude-val">Some</span>(max_fee), <span class="kw">_</span>) <span class="kw">if </span>max_fee.is_zero() =&gt; U256::zero(),
 				<span class="comment">// With no tip, we pay exactly the base_fee
-				</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>, <span class="kw">_</span>) =&gt; (base_fee, U256::zero()),
+				</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>), <span class="prelude-val">None</span>) =&gt; base_fee,
 				<span class="comment">// With tip, we include as much of the tip on top of base_fee that we can, never
 				// exceeding max_fee_per_gas
-				</span>(<span class="prelude-val">Some</span>(max_fee_per_gas), <span class="prelude-val">Some</span>(max_priority_fee_per_gas), <span class="kw">_</span>) =&gt; {
+				</span>(<span class="prelude-val">Some</span>(max_fee_per_gas), <span class="prelude-val">Some</span>(max_priority_fee_per_gas)) =&gt; {
 					<span class="kw">let </span>actual_priority_fee_per_gas = max_fee_per_gas
 						.saturating_sub(base_fee)
 						.min(max_priority_fee_per_gas);
-					(
-						base_fee.saturating_add(actual_priority_fee_per_gas),
-						actual_priority_fee_per_gas,
-					)
+
+					base_fee.saturating_add(actual_priority_fee_per_gas)
 				}
-				<span class="comment">// Gas price check is skipped for non-transactional calls that don&#39;t
-				// define a `max_fee_per_gas` input.
-				</span>(<span class="prelude-val">None</span>, <span class="kw">_</span>, <span class="bool-val">false</span>) =&gt; (Default::default(), U256::zero()),
-				<span class="comment">// Unreachable, previously validated. Handle gracefully.
-				</span><span class="kw">_ </span>=&gt; {
+				<span class="kw">_ </span>=&gt; {
 					<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
 						error: Error::&lt;T&gt;::GasPriceTooLow,
 						weight,
 					})
 				}
-			};
+			}
+		} <span class="kw">else </span>{
+			<span class="comment">// Gas price check is skipped for non-transactional calls or creates
+			</span>Default::default()
+		};
 
 		<span class="comment">// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
 		</span><span class="kw">let </span>total_fee =
