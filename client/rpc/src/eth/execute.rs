@@ -1020,11 +1020,9 @@ fn fee_details(
 		request_max_fee_per_gas,
 		request_priority_fee_per_gas,
 	) {
-		(Some(_), Some(_), Some(_)) => {
-			return Err(internal_err(
-				"both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified",
-			));
-		}
+		(Some(_), Some(_), Some(_)) => Err(internal_err(
+			"both gasPrice and (maxFeePerGas or maxPriorityFeePerGas) specified",
+		)),
 		// Legacy or EIP-2930 transaction.
 		(gas_price, None, None) if gas_price.is_some() => Ok(FeeDetails {
 			gas_price,
