@@ -14,7 +14,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
-log = { workspace = true }
 
 # Substrate
 sp-api = { workspace = true }
@@ -69,7 +68,6 @@ with-paritydb-weights = []
 std = [
 	"scale-codec/std",
 	"scale-info/std",
-	"log/std",
 	# Substrate
 	"sp-api/std",
 	"sp-block-builder/std",

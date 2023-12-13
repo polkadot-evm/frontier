@@ -2907,7 +2907,6 @@ version = "3.0.0-dev"
 dependencies = [
  "evm",
  "frame-support",
- "log",
  "num_enum",
  "parity-scale-codec",
  "scale-info",
@@ -3278,7 +3277,6 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
- "log",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",

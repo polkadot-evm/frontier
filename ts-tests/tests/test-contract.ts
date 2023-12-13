@@ -57,7 +57,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("eth_call contract create should return code", async function () {
-		console.log("bear: --- this is the second test case");
 		expect(
 			await context.web3.eth.call({
 				data: TEST_CONTRACT_BYTECODE,
@@ -66,7 +65,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("eth_call at missing block returns error", async function () {
-		console.log("bear: --- this is the third test case");
 		const nonExistingBlockNumber = "999999";
 		return expect(
 			context.web3.eth.call(

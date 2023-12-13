@@ -77,7 +77,6 @@ export async function startFrontierNode(provider?: string): Promise<{
 		`--no-prometheus`,
 		`--sealing=Manual`,
 		`--no-grandpa`,
-		`--wasm-runtime-overrides=/home/bear/coding/rust-space/frontier/template/node/overridden-runtimes/`,
 		`--force-authoring`,
 		`-l${FRONTIER_LOG}`,
 		`--port=${PORT}`,

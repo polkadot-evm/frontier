@@ -193,35 +193,33 @@ where
 			});
 		}
 
-		log::info!(target: "rpc", "bear: --- Before withdraw, max_fee_per_gas: {:?}, max_priority_fee_per_gas: {:?}, is_transactional: {:?}", max_fee_per_gas, max_priority_fee_per_gas, is_transactional);
-		let (total_fee_per_gas, _actual_priority_fee_per_gas) =
-			match (max_fee_per_gas, max_priority_fee_per_gas, is_transactional) {
+		let total_fee_per_gas = if is_transactional {
+			match (max_fee_per_gas, max_priority_fee_per_gas) {
 				// Zero max_fee_per_gas for validated transactional calls exist in XCM -> EVM
 				// because fees are already withdrawn in the xcm-executor.
-				(Some(max_fee), _, true) if max_fee.is_zero() => (U256::zero(), U256::zero()),
+				(Some(max_fee), _) if max_fee.is_zero() => U256::zero(),
 				// With no tip, we pay exactly the base_fee
-				(Some(_), None, _) => (base_fee, U256::zero()),
+				(Some(_), None) => base_fee,
 				// With tip, we include as much of the tip on top of base_fee that we can, never
 				// exceeding max_fee_per_gas
-				(Some(max_fee_per_gas), Some(max_priority_fee_per_gas), true) => {
+				(Some(max_fee_per_gas), Some(max_priority_fee_per_gas)) => {
 					let actual_priority_fee_per_gas = max_fee_per_gas
 						.saturating_sub(base_fee)
 						.min(max_priority_fee_per_gas);
-					(
-						base_fee.saturating_add(actual_priority_fee_per_gas),
-						actual_priority_fee_per_gas,
-					)
+
+					base_fee.saturating_add(actual_priority_fee_per_gas)
 				}
-				// Gas price check is skipped for non-transactional calls or creates
-				(_, _, false) => (Default::default(), U256::zero()),
-				// Unreachable, previously validated. Handle gracefully.
 				_ => {
 					return Err(RunnerError {
 						error: Error::<T>::GasPriceTooLow,
 						weight,
 					})
 				}
-			};
+			}
+		} else {
+			// Gas price check is skipped for non-transactional calls or creates
+			Default::default()
+		};
 
 		// After eip-1559 we make sure the account can pay both the evm execution and priority fees.
 		let total_fee =
@@ -233,10 +231,8 @@ where
 				})?;
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
-		log::info!(target: "rpc", "bear: --- Before withdraw, total_fee: {:?}", total_fee);
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
 			.map_err(|e| RunnerError { error: e, weight })?;
-		log::info!(target: "rpc", "bear: --- After withdraw");
 
 		// Execute the EVM call.
 		let vicinity = Vicinity {
@@ -426,7 +422,6 @@ where
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
-			log::info!(target: "rpc", "bear: --- Ready to validate");
 			Self::validate(
 				source,
 				Some(target),
@@ -443,7 +438,6 @@ where
 				config,
 			)?;
 		}
-		log::info!(target: "rpc", "bear: --- Pass validation");
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -476,7 +470,6 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
-			log::info!(target: "rpc", "bear: --- Ready to validate");
 			Self::validate(
 				source,
 				None,
@@ -492,7 +485,6 @@ where
 				proof_size_base_cost,
 				config,
 			)?;
-			log::info!(target: "rpc", "bear: --- Pass validation");
 		}
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
