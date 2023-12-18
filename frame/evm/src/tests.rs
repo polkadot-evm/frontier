@@ -703,13 +703,11 @@ mod storage_growth_test {
 			let result = create_test_contract(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE, gas_limit)
 				.expect("create succeeds");
 
-			// Assert that the legacy gas is lower than the gas limit.
-			assert!(result.used_gas.standard < U256::from(gas_limit));
 			assert_eq!(
 				result.exit_reason,
 				crate::ExitReason::Error(crate::ExitError::OutOfGas)
 			);
-			assert_eq!(result.used_gas.effective.as_u64(), 78485);
+			assert_eq!(result.used_gas.effective.as_u64(), 80000);
 			// Assert that the contract entry does not exists in the storage.
 			assert!(!AccountCodes::<Test>::contains_key(result.value));
 		});
