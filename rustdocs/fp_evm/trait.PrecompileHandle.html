@@ -13,7 +13,8 @@
 <span class="item-spacer"></span>    fn <a href="#tymethod.record_external_cost" class="fn">record_external_cost</a>(
         &amp;mut self,
         ref_time: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
-        proof_size: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;
+        proof_size: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
+        storage_growth: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;
     ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="enum" href="enum.ExitError.html" title="enum fp_evm::ExitError">ExitError</a>&gt;;
 <span class="item-spacer"></span>    fn <a href="#tymethod.refund_external_cost" class="fn">refund_external_cost</a>(
         &amp;mut self,
@@ -47,7 +48,8 @@ Precompile specifies in which context the subcall is executed.</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="tymethod.record_external_cost" class="method"><h4 class="code-header">fn <a href="#tymethod.record_external_cost" class="fn">record_external_cost</a>(
     &amp;mut self,
     ref_time: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
-    proof_size: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;
+    proof_size: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;,
+    storage_growth: <a class="enum" href="https://doc.rust-lang.org/nightly/core/option/enum.Option.html" title="enum core::option::Option">Option</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.u64.html">u64</a>&gt;
 ) -&gt; <a class="enum" href="https://doc.rust-lang.org/nightly/core/result/enum.Result.html" title="enum core::result::Result">Result</a>&lt;<a class="primitive" href="https://doc.rust-lang.org/nightly/std/primitive.unit.html">()</a>, <a class="enum" href="enum.ExitError.html" title="enum fp_evm::ExitError">ExitError</a>&gt;</h4></section></summary><div class="docblock"><p>Record Substrate specific cost.</p>
 </div></details><details class="toggle method-toggle" open><summary><section id="tymethod.refund_external_cost" class="method"><h4 class="code-header">fn <a href="#tymethod.refund_external_cost" class="fn">refund_external_cost</a>(
     &amp;mut self,

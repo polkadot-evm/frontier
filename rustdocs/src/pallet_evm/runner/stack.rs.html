@@ -1255,6 +1255,7 @@
 <a href="#1255" id="1255">1255</a>
 <a href="#1256" id="1256">1256</a>
 <a href="#1257" id="1257">1257</a>
+<a href="#1258" id="1258">1258</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -2256,7 +2257,7 @@
 				ExternalOperation::IsEmpty =&gt; {
 					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)<span class="question-mark">?
 				</span>}
-				ExternalOperation::Write =&gt; {
+				ExternalOperation::Write(<span class="kw">_</span>) =&gt; {
 					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)<span class="question-mark">?
 				</span>}
 			};
@@ -2395,6 +2396,7 @@
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>,
 		ref_time: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 		proof_size: <span class="prelude-ty">Option</span>&lt;u64&gt;,
+		_storage_growth: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
 		<span class="kw">let </span>weight_info = <span class="kw">if let </span>(<span class="prelude-val">Some</span>(weight_info), <span class="kw">_</span>) = <span class="self">self</span>.info_mut() {
 			weight_info

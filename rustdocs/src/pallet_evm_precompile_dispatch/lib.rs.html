@@ -149,6 +149,9 @@
 <a href="#149" id="149">149</a>
 <a href="#150" id="150">150</a>
 <a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -236,8 +239,11 @@
 			<span class="kw">return </span><span class="prelude-val">Err</span>(err);
 		}
 
-		handle
-			.record_external_cost(<span class="prelude-val">Some</span>(info.weight.ref_time()), <span class="prelude-val">Some</span>(info.weight.proof_size()))<span class="question-mark">?</span>;
+		handle.record_external_cost(
+			<span class="prelude-val">Some</span>(info.weight.ref_time()),
+			<span class="prelude-val">Some</span>(info.weight.proof_size()),
+			<span class="prelude-val">None</span>,
+		)<span class="question-mark">?</span>;
 
 		<span class="kw">match </span>call.dispatch(<span class="prelude-val">Some</span>(origin).into()) {
 			<span class="prelude-val">Ok</span>(post_info) =&gt; {
