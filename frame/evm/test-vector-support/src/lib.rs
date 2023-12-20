@@ -80,7 +80,12 @@ impl PrecompileHandle for MockHandle {
 		Ok(())
 	}
 
-	fn record_external_cost(&mut self, _: Option<u64>, _: Option<u64>) -> Result<(), ExitError> {
+	fn record_external_cost(
+		&mut self,
+		_: Option<u64>,
+		_: Option<u64>,
+		_: Option<u64>,
+	) -> Result<(), ExitError> {
 		Ok(())
 	}
 

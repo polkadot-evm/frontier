@@ -999,7 +999,7 @@ where
 				ExternalOperation::IsEmpty => {
 					weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?
 				}
-				ExternalOperation::Write => {
+				ExternalOperation::Write(_) => {
 					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?
 				}
 			};
@@ -1138,6 +1138,7 @@ where
 		&mut self,
 		ref_time: Option<u64>,
 		proof_size: Option<u64>,
+		_storage_growth: Option<u64>,
 	) -> Result<(), ExitError> {
 		let weight_info = if let (Some(weight_info), _) = self.info_mut() {
 			weight_info
