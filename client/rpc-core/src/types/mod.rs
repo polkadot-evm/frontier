@@ -37,10 +37,12 @@ mod work;
 
 pub mod pubsub;
 
+use ethereum::TransactionV2 as EthereumTransaction;
+use ethereum_types::H160;
 use serde::{de::Error, Deserialize, Deserializer};
 
 #[cfg(feature = "txpool")]
-pub use self::txpool::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction};
+pub use self::txpool::{Summary, TransactionMap, TxPoolResult};
 pub use self::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
@@ -88,4 +90,9 @@ pub(crate) fn deserialize_data_or_input<'d, D: Deserializer<'d>>(
 		}
 		(_, _) => Ok(data.or(input)),
 	}
+}
+
+/// The trait that used to build types from the `from` address and ethereum `transaction`.
+pub trait BuildFrom {
+	fn build_from(from: H160, transaction: &EthereumTransaction) -> Self;
 }
