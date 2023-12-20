@@ -365,7 +365,7 @@ impl<T: Config> Pallet<T> {
 		) {
 			weight_limit if weight_limit.proof_size() > 0 => (
 				Some(weight_limit),
-				Some(transaction_data.proof_size_base_cost.unwrap_or_default()),
+				Some(transaction_data.proof_size_base_cost()),
 			),
 			_ => (None, None),
 		}
