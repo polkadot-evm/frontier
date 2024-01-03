@@ -49,6 +49,7 @@ sp-consensus-aura = { workspace = true, features = ["default"] }
 sp-consensus-grandpa = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 sp-inherents = { workspace = true, features = ["default"] }
+sp-keyring = { workspace = true }
 sp-offchain = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
 sp-session = { workspace = true, features = ["default"] }
@@ -91,6 +92,7 @@ default = [
 	"sql",
 	"txpool",
 ]
+unified-accounts = []
 rocksdb = [
 	"sc-cli/rocksdb",
 	"sc-service/rocksdb",

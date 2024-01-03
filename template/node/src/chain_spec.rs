@@ -1,13 +1,13 @@
-use std::{collections::BTreeMap, str::FromStr};
-
+#[cfg(feature = "unified-accounts")]
 use hex_literal::hex;
 use serde::{Deserialize, Serialize};
+use std::{collections::BTreeMap, str::FromStr};
 // Substrate
 use sc_chain_spec::{ChainType, Properties};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
 use sp_consensus_grandpa::AuthorityId as GrandpaId;
-#[allow(unused_imports)]
-use sp_core::ecdsa;
+#[cfg(not(feature = "unified-accounts"))]
+use sp_core::sr25519;
 use sp_core::{storage::Storage, Pair, Public, H160, U256};
 use sp_runtime::traits::{IdentifyAccount, Verify};
 use sp_state_machine::BasicExternalities;
@@ -56,7 +56,7 @@ pub fn get_from_seed<TPublic: Public>(seed: &str) -> <TPublic::Pair as Pair>::Pu
 type AccountPublic = <Signature as Verify>::Signer;
 
 /// Generate an account ID from seed.
-/// For use with `AccountId32`, `dead_code` if `AccountId20`.
+/// For use with `AccountId32`, `dead_code` if `unified-accounts`.
 #[allow(dead_code)]
 pub fn get_account_id_from_seed<TPublic: Public>(seed: &str) -> AccountId
 where
@@ -79,6 +79,7 @@ fn properties() -> Properties {
 
 const UNITS: Balance = 1_000_000_000_000_000_000;
 
+#[cfg(feature = "unified-accounts")]
 pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -126,6 +127,53 @@ pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
 	)
 }
 
+#[cfg(not(feature = "unified-accounts"))]
+pub fn development_config(enable_manual_seal: Option<bool>) -> DevChainSpec {
+	let wasm_binary = WASM_BINARY.expect("WASM not available");
+
+	DevChainSpec::from_genesis(
+		// Name
+		"Development",
+		// ID
+		"dev",
+		ChainType::Development,
+		move || {
+			DevGenesisExt {
+				genesis_config: testnet_genesis(
+					wasm_binary,
+					// Sudo account
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					// Pre-funded accounts
+					vec![
+						get_account_id_from_seed::<sr25519::Public>("Alice"),
+						get_account_id_from_seed::<sr25519::Public>("Bob"),
+						get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+						get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					],
+					// Initial PoA authorities
+					vec![authority_keys_from_seed("Alice")],
+					// Ethereum chain ID
+					SS58Prefix::get() as u64,
+				),
+				enable_manual_seal,
+			}
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Fork ID
+		None,
+		// Properties
+		Some(properties()),
+		// Extensions
+		None,
+	)
+}
+
+#[cfg(feature = "unified-accounts")]
 pub fn local_testnet_config() -> ChainSpec {
 	let wasm_binary = WASM_BINARY.expect("WASM not available");
 
@@ -149,6 +197,59 @@ pub fn local_testnet_config() -> ChainSpec {
 					AccountId::from(hex!("773539d4Ac0e786233D90A233654ccEE26a613D9")), // Dorothy
 					AccountId::from(hex!("Ff64d3F6efE2317EE2807d223a0Bdc4c0c49dfDB")), // Ethan
 					AccountId::from(hex!("C0F0f4ab324C46e55D02D0033343B4Be8A55532d")), // Faith
+				],
+				vec![
+					authority_keys_from_seed("Alice"),
+					authority_keys_from_seed("Bob"),
+				],
+				42,
+			)
+		},
+		// Bootnodes
+		vec![],
+		// Telemetry
+		None,
+		// Protocol ID
+		None,
+		// Fork ID
+		None,
+		// Properties
+		None,
+		// Extensions
+		None,
+	)
+}
+
+#[cfg(not(feature = "unified-accounts"))]
+pub fn local_testnet_config() -> ChainSpec {
+	let wasm_binary = WASM_BINARY.expect("WASM not available");
+
+	ChainSpec::from_genesis(
+		// Name
+		"Local Testnet",
+		// ID
+		"local_testnet",
+		ChainType::Local,
+		move || {
+			testnet_genesis(
+				wasm_binary,
+				// Initial PoA authorities
+				// Sudo account
+				get_account_id_from_seed::<sr25519::Public>("Alice"),
+				// Pre-funded accounts
+				vec![
+					get_account_id_from_seed::<sr25519::Public>("Alice"),
+					get_account_id_from_seed::<sr25519::Public>("Bob"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie"),
+					get_account_id_from_seed::<sr25519::Public>("Dave"),
+					get_account_id_from_seed::<sr25519::Public>("Eve"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie"),
+					get_account_id_from_seed::<sr25519::Public>("Alice//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Bob//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Charlie//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Dave//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Eve//stash"),
+					get_account_id_from_seed::<sr25519::Public>("Ferdie//stash"),
 				],
 				vec![
 					authority_keys_from_seed("Alice"),
