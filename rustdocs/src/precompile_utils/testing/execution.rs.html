@@ -404,7 +404,7 @@
 	<span class="doccomment">/// Execute the precompile set and expect no precompile to have been executed.
 	</span><span class="kw">pub fn </span>execute_none(<span class="kw-2">mut </span><span class="self">self</span>) {
 		<span class="kw">let </span>res = <span class="self">self</span>.execute();
-		<span class="macro">assert!</span>(res.is_some());
+		<span class="macro">assert!</span>(res.is_none());
 		<span class="self">self</span>.assert_optionals();
 	}
 
