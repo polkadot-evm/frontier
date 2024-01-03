@@ -17,7 +17,6 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 mod block;
-mod cache;
 mod client;
 mod execute;
 mod fee;
@@ -53,13 +52,12 @@ use fp_rpc::{
 	RuntimeStorageOverride, TransactionStatus,
 };
 
-use crate::{frontier_backend_client, internal_err, public_key, signer::EthSigner};
-
-pub use self::{
-	cache::{EthBlockDataCacheTask, EthTask},
-	execute::EstimateGasAdapter,
-	filter::EthFilter,
+use crate::{
+	cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, public_key,
+	signer::EthSigner,
 };
+
+pub use self::{execute::EstimateGasAdapter, filter::EthFilter};
 
 // Configuration trait for RPC configuration.
 pub trait EthConfig<B: BlockT, C>: Send + Sync + 'static {

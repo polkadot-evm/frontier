@@ -26,6 +26,8 @@
 )]
 #![deny(unused_crate_dependencies)]
 
+mod cache;
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -37,10 +39,9 @@ mod web3;
 #[cfg(feature = "txpool")]
 pub use self::txpool::TxPool;
 pub use self::{
-	eth::{
-		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
-		EthTask,
-	},
+	cache::{EthBlockDataCacheTask, EthTask},
+	debug::Debug,
+	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -50,7 +51,8 @@ pub use ethereum::TransactionV2 as EthereumTransaction;
 #[cfg(feature = "txpool")]
 pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
 };
 pub use fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,

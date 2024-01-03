@@ -41,7 +41,7 @@ use sp_runtime::{
 use fc_rpc_core::{types::*, EthFilterApiServer};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
 pub struct EthFilter<B: BlockT, C, BE, A: ChainApi> {
 	client: Arc<C>,
