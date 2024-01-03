@@ -713,7 +713,6 @@
 <a href="#713" id="713">713</a>
 <a href="#714" id="714">714</a>
 <a href="#715" id="715">715</a>
-<a href="#716" id="716">716</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -787,7 +786,7 @@
 }
 
 <span class="doccomment">/// Eth API implementation.
-</span><span class="kw">pub struct </span>Eth&lt;B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC: EthConfig&lt;B, C&gt;&gt; {
+</span><span class="kw">pub struct </span>Eth&lt;B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC&gt; {
 	pool: Arc&lt;P&gt;,
 	graph: Arc&lt;Pool&lt;A&gt;&gt;,
 	client: Arc&lt;C&gt;,
@@ -818,7 +817,6 @@
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt; + <span class="lifetime">&#39;static</span>,
 	A: ChainApi&lt;Block = B&gt;,
-	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub fn </span>new(
 		client: Arc&lt;C&gt;,

@@ -106,16 +106,6 @@
 <a href="#106" id="106">106</a>
 <a href="#107" id="107">107</a>
 <a href="#108" id="108">108</a>
-<a href="#109" id="109">109</a>
-<a href="#110" id="110">110</a>
-<a href="#111" id="111">111</a>
-<a href="#112" id="112">112</a>
-<a href="#113" id="113">113</a>
-<a href="#114" id="114">114</a>
-<a href="#115" id="115">115</a>
-<a href="#116" id="116">116</a>
-<a href="#117" id="117">117</a>
-<a href="#118" id="118">118</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -147,10 +137,7 @@
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
 <span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 
-<span class="kw">use crate</span>::{
-	eth::{Eth, EthConfig},
-	internal_err,
-};
+<span class="kw">use crate</span>::{eth::Eth, internal_err};
 
 <span class="kw">impl</span>&lt;B, C, P, CT, BE, A, CIDP, EC&gt; Eth&lt;B, C, P, CT, BE, A, CIDP, EC&gt;
 <span class="kw">where
@@ -160,7 +147,6 @@
 	C: HeaderBackend&lt;B&gt; + StorageProvider&lt;B, BE&gt; + <span class="lifetime">&#39;static</span>,
 	BE: Backend&lt;B&gt;,
 	A: ChainApi&lt;Block = B&gt;,
-	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">pub fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;u64&gt; {
 		<span class="prelude-val">Ok</span>(<span class="number">1</span>)
@@ -169,23 +155,20 @@
 	<span class="kw">pub async fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt; {
 		<span class="kw">if </span><span class="self">self</span>.sync.is_major_syncing() {
 			<span class="kw">let </span>current_number = <span class="self">self</span>.client.info().best_number;
-			<span class="kw">let </span>current_block = U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(
-				current_number,
-			));
 			<span class="kw">let </span>highest_number = <span class="self">self
 				</span>.sync
 				.best_seen_block()
 				.<span class="kw">await
-				</span>.map_err(|_err| internal_err(<span class="string">&quot;fetching best_seen_block failed&quot;</span>))<span class="question-mark">?
+				</span>.map_err(|<span class="kw">_</span>| internal_err(<span class="string">&quot;fetch best_seen_block failed&quot;</span>))<span class="question-mark">?
 				</span>.unwrap_or(current_number);
-			<span class="kw">let </span>highest_block = U256::from(UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(
-				highest_number,
-			));
+
+			<span class="kw">let </span>current_number = UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(current_number);
+			<span class="kw">let </span>highest_number = UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(highest_number);
 
 			<span class="prelude-val">Ok</span>(SyncStatus::Info(SyncInfo {
 				starting_block: U256::zero(),
-				current_block,
-				highest_block,
+				current_block: U256::from(current_number),
+				highest_block: U256::from(highest_number),
 				warp_chunks_amount: <span class="prelude-val">None</span>,
 				warp_chunks_processed: <span class="prelude-val">None</span>,
 			}))
@@ -197,41 +180,38 @@
 	<span class="kw">pub fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;H160&gt; {
 		<span class="kw">let </span>hash = <span class="self">self</span>.client.info().best_hash;
 		<span class="kw">let </span>schema = fc_storage::onchain_storage_schema(<span class="self">self</span>.client.as_ref(), hash);
-
-		<span class="prelude-val">Ok</span>(<span class="self">self
+		<span class="kw">let </span>current_block = <span class="self">self
 			</span>.overrides
 			.schemas
 			.get(<span class="kw-2">&amp;</span>schema)
 			.unwrap_or(<span class="kw-2">&amp;</span><span class="self">self</span>.overrides.fallback)
 			.current_block(hash)
-			.ok_or_else(|| internal_err(<span class="string">&quot;fetching author through override failed&quot;</span>))<span class="question-mark">?
-			</span>.header
-			.beneficiary)
+			.ok_or_else(|| internal_err(<span class="string">&quot;fetching author through override failed&quot;</span>))<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(current_block.header.beneficiary)
 	}
 
 	<span class="kw">pub fn </span>accounts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Vec&lt;H160&gt;&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>accounts = Vec::new();
-		<span class="kw">for </span>signer <span class="kw">in </span><span class="kw-2">&amp;*</span><span class="self">self</span>.signers {
-			accounts.append(<span class="kw-2">&amp;mut </span>signer.accounts());
-		}
-		<span class="prelude-val">Ok</span>(accounts)
+		<span class="prelude-val">Ok</span>(<span class="self">self
+			</span>.signers
+			.iter()
+			.flat_map(|signer| signer.accounts())
+			.collect::&lt;Vec&lt;<span class="kw">_</span>&gt;&gt;())
 	}
 
 	<span class="kw">pub fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt; {
-		<span class="prelude-val">Ok</span>(U256::from(
-			UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(<span class="self">self</span>.client.info().best_number),
-		))
+		<span class="kw">let </span>best_number = <span class="self">self</span>.client.info().best_number;
+		<span class="kw">let </span>best_number = UniqueSaturatedInto::&lt;u128&gt;::unique_saturated_into(best_number);
+		<span class="prelude-val">Ok</span>(U256::from(best_number))
 	}
 
 	<span class="kw">pub fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U64&gt;&gt; {
 		<span class="kw">let </span>hash = <span class="self">self</span>.client.info().best_hash;
-		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(
-			<span class="self">self</span>.client
-				.runtime_api()
-				.chain_id(hash)
-				.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {:?}&quot;</span>, err)))<span class="question-mark">?
-				</span>.into(),
-		))
+		<span class="kw">let </span>chain_id = <span class="self">self
+			</span>.client
+			.runtime_api()
+			.chain_id(hash)
+			.map_err(|err| internal_err(<span class="macro">format!</span>(<span class="string">&quot;fetch runtime chain id failed: {err:?}&quot;</span>)))<span class="question-mark">?</span>;
+		<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(U64::from(chain_id)))
 	}
 }
 </code></pre></div></section></main></body></html>

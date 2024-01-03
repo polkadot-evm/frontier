@@ -552,7 +552,7 @@
 	<span class="kw">use </span>sp_io::hashing::{blake2_128, twox_128};
 	<span class="kw">use </span>sp_runtime::{
 		generic::BlockId,
-		traits::{Block <span class="kw">as </span>BlockT, HashingFor, UniqueSaturatedInto, Zero},
+		traits::{Block <span class="kw">as </span>BlockT, HashingFor, UniqueSaturatedInto},
 	};
 	<span class="kw">use </span>sp_state_machine::OverlayedChanges;
 	<span class="comment">// Frontier
@@ -687,7 +687,7 @@
 			}
 			BlockNumberOrHash::Num(number) =&gt; <span class="prelude-val">Some</span>(BlockId::Number(number.unique_saturated_into())),
 			BlockNumberOrHash::Latest =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().best_hash)),
-			BlockNumberOrHash::Earliest =&gt; <span class="prelude-val">Some</span>(BlockId::Number(Zero::zero())),
+			BlockNumberOrHash::Earliest =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().genesis_hash)),
 			BlockNumberOrHash::Pending =&gt; <span class="prelude-val">None</span>,
 			BlockNumberOrHash::Safe =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
 			BlockNumberOrHash::Finalized =&gt; <span class="prelude-val">Some</span>(BlockId::Hash(client.info().finalized_hash)),
