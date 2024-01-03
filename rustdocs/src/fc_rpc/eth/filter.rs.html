@@ -861,7 +861,7 @@
 </span><span class="kw">use </span>fc_rpc_core::{types::<span class="kw-2">*</span>, EthFilterApiServer};
 <span class="kw">use </span>fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-<span class="kw">use crate</span>::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+<span class="kw">use crate</span>::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
 <span class="kw">pub struct </span>EthFilter&lt;B: BlockT, C, BE, A: ChainApi&gt; {
 	client: Arc&lt;C&gt;,

@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"mod":["types"],"trait":["EthApiServer","EthFilterApiServer","EthPubSubApiServer","NetApiServer","TxPoolApiServer","Web3ApiServer"]};
+window.SIDEBAR_ITEMS = {"mod":["types"],"trait":["DebugApiServer","EthApiServer","EthFilterApiServer","EthPubSubApiServer","NetApiServer","TxPoolApiServer","Web3ApiServer"]};

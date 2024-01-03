@@ -35,6 +35,8 @@
 <a href="#35" id="35">35</a>
 <a href="#36" id="36">36</a>
 <a href="#37" id="37">37</a>
+<a href="#38" id="38">38</a>
+<a href="#39" id="39">39</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -57,6 +59,7 @@
 
 </span><span class="kw">pub mod </span>types;
 
+<span class="kw">mod </span>debug;
 <span class="kw">mod </span>eth;
 <span class="kw">mod </span>eth_pubsub;
 <span class="kw">mod </span>net;
@@ -67,6 +70,7 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
 </span><span class="kw">pub use </span><span class="self">self</span>::txpool::TxPoolApiServer;
 <span class="kw">pub use </span><span class="self">self</span>::{
+	debug::DebugApiServer,
 	eth::{EthApiServer, EthFilterApiServer},
 	eth_pubsub::EthPubSubApiServer,
 	net::NetApiServer,

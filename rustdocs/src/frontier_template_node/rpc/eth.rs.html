@@ -194,6 +194,16 @@
 <a href="#194" id="194">194</a>
 <a href="#195" id="195">195</a>
 <a href="#196" id="196">196</a>
+<a href="#197" id="197">197</a>
+<a href="#198" id="198">198</a>
+<a href="#199" id="199">199</a>
+<a href="#200" id="200">200</a>
+<a href="#201" id="201">201</a>
+<a href="#202" id="202">202</a>
+<a href="#203" id="203">203</a>
+<a href="#204" id="204">204</a>
+<a href="#205" id="205">205</a>
+<a href="#206" id="206">206</a>
 </pre></div><pre class="rust"><code><span class="kw">use </span>std::{collections::BTreeMap, sync::Arc};
 
 <span class="kw">use </span>jsonrpsee::RpcModule;
@@ -290,9 +300,9 @@
 	EC: EthConfig&lt;B, C&gt;,
 {
 	<span class="kw">use </span>fc_rpc::{
-		pending::AuraConsensusDataProvider, Eth, EthApiServer, EthDevSigner, EthFilter,
-		EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3,
-		Web3ApiServer,
+		pending::AuraConsensusDataProvider, Debug, DebugApiServer, Eth, EthApiServer, EthDevSigner,
+		EthFilter, EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer,
+		Web3, Web3ApiServer,
 	};
 	<span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
 	</span><span class="kw">use </span>fc_rpc::{TxPool, TxPoolApiServer};
@@ -350,12 +360,12 @@
 		io.merge(
 			EthFilter::new(
 				client.clone(),
-				frontier_backend,
+				frontier_backend.clone(),
 				graph.clone(),
 				filter_pool,
 				<span class="number">500_usize</span>, <span class="comment">// max stored filters
 				</span>max_past_logs,
-				block_data_cache,
+				block_data_cache.clone(),
 			)
 			.into_rpc(),
 		)<span class="question-mark">?</span>;
@@ -367,7 +377,7 @@
 			client.clone(),
 			sync,
 			subscription_task_executor,
-			overrides,
+			overrides.clone(),
 			pubsub_notification_sinks,
 		)
 		.into_rpc(),
@@ -384,6 +394,16 @@
 	)<span class="question-mark">?</span>;
 
 	io.merge(Web3::new(client.clone()).into_rpc())<span class="question-mark">?</span>;
+
+	io.merge(
+		Debug::new(
+			client.clone(),
+			frontier_backend,
+			overrides,
+			block_data_cache,
+		)
+		.into_rpc(),
+	)<span class="question-mark">?</span>;
 
 	<span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
 	</span>io.merge(TxPool::new(client, graph).into_rpc())<span class="question-mark">?</span>;

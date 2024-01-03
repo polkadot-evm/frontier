@@ -474,6 +474,8 @@
 <a href="#474" id="474">474</a>
 <a href="#475" id="475">475</a>
 <a href="#476" id="476">476</a>
+<a href="#477" id="477">477</a>
+<a href="#478" id="478">478</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -502,7 +504,9 @@
 )]
 #![deny(unused_crate_dependencies)]
 
-</span><span class="kw">mod </span>eth;
+</span><span class="kw">mod </span>cache;
+<span class="kw">mod </span>debug;
+<span class="kw">mod </span>eth;
 <span class="kw">mod </span>eth_pubsub;
 <span class="kw">mod </span>net;
 <span class="kw">mod </span>signer;
@@ -513,10 +517,9 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
 </span><span class="kw">pub use </span><span class="self">self</span>::txpool::TxPool;
 <span class="kw">pub use </span><span class="self">self</span>::{
-	eth::{
-		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
-		EthTask,
-	},
+	cache::{EthBlockDataCacheTask, EthTask},
+	debug::Debug,
+	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -526,7 +529,8 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;txpool&quot;</span>)]
 </span><span class="kw">pub use </span>fc_rpc_core::TxPoolApiServer;
 <span class="kw">pub use </span>fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
 };
 <span class="kw">pub use </span>fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,

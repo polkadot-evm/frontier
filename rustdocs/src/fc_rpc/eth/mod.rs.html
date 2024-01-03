@@ -714,8 +714,6 @@
 <a href="#714" id="714">714</a>
 <a href="#715" id="715">715</a>
 <a href="#716" id="716">716</a>
-<a href="#717" id="717">717</a>
-<a href="#718" id="718">718</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -735,7 +733,6 @@
 // along with this program. If not, see &lt;https://www.gnu.org/licenses/&gt;.
 
 </span><span class="kw">mod </span>block;
-<span class="kw">mod </span>cache;
 <span class="kw">mod </span>client;
 <span class="kw">mod </span>execute;
 <span class="kw">mod </span>fee;
@@ -771,13 +768,12 @@
 	RuntimeStorageOverride, TransactionStatus,
 };
 
-<span class="kw">use crate</span>::{frontier_backend_client, internal_err, public_key, signer::EthSigner};
-
-<span class="kw">pub use </span><span class="self">self</span>::{
-	cache::{EthBlockDataCacheTask, EthTask},
-	execute::EstimateGasAdapter,
-	filter::EthFilter,
+<span class="kw">use crate</span>::{
+	cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, public_key,
+	signer::EthSigner,
 };
+
+<span class="kw">pub use </span><span class="self">self</span>::{execute::EstimateGasAdapter, filter::EthFilter};
 
 <span class="comment">// Configuration trait for RPC configuration.
 </span><span class="kw">pub trait </span>EthConfig&lt;B: BlockT, C&gt;: Send + Sync + <span class="lifetime">&#39;static </span>{
