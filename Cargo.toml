@@ -123,6 +123,7 @@ sp-storage = { version = "13.0.0", git = "https://github.com/paritytech/polkadot
 sp-timestamp = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
 sp-transaction-pool = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
 sp-version = { version = "22.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
+sp-weights = { version = "20.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
 # Substrate FRAME
 frame-benchmarking = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
 frame-executive = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
@@ -146,6 +147,9 @@ substrate-build-script-utils = { version = "3.0.0", git = "https://github.com/pa
 substrate-frame-rpc-system = { version = "4.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
 substrate-test-runtime-client = { version = "2.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
 substrate-wasm-builder = { version = "5.0.0-dev", git = "https://github.com/paritytech/polkadot-sdk", branch = "master" }
+
+# XCM
+xcm = { package = "staging-xcm", version = "1.0.0", git = "https://github.com/paritytech/polkadot-sdk", branch = "master", default-features = false }
 
 # Frontier Client
 fc-api = { version = "1.0.0-dev", path = "client/api" }
