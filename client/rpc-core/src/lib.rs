@@ -20,6 +20,7 @@
 
 pub mod types;
 
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -30,6 +31,7 @@ mod web3;
 #[cfg(feature = "txpool")]
 pub use self::txpool::TxPoolApiServer;
 pub use self::{
+	debug::DebugApiServer,
 	eth::{EthApiServer, EthFilterApiServer},
 	eth_pubsub::EthPubSubApiServer,
 	net::NetApiServer,

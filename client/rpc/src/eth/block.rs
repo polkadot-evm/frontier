@@ -33,7 +33,7 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{rich_block_build, BlockInfo, Eth, EthConfig},
+	eth::{rich_block_build, BlockInfo, Eth},
 	frontier_backend_client, internal_err,
 };
 
@@ -45,7 +45,6 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
 		let BlockInfo {

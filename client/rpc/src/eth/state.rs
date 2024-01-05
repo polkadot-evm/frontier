@@ -32,10 +32,7 @@ use sp_runtime::traits::Block as BlockT;
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{
-	eth::{Eth, EthConfig},
-	frontier_backend_client, internal_err,
-};
+use crate::{eth::Eth, frontier_backend_client, internal_err};
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
@@ -47,7 +44,6 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	pub async fn balance(
 		&self,

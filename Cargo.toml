@@ -52,7 +52,7 @@ environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.15.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
 evm = { version = "0.41.1", default-features = false }
-futures = "0.3.28"
+futures = "0.3.30"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
@@ -67,7 +67,7 @@ parity-db = "0.4.12"
 parking_lot = "0.12.1"
 rlp = { version = "0.5.2", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = ["derive"] }
-scale-info = { version = "2.9.0", default-features = false, features = ["derive"] }
+scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
 similar-asserts = "1.1.0"
@@ -123,6 +123,8 @@ sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", branch = "rel
 sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 sp-version = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
+sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
+
 # Substrate FRAME
 frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
@@ -154,6 +156,9 @@ ark-bw6-761 = { version = "0.4.0", default-features = false }
 ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
+
+# XCM
+xcm = { package = "staging-xcm", git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.3.0", default-features = false }
 
 # Frontier Client
 fc-api = { version = "1.0.0-dev", path = "client/api" }
