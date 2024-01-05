@@ -28,10 +28,7 @@ use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{
-	eth::{Eth, EthConfig},
-	frontier_backend_client, internal_err,
-};
+use crate::{eth::Eth, frontier_backend_client, internal_err};
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
@@ -41,7 +38,6 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
 {
 	pub fn gas_price(&self) -> RpcResult<U256> {
 		let block_hash = self.client.info().best_hash;

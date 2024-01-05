@@ -26,6 +26,8 @@
 )]
 #![deny(unused_crate_dependencies)]
 
+mod cache;
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -37,10 +39,9 @@ mod web3;
 #[cfg(feature = "txpool")]
 pub use self::txpool::TxPool;
 pub use self::{
-	eth::{
-		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
-		EthTask,
-	},
+	cache::{EthBlockDataCacheTask, EthTask},
+	debug::Debug,
+	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -50,7 +51,8 @@ pub use ethereum::TransactionV2 as EthereumTransaction;
 #[cfg(feature = "txpool")]
 pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
 };
 pub use fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
@@ -72,7 +74,7 @@ pub mod frontier_backend_client {
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto, Zero},
+		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto},
 	};
 	use sp_state_machine::OverlayedChanges;
 	// Frontier
@@ -207,7 +209,7 @@ pub mod frontier_backend_client {
 			}
 			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
-			BlockNumberOrHash::Earliest => Some(BlockId::Number(Zero::zero())),
+			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
 			BlockNumberOrHash::Pending => None,
 			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
 			BlockNumberOrHash::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),

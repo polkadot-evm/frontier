@@ -34,7 +34,7 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{transaction_build, BlockInfo, Eth, EthConfig},
+	eth::{transaction_build, BlockInfo, Eth},
 	frontier_backend_client, internal_err,
 };
 
@@ -46,7 +46,6 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
 {
 	pub async fn transaction_by_hash(&self, hash: H256) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);

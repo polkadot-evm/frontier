@@ -94,9 +94,9 @@ where
 	EC: EthConfig<B, C>,
 {
 	use fc_rpc::{
-		pending::AuraConsensusDataProvider, Eth, EthApiServer, EthDevSigner, EthFilter,
-		EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3,
-		Web3ApiServer,
+		pending::AuraConsensusDataProvider, Debug, DebugApiServer, Eth, EthApiServer, EthDevSigner,
+		EthFilter, EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer,
+		Web3, Web3ApiServer,
 	};
 	#[cfg(feature = "txpool")]
 	use fc_rpc::{TxPool, TxPoolApiServer};
@@ -154,12 +154,12 @@ where
 		io.merge(
 			EthFilter::new(
 				client.clone(),
-				frontier_backend,
+				frontier_backend.clone(),
 				graph.clone(),
 				filter_pool,
 				500_usize, // max stored filters
 				max_past_logs,
-				block_data_cache,
+				block_data_cache.clone(),
 			)
 			.into_rpc(),
 		)?;
@@ -171,7 +171,7 @@ where
 			client.clone(),
 			sync,
 			subscription_task_executor,
-			overrides,
+			overrides.clone(),
 			pubsub_notification_sinks,
 		)
 		.into_rpc(),
@@ -188,6 +188,16 @@ where
 	)?;
 
 	io.merge(Web3::new(client.clone()).into_rpc())?;
+
+	io.merge(
+		Debug::new(
+			client.clone(),
+			frontier_backend,
+			overrides,
+			block_data_cache,
+		)
+		.into_rpc(),
+	)?;
 
 	#[cfg(feature = "txpool")]
 	io.merge(TxPool::new(client, graph).into_rpc())?;
