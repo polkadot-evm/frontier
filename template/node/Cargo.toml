@@ -96,10 +96,10 @@ rocksdb = [
 	"fc-db/rocksdb",
 	"fc-mapping-sync/rocksdb",
 	"fc-rpc/rocksdb",
-	"frontier-template-runtime/with-rocksdb-weights"
+	"frontier-template-runtime/with-rocksdb-weights",
 ]
 paritydb = [
-	"frontier-template-runtime/with-paritydb-weights"
+	"frontier-template-runtime/with-paritydb-weights",
 ]
 sql = [
 	"fc-db/sql",
