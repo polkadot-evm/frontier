@@ -170,7 +170,7 @@ mod tests {
 	use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 	use fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
-	use sc_block_builder::BlockBuilderProvider;
+	use sc_block_builder::BlockBuilderBuilder;
 	use sc_client_api::BlockchainEvents;
 	use sp_api::Encode;
 	use sp_consensus::BlockOrigin;
@@ -313,7 +313,13 @@ mod tests {
 			}
 
 			// Let's produce a block, which we expect to trigger a channel message
-			let builder = client.new_block(ethereum_digest()).unwrap();
+			let chain_info = client.chain_info();
+			let builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.with_inherent_digests(ethereum_digest())
+				.build()
+				.unwrap();
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			let _res = client.import(BlockOrigin::Own, block).await;
@@ -350,7 +356,13 @@ mod tests {
 
 			// Let's produce another block, this not only triggers a message in the new channel
 			// but also removes the closed channels from the pool.
-			let builder = client.new_block(ethereum_digest()).unwrap();
+			let chain_info = client.chain_info();
+			let builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.with_inherent_digests(ethereum_digest())
+				.build()
+				.unwrap();
 			let block = builder.build().unwrap().block;
 			let block_hash = block.header.hash();
 			let _res = client.import(BlockOrigin::Own, block).await;
@@ -451,7 +463,13 @@ mod tests {
 			}
 
 			// Let's produce a block, which we expect to trigger a channel message
-			let builder = client.new_block(ethereum_digest()).unwrap();
+			let chain_info = client.chain_info();
+			let builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.with_inherent_digests(ethereum_digest())
+				.build()
+				.unwrap();
 			let block = builder.build().unwrap().block;
 			let _res = client.import(BlockOrigin::Own, block).await;
 

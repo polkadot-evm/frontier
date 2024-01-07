@@ -8,7 +8,7 @@ use prometheus_endpoint::Registry;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus::BasicQueue;
 use sc_executor::NativeExecutionDispatch;
-use sc_network_sync::warp::WarpSyncParams;
+use sc_network_sync::warp::{WarpSyncParams, WarpSyncProvider};
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
@@ -303,7 +303,7 @@ where
 		net_config.add_notification_protocol(sc_consensus_grandpa::grandpa_peers_set_config(
 			grandpa_protocol_name.clone(),
 		));
-		let warp_sync: Arc<dyn sc_network::config::WarpSyncProvider<Block>> =
+		let warp_sync: Arc<dyn WarpSyncProvider<Block>> =
 			Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 				backend.clone(),
 				grandpa_link.shared_authority_set().clone(),
