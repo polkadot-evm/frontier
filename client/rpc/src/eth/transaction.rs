@@ -284,7 +284,6 @@ where
 				let mut cumulative_receipts = receipts;
 				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
 				let transaction = block.transactions[index].clone();
-
 				let effective_gas_price = match transaction {
 					EthereumTransaction::Legacy(t) => t.gas_price,
 					EthereumTransaction::EIP2930(t) => t.gas_price,
