@@ -214,7 +214,6 @@ where
 			block,
 			receipts,
 			statuses,
-			substrate_hash,
 			..
 		} = block_info.clone();
 		match (block, statuses, receipts) {
@@ -285,17 +284,25 @@ where
 				let mut cumulative_receipts = receipts;
 				cumulative_receipts.truncate((status.transaction_index + 1) as usize);
 				let transaction = block.transactions[index].clone();
+
 				let effective_gas_price = match transaction {
 					EthereumTransaction::Legacy(t) => t.gas_price,
 					EthereumTransaction::EIP2930(t) => t.gas_price,
-					EthereumTransaction::EIP1559(t) => self
-						.client
-						.runtime_api()
-						.gas_price(substrate_hash)
-						.unwrap_or_default()
-						.checked_add(t.max_priority_fee_per_gas)
-						.unwrap_or_else(U256::max_value)
-						.min(t.max_fee_per_gas),
+					EthereumTransaction::EIP1559(t) => {
+						let parent_eth_hash = block.header.parent_hash;
+						let parent_substrate_hash = self
+							.block_info_by_eth_block_hash(parent_eth_hash)
+							.await?
+							.substrate_hash;
+
+						self.client
+							.runtime_api()
+							.gas_price(parent_substrate_hash)
+							.unwrap_or_default()
+							.checked_add(t.max_priority_fee_per_gas)
+							.unwrap_or_else(U256::max_value)
+							.min(t.max_fee_per_gas)
+					}
 				};
 
 				return Ok(Some(Receipt {
