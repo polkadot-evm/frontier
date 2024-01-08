@@ -80,10 +80,10 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
+	pub const ExistentialDeposit: u64 = 0;
 	// For weight estimation, we assume that the most locks on an individual account will be 50.
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
-	pub const ExistentialDeposit: u64 = 500;
 }
 
 impl pallet_balances::Config for Test {
