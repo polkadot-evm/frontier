@@ -90,6 +90,7 @@ default = [
 	"rocksdb",
 	"sql",
 	"txpool",
+	"rpc-binary-search-estimate",
 ]
 rocksdb = [
 	"sc-cli/rocksdb",
