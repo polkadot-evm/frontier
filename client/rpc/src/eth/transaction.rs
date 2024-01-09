@@ -296,8 +296,7 @@ where
 						)
 						.await
 						.map_err(|err| internal_err(format!("{:?}", err)))?
-						.ok_or(internal_err("Failed to retrieve substrate block hash"))
-						.map_err(|err| internal_err(format!("{:?}", err)))?;
+						.ok_or(internal_err("Failed to retrieve substrate block hash"))?;
 
 						self.client
 							.runtime_api()
