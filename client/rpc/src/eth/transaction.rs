@@ -289,10 +289,15 @@ where
 					EthereumTransaction::EIP2930(t) => t.gas_price,
 					EthereumTransaction::EIP1559(t) => {
 						let parent_eth_hash = block.header.parent_hash;
-						let parent_substrate_hash = self
-							.block_info_by_eth_block_hash(parent_eth_hash)
-							.await?
-							.substrate_hash;
+						let parent_substrate_hash = frontier_backend_client::load_hash::<B, C>(
+							self.client.as_ref(),
+							self.backend.as_ref(),
+							parent_eth_hash,
+						)
+						.await
+						.map_err(|err| internal_err(format!("{:?}", err)))?
+						.ok_or(internal_err("Failed to retrieve substrate block hash"))
+						.map_err(|err| internal_err(format!("{:?}", err)))?;
 
 						self.client
 							.runtime_api()
