@@ -71,7 +71,7 @@ benchmarks! {
 
 		let caller = "1000000000000000000000000000000000000001".parse::<H160>().unwrap();
 
-		let mut nonce: u64 = 1;
+		let mut nonce: u64 = 0;
 		let nonce_as_u256: U256 = nonce.into();
 
 		let value = U256::default();
@@ -83,8 +83,8 @@ benchmarks! {
 			contract_bytecode,
 			value,
 			gas_limit_create,
-			Some(U256::from(1_000_000_000)),
-			Some(U256::from(1_000_000_000)),
+			Some(U256::from(1_000_000_000_000_000u128)),
+			Some(U256::from(1_000_000_000_000_000u128)),
 			Some(nonce_as_u256),
 			Vec::new(),
 			is_transactional,
@@ -120,8 +120,8 @@ benchmarks! {
 			encoded_call,
 			value,
 			gas_limit_call,
-			Some(U256::from(1_000_000_000)),
-			Some(U256::from(1_000_000_000)),
+			Some(U256::from(1_000_000_000_000_000u128)),
+			Some(U256::from(1_000_000_000_000_000u128)),
 			Some(nonce_as_u256),
 			Vec::new(),
 			is_transactional,
