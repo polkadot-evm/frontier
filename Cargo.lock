@@ -3301,6 +3301,7 @@ dependencies = [
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
+ "precompile-utils",
  "scale-info",
  "sp-api",
  "sp-block-builder",

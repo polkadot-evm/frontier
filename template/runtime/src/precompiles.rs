@@ -1,14 +1,15 @@
-use pallet_evm::{
-	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
-};
 use sp_core::H160;
 use sp_std::marker::PhantomData;
 
+use pallet_evm::{
+	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
+};
 use pallet_evm_precompile_blake2::Blake2F;
 use pallet_evm_precompile_bn128::{Bn128Add, Bn128Mul, Bn128Pairing};
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
+use precompile_utils::prelude::revert;
 
 pub struct FrontierPrecompiles<R>(PhantomData<R>);
 
@@ -40,6 +41,18 @@ where
 	R: pallet_evm::Config,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
+		let (code_addr, context_addr) = (handle.code_address(), handle.context().address);
+		// For chains that possess their own stateful precompiles, it is advisable to activate this verification measure.
+		// This measure prohibits the use of DELEGATECALL or CALLCODE for any precompiles other than the official Ethereum precompiles, which are inherently stateless.
+		if Self::used_addresses().contains(&code_addr)
+			&& code_addr > hash(9)
+			&& code_addr != context_addr
+		{
+			return Some(Err(revert(
+				"cannot be called with DELEGATECALL or CALLCODE",
+			)));
+		};
+
 		match handle.code_address() {
 			// Ethereum precompiles :
 			a if a == hash(1) => Some(ECRecover::execute(handle)),
