@@ -175,6 +175,8 @@ pallet-dynamic-fee = { version = "4.0.0-dev", path = "frame/dynamic-fee", defaul
 pallet-ethereum = { version = "4.0.0-dev", path = "frame/ethereum", default-features = false }
 pallet-evm = { version = "6.0.0-dev", path = "frame/evm", default-features = false }
 pallet-evm-chain-id = { version = "1.0.0-dev", path = "frame/evm-chain-id", default-features = false }
+pallet-evm-precompile-blake2 = { version = "2.0.0-dev", path = "frame/evm/precompile/blake2", default-features = false }
+pallet-evm-precompile-bn128 = { version = "2.0.0-dev", path = "frame/evm/precompile/bn128", default-features = false }
 pallet-evm-precompile-modexp = { version = "2.0.0-dev", path = "frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { version = "2.0.0-dev", path = "frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { version = "2.0.0-dev", path = "frame/evm/precompile/simple", default-features = false }
