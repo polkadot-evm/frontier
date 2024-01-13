@@ -46,6 +46,7 @@ sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
 sp-consensus-aura = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
+sp-externalities = { workspace = true, features = ["default"] }
 sp-inherents = { workspace = true, features = ["default"] }
 sp-io = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }

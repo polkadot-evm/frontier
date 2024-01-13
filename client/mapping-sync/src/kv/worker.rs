@@ -172,7 +172,7 @@ mod tests {
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use sc_block_builder::BlockBuilderBuilder;
 	use sc_client_api::BlockchainEvents;
-	use sp_api::Encode;
+	use scale_codec::Encode;
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_runtime::{generic::Header, traits::BlakeTwo256, Digest};

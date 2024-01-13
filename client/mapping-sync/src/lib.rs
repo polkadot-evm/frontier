@@ -23,7 +23,7 @@ pub mod kv;
 #[cfg(feature = "sql")]
 pub mod sql;
 
-use sp_api::BlockT;
+use sp_runtime::traits::Block as BlockT;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SyncStrategy {
