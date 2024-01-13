@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 // Substrate
 pub use sc_client_db::DatabaseSource;

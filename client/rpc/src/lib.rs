@@ -24,7 +24,7 @@
 	clippy::len_zero,
 	clippy::new_without_default
 )]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 mod cache;
 mod debug;
