@@ -528,6 +528,18 @@
 <a href="#528" id="528">528</a>
 <a href="#529" id="529">529</a>
 <a href="#530" id="530">530</a>
+<a href="#531" id="531">531</a>
+<a href="#532" id="532">532</a>
+<a href="#533" id="533">533</a>
+<a href="#534" id="534">534</a>
+<a href="#535" id="535">535</a>
+<a href="#536" id="536">536</a>
+<a href="#537" id="537">537</a>
+<a href="#538" id="538">538</a>
+<a href="#539" id="539">539</a>
+<a href="#540" id="540">540</a>
+<a href="#541" id="541">541</a>
+<a href="#542" id="542">542</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -860,13 +872,13 @@
 	<span class="kw">use </span>scale_codec::Encode;
 	<span class="kw">use </span>tempfile::tempdir;
 	<span class="comment">// Substrate
-	</span><span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
+	</span><span class="kw">use </span>sc_block_builder::BlockBuilderBuilder;
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>sp_consensus::BlockOrigin;
 	<span class="kw">use </span>sp_core::H256;
 	<span class="kw">use </span>sp_runtime::{
 		generic::{Block, Header},
-		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT},
+		traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT},
 	};
 	<span class="kw">use </span>substrate_test_runtime_client::{
 		prelude::<span class="kw-2">*</span>, DefaultTestClientBuilderExt, TestClientBuilder,
@@ -916,10 +928,16 @@
 			<span class="kw">let </span><span class="kw-2">mut </span>client = Arc::new(client);
 
 			<span class="comment">// Genesis block
-			</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client.new_block(Default::default()).unwrap();
+			</span><span class="kw">let </span>chain_info = client.chain_info();
+			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.build()
+				.unwrap();
 			builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span><span class="kw-2">mut </span>previous_canon_block_hash = block.header.hash();
+			<span class="kw">let </span><span class="kw-2">mut </span>previous_canon_block_number = <span class="kw-2">*</span>block.header.number();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 			<span class="kw">let </span>path = setting.source.path().unwrap();
@@ -940,16 +958,21 @@
 					<span class="comment">// Create two branches, and map the orphan one.
 					// Keep track of the canon hash to later verify the migration replaced it.
 					// A1
-					</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-						.new_block_at(previous_canon_block_hash, Default::default(), <span class="bool-val">false</span>)
+					</span><span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+						.on_parent_block(previous_canon_block_hash)
+						.with_parent_block_number(previous_canon_block_number)
+						.build()
 						.unwrap();
 					builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 					<span class="kw">let </span>block = builder.build().unwrap().block;
 					<span class="kw">let </span>next_canon_block_hash = block.header.hash();
+					<span class="kw">let </span>next_canon_block_number = <span class="kw-2">*</span>block.header.number();
 					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 					<span class="comment">// A2
-					</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-						.new_block_at(previous_canon_block_hash, Default::default(), <span class="bool-val">false</span>)
+					</span><span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+						.on_parent_block(previous_canon_block_hash)
+						.with_parent_block_number(previous_canon_block_number)
+						.build()
 						.unwrap();
 					builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">2</span>], <span class="prelude-val">None</span>).unwrap();
 					<span class="kw">let </span>block = builder.build().unwrap().block;
@@ -984,6 +1007,7 @@
 					);
 					transaction_hashes.push(eth_tx_hash);
 					previous_canon_block_hash = next_canon_block_hash;
+					previous_canon_block_number = next_canon_block_number;
 				}
 				<span class="kw">let _ </span>= backend.mapping().db.commit(transaction);
 			}

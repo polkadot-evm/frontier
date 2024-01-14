@@ -738,7 +738,7 @@
 <span class="kw">use </span>sc_client_api::{Backend, BlockBackend};
 <span class="kw">use </span>sc_consensus::BasicQueue;
 <span class="kw">use </span>sc_executor::NativeExecutionDispatch;
-<span class="kw">use </span>sc_network_sync::warp::WarpSyncParams;
+<span class="kw">use </span>sc_network_sync::warp::{WarpSyncParams, WarpSyncProvider};
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
@@ -1033,7 +1033,7 @@
 		net_config.add_notification_protocol(sc_consensus_grandpa::grandpa_peers_set_config(
 			grandpa_protocol_name.clone(),
 		));
-		<span class="kw">let </span>warp_sync: Arc&lt;<span class="kw">dyn </span>sc_network::config::WarpSyncProvider&lt;Block&gt;&gt; =
+		<span class="kw">let </span>warp_sync: Arc&lt;<span class="kw">dyn </span>WarpSyncProvider&lt;Block&gt;&gt; =
 			Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 				backend.clone(),
 				grandpa_link.shared_authority_set().clone(),

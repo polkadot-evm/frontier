@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"constant":["UNITS"],"fn":["authority_keys_from_seed","development_config","get_account_id_from_seed","get_from_seed","local_testnet_config","properties","testnet_genesis"],"struct":["DevGenesisExt"],"type":["AccountPublic","ChainSpec","DevChainSpec"]};
+window.SIDEBAR_ITEMS = {"constant":["UNITS"],"fn":["authority_keys_from_seed","development_config","get_account_id_from_seed","get_from_seed","local_testnet_config","properties","testnet_genesis"],"type":["AccountPublic","ChainSpec"]};

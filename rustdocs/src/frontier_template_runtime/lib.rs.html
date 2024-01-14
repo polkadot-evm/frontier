@@ -963,6 +963,46 @@
 <a href="#963" id="963">963</a>
 <a href="#964" id="964">964</a>
 <a href="#965" id="965">965</a>
+<a href="#966" id="966">966</a>
+<a href="#967" id="967">967</a>
+<a href="#968" id="968">968</a>
+<a href="#969" id="969">969</a>
+<a href="#970" id="970">970</a>
+<a href="#971" id="971">971</a>
+<a href="#972" id="972">972</a>
+<a href="#973" id="973">973</a>
+<a href="#974" id="974">974</a>
+<a href="#975" id="975">975</a>
+<a href="#976" id="976">976</a>
+<a href="#977" id="977">977</a>
+<a href="#978" id="978">978</a>
+<a href="#979" id="979">979</a>
+<a href="#980" id="980">980</a>
+<a href="#981" id="981">981</a>
+<a href="#982" id="982">982</a>
+<a href="#983" id="983">983</a>
+<a href="#984" id="984">984</a>
+<a href="#985" id="985">985</a>
+<a href="#986" id="986">986</a>
+<a href="#987" id="987">987</a>
+<a href="#988" id="988">988</a>
+<a href="#989" id="989">989</a>
+<a href="#990" id="990">990</a>
+<a href="#991" id="991">991</a>
+<a href="#992" id="992">992</a>
+<a href="#993" id="993">993</a>
+<a href="#994" id="994">994</a>
+<a href="#995" id="995">995</a>
+<a href="#996" id="996">996</a>
+<a href="#997" id="997">997</a>
+<a href="#998" id="998">998</a>
+<a href="#999" id="999">999</a>
+<a href="#1000" id="1000">1000</a>
+<a href="#1001" id="1001">1001</a>
+<a href="#1002" id="1002">1002</a>
+<a href="#1003" id="1003">1003</a>
+<a href="#1004" id="1004">1004</a>
+<a href="#1005" id="1005">1005</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
@@ -978,6 +1018,7 @@
 <span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="kw">use </span>sp_api::impl_runtime_apis;
 <span class="kw">use </span>sp_consensus_aura::sr25519::AuthorityId <span class="kw">as </span>AuraId;
+<span class="kw">use </span>sp_consensus_grandpa::{AuthorityId <span class="kw">as </span>GrandpaId, AuthorityList <span class="kw">as </span>GrandpaAuthorityList};
 <span class="kw">use </span>sp_core::{
 	crypto::{ByteArray, KeyTypeId},
 	OpaqueMetadata, H160, H256, U256,
@@ -999,12 +1040,10 @@
 <span class="attr">#[cfg(feature = <span class="string">&quot;with-rocksdb-weights&quot;</span>)]
 </span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::{
-	construct_runtime, parameter_types,
+	genesis_builder_helper::{build_config, create_default_config},
+	parameter_types,
 	traits::{ConstBool, ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
-};
-<span class="kw">use </span>pallet_grandpa::{
-	fg_primitives, AuthorityId <span class="kw">as </span>GrandpaId, AuthorityList <span class="kw">as </span>GrandpaAuthorityList,
 };
 <span class="kw">use </span>pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter};
 <span class="comment">// Frontier
@@ -1255,10 +1294,10 @@
 <span class="kw">impl </span>pallet_transaction_payment::Config <span class="kw">for </span>Runtime {
 	<span class="kw">type </span>RuntimeEvent = RuntimeEvent;
 	<span class="kw">type </span>OnChargeTransaction = CurrencyAdapter&lt;Balances, ()&gt;;
-	<span class="kw">type </span>OperationalFeeMultiplier = ConstU8&lt;<span class="number">5</span>&gt;;
 	<span class="kw">type </span>WeightToFee = IdentityFee&lt;Balance&gt;;
 	<span class="kw">type </span>LengthToFee = IdentityFee&lt;Balance&gt;;
 	<span class="kw">type </span>FeeMultiplierUpdate = ConstFeeMultiplier&lt;FeeMultiplier&gt;;
+	<span class="kw">type </span>OperationalFeeMultiplier = ConstU8&lt;<span class="number">5</span>&gt;;
 }
 
 <span class="kw">impl </span>pallet_sudo::Config <span class="kw">for </span>Runtime {
@@ -1367,8 +1406,37 @@
 	<span class="kw">type </span>WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight&lt;<span class="self">Self</span>&gt;;
 }
 
+<span class="attr">#[frame_support::pallet]
+</span><span class="kw">mod </span>pallet_manual_seal {
+	<span class="kw">use super</span>::<span class="kw-2">*</span>;
+	<span class="kw">use </span>frame_support::pallet_prelude::<span class="kw-2">*</span>;
+
+	<span class="attr">#[pallet::pallet]
+	</span><span class="kw">pub struct </span>Pallet&lt;T&gt;(PhantomData&lt;T&gt;);
+
+	<span class="attr">#[pallet::config]
+	</span><span class="kw">pub trait </span>Config: frame_system::Config {}
+
+	<span class="attr">#[pallet::genesis_config]
+	#[derive(frame_support::DefaultNoBound)]
+	</span><span class="kw">pub struct </span>GenesisConfig&lt;T&gt; {
+		<span class="kw">pub </span>enable: bool,
+		<span class="attr">#[serde(skip)]
+		</span><span class="kw">pub </span>_config: PhantomData&lt;T&gt;,
+	}
+
+	<span class="attr">#[pallet::genesis_build]
+	</span><span class="kw">impl</span>&lt;T: Config&gt; BuildGenesisConfig <span class="kw">for </span>GenesisConfig&lt;T&gt; {
+		<span class="kw">fn </span>build(<span class="kw-2">&amp;</span><span class="self">self</span>) {
+			EnableManualSeal::set(<span class="kw-2">&amp;</span><span class="self">self</span>.enable);
+		}
+	}
+}
+
+<span class="kw">impl </span>pallet_manual_seal::Config <span class="kw">for </span>Runtime {}
+
 <span class="comment">// Create the runtime by composing the FRAME pallets that were previously configured.
-</span><span class="macro">construct_runtime!</span>(
+</span><span class="macro">frame_support::construct_runtime!</span>(
 	<span class="kw">pub enum </span>Runtime {
 		System: frame_system,
 		Timestamp: pallet_timestamp,
@@ -1383,6 +1451,8 @@
 		DynamicFee: pallet_dynamic_fee,
 		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
+
+		ManualSeal: pallet_manual_seal,
 	}
 );
 
@@ -1589,6 +1659,28 @@
 		}
 	}
 
+	<span class="kw">impl </span>sp_genesis_builder::GenesisBuilder&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>create_default_config() -&gt; Vec&lt;u8&gt; {
+			create_default_config::&lt;RuntimeGenesisConfig&gt;()
+		}
+
+		<span class="kw">fn </span>build_config(config: Vec&lt;u8&gt;) -&gt; sp_genesis_builder::Result {
+			build_config::&lt;RuntimeGenesisConfig&gt;(config)
+		}
+	}
+
+	<span class="kw">impl </span>sp_session::SessionKeys&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>generate_session_keys(seed: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; Vec&lt;u8&gt; {
+			opaque::SessionKeys::generate(seed)
+		}
+
+		<span class="kw">fn </span>decode_session_keys(
+			encoded: Vec&lt;u8&gt;,
+		) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(Vec&lt;u8&gt;, KeyTypeId)&gt;&gt; {
+			opaque::SessionKeys::decode_into_raw_public_keys(<span class="kw-2">&amp;</span>encoded)
+		}
+	}
+
 	<span class="kw">impl </span>sp_consensus_aura::AuraApi&lt;Block, AuraId&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>slot_duration() -&gt; sp_consensus_aura::SlotDuration {
 			sp_consensus_aura::SlotDuration::from_millis(Aura::slot_duration())
@@ -1599,9 +1691,66 @@
 		}
 	}
 
+	<span class="kw">impl </span>sp_consensus_grandpa::GrandpaApi&lt;Block&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>grandpa_authorities() -&gt; GrandpaAuthorityList {
+			Grandpa::grandpa_authorities()
+		}
+
+		<span class="kw">fn </span>current_set_id() -&gt; sp_consensus_grandpa::SetId {
+			Grandpa::current_set_id()
+		}
+
+		<span class="kw">fn </span>submit_report_equivocation_unsigned_extrinsic(
+			_equivocation_proof: sp_consensus_grandpa::EquivocationProof&lt;
+				&lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
+				NumberFor&lt;Block&gt;,
+			&gt;,
+			_key_owner_proof: sp_consensus_grandpa::OpaqueKeyOwnershipProof,
+		) -&gt; <span class="prelude-ty">Option</span>&lt;()&gt; {
+			<span class="prelude-val">None
+		</span>}
+
+		<span class="kw">fn </span>generate_key_ownership_proof(
+			_set_id: sp_consensus_grandpa::SetId,
+			_authority_id: GrandpaId,
+		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_consensus_grandpa::OpaqueKeyOwnershipProof&gt; {
+			<span class="comment">// NOTE: this is the only implementation possible since we&#39;ve
+			// defined our key owner proof type as a bottom type (i.e. a type
+			// with no values).
+			</span><span class="prelude-val">None
+		</span>}
+	}
+
 	<span class="kw">impl </span>frame_system_rpc_runtime_api::AccountNonceApi&lt;Block, AccountId, Nonce&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>account_nonce(account: AccountId) -&gt; Nonce {
 			System::account_nonce(account)
+		}
+	}
+
+	<span class="kw">impl </span>pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;
+		Block,
+		Balance,
+	&gt; <span class="kw">for </span>Runtime {
+		<span class="kw">fn </span>query_info(
+			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
+			len: u32
+		) -&gt; pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo&lt;Balance&gt; {
+			TransactionPayment::query_info(uxt, len)
+		}
+
+		<span class="kw">fn </span>query_fee_details(
+			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
+			len: u32,
+		) -&gt; pallet_transaction_payment::FeeDetails&lt;Balance&gt; {
+			TransactionPayment::query_fee_details(uxt, len)
+		}
+
+		<span class="kw">fn </span>query_weight_to_fee(weight: Weight) -&gt; Balance {
+			TransactionPayment::weight_to_fee(weight)
+		}
+
+		<span class="kw">fn </span>query_length_to_fee(length: u32) -&gt; Balance {
+			TransactionPayment::length_to_fee(length)
 		}
 	}
 
@@ -1798,75 +1947,6 @@
 				pallet_ethereum::Call::&lt;Runtime&gt;::transact { transaction }.into(),
 			)
 		}
-	}
-
-	<span class="kw">impl </span>pallet_transaction_payment_rpc_runtime_api::TransactionPaymentApi&lt;
-		Block,
-		Balance,
-	&gt; <span class="kw">for </span>Runtime {
-		<span class="kw">fn </span>query_info(
-			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
-			len: u32
-		) -&gt; pallet_transaction_payment_rpc_runtime_api::RuntimeDispatchInfo&lt;Balance&gt; {
-			TransactionPayment::query_info(uxt, len)
-		}
-
-		<span class="kw">fn </span>query_fee_details(
-			uxt: &lt;Block <span class="kw">as </span>BlockT&gt;::Extrinsic,
-			len: u32,
-		) -&gt; pallet_transaction_payment::FeeDetails&lt;Balance&gt; {
-			TransactionPayment::query_fee_details(uxt, len)
-		}
-
-		<span class="kw">fn </span>query_weight_to_fee(weight: Weight) -&gt; Balance {
-			TransactionPayment::weight_to_fee(weight)
-		}
-
-		<span class="kw">fn </span>query_length_to_fee(length: u32) -&gt; Balance {
-			TransactionPayment::length_to_fee(length)
-		}
-	}
-
-	<span class="kw">impl </span>sp_session::SessionKeys&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="kw">fn </span>generate_session_keys(seed: <span class="prelude-ty">Option</span>&lt;Vec&lt;u8&gt;&gt;) -&gt; Vec&lt;u8&gt; {
-			opaque::SessionKeys::generate(seed)
-		}
-
-		<span class="kw">fn </span>decode_session_keys(
-			encoded: Vec&lt;u8&gt;,
-		) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;(Vec&lt;u8&gt;, KeyTypeId)&gt;&gt; {
-			opaque::SessionKeys::decode_into_raw_public_keys(<span class="kw-2">&amp;</span>encoded)
-		}
-	}
-
-	<span class="kw">impl </span>fg_primitives::GrandpaApi&lt;Block&gt; <span class="kw">for </span>Runtime {
-		<span class="kw">fn </span>grandpa_authorities() -&gt; GrandpaAuthorityList {
-			Grandpa::grandpa_authorities()
-		}
-
-		<span class="kw">fn </span>current_set_id() -&gt; fg_primitives::SetId {
-			Grandpa::current_set_id()
-		}
-
-		<span class="kw">fn </span>submit_report_equivocation_unsigned_extrinsic(
-			_equivocation_proof: fg_primitives::EquivocationProof&lt;
-				&lt;Block <span class="kw">as </span>BlockT&gt;::Hash,
-				NumberFor&lt;Block&gt;,
-			&gt;,
-			_key_owner_proof: fg_primitives::OpaqueKeyOwnershipProof,
-		) -&gt; <span class="prelude-ty">Option</span>&lt;()&gt; {
-			<span class="prelude-val">None
-		</span>}
-
-		<span class="kw">fn </span>generate_key_ownership_proof(
-			_set_id: fg_primitives::SetId,
-			_authority_id: GrandpaId,
-		) -&gt; <span class="prelude-ty">Option</span>&lt;fg_primitives::OpaqueKeyOwnershipProof&gt; {
-			<span class="comment">// NOTE: this is the only implementation possible since we&#39;ve
-			// defined our key owner proof type as a bottom type (i.e. a type
-			// with no values).
-			</span><span class="prelude-val">None
-		</span>}
 	}
 
 	<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]

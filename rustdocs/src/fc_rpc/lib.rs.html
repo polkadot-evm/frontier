@@ -476,6 +476,20 @@
 <a href="#476" id="476">476</a>
 <a href="#477" id="477">477</a>
 <a href="#478" id="478">478</a>
+<a href="#479" id="479">479</a>
+<a href="#480" id="480">480</a>
+<a href="#481" id="481">481</a>
+<a href="#482" id="482">482</a>
+<a href="#483" id="483">483</a>
+<a href="#484" id="484">484</a>
+<a href="#485" id="485">485</a>
+<a href="#486" id="486">486</a>
+<a href="#487" id="487">487</a>
+<a href="#488" id="488">488</a>
+<a href="#489" id="489">489</a>
+<a href="#490" id="490">490</a>
+<a href="#491" id="491">491</a>
+<a href="#492" id="492">492</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -821,7 +835,7 @@
 	<span class="kw">use </span>std::{path::PathBuf, sync::Arc};
 
 	<span class="kw">use </span>futures::executor;
-	<span class="kw">use </span>sc_block_builder::BlockBuilderProvider;
+	<span class="kw">use </span>sc_block_builder::BlockBuilderBuilder;
 	<span class="kw">use </span>sp_blockchain::HeaderBackend;
 	<span class="kw">use </span>sp_consensus::BlockOrigin;
 	<span class="kw">use </span>sp_runtime::{
@@ -869,15 +883,23 @@
 		</span><span class="kw">let </span>ethereum_block_hash = sp_core::H256::random();
 
 		<span class="comment">// G -&gt; A1.
-		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client.new_block(Default::default()).unwrap();
+		</span><span class="kw">let </span>chain = client.chain_info();
+		<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>a1 = builder.build().unwrap().block;
 		<span class="kw">let </span>a1_hash = a1.header.hash();
 		executor::block_on(client.import(BlockOrigin::Own, a1)).unwrap();
 
 		<span class="comment">// A1 -&gt; B1
-		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-			.new_block_at(a1_hash, Default::default(), <span class="bool-val">false</span>)
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(<span class="kw-2">&amp;*</span>client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>b1 = builder.build().unwrap().block;
@@ -905,8 +927,11 @@
 		);
 
 		<span class="comment">// A1 -&gt; B2
-		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-			.new_block_at(a1_hash, Default::default(), <span class="bool-val">false</span>)
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(<span class="kw-2">&amp;*</span>client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">2</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>b2 = builder.build().unwrap().block;
@@ -934,8 +959,11 @@
 		);
 
 		<span class="comment">// B2 -&gt; C1. B2 branch is now canon.
-		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = client
-			.new_block_at(b2_hash, Default::default(), <span class="bool-val">false</span>)
+		</span><span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
+			.on_parent_block(b2_hash)
+			.fetch_parent_block_number(<span class="kw-2">&amp;*</span>client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(<span class="macro">vec!</span>[<span class="number">1</span>], <span class="prelude-val">None</span>).unwrap();
 		<span class="kw">let </span>c1 = builder.build().unwrap().block;
