@@ -232,16 +232,6 @@
 <a href="#232" id="232">232</a>
 <a href="#233" id="233">233</a>
 <a href="#234" id="234">234</a>
-<a href="#235" id="235">235</a>
-<a href="#236" id="236">236</a>
-<a href="#237" id="237">237</a>
-<a href="#238" id="238">238</a>
-<a href="#239" id="239">239</a>
-<a href="#240" id="240">240</a>
-<a href="#241" id="241">241</a>
-<a href="#242" id="242">242</a>
-<a href="#243" id="243">243</a>
-<a href="#244" id="244">244</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -271,9 +261,7 @@
 <span class="kw">use </span>sp_block_builder::BlockBuilder <span class="kw">as </span>BlockBuilderApi;
 <span class="kw">use </span>sp_blockchain::HeaderBackend;
 <span class="kw">use </span>sp_inherents::CreateInherentDataProviders;
-<span class="kw">use </span>sp_runtime::{
-	generic::BlockId, traits::Block <span class="kw">as </span>BlockT, transaction_validity::TransactionSource,
-};
+<span class="kw">use </span>sp_runtime::{traits::Block <span class="kw">as </span>BlockT, transaction_validity::TransactionSource};
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fc_rpc_core::types::<span class="kw-2">*</span>;
 <span class="kw">use </span>fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
@@ -393,11 +381,7 @@
 		<span class="kw">let </span>extrinsic = <span class="self">self</span>.convert_transaction(block_hash, transaction)<span class="question-mark">?</span>;
 
 		<span class="self">self</span>.pool
-			.submit_one(
-				<span class="kw-2">&amp;</span>BlockId::Hash(block_hash),
-				TransactionSource::Local,
-				extrinsic,
-			)
+			.submit_one(block_hash, TransactionSource::Local, extrinsic)
 			.map_ok(<span class="kw">move </span>|<span class="kw">_</span>| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.<span class="kw">await
@@ -420,11 +404,7 @@
 		<span class="kw">let </span>extrinsic = <span class="self">self</span>.convert_transaction(block_hash, transaction)<span class="question-mark">?</span>;
 
 		<span class="self">self</span>.pool
-			.submit_one(
-				<span class="kw-2">&amp;</span>BlockId::Hash(block_hash),
-				TransactionSource::Local,
-				extrinsic,
-			)
+			.submit_one(block_hash, TransactionSource::Local, extrinsic)
 			.map_ok(<span class="kw">move </span>|<span class="kw">_</span>| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.<span class="kw">await

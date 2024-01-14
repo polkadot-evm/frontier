@@ -308,7 +308,7 @@
 			Default::default()
 		};
 
-		<span class="macro">log::info!</span>(target: LOG_TARGET, <span class="string">&quot;Pending runtime API: header digest = {digest:?}&quot;</span>);
+		<span class="macro">log::debug!</span>(target: LOG_TARGET, <span class="string">&quot;Pending runtime API: header digest = {digest:?}&quot;</span>);
 
 		<span class="kw">let </span>pending_header = &lt;&lt;B <span class="kw">as </span>BlockT&gt;::Header <span class="kw">as </span>HeaderT&gt;::new(
 			best_number + One::one(),
