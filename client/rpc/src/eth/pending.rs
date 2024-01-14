@@ -88,7 +88,7 @@ where
 			Default::default()
 		};
 
-		log::info!(target: LOG_TARGET, "Pending runtime API: header digest = {digest:?}");
+		log::debug!(target: LOG_TARGET, "Pending runtime API: header digest = {digest:?}");
 
 		let pending_header = <<B as BlockT>::Header as HeaderT>::new(
 			best_number + One::one(),
