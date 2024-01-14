@@ -84,22 +84,24 @@ parameter_types! {
 	// For weight estimation, we assume that the most locks on an individual account will be 50.
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type WeightInfo = ();
 	type Balance = u64;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = ();
-	type RuntimeHoldReason = ();
-	type FreezeIdentifier = ();
+	type ReserveIdentifier = [u8; 8];
+	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxLocks = MaxLocks;
-	type MaxReserves = ();
-	type MaxHolds = ();
-	type MaxFreezes = ();
+	type MaxReserves = MaxReserves;
+	type MaxHolds = ConstU32<5>;
+	type MaxFreezes = ConstU32<1>;
 }
 
 parameter_types! {
