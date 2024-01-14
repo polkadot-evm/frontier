@@ -343,7 +343,7 @@ mod tests {
 	use std::{path::PathBuf, sync::Arc};
 
 	use futures::executor;
-	use sc_block_builder::BlockBuilderProvider;
+	use sc_block_builder::BlockBuilderBuilder;
 	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
@@ -391,15 +391,23 @@ mod tests {
 		let ethereum_block_hash = sp_core::H256::random();
 
 		// G -> A1.
-		let mut builder = client.new_block(Default::default()).unwrap();
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let a1 = builder.build().unwrap().block;
 		let a1_hash = a1.header.hash();
 		executor::block_on(client.import(BlockOrigin::Own, a1)).unwrap();
 
 		// A1 -> B1
-		let mut builder = client
-			.new_block_at(a1_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let b1 = builder.build().unwrap().block;
@@ -427,8 +435,11 @@ mod tests {
 		);
 
 		// A1 -> B2
-		let mut builder = client
-			.new_block_at(a1_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![2], None).unwrap();
 		let b2 = builder.build().unwrap().block;
@@ -456,8 +467,11 @@ mod tests {
 		);
 
 		// B2 -> C1. B2 branch is now canon.
-		let mut builder = client
-			.new_block_at(b2_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(b2_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let c1 = builder.build().unwrap().block;

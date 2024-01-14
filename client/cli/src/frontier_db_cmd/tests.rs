@@ -24,7 +24,7 @@ use scale_codec::Encode;
 use serde::Serialize;
 use tempfile::tempdir;
 // Substrate
-use sc_block_builder::BlockBuilderProvider;
+use sc_block_builder::BlockBuilderBuilder;
 use sc_cli::DatabasePruningMode;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
@@ -546,7 +546,12 @@ fn commitment_create() {
 
 	// Build a block and fill the pallet-ethereum status.
 	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
-	let mut builder = client.new_block(Default::default()).unwrap();
+	let chain = client.chain_info();
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(chain.best_hash)
+		.with_parent_block_number(chain.best_number)
+		.build()
+		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses.encode()))
 		.unwrap();
@@ -628,8 +633,10 @@ fn commitment_update() {
 	// First we create block and insert data in the offchain db.
 
 	// Build a block A1 and fill the pallet-ethereum status.
-	let mut builder = client
-		.new_block_at(client.genesis_hash(), Default::default(), false)
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(client.genesis_hash())
+		.with_parent_block_number(0)
+		.build()
 		.unwrap();
 	builder
 		.push_storage_change(key.clone(), Some(statuses_a1.encode()))
@@ -678,8 +685,10 @@ fn commitment_update() {
 	// Build a block A2 and fill the pallet-ethereum status.
 	let tmp = tempdir().expect("create a temporary directory");
 
-	let mut builder = client
-		.new_block_at(client.genesis_hash(), Default::default(), false)
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(client.genesis_hash())
+		.with_parent_block_number(0)
+		.build()
 		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses_a2.encode()))
@@ -748,7 +757,12 @@ fn mapping_read_works() {
 
 	// Build a block and fill the pallet-ethereum status.
 	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
-	let mut builder = client.new_block(Default::default()).unwrap();
+	let chain = client.chain_info();
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(chain.best_hash)
+		.with_parent_block_number(chain.best_number)
+		.build()
+		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses.encode()))
 		.unwrap();

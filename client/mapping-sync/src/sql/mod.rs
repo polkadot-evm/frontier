@@ -482,7 +482,7 @@ mod test {
 	use sqlx::Row;
 	use tempfile::tempdir;
 	// Substrate
-	use sc_block_builder::BlockBuilderProvider;
+	use sc_block_builder::BlockBuilderBuilder;
 	use sc_client_api::{BlockchainEvents, HeaderBackend};
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
@@ -593,7 +593,12 @@ mod test {
 		let mut logs: Vec<(i32, fc_db::sql::Log)> = vec![];
 		for block_number in 1..11 {
 			// New block including pallet ethereum block digest
-			let mut builder = client.new_block(Default::default()).unwrap();
+			let chain = client.chain_info();
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain.best_hash)
+				.with_parent_block_number(chain.best_number)
+				.build()
+				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
 				.expect("deposit log");
@@ -829,7 +834,12 @@ mod test {
 		let mut logs: Vec<(i32, fc_db::sql::Log)> = vec![];
 		for block_number in 1..11 {
 			// New block including pallet ethereum block digest
-			let mut builder = client.new_block(Default::default()).unwrap();
+			let chain = client.chain_info();
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain.best_hash)
+				.with_parent_block_number(chain.best_number)
+				.build()
+				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
 				.expect("deposit log");
@@ -1040,8 +1050,11 @@ mod test {
 		let mut hashes_to_be_orphaned: Vec<H256> = vec![];
 		for block_number in 1..11 {
 			// New block including pallet ethereum block digest
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1077,8 +1090,11 @@ mod test {
 		parent_hash = common_ancestor;
 		for _ in 1..11 {
 			// New block including pallet ethereum block digest
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1178,8 +1194,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=5 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1355,8 +1374,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=3 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1461,8 +1483,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=3 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1476,8 +1501,11 @@ mod test {
 		}
 
 		// create non-best block
-		let mut builder = client
-			.new_block_at(best_block_hashes[0], Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(best_block_hashes[0])
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder
 			.push_deposit_log_digest_item(ethereum_digest())
@@ -1578,8 +1606,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=3 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1684,8 +1715,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=3 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1699,8 +1733,11 @@ mod test {
 		}
 
 		// create non-best block
-		let mut builder = client
-			.new_block_at(best_block_hashes[0], Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(best_block_hashes[0])
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder
 			.push_deposit_log_digest_item(ethereum_digest())
@@ -1801,8 +1838,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=3 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
@@ -1907,8 +1947,11 @@ mod test {
 			.expect("genesis hash");
 		let mut best_block_hashes: Vec<H256> = vec![];
 		for _block_number in 1..=3 {
-			let mut builder = client
-				.new_block_at(parent_hash, Default::default(), false)
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(parent_hash)
+				.fetch_parent_block_number(&*client)
+				.unwrap()
+				.build()
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
