@@ -2003,11 +2003,11 @@
 <span class="kw">use </span>futures::prelude::<span class="kw-2">*</span>;
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::backend::{Backend <span class="kw">as </span>BackendT, StateBackend, StorageProvider};
-<span class="kw">use </span>sp_api::{HeaderT, ProvideRuntimeApi};
+<span class="kw">use </span>sp_api::ProvideRuntimeApi;
 <span class="kw">use </span>sp_blockchain::{Backend, HeaderBackend};
 <span class="kw">use </span>sp_consensus::SyncOracle;
 <span class="kw">use </span>sp_core::H256;
-<span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, UniqueSaturatedInto};
+<span class="kw">use </span>sp_runtime::traits::{BlakeTwo256, Block <span class="kw">as </span>BlockT, Header <span class="kw">as </span>HeaderT, UniqueSaturatedInto};
 <span class="comment">// Frontier
 </span><span class="kw">use </span>fp_rpc::EthereumRuntimeRPCApi;
 

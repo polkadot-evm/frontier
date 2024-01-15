@@ -29,7 +29,7 @@
 	clippy::too_many_arguments,
 	clippy::large_enum_variant
 )]
-#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, deny(unused_crate_dependencies))]
+#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, warn(unused_crate_dependencies))]
 
 #[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
 </span><span class="kw">mod </span>benchmarking;
