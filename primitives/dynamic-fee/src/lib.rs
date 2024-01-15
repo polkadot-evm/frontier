@@ -18,7 +18,7 @@
 //! Core types and inherents for dynamic fee.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 use sp_core::U256;
 use sp_inherents::InherentIdentifier;

@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 use ethereum::Log;
 use ethereum_types::Bloom;

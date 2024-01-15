@@ -19,16 +19,18 @@
 
 //! Encoding of XCM types for solidity
 
-use crate::solidity::{
-	codec::{bytes::*, Codec, Reader, Writer},
-	revert::{BacktraceExt, InjectBacktrace, MayRevert, RevertReason},
-};
 use alloc::string::String;
+
 use frame_support::{ensure, traits::ConstU32};
 use sp_core::H256;
 use sp_std::vec::Vec;
 use sp_weights::Weight;
 use xcm::latest::{Junction, Junctions, MultiLocation, NetworkId};
+
+use crate::solidity::{
+	codec::{bytes::*, Codec, Reader, Writer},
+	revert::{BacktraceExt, InjectBacktrace, MayRevert, RevertReason},
+};
 
 pub const JUNCTION_SIZE_LIMIT: u32 = 2u32.pow(16);
 
@@ -107,6 +109,11 @@ pub(crate) fn network_id_to_bytes(network_id: Option<NetworkId>) -> Vec<u8> {
 			encoded.push(9u8);
 			encoded
 		}
+		Some(NetworkId::PolkadotBulletin) => {
+			encoded.push(11u8);
+			encoded.push(10u8);
+			encoded
+		}
 	}
 }
 
@@ -159,6 +166,7 @@ pub(crate) fn network_id_from_bytes(encoded_bytes: Vec<u8>) -> MayRevert<Option<
 		}
 		9 => Ok(Some(NetworkId::BitcoinCore)),
 		10 => Ok(Some(NetworkId::BitcoinCash)),
+		11 => Ok(Some(NetworkId::PolkadotBulletin)),
 		_ => Err(RevertReason::custom("Non-valid Network Id").into()),
 	}
 }

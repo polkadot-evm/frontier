@@ -21,11 +21,11 @@ use std::{ops::DerefMut, sync::Arc, time::Duration};
 use futures::prelude::*;
 // Substrate
 use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
-use sp_api::{HeaderT, ProvideRuntimeApi};
+use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Backend, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT, UniqueSaturatedInto};
+use sp_runtime::traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
