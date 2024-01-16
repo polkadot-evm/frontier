@@ -213,6 +213,7 @@ where
 			block,
 			receipts,
 			statuses,
+			substrate_hash,
 			..
 		} = block_info.clone();
 		match (block, statuses, receipts) {
@@ -288,20 +289,24 @@ where
 					EthereumTransaction::EIP2930(t) => t.gas_price,
 					EthereumTransaction::EIP1559(t) => {
 						let parent_eth_hash = block.header.parent_hash;
-						let parent_substrate_hash = frontier_backend_client::load_hash::<B, C>(
-							self.client.as_ref(),
-							self.backend.as_ref(),
-							parent_eth_hash,
-						)
-						.await
-						.map_err(|err| internal_err(format!("{:?}", err)))?
-						.ok_or(internal_err(
-							"Failed to retrieve substrate parent block hash",
-						))?;
+						let base_fee_block_substrate_hash = if parent_eth_hash.is_zero() {
+							substrate_hash
+						} else {
+							frontier_backend_client::load_hash::<B, C>(
+								self.client.as_ref(),
+								self.backend.as_ref(),
+								parent_eth_hash,
+							)
+							.await
+							.map_err(|err| internal_err(format!("{:?}", err)))?
+							.ok_or(internal_err(
+								"Failed to retrieve substrate parent block hash",
+							))?
+						};
 
 						self.client
 							.runtime_api()
-							.gas_price(parent_substrate_hash)
+							.gas_price(base_fee_block_substrate_hash)
 							.unwrap_or_default()
 							.checked_add(t.max_priority_fee_per_gas)
 							.unwrap_or_else(U256::max_value)
