@@ -15,6 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#[cfg(feature = "pallet-contracts")]
+pub mod contracts;
 pub mod stack;
 
 use crate::{Config, Weight};
