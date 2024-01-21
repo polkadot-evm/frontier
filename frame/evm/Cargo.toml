@@ -33,6 +33,7 @@ sp-std = { workspace = true }
 # Frontier
 fp-account = { workspace = true }
 fp-evm = { workspace = true, features = ["serde"] }
+pallet-contracts = { workspace = true, optional = true }
 
 [dev-dependencies]
 hex = { workspace = true }
@@ -56,6 +57,7 @@ std = [
 	"frame-benchmarking?/std",
 	"frame-support/std",
 	"frame-system/std",
+	"pallet-contracts/std",
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
