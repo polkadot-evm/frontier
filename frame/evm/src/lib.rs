@@ -1085,9 +1085,7 @@ where
 			let refund_amount = paid
 				.peek()
 				.saturating_sub(corrected_fee.unique_saturated_into());
-			// refund to the account that paid the fees. If this fails, the
-			// account might have dropped below the existential balance. In
-			// that case we don't refund anything.
+			// refund to the account that paid the fees.
 			let refund_imbalance = F::deposit(&account_id, refund_amount, Precision::BestEffort)
 				.unwrap_or_else(|_| Debt::<T::AccountId, F>::zero());
 
