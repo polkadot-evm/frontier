@@ -1,0 +1,68 @@
+[package]
+name = "pallet-evm-precompile"
+version = "1.0.0-dev"
+license = "Apache-2.0"
+readme = "README.md"
+description = "FRAME EVM Precompile pallet."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-info = { workspace = true }
+serde = { workspace = true, default-features = false }
+# Substrate
+frame-benchmarking = { workspace = true, optional = true }
+frame-support = { workspace = true }
+frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
+sp-std = { workspace = true }
+
+# Frontier
+pallet-evm = { workspace = true }
+pallet-evm-precompile-modexp = { workspace = true }
+pallet-evm-precompile-sha3fips = { workspace = true }
+pallet-evm-precompile-simple = { workspace = true }
+
+[dev-dependencies]
+# Substrate
+pallet-balances = { workspace = true, features = ["default"] }
+pallet-timestamp = { workspace = true }
+sp-io = { workspace = true }
+
+# Frontier
+fp-evm = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+	"serde/std",
+	# Substrate
+	"frame-benchmarking/std",
+	"frame-support/std",
+	"frame-system/std",
+	"sp-std/std",
+	"sp-core/std",
+	"sp-runtime/std",
+	# Frontier
+	"pallet-evm/std",
+	"pallet-evm-precompile-modexp/std",
+	"pallet-evm-precompile-sha3fips/std",
+	"pallet-evm-precompile-simple/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-support/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"pallet-evm/runtime-benchmarks",
+]
+try-runtime = [
+	"frame-support/try-runtime",
+	"frame-system/try-runtime",
+	"pallet-evm/try-runtime",
+]
