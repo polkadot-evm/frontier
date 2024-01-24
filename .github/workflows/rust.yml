@@ -85,7 +85,7 @@ jobs:
         if taplo --version &> /dev/null; then
           echo "taplo-cli is already installed"
         else
-          cargo install taplo-cli --locked
+          cargo install taplo-cli
         fi
         taplo fmt --check
     - name: Rustfmt
