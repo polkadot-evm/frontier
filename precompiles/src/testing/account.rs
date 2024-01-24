@@ -22,7 +22,7 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{Decode, Encode, MaxEncodedLen, H160, H256};
 
-#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 #[derive(Serialize, Deserialize, derive_more::Display)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct MockAccount(pub H160);
@@ -79,6 +79,12 @@ impl From<[u8; 20]> for MockAccount {
 	fn from(address: [u8; 20]) -> MockAccount {
 		let x: H160 = address.into();
 		MockAccount(x)
+	}
+}
+
+impl From<u64> for MockAccount {
+	fn from(address: u64) -> MockAccount {
+		MockAccount::from_u64(address)
 	}
 }
 
