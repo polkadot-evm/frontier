@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"frontier_template_runtime":[["impl VariantCount for <a class=\"enum\" href=\"frontier_template_runtime/enum.RuntimeHoldReason.html\" title=\"enum frontier_template_runtime::RuntimeHoldReason\">RuntimeHoldReason</a>"],["impl VariantCount for <a class=\"enum\" href=\"frontier_template_runtime/enum.RuntimeFreezeReason.html\" title=\"enum frontier_template_runtime::RuntimeFreezeReason\">RuntimeFreezeReason</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
