@@ -74,7 +74,7 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	// write database version only after the database is successfully opened
 	#[cfg(not(test))]
 	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
-	return Ok(sp_database::as_database(db));
+	Ok(sp_database::as_database(db))
 }
 
 #[cfg(not(feature = "rocksdb"))]

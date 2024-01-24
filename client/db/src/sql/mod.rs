@@ -545,6 +545,7 @@ where
 			let transaction_index = transaction_index as i32;
 			log_count += receipt_logs.len();
 			for (log_index, log) in receipt_logs.iter().enumerate() {
+				#[allow(clippy::get_first)]
 				logs.push(Log {
 					address: log.address.as_bytes().to_owned(),
 					topic_1: log.topics.get(0).map(|l| l.as_bytes().to_owned()),

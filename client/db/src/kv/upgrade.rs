@@ -451,9 +451,9 @@ mod tests {
 					// happened in case of fork or equivocation.
 					let eth_tx_hash = H256::random();
 					let mut metadata = vec![];
-					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
+					for hash in [next_canon_block_hash, orphan_block_hash] {
 						metadata.push(crate::kv::TransactionMetadata::<OpaqueBlock> {
-							substrate_block_hash: *hash,
+							substrate_block_hash: hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: 0u32,
 						});

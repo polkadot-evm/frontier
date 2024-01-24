@@ -129,7 +129,7 @@ impl EthSubscriptionResult {
 		receipts: Vec<ethereum::ReceiptV3>,
 		params: &FilteredParams,
 	) -> Vec<Log> {
-		let block_hash = Some(H256::from(keccak_256(&rlp::encode(&block.header))));
+		let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 		let mut logs: Vec<Log> = vec![];
 		let mut log_index: u32 = 0;
 		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
@@ -145,12 +145,12 @@ impl EthSubscriptionResult {
 				None
 			};
 			for log in receipt_logs {
-				if Self::add_log(block_hash.unwrap(), &log, &block, params) {
+				if Self::add_log(block_hash, &log, &block, params) {
 					logs.push(Log {
 						address: log.address,
 						topics: log.topics,
 						data: Bytes(log.data),
-						block_hash,
+						block_hash: Some(block_hash),
 						block_number: Some(block.header.number),
 						transaction_hash,
 						transaction_index: Some(U256::from(receipt_index)),

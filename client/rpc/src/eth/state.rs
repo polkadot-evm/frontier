@@ -140,7 +140,7 @@ where
 			for tx in self.pool.ready() {
 				// since transactions in `ready()` need to be ordered by nonce
 				// it's fine to continue with current iterator.
-				if tx.provides().get(0) == Some(&current_tag) {
+				if tx.provides().first() == Some(&current_tag) {
 					current_nonce = current_nonce.saturating_add(1.into());
 					current_tag = (address, current_nonce).encode();
 				}

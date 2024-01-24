@@ -58,7 +58,7 @@ where
 					Err(e) => return Err(e),
 				};
 
-				match accounts.get(0) {
+				match accounts.first() {
 					Some(account) => *account,
 					None => return Err(internal_err("no signer available")),
 				}
