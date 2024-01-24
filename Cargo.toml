@@ -70,10 +70,10 @@ scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-featu
 scale-info = { version = "2.10.0", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
-similar-asserts = "1.1.0"
-sqlx = { version = "0.7.1", default-features = false, features = ["macros"] }
+similar-asserts = "1.5.0"
+sqlx = { version = "0.7.3", default-features = false, features = ["macros"] }
 thiserror = "1.0"
-tokio = "1.32.0"
+tokio = "1.35.1"
 
 # Substrate Client
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.6.0" }
