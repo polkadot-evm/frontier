@@ -176,6 +176,8 @@ impl frame_system::Config for Runtime {
 	type RuntimeOrigin = RuntimeOrigin;
 	/// The aggregated dispatch type that is available for extrinsics.
 	type RuntimeCall = RuntimeCall;
+	/// The aggregated RuntimeTask type.
+	type RuntimeTask = RuntimeTask;
 	/// The index type for storing how many extrinsics an account has signed.
 	type Nonce = Nonce;
 	/// The type for hashing blocks and tries.
@@ -402,7 +404,7 @@ impl pallet_hotfix_sufficients::Config for Runtime {
 }
 
 #[frame_support::pallet]
-mod pallet_manual_seal {
+pub mod pallet_manual_seal {
 	use super::*;
 	use frame_support::pallet_prelude::*;
 

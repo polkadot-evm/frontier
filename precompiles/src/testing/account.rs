@@ -22,21 +22,9 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{Decode, Encode, MaxEncodedLen, H160, H256};
 
-#[derive(
-	Eq,
-	PartialEq,
-	Ord,
-	PartialOrd,
-	Clone,
-	Encode,
-	Decode,
-	Debug,
-	MaxEncodedLen,
-	TypeInfo,
-	Serialize,
-	Deserialize,
-	derive_more::Display
-)]
+#[derive(Eq, PartialEq, Ord, PartialOrd, Clone, Debug)]
+#[derive(Serialize, Deserialize, derive_more::Display)]
+#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct MockAccount(pub H160);
 
 impl MockAccount {
@@ -119,6 +107,7 @@ macro_rules! mock_account {
 	(# $name:ident, $convert:expr) => {
 		impl From<$name> for MockAccount {
 			fn from(value: $name) -> MockAccount {
+				#[allow(clippy::redundant_closure_call)]
 				$convert(value)
 			}
 		}

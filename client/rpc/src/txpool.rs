@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256, U256};
@@ -96,7 +96,7 @@ where
 			};
 			result
 				.entry(from)
-				.or_insert_with(HashMap::new)
+				.or_default()
 				.insert(nonce, T::build_from(from, txn));
 		}
 		result
