@@ -77,6 +77,12 @@ impl PrecompileHandle for MockHandle {
 
 	fn record_cost(&mut self, cost: u64) -> Result<(), ExitError> {
 		self.gas_used += cost;
+
+		if let Some(gas_limit) = self.gas_limit {
+			if self.gas_used > gas_limit {
+				return Err(ExitError::OutOfGas);
+			}
+		}
 		Ok(())
 	}
 
@@ -132,7 +138,7 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(),
 	for test in tests {
 		let input: Vec<u8> = hex::decode(test.input).expect("Could not hex-decode test input data");
 
-		let cost: u64 = 10000000;
+		let cost: u64 = 100000000;
 
 		let context: Context = Context {
 			address: Default::default(),
@@ -184,7 +190,7 @@ pub fn test_precompile_failure_test_vectors<P: Precompile>(filepath: &str) -> Re
 	for test in tests {
 		let input: Vec<u8> = hex::decode(test.input).expect("Could not hex-decode test input data");
 
-		let cost: u64 = 10000000;
+		let cost: u64 = 100000000;
 
 		let context: Context = Context {
 			address: Default::default(),

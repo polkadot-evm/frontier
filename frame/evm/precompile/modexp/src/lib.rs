@@ -131,6 +131,8 @@ fn read_input(source: &[u8], target: &mut [u8], source_offset: &mut usize) {
 
 impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		handle.record_cost(MIN_GAS_COST)?;
+
 		let input = handle.input();
 		let mut input_offset = 0;
 
@@ -182,7 +184,6 @@ impl Precompile for Modexp {
 
 		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
 		let r = if base_len == 0 && mod_len == 0 {
-			handle.record_cost(MIN_GAS_COST)?;
 			BigUint::zero()
 		} else {
 			// read the numbers themselves.
@@ -207,7 +208,7 @@ impl Precompile for Modexp {
 				modulus.is_even(),
 			);
 
-			handle.record_cost(gas_cost)?;
+			handle.record_cost(gas_cost.saturating_sub(MIN_GAS_COST))?;
 
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
@@ -256,10 +257,34 @@ mod tests {
 	}
 
 	#[test]
+	fn test_min_gas() {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		assert_eq!(
+			Modexp::execute(&mut MockHandle::new(vec![], Some(199), context.clone())),
+			Err(PrecompileFailure::Error {
+				exit_status: ExitError::OutOfGas,
+			})
+		);
+
+		assert_eq!(
+			Modexp::execute(&mut MockHandle::new(vec![], Some(200), context)),
+			Ok(PrecompileOutput {
+				exit_status: ExitSucceed::Returned,
+				output: vec![],
+			})
+		);
+	}
+
+	#[test]
 	fn test_empty_input() {
 		let input = Vec::new();
 
-		let cost: u64 = 1;
+		let cost: u64 = 200;
 
 		let context: Context = Context {
 			address: Default::default(),
@@ -288,7 +313,7 @@ mod tests {
 		)
 		.expect("Decode failed");
 
-		let cost: u64 = 1;
+		let cost: u64 = 10000;
 
 		let context: Context = Context {
 			address: Default::default(),
@@ -310,7 +335,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_excessive_input() -> Result<(), PrecompileFailure> {
+	fn test_excessive_input() {
 		let input = hex::decode(
 			"1000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
@@ -318,7 +343,7 @@ mod tests {
 		)
 		.expect("Decode failed");
 
-		let cost: u64 = 1;
+		let cost: u64 = 200;
 
 		let context: Context = Context {
 			address: Default::default(),
@@ -328,20 +353,12 @@ mod tests {
 
 		let mut handle = MockHandle::new(input, Some(cost), context);
 
-		match Modexp::execute(&mut handle) {
-			Ok(_) => {
-				panic!("Test not expected to pass");
-			}
-			Err(e) => {
-				assert_eq!(
-					e,
-					PrecompileFailure::Error {
-						exit_status: ExitError::Other("unreasonably large base length".into())
-					}
-				);
-				Ok(())
-			}
-		}
+		assert_eq!(
+			Modexp::execute(&mut handle),
+			Err(PrecompileFailure::Error {
+				exit_status: ExitError::Other("unreasonably large base length".into())
+			})
+		);
 	}
 
 	#[test]
@@ -515,7 +532,7 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		let mut handle = MockHandle::new(input, Some(100_000), context);
+		let mut handle = MockHandle::new(input, Some(1000_000), context);
 
 		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
 
