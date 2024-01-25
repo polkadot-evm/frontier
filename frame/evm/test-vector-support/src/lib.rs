@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 use std::fs;
 
@@ -80,7 +80,12 @@ impl PrecompileHandle for MockHandle {
 		Ok(())
 	}
 
-	fn record_external_cost(&mut self, _: Option<u64>, _: Option<u64>) -> Result<(), ExitError> {
+	fn record_external_cost(
+		&mut self,
+		_: Option<u64>,
+		_: Option<u64>,
+		_: Option<u64>,
+	) -> Result<(), ExitError> {
 		Ok(())
 	}
 

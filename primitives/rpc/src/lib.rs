@@ -17,7 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::too_many_arguments)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 use ethereum::Log;
 use ethereum_types::Bloom;
@@ -41,12 +41,6 @@ pub struct TransactionStatus {
 	pub contract_address: Option<H160>,
 	pub logs: Vec<Log>,
 	pub logs_bloom: Bloom,
-}
-
-#[derive(Eq, PartialEq, Clone, Encode, Decode, RuntimeDebug)]
-pub struct TxPoolResponse {
-	pub ready: Vec<ethereum::TransactionV2>,
-	pub future: Vec<ethereum::TransactionV2>,
 }
 
 pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {

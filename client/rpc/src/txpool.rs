@@ -16,9 +16,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashMap, marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
-use ethereum::TransactionV2;
+use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256, U256};
 use jsonrpsee::core::RpcResult;
 use serde::Serialize;
@@ -31,12 +31,17 @@ use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::{
-	types::{Get, Summary, TransactionMap, TxPoolResult, TxPoolTransaction},
+	types::{BuildFrom, Summary, Transaction, TransactionMap, TxPoolResult},
 	TxPoolApiServer,
 };
-use fp_rpc::{EthereumRuntimeRPCApi, TxPoolResponse};
+use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{internal_err, public_key};
+
+struct TxPoolTransactions {
+	ready: Vec<EthereumTransaction>,
+	future: Vec<EthereumTransaction>,
+}
 
 pub struct TxPool<B, C, A: ChainApi> {
 	client: Arc<C>,
@@ -62,82 +67,71 @@ where
 	C: HeaderBackend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	/// Use the transaction graph interface to get the extrinsics currently in the ready and future
-	/// queues.
 	fn map_build<T>(&self) -> RpcResult<TxPoolResult<TransactionMap<T>>>
 	where
-		T: Get + Serialize,
+		T: BuildFrom + Serialize,
 	{
-		// Get the pending and queued ethereum transactions.
-		let ethereum_txns = self.tx_pool_response()?;
-
-		// Build the T response.
-		let mut pending = TransactionMap::<T>::new();
-		for txn in ethereum_txns.ready.iter() {
-			let hash = txn.hash();
-			let nonce = match txn {
-				TransactionV2::Legacy(t) => t.nonce,
-				TransactionV2::EIP2930(t) => t.nonce,
-				TransactionV2::EIP1559(t) => t.nonce,
-			};
-			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),
-				Err(_e) => H160::default(),
-			};
-			pending
-				.entry(from_address)
-				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
-		}
-		let mut queued = TransactionMap::<T>::new();
-		for txn in ethereum_txns.future.iter() {
-			let hash = txn.hash();
-			let nonce = match txn {
-				TransactionV2::Legacy(t) => t.nonce,
-				TransactionV2::EIP2930(t) => t.nonce,
-				TransactionV2::EIP1559(t) => t.nonce,
-			};
-			let from_address = match public_key(txn) {
-				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),
-				Err(_e) => H160::default(),
-			};
-			queued
-				.entry(from_address)
-				.or_insert_with(HashMap::new)
-				.insert(nonce, T::get(hash, from_address, txn));
-		}
+		let txns = self.collect_txpool_transactions()?;
+		let pending = Self::build_txn_map::<'_, T>(txns.ready.iter());
+		let queued = Self::build_txn_map::<'_, T>(txns.future.iter());
 		Ok(TxPoolResult { pending, queued })
 	}
 
-	pub(crate) fn tx_pool_response(&self) -> RpcResult<TxPoolResponse> {
-		// Collect transactions in the ready validated pool.
-		let txs_ready = self
+	fn build_txn_map<'a, T>(
+		txns: impl Iterator<Item = &'a EthereumTransaction>,
+	) -> TransactionMap<T>
+	where
+		T: BuildFrom + Serialize,
+	{
+		let mut result = TransactionMap::<T>::new();
+		for txn in txns {
+			let nonce = match txn {
+				EthereumTransaction::Legacy(t) => t.nonce,
+				EthereumTransaction::EIP2930(t) => t.nonce,
+				EthereumTransaction::EIP1559(t) => t.nonce,
+			};
+			let from = match public_key(txn) {
+				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),
+				Err(_) => H160::default(),
+			};
+			result
+				.entry(from)
+				.or_default()
+				.insert(nonce, T::build_from(from, txn));
+		}
+		result
+	}
+
+	/// Collect the extrinsics currently in the ready and future queues.
+	fn collect_txpool_transactions(&self) -> RpcResult<TxPoolTransactions> {
+		// Collect extrinsics in the ready validated pool.
+		let ready_extrinsics = self
 			.graph
 			.validated_pool()
 			.ready()
 			.map(|in_pool_tx| in_pool_tx.data().clone())
 			.collect();
 
-		// Collect transactions in the future validated pool.
-		let txs_future = self
+		// Collect extrinsics in the future validated pool.
+		let future_extrinsics = self
 			.graph
 			.validated_pool()
 			.futures()
 			.iter()
-			.map(|(_hash, extrinsic)| extrinsic.clone())
+			.map(|(_, extrinsic)| extrinsic.clone())
 			.collect();
 
 		// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
 		let best_block = self.client.info().best_hash;
 		let api = self.client.runtime_api();
 		let ready = api
-			.extrinsic_filter(best_block, txs_ready)
-			.map_err(|err| internal_err(format!("fetch ready transactions failed: {:?}", err)))?;
+			.extrinsic_filter(best_block, ready_extrinsics)
+			.map_err(|err| internal_err(format!("fetch ready transactions failed: {err}")))?;
 		let future = api
-			.extrinsic_filter(best_block, txs_future)
-			.map_err(|err| internal_err(format!("fetch future transactions failed: {:?}", err)))?;
+			.extrinsic_filter(best_block, future_extrinsics)
+			.map_err(|err| internal_err(format!("fetch future transactions failed: {err}")))?;
 
-		Ok(TxPoolResponse { ready, future })
+		Ok(TxPoolTransactions { ready, future })
 	}
 }
 
@@ -159,8 +153,8 @@ where
 	C: HeaderBackend<B> + 'static,
 	A: ChainApi<Block = B> + 'static,
 {
-	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<TxPoolTransaction>>> {
-		self.map_build::<TxPoolTransaction>()
+	fn content(&self) -> RpcResult<TxPoolResult<TransactionMap<Transaction>>> {
+		self.map_build::<Transaction>()
 	}
 
 	fn inspect(&self) -> RpcResult<TxPoolResult<TransactionMap<Summary>>> {

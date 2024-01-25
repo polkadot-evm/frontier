@@ -60,6 +60,7 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
+	type RuntimeTask = RuntimeTask;
 	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
@@ -80,26 +81,28 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
+	pub const ExistentialDeposit: u64 = 0;
 	// For weight estimation, we assume that the most locks on an individual account will be 50.
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
-	pub const ExistentialDeposit: u64 = 500;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type WeightInfo = ();
 	type Balance = u64;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = ();
-	type RuntimeHoldReason = ();
-	type FreezeIdentifier = ();
+	type ReserveIdentifier = [u8; 8];
+	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxLocks = MaxLocks;
-	type MaxReserves = ();
-	type MaxHolds = ();
-	type MaxFreezes = ();
+	type MaxReserves = MaxReserves;
+	type MaxHolds = ConstU32<5>;
+	type MaxFreezes = ConstU32<1>;
 }
 
 parameter_types! {
@@ -151,6 +154,10 @@ impl AddressMapping<AccountId32> for HashedAddressMapping {
 	}
 }
 
+parameter_types! {
+	pub SuicideQuickClearLimit: u32 = 0;
+}
+
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
@@ -170,6 +177,7 @@ impl pallet_evm::Config for Test {
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 }

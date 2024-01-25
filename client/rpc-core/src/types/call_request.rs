@@ -26,7 +26,6 @@ use crate::types::{deserialize_data_or_input, Bytes};
 
 /// Call request
 #[derive(Clone, Debug, Default, Eq, PartialEq, Deserialize)]
-#[serde(deny_unknown_fields)]
 #[serde(rename_all = "camelCase")]
 pub struct CallRequest {
 	/// From

@@ -55,6 +55,7 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
+	type RuntimeTask = RuntimeTask;
 	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
@@ -86,14 +87,15 @@ parameter_types! {
 }
 impl pallet_balances::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type WeightInfo = ();
 	type Balance = u64;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = ();
-	type RuntimeHoldReason = ();
-	type FreezeIdentifier = ();
+	type ReserveIdentifier = [u8; 8];
+	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type MaxHolds = ();
@@ -130,6 +132,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+	pub SuicideQuickClearLimit: u32 = 0;
 }
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
@@ -152,6 +155,7 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
+	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type GasLimitPovSizeRatio = ();
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
@@ -183,6 +187,7 @@ impl PrecompileHandle for MockHandle {
 		&mut self,
 		_ref_time: Option<u64>,
 		_proof_size: Option<u64>,
+		_storage_growth: Option<u64>,
 	) -> Result<(), ExitError> {
 		Ok(())
 	}

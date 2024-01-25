@@ -35,7 +35,7 @@ hex = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 rlp = { workspace = true }
 # Substrate
-pallet-balances = { workspace = true, features = ["default"] }
+pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 # Frontier
@@ -61,7 +61,6 @@ std = [
 	"fp-ethereum/std",
 	"fp-evm/std",
 	"fp-rpc/std",
-	"fp-self-contained/std",
 	"fp-storage/std",
 	"pallet-evm/std",
 ]

@@ -32,10 +32,7 @@ use sp_runtime::traits::Block as BlockT;
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{
-	eth::{Eth, EthConfig},
-	frontier_backend_client, internal_err,
-};
+use crate::{eth::Eth, frontier_backend_client, internal_err};
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
@@ -47,7 +44,6 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	pub async fn balance(
 		&self,
@@ -144,7 +140,7 @@ where
 			for tx in self.pool.ready() {
 				// since transactions in `ready()` need to be ordered by nonce
 				// it's fine to continue with current iterator.
-				if tx.provides().get(0) == Some(&current_tag) {
+				if tx.provides().first() == Some(&current_tag) {
 					current_nonce = current_nonce.saturating_add(1.into());
 					current_tag = (address, current_nonce).encode();
 				}

@@ -16,14 +16,14 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
 pub mod kv;
 #[cfg(feature = "sql")]
 pub mod sql;
 
-use sp_api::BlockT;
+use sp_runtime::traits::Block as BlockT;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SyncStrategy {

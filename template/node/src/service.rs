@@ -8,7 +8,7 @@ use prometheus_endpoint::Registry;
 use sc_client_api::{Backend, BlockBackend};
 use sc_consensus::BasicQueue;
 use sc_executor::NativeExecutionDispatch;
-use sc_network_sync::warp::WarpSyncParams;
+use sc_network_sync::warp::{WarpSyncParams, WarpSyncProvider};
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
@@ -296,14 +296,14 @@ where
 		&client.block_hash(0)?.expect("Genesis block exists; qed"),
 		&config.chain_spec,
 	);
+	let (grandpa_protocol_config, grandpa_notification_service) =
+		sc_consensus_grandpa::grandpa_peers_set_config(grandpa_protocol_name.clone());
 
 	let warp_sync_params = if sealing.is_some() {
 		None
 	} else {
-		net_config.add_notification_protocol(sc_consensus_grandpa::grandpa_peers_set_config(
-			grandpa_protocol_name.clone(),
-		));
-		let warp_sync: Arc<dyn sc_network::config::WarpSyncProvider<Block>> =
+		net_config.add_notification_protocol(grandpa_protocol_config);
+		let warp_sync: Arc<dyn WarpSyncProvider<Block>> =
 			Arc::new(sc_consensus_grandpa::warp_proof::NetworkProvider::new(
 				backend.clone(),
 				grandpa_link.shared_authority_set().clone(),
@@ -322,6 +322,7 @@ where
 			import_queue,
 			block_announce_validator_builder: None,
 			warp_sync_params,
+			block_relay: None,
 		})?;
 
 	if config.offchain_worker.enabled {
@@ -576,6 +577,7 @@ where
 				link: grandpa_link,
 				network,
 				sync: sync_service,
+				notification_service: grandpa_notification_service,
 				voting_rule: sc_consensus_grandpa::VotingRulesBuilder::default().build(),
 				prometheus_registry,
 				shared_voter_state: sc_consensus_grandpa::SharedVoterState::empty(),

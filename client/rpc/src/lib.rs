@@ -24,8 +24,10 @@
 	clippy::len_zero,
 	clippy::new_without_default
 )]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
+mod cache;
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -37,10 +39,9 @@ mod web3;
 #[cfg(feature = "txpool")]
 pub use self::txpool::TxPool;
 pub use self::{
-	eth::{
-		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
-		EthTask,
-	},
+	cache::{EthBlockDataCacheTask, EthTask},
+	debug::Debug,
+	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -50,7 +51,8 @@ pub use ethereum::TransactionV2 as EthereumTransaction;
 #[cfg(feature = "txpool")]
 pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
 };
 pub use fc_storage::{
 	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
@@ -72,7 +74,7 @@ pub mod frontier_backend_client {
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto, Zero},
+		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto},
 	};
 	use sp_state_machine::OverlayedChanges;
 	// Frontier
@@ -207,7 +209,7 @@ pub mod frontier_backend_client {
 			}
 			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
-			BlockNumberOrHash::Earliest => Some(BlockId::Number(Zero::zero())),
+			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
 			BlockNumberOrHash::Pending => None,
 			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
 			BlockNumberOrHash::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
@@ -341,7 +343,7 @@ mod tests {
 	use std::{path::PathBuf, sync::Arc};
 
 	use futures::executor;
-	use sc_block_builder::BlockBuilderProvider;
+	use sc_block_builder::BlockBuilderBuilder;
 	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
@@ -389,15 +391,23 @@ mod tests {
 		let ethereum_block_hash = sp_core::H256::random();
 
 		// G -> A1.
-		let mut builder = client.new_block(Default::default()).unwrap();
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let a1 = builder.build().unwrap().block;
 		let a1_hash = a1.header.hash();
 		executor::block_on(client.import(BlockOrigin::Own, a1)).unwrap();
 
 		// A1 -> B1
-		let mut builder = client
-			.new_block_at(a1_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let b1 = builder.build().unwrap().block;
@@ -425,8 +435,11 @@ mod tests {
 		);
 
 		// A1 -> B2
-		let mut builder = client
-			.new_block_at(a1_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![2], None).unwrap();
 		let b2 = builder.build().unwrap().block;
@@ -454,8 +467,11 @@ mod tests {
 		);
 
 		// B2 -> C1. B2 branch is now canon.
-		let mut builder = client
-			.new_block_at(b2_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(b2_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let c1 = builder.build().unwrap().block;
