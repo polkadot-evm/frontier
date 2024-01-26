@@ -71,7 +71,7 @@ where
 					Some(key) => {
 						// Write AccountStorages storage item
 						handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
-						pallet_evm::AccountStorages::<Runtime>::remove(address.0, &key);
+						pallet_evm::AccountStorages::<Runtime>::remove(address.0, key);
 						deleted_entries += 1;
 						if deleted_entries >= limit {
 							// Check if there are no remaining entries. If there aren't any, clear the contract.
@@ -102,7 +102,7 @@ where
 
 	fn clear_suicided_contract(address: &Address) {
 		// Remove the address from the list of suicided contracts
-		pallet_evm::Suicided::<Runtime>::remove(&address.0);
+		pallet_evm::Suicided::<Runtime>::remove(address.0);
 		// Decrement the sufficients of the account
 		let account_id = Runtime::AddressMapping::into_account_id(address.0);
 		let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);

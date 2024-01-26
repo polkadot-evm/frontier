@@ -144,14 +144,9 @@ impl pallet_evm::Config for Runtime {
 }
 
 /// Build test externalities, prepopulated with data for testing the precompile.
+#[derive(Default)]
 pub(crate) struct ExtBuilder {
 	balances: Vec<(AccountId, Balance)>,
-}
-
-impl Default for ExtBuilder {
-	fn default() -> Self {
-		Self { balances: vec![] }
-	}
 }
 
 impl ExtBuilder {

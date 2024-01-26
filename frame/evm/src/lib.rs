@@ -797,7 +797,7 @@ impl<T: Config> Pallet<T> {
 	}
 	/// Check whether an account is a suicided contract
 	pub fn is_account_suicided(address: &H160) -> bool {
-		<Suicided<T>>::contains_key(&address)
+		<Suicided<T>>::contains_key(address)
 	}
 
 	pub fn iter_account_storages(address: &H160) -> KeyPrefixIterator<H256> {
