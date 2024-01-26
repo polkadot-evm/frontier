@@ -23,6 +23,7 @@ extern crate alloc;
 pub const ARRAY_LIMIT: u32 = 1_000;
 
 use core::marker::PhantomData;
+use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
 use pallet_evm::AddressMapping;
 use precompile_utils::{prelude::*, EvmResult};
 use sp_runtime::traits::ConstU32;
@@ -34,7 +35,7 @@ mod tests;
 
 type GetArrayLimit = ConstU32<ARRAY_LIMIT>;
 
-/// Storage cleaner precompile.
+/// Storage cleaner precompile. This precompile is used to clear the storage of a suicided contract.
 #[derive(Debug, Clone)]
 pub struct StorageCleanerPrecompile<Runtime>(PhantomData<Runtime>);
 
@@ -52,7 +53,7 @@ where
 		let addresses: Vec<_> = addresses.into();
 		let mut deleted_entries = 0;
 
-		for address in addresses {
+		for address in &addresses {
 			// Read Suicided storage item
 			// Suicided: Blake2128(16) + H160(20)
 			handle.record_db_read::<Runtime>(36)?;
@@ -61,34 +62,44 @@ where
 			}
 
 			let mut iter = pallet_evm::AccountStorages::<Runtime>::iter_key_prefix(address.0);
+
 			loop {
-				handle.record_db_read::<Runtime>(116)?;
-				// Record the gas cost of deleting the storage item
-				handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
-				// Delete the storage item
-				if let Some(key) = iter.next() {
-					pallet_evm::AccountStorages::<Runtime>::remove(address.0, &key);
-				} else {
-					handle.refund_external_cost(None, Some(116));
-					Self::clear_suicided_contract(address);
-					break;
-				}
-				deleted_entries += 1;
-				if deleted_entries >= limit {
-					handle.record_db_read::<Runtime>(116)?;
-					if iter.next().is_none() {
-						handle.refund_external_cost(None, Some(116));
-						Self::clear_suicided_contract(address);
+				// Read AccountStorages storage item
+				handle.record_db_read::<Runtime>(ACCOUNT_STORAGE_PROOF_SIZE as usize)?;
+
+				match iter.next() {
+					Some(key) => {
+						// Write AccountStorages storage item
+						handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
+						pallet_evm::AccountStorages::<Runtime>::remove(address.0, &key);
+						deleted_entries += 1;
+						if deleted_entries >= limit {
+							// Check if there are no remaining entries. If there aren't any, clear the contract.
+							handle.record_db_read::<Runtime>(ACCOUNT_STORAGE_PROOF_SIZE as usize)?;
+							if iter.next().is_none() {
+								// We perform an additional iteration at the end because we cannot determine the end of
+								// the iteration in advance. Therefore, we reimburse the cost of this last iteration
+								// when it is empty.
+								handle.refund_external_cost(None, Some(ACCOUNT_STORAGE_PROOF_SIZE));
+								Self::clear_suicided_contract(address);
+							}
+							return Ok(());
+						}
 					}
-					return Ok(());
+					None => {
+						// No more entries, clear the contract.
+						// Refund the cost of the last iteration.
+						handle.refund_external_cost(None, Some(ACCOUNT_STORAGE_PROOF_SIZE));
+						Self::clear_suicided_contract(address);
+						break;
+					}
 				}
 			}
 		}
-
 		Ok(())
 	}
 
-	fn clear_suicided_contract(address: Address) {
+	fn clear_suicided_contract(address: &Address) {
 		// Remove the address from the list of suicided contracts
 		pallet_evm::Suicided::<Runtime>::remove(&address.0);
 		// Decrement the sufficients of the account
