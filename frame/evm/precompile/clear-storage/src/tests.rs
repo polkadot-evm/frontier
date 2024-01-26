@@ -78,7 +78,7 @@ fn test_clear_suicided_contract_succesfull() {
 				0
 			);
 
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address
 			));
 		})
@@ -94,7 +94,7 @@ fn test_clear_suicided_contract_failed() {
 			let contract_address = mock_contract_with_entries(1, 10);
 
 			// Ensure that the contract is not suicided
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address
 			));
 
@@ -195,13 +195,13 @@ fn test_clear_suicided_contract_multiple_addresses() {
 				0
 			);
 
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address1
 			));
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address2
 			));
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address3
 			));
 		})
@@ -280,42 +280,42 @@ fn test_clear_suicided_no_storage_entries() {
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address1).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address1
 			));
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address2).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address2
 			));
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address3).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address3
 			));
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address4).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address4
 			));
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address4).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address4
 			));
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address5).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address5
 			));
 		})
@@ -349,7 +349,7 @@ fn test_clear_suicided_entry_limit() {
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(contract_address1).count(),
 				0
 			);
-			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
+			assert!(!pallet_evm::Suicided::<Runtime>::contains_key(
 				contract_address1
 			));
 
