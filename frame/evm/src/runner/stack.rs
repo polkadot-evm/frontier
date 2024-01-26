@@ -353,7 +353,7 @@ where
 			actual_base_fee,
 			// Fee initially withdrawn.
 			fee,
-		);
+		).map_err(|e| RunnerError { error: e, weight })?;
 		T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
 
 		let state = executor.into_state();
