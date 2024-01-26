@@ -20,7 +20,7 @@
 use crate::{StorageCleanerPrecompile, StorageCleanerPrecompileCall};
 use frame_support::{parameter_types, weights::Weight};
 use pallet_evm::{EnsureAddressNever, EnsureAddressRoot, IdentityAddressMapping};
-use precompile_utils::{testing::*, precompile_set::*};
+use precompile_utils::{precompile_set::*, testing::*};
 use sp_core::{ConstU32, H256, U256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -150,9 +150,7 @@ pub(crate) struct ExtBuilder {
 
 impl Default for ExtBuilder {
 	fn default() -> Self {
-		Self {
-			balances: vec![],
-		}
+		Self { balances: vec![] }
 	}
 }
 

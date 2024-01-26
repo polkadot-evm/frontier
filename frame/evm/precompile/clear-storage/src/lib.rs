@@ -75,7 +75,8 @@ where
 						deleted_entries += 1;
 						if deleted_entries >= limit {
 							// Check if there are no remaining entries. If there aren't any, clear the contract.
-							handle.record_db_read::<Runtime>(ACCOUNT_STORAGE_PROOF_SIZE as usize)?;
+							handle
+								.record_db_read::<Runtime>(ACCOUNT_STORAGE_PROOF_SIZE as usize)?;
 							if iter.next().is_none() {
 								// We perform an additional iteration at the end because we cannot determine the end of
 								// the iteration in advance. Therefore, we reimburse the cost of this last iteration
