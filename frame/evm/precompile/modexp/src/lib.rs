@@ -174,18 +174,16 @@ impl Precompile for Modexp {
 		let exp_len = exp_len_big.to_usize().expect("exp_len out of bounds");
 		let mod_len = mod_len_big.to_usize().expect("mod_len out of bounds");
 
-		// if mod_len is 0 output must be empty
-		if mod_len == 0 {
+		// Handle a special case when both the base and mod length is zero
+		// https://github.com/ethereum/go-ethereum/blob/cd0770ea/core/vm/contracts.go#L396C5-L399
+		if base_len == 0 && mod_len == 0 {
 			return Ok(PrecompileOutput {
 				exit_status: ExitSucceed::Returned,
 				output: vec![],
 			});
 		}
 
-		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
-		let r = if base_len == 0 && mod_len == 0 {
-			BigUint::zero()
-		} else {
+		let r = {
 			// read the numbers themselves.
 			let mut base_buf = vec![0u8; base_len];
 			read_input(input, &mut base_buf, &mut input_offset);
@@ -532,7 +530,7 @@ mod tests {
 			apparent_value: From::from(0),
 		};
 
-		let mut handle = MockHandle::new(input, Some(1000_000), context);
+		let mut handle = MockHandle::new(input, Some(1_000_000), context);
 
 		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
 
