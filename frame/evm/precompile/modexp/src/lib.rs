@@ -176,7 +176,7 @@ impl Precompile for Modexp {
 		let r = if base_len == 0 && mod_len == 0 {
 			handle.record_cost(MIN_GAS_COST)?;
 			BigUint::zero()
-		} else  {
+		} else {
 			// read the numbers themselves.
 			let mut base_buf = vec![0u8; base_len];
 			read_input(input, &mut base_buf, &mut input_offset);
