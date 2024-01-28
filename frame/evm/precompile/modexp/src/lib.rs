@@ -131,8 +131,6 @@ fn read_input(source: &[u8], target: &mut [u8], source_offset: &mut usize) {
 
 impl Precompile for Modexp {
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
-		handle.record_cost(MIN_GAS_COST)?;
-
 		let input = handle.input();
 		let mut input_offset = 0;
 
@@ -174,16 +172,11 @@ impl Precompile for Modexp {
 		let exp_len = exp_len_big.to_usize().expect("exp_len out of bounds");
 		let mod_len = mod_len_big.to_usize().expect("mod_len out of bounds");
 
-		// Handle a special case when both the base and mod length is zero
-		// https://github.com/ethereum/go-ethereum/blob/cd0770ea/core/vm/contracts.go#L396C5-L399
-		if base_len == 0 && mod_len == 0 {
-			return Ok(PrecompileOutput {
-				exit_status: ExitSucceed::Returned,
-				output: vec![],
-			});
-		}
-
-		let r = {
+		// Gas formula allows arbitrary large exp_len when base and modulus are empty, so we need to handle empty base first.
+		let r = if base_len == 0 && mod_len == 0 {
+			handle.record_cost(MIN_GAS_COST)?;
+			BigUint::zero()
+		} else  {
 			// read the numbers themselves.
 			let mut base_buf = vec![0u8; base_len];
 			read_input(input, &mut base_buf, &mut input_offset);
@@ -206,7 +199,7 @@ impl Precompile for Modexp {
 				modulus.is_even(),
 			);
 
-			handle.record_cost(gas_cost.saturating_sub(MIN_GAS_COST))?;
+			handle.record_cost(gas_cost)?;
 
 			if modulus.is_zero() || modulus.is_one() {
 				BigUint::zero()
@@ -234,8 +227,9 @@ impl Precompile for Modexp {
 				output: ret.to_vec(),
 			})
 		} else {
-			Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("failed".into()),
+			Ok(PrecompileOutput {
+				exit_status: ExitSucceed::Returned,
+				output: vec![],
 			})
 		}
 	}
