@@ -269,6 +269,28 @@
 <a href="#269" id="269">269</a>
 <a href="#270" id="270">270</a>
 <a href="#271" id="271">271</a>
+<a href="#272" id="272">272</a>
+<a href="#273" id="273">273</a>
+<a href="#274" id="274">274</a>
+<a href="#275" id="275">275</a>
+<a href="#276" id="276">276</a>
+<a href="#277" id="277">277</a>
+<a href="#278" id="278">278</a>
+<a href="#279" id="279">279</a>
+<a href="#280" id="280">280</a>
+<a href="#281" id="281">281</a>
+<a href="#282" id="282">282</a>
+<a href="#283" id="283">283</a>
+<a href="#284" id="284">284</a>
+<a href="#285" id="285">285</a>
+<a href="#286" id="286">286</a>
+<a href="#287" id="287">287</a>
+<a href="#288" id="288">288</a>
+<a href="#289" id="289">289</a>
+<a href="#290" id="290">290</a>
+<a href="#291" id="291">291</a>
+<a href="#292" id="292">292</a>
+<a href="#293" id="293">293</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -291,8 +313,9 @@
 </span><span class="kw">use </span>scale_codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
 <span class="comment">// Substrate
-</span><span class="kw">use </span>sp_core::{ecdsa, RuntimeDebug, H160, H256};
+</span><span class="kw">use </span>sp_core::{crypto::AccountId32, ecdsa, RuntimeDebug, H160, H256};
 <span class="kw">use </span>sp_io::hashing::keccak_256;
+<span class="kw">use </span>sp_runtime::MultiSignature;
 <span class="kw">use </span>sp_runtime_interface::pass_by::PassByInner;
 
 <span class="doccomment">/// A fully Ethereum-compatible `AccountId`.
@@ -430,6 +453,13 @@
 	}
 }
 
+<span class="kw">impl </span>From&lt;AccountId32&gt; <span class="kw">for </span>AccountId20 {
+	<span class="kw">fn </span>from(account: AccountId32) -&gt; <span class="self">Self </span>{
+		<span class="kw">let </span>bytes: <span class="kw-2">&amp;</span>[u8; <span class="number">32</span>] = account.as_ref();
+		<span class="self">Self</span>::from(<span class="kw-2">*</span>bytes)
+	}
+}
+
 <span class="attr">#[derive(Eq, PartialEq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(serde::Serialize, serde::Deserialize))]
 </span><span class="kw">pub struct </span>EthereumSignature(ecdsa::Signature);
@@ -456,9 +486,23 @@
 	}
 }
 
+<span class="kw">impl </span>From&lt;MultiSignature&gt; <span class="kw">for </span>EthereumSignature {
+	<span class="kw">fn </span>from(signature: MultiSignature) -&gt; <span class="self">Self </span>{
+		<span class="kw">match </span>signature {
+			MultiSignature::Ed25519(<span class="kw">_</span>) =&gt; {
+				<span class="macro">panic!</span>(<span class="string">&quot;Ed25519 not supported for EthereumSignature&quot;</span>)
+			}
+			MultiSignature::Sr25519(<span class="kw">_</span>) =&gt; {
+				<span class="macro">panic!</span>(<span class="string">&quot;Sr25519 not supported for EthereumSignature&quot;</span>)
+			}
+			MultiSignature::Ecdsa(sig) =&gt; <span class="self">Self</span>(sig),
+		}
+	}
+}
+
 <span class="kw">impl </span>EthereumSignature {
 	<span class="kw">pub fn </span>new(s: ecdsa::Signature) -&gt; <span class="self">Self </span>{
-		EthereumSignature(s)
+		<span class="self">Self</span>(s)
 	}
 }
 
