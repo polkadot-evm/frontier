@@ -712,7 +712,7 @@ where
 	} else {
 		None
 	};
-	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
+	let address_bloom_filter = FilteredParams::address_bloom_filter(&filter.address);
 	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
 	while current_number <= to {
@@ -787,17 +787,17 @@ fn filter_block_logs<'a>(
 			let mut add: bool = true;
 			match (filter.address.clone(), filter.topics.clone()) {
 				(Some(_), Some(_)) => {
-					if !params.filter_address(&log) || !params.filter_topics(&log) {
+					if !params.filter_address(&log.address) || !params.filter_topics(&log.topics) {
 						add = false;
 					}
 				}
 				(Some(_), _) => {
-					if !params.filter_address(&log) {
+					if !params.filter_address(&log.address) {
 						add = false;
 					}
 				}
 				(_, Some(_)) => {
-					if !params.filter_topics(&log) {
+					if !params.filter_topics(&log.topics) {
 						add = false;
 					}
 				}
