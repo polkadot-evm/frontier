@@ -287,24 +287,29 @@ pub mod frontier_backend_client {
 	}
 }
 
-pub fn err<T: ToString>(code: i32, message: T, data: Option<&[u8]>) -> jsonrpsee::core::Error {
-	jsonrpsee::core::Error::Call(jsonrpsee::types::error::CallError::Custom(
-		jsonrpsee::types::error::ErrorObject::owned(
-			code,
-			message.to_string(),
-			data.map(|bytes| {
-				jsonrpsee::core::to_json_raw_value(&format!("0x{}", hex::encode(bytes)))
-					.expect("fail to serialize data")
-			}),
-		),
-	))
+pub fn err<T: ToString>(
+	code: i32,
+	message: T,
+	data: Option<&[u8]>,
+) -> jsonrpsee::types::error::ErrorObjectOwned {
+	jsonrpsee::types::error::ErrorObject::owned(
+		code,
+		message.to_string(),
+		data.map(|bytes| {
+			jsonrpsee::core::to_json_raw_value(&format!("0x{}", hex::encode(bytes)))
+				.expect("fail to serialize data")
+		}),
+	)
 }
 
-pub fn internal_err<T: ToString>(message: T) -> jsonrpsee::core::Error {
+pub fn internal_err<T: ToString>(message: T) -> jsonrpsee::types::error::ErrorObjectOwned {
 	err(jsonrpsee::types::error::INTERNAL_ERROR_CODE, message, None)
 }
 
-pub fn internal_err_with_data<T: ToString>(message: T, data: &[u8]) -> jsonrpsee::core::Error {
+pub fn internal_err_with_data<T: ToString>(
+	message: T,
+	data: &[u8],
+) -> jsonrpsee::types::error::ErrorObjectOwned {
 	err(
 		jsonrpsee::types::error::INTERNAL_ERROR_CODE,
 		message,
