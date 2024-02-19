@@ -189,7 +189,7 @@ pub trait EthApi {
 	#[method(name = "eth_call")]
 	async fn call(
 		&self,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes>;
@@ -198,7 +198,7 @@ pub trait EthApi {
 	#[method(name = "eth_estimateGas")]
 	async fn estimate_gas(
 		&self,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256>;
 

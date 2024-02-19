@@ -20,7 +20,7 @@ use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
 use ethereum_types::{H160, H256, U256};
 use evm::{ExitError, ExitReason};
-use jsonrpsee::core::RpcResult;
+use jsonrpsee::{core::RpcResult, types::error::CALL_EXECUTION_FAILED_CODE};
 use scale_codec::{Decode, Encode};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
@@ -47,9 +47,6 @@ use crate::{
 	frontier_backend_client, internal_err,
 };
 
-/// Default JSONRPC error code return by geth
-pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
-
 /// Allow to adapt a request for `estimate_gas`.
 /// Can be used to estimate gas of some contracts using a different function
 /// in the case the normal gas estimation doesn't work.
@@ -59,11 +56,11 @@ pub const JSON_RPC_ERROR_DEFAULT: i32 = -32000;
 /// to the minimum, while we want to estimate a gas limit that will allow the subcall to
 /// have enough gas to succeed.
 pub trait EstimateGasAdapter {
-	fn adapt_request(request: CallRequest) -> CallRequest;
+	fn adapt_request(request: TransactionRequest) -> TransactionRequest;
 }
 
 impl EstimateGasAdapter for () {
-	fn adapt_request(request: CallRequest) -> CallRequest {
+	fn adapt_request(request: TransactionRequest) -> TransactionRequest {
 		request
 	}
 }
@@ -81,11 +78,11 @@ where
 {
 	pub async fn call(
 		&self,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
-		let CallRequest {
+		let TransactionRequest {
 			from,
 			to,
 			gas_price,
@@ -116,10 +113,9 @@ where
 		.await?
 		{
 			Some(id) => {
-				let hash = self
-					.client
-					.expect_block_hash_from_id(&id)
-					.map_err(|_| crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None))?;
+				let hash = self.client.expect_block_hash_from_id(&id).map_err(|_| {
+					crate::err(CALL_EXECUTION_FAILED_CODE, "header not found", None)
+				})?;
 				(hash, self.client.runtime_api())
 			}
 			None => {
@@ -175,7 +171,7 @@ where
 			},
 		};
 
-		let data = data.map(|d| d.0).unwrap_or_default();
+		let data = data.into_bytes().map(|d| d.into_vec()).unwrap_or_default();
 		match to {
 			Some(to) => {
 				if api_version == 1 {
@@ -412,7 +408,7 @@ where
 
 	pub async fn estimate_gas(
 		&self,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		let client = Arc::clone(&self.client);
@@ -430,9 +426,9 @@ where
 		.await?
 		{
 			Some(id) => {
-				let hash = client
-					.expect_block_hash_from_id(&id)
-					.map_err(|_| crate::err(JSON_RPC_ERROR_DEFAULT, "header not found", None))?;
+				let hash = client.expect_block_hash_from_id(&id).map_err(|_| {
+					crate::err(CALL_EXECUTION_FAILED_CODE, "header not found", None)
+				})?;
 				(hash, client.runtime_api())
 			}
 			None => {
@@ -448,7 +444,7 @@ where
 		let request = EC::EstimateGasAdapter::adapt_request(request);
 
 		// For simple transfer to simple account, return MIN_GAS_PER_TX directly
-		let is_simple_transfer = match &request.data {
+		let is_simple_transfer = match &request.data() {
 			None => true,
 			Some(vec) => vec.0.is_empty(),
 		};
@@ -557,7 +553,7 @@ where
 			let executable = move |
 				request, gas_limit, api_version, api: sp_api::ApiRef<'_, C::Api>, estimate_mode
 			| -> RpcResult<ExecutableResult> {
-				let CallRequest {
+				let TransactionRequest {
 					from,
 					to,
 					gas,
@@ -571,7 +567,7 @@ where
 				// Use request gas limit only if it less than gas_limit parameter
 				let gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
 
-				let data = data.map(|d| d.0).unwrap_or_default();
+				let data = data.into_bytes().map(|d| d.0).unwrap_or_default();
 
 				let (exit_reason, data, used_gas) = match to {
 					Some(to) => {
@@ -769,7 +765,7 @@ where
 			return Err(internal_err("failed to retrieve Runtime Api version"));
 		};
 
-		// Verify that the transaction succeed with highest capacity
+		// Verify that the transaction succeed with the highest capacity
 		let cap = highest;
 		let estimate_mode = !cfg!(feature = "rpc-binary-search-estimate");
 		let ExecutableResult {
