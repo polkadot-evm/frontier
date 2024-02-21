@@ -385,39 +385,6 @@ impl pallet_ethereum::Config for Runtime {
 	type ExtraDataLength = ConstU32<30>;
 }
 
-// parameter_types! {
-// 	pub BoundDivision: U256 = U256::from(1024);
-// }
-
-// impl pallet_dynamic_fee::Config for Runtime {
-// 	type MinGasPriceBoundDivisor = BoundDivision;
-// }
-
-// parameter_types! {
-// 	pub DefaultBaseFeePerGas: U256 = U256::from(1_000_000_000);
-// 	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
-// }
-
-// pub struct BaseFeeThreshold;
-// impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
-// 	fn lower() -> Permill {
-// 		Permill::zero()
-// 	}
-// 	fn ideal() -> Permill {
-// 		Permill::from_parts(500_000)
-// 	}
-// 	fn upper() -> Permill {
-// 		Permill::from_parts(1_000_000)
-// 	}
-// }
-
-// impl pallet_base_fee::Config for Runtime {
-// 	type RuntimeEvent = RuntimeEvent;
-// 	type Threshold = BaseFeeThreshold;
-// 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
-// 	type DefaultElasticity = DefaultElasticity;
-// }
-
 impl pallet_hotfix_sufficients::Config for Runtime {
 	type AddressMapping = IdentityAddressMapping;
 	type WeightInfo = pallet_hotfix_sufficients::weights::SubstrateWeight<Self>;
@@ -465,8 +432,6 @@ frame_support::construct_runtime!(
 		Ethereum: pallet_ethereum,
 		EVM: pallet_evm,
 		EVMChainId: pallet_evm_chain_id,
-		// DynamicFee: pallet_dynamic_fee,
-		// BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
 
 		ManualSeal: pallet_manual_seal,

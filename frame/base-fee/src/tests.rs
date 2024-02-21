@@ -22,7 +22,7 @@ use frame_support::{
 	traits::{ConstU32, OnFinalize},
 	weights::Weight,
 };
-use sp_core::{H256, U256};
+use sp_core::{ConstU64, H256, U256};
 use sp_io::TestExternalities;
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -34,7 +34,6 @@ use crate as pallet_base_fee;
 use crate::BaseFeeThreshold as BaseFeeThresholdT;
 
 parameter_types! {
-	pub const BlockHashCount: u64 = 250;
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
@@ -52,7 +51,7 @@ impl frame_system::Config for Test {
 	type AccountId = u64;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Block = frame_system::mocking::MockBlock<Self>;
-	type BlockHashCount = BlockHashCount;
+	type BlockHashCount = ConstU64<256>;
 	type DbWeight = ();
 	type Version = ();
 	type PalletInfo = PalletInfo;
