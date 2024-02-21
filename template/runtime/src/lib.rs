@@ -10,6 +10,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use frame_support::weights::WeightToFee;
 use scale_codec::{Decode, Encode};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -25,10 +26,11 @@ use sp_runtime::{
 		IdentityLookup, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
+	ApplyExtrinsicResult, ConsensusEngineId, FixedPointNumber, Perbill, Permill,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
+// substrate
 // Substrate FRAME
 #[cfg(feature = "with-paritydb-weights")]
 use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
@@ -333,9 +335,6 @@ parameter_types! {
 pub struct TransactionPaymentGasPrice;
 impl pallet_evm::FeeCalculator for TransactionPaymentGasPrice {
 	fn min_gas_price() -> (sp_core::U256, frame_support::weights::Weight) {
-		// substrate
-		use frame_support::weights::WeightToFee;
-		use sp_runtime::FixedPointNumber;
 		(
 			TransactionPayment::next_fee_multiplier()
 				.saturating_mul_int::<Balance>(
@@ -349,8 +348,11 @@ impl pallet_evm::FeeCalculator for TransactionPaymentGasPrice {
 	}
 }
 
-
 impl pallet_evm::Config for Runtime {
+	// The FeeCalculator can be customized to suit your requirements.
+	// For simplicity, the default implementation in the template runtime is TransactionPaymentGasPrice.
+	// There are also two other implementations available: pallet_base_fee and pallet_dynamic_fee.
+	// You can select the one that best fits your needs. To understand how to configure them, take a look at PR https://github.com/polkadot-evm/frontier/pull/1303.
 	type FeeCalculator = TransactionPaymentGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
