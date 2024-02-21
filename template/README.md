@@ -18,7 +18,7 @@ repository.
 This template was originally forked from the
 [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template). You
 can find more information on features on this template there, and more detailed usage on the
-[Substrate Developer Hub Tutorials](https://docs.substrate.io/tutorials/v3/) that use this heavily.
+[Substrate Developer Hub Tutorials](https://docs.substrate.io/tutorials/integrate-with-tools/access-evm-accounts/) that use this heavily.
 
 ## Build & Run
 
