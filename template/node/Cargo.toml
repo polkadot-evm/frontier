@@ -75,7 +75,6 @@ fc-rpc = { workspace = true }
 fc-rpc-core = { workspace = true }
 fc-storage = { workspace = true }
 fp-account = { workspace = true }
-fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
 frontier-template-runtime = { workspace = true, features = ["std"] }
