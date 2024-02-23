@@ -175,7 +175,7 @@
 <span class="kw">use </span>serde::{Serialize, Serializer};
 
 <span class="doccomment">/// Sync info
-</span><span class="attr">#[derive(Debug, Eq, PartialEq, Default, Serialize)]
+</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>SyncInfo {
 	<span class="doccomment">/// Starting block
@@ -203,7 +203,7 @@
 	</span><span class="kw">pub </span>peers: Vec&lt;PeerInfo&gt;,
 }
 
-<span class="attr">#[derive(Debug, Serialize)]
+<span class="attr">#[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 </span><span class="kw">pub enum </span>PeerCount {
 	U32(u32),
@@ -267,7 +267,7 @@
 }
 
 <span class="doccomment">/// Sync status
-</span><span class="attr">#[derive(Debug, Eq, PartialEq)]
+</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq)]
 </span><span class="kw">pub enum </span>SyncStatus {
 	<span class="doccomment">/// Info when syncing
 	</span>Info(SyncInfo),

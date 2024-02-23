@@ -736,6 +736,26 @@
 <a href="#736" id="736">736</a>
 <a href="#737" id="737">737</a>
 <a href="#738" id="738">738</a>
+<a href="#739" id="739">739</a>
+<a href="#740" id="740">740</a>
+<a href="#741" id="741">741</a>
+<a href="#742" id="742">742</a>
+<a href="#743" id="743">743</a>
+<a href="#744" id="744">744</a>
+<a href="#745" id="745">745</a>
+<a href="#746" id="746">746</a>
+<a href="#747" id="747">747</a>
+<a href="#748" id="748">748</a>
+<a href="#749" id="749">749</a>
+<a href="#750" id="750">750</a>
+<a href="#751" id="751">751</a>
+<a href="#752" id="752">752</a>
+<a href="#753" id="753">753</a>
+<a href="#754" id="754">754</a>
+<a href="#755" id="755">755</a>
+<a href="#756" id="756">756</a>
+<a href="#757" id="757">757</a>
+<a href="#758" id="758">758</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -911,7 +931,7 @@
 	}
 
 	<span class="doccomment">/// Build an address-based BloomFilter.
-	</span><span class="kw">pub fn </span>adresses_bloom_filter(address: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;FilterAddress&gt;) -&gt; BloomFilter&lt;<span class="lifetime">&#39;_</span>&gt; {
+	</span><span class="kw">pub fn </span>address_bloom_filter(address: <span class="kw-2">&amp;</span><span class="prelude-ty">Option</span>&lt;FilterAddress&gt;) -&gt; BloomFilter&lt;<span class="lifetime">&#39;_</span>&gt; {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(address) = address {
 			<span class="kw">return </span>address.into();
 		}
@@ -1039,7 +1059,7 @@
 	}
 
 	<span class="doccomment">/// Replace None values - aka wildcards - for the log input value in that position.
-	</span><span class="kw">pub fn </span>replace(<span class="kw-2">&amp;</span><span class="self">self</span>, log: <span class="kw-2">&amp;</span>Log, topic: FlatTopic) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;H256&gt;&gt; {
+	</span><span class="kw">pub fn </span>replace(<span class="kw-2">&amp;</span><span class="self">self</span>, topics: <span class="kw-2">&amp;</span>[H256], topic: FlatTopic) -&gt; <span class="prelude-ty">Option</span>&lt;Vec&lt;H256&gt;&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>out: Vec&lt;H256&gt; = Vec::new();
 		<span class="kw">match </span>topic {
 			VariadicValue::Single(<span class="prelude-val">Some</span>(value)) =&gt; {
@@ -1050,7 +1070,7 @@
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(v) = v {
 						out.push(v);
 					} <span class="kw">else </span>{
-						out.push(log.topics[k]);
+						out.push(topics[k]);
 					}
 				}
 			}
@@ -1061,6 +1081,26 @@
 		}
 		<span class="prelude-val">Some</span>(out)
 	}
+
+	<span class="kw">pub fn </span>is_not_filtered(
+		<span class="kw-2">&amp;</span><span class="self">self</span>,
+		block_number: U256,
+		block_hash: H256,
+		address: <span class="kw-2">&amp;</span>H160,
+		topics: <span class="kw-2">&amp;</span>[H256],
+	) -&gt; bool {
+		<span class="kw">if </span><span class="self">self</span>.filter.is_some() {
+			<span class="kw">let </span>block_number = block_number.as_u64();
+			<span class="kw">if </span>!<span class="self">self</span>.filter_block_range(block_number)
+				|| !<span class="self">self</span>.filter_block_hash(block_hash)
+				|| !<span class="self">self</span>.filter_address(address)
+				|| !<span class="self">self</span>.filter_topics(topics)
+			{
+				<span class="kw">return </span><span class="bool-val">false</span>;
+			}
+		}
+		<span class="bool-val">true
+	</span>}
 
 	<span class="kw">pub fn </span>filter_block_range(<span class="kw-2">&amp;</span><span class="self">self</span>, block_number: u64) -&gt; bool {
 		<span class="kw">let </span><span class="kw-2">mut </span>out = <span class="bool-val">true</span>;
@@ -1095,16 +1135,16 @@
 		<span class="bool-val">true
 	</span>}
 
-	<span class="kw">pub fn </span>filter_address(<span class="kw-2">&amp;</span><span class="self">self</span>, log: <span class="kw-2">&amp;</span>Log) -&gt; bool {
+	<span class="kw">pub fn </span>filter_address(<span class="kw-2">&amp;</span><span class="self">self</span>, address: <span class="kw-2">&amp;</span>H160) -&gt; bool {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(input_address) = <span class="kw-2">&amp;</span><span class="self">self</span>.filter.clone().unwrap().address {
 			<span class="kw">match </span>input_address {
 				VariadicValue::Single(x) =&gt; {
-					<span class="kw">if </span>log.address != <span class="kw-2">*</span>x {
+					<span class="kw">if </span>address != x {
 						<span class="kw">return </span><span class="bool-val">false</span>;
 					}
 				}
 				VariadicValue::Multiple(x) =&gt; {
-					<span class="kw">if </span>!x.contains(<span class="kw-2">&amp;</span>log.address) {
+					<span class="kw">if </span>!x.contains(address) {
 						<span class="kw">return </span><span class="bool-val">false</span>;
 					}
 				}
@@ -1116,13 +1156,13 @@
 		<span class="bool-val">true
 	</span>}
 
-	<span class="kw">pub fn </span>filter_topics(<span class="kw-2">&amp;</span><span class="self">self</span>, log: <span class="kw-2">&amp;</span>Log) -&gt; bool {
+	<span class="kw">pub fn </span>filter_topics(<span class="kw-2">&amp;</span><span class="self">self</span>, topics: <span class="kw-2">&amp;</span>[H256]) -&gt; bool {
 		<span class="kw">let </span><span class="kw-2">mut </span>out: bool = <span class="bool-val">true</span>;
 		<span class="kw">for </span>topic <span class="kw">in </span><span class="self">self</span>.flat_topics.clone() {
 			<span class="kw">match </span>topic {
 				VariadicValue::Single(single) =&gt; {
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(single) = single {
-						<span class="kw">if </span>!log.topics.starts_with(<span class="kw-2">&amp;</span>[single]) {
+						<span class="kw">if </span>!topics.starts_with(<span class="kw-2">&amp;</span>[single]) {
 							out = <span class="bool-val">false</span>;
 						}
 					}
@@ -1139,15 +1179,15 @@
 						new_multi.pop();
 					}
 					<span class="comment">// We can discard right away any logs with lesser topics than the filter.
-					</span><span class="kw">if </span>new_multi.len() &gt; log.topics.len() {
+					</span><span class="kw">if </span>new_multi.len() &gt; topics.len() {
 						out = <span class="bool-val">false</span>;
 						<span class="kw">break</span>;
 					}
 					<span class="kw">let </span>replaced: <span class="prelude-ty">Option</span>&lt;Vec&lt;H256&gt;&gt; =
-						<span class="self">self</span>.replace(log, VariadicValue::Multiple(new_multi));
+						<span class="self">self</span>.replace(topics, VariadicValue::Multiple(new_multi));
 					<span class="kw">if let </span><span class="prelude-val">Some</span>(replaced) = replaced {
 						out = <span class="bool-val">false</span>;
-						<span class="kw">if </span>log.topics.starts_with(<span class="kw-2">&amp;</span>replaced[..]) {
+						<span class="kw">if </span>topics.starts_with(<span class="kw-2">&amp;</span>replaced[..]) {
 							out = <span class="bool-val">true</span>;
 							<span class="kw">break</span>;
 						}
@@ -1163,7 +1203,7 @@
 }
 
 <span class="doccomment">/// Results of the filter_changes RPC.
-</span><span class="attr">#[derive(Debug, Eq, PartialEq)]
+</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq)]
 </span><span class="kw">pub enum </span>FilterChanges {
 	<span class="doccomment">/// New logs.
 	</span>Logs(Vec&lt;Log&gt;),
@@ -1235,7 +1275,7 @@
 			address: <span class="prelude-val">Some</span>(VariadicValue::Single(test_address)),
 			topics: <span class="prelude-val">None</span>,
 		};
-		<span class="kw">let </span>address_bloom = FilteredParams::adresses_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
+		<span class="kw">let </span>address_bloom = FilteredParams::address_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
 		<span class="macro">assert!</span>(FilteredParams::address_in_bloom(
 			block_bloom(),
 			<span class="kw-2">&amp;</span>address_bloom
@@ -1252,7 +1292,7 @@
 			address: <span class="prelude-val">Some</span>(VariadicValue::Single(test_address)),
 			topics: <span class="prelude-val">None</span>,
 		};
-		<span class="kw">let </span>address_bloom = FilteredParams::adresses_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
+		<span class="kw">let </span>address_bloom = FilteredParams::address_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
 		<span class="macro">assert!</span>(!FilteredParams::address_in_bloom(
 			block_bloom(),
 			<span class="kw-2">&amp;</span>address_bloom
@@ -1373,7 +1413,7 @@
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>};
-		<span class="kw">let </span>address_bloom = FilteredParams::adresses_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
+		<span class="kw">let </span>address_bloom = FilteredParams::address_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
 		<span class="kw">let </span>topics_bloom = FilteredParams::topics_bloom_filter(<span class="kw-2">&amp;</span>topics_input);
 		<span class="kw">let </span>matches = FilteredParams::address_in_bloom(block_bloom(), <span class="kw-2">&amp;</span>address_bloom)
 			&amp;&amp; FilteredParams::topics_in_bloom(block_bloom(), <span class="kw-2">&amp;</span>topics_bloom);
@@ -1407,7 +1447,7 @@
 		} <span class="kw">else </span>{
 			<span class="prelude-val">None
 		</span>};
-		<span class="kw">let </span>address_bloom = FilteredParams::adresses_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
+		<span class="kw">let </span>address_bloom = FilteredParams::address_bloom_filter(<span class="kw-2">&amp;</span>filter.address);
 		<span class="kw">let </span>topics_bloom = FilteredParams::topics_bloom_filter(<span class="kw-2">&amp;</span>topics_input);
 		<span class="kw">let </span>matches = FilteredParams::address_in_bloom(block_bloom(), <span class="kw-2">&amp;</span>address_bloom)
 			&amp;&amp; FilteredParams::topics_in_bloom(block_bloom(), <span class="kw-2">&amp;</span>topics_bloom);

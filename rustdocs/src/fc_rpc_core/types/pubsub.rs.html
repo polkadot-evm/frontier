@@ -109,6 +109,90 @@
 <a href="#109" id="109">109</a>
 <a href="#110" id="110">110</a>
 <a href="#111" id="111">111</a>
+<a href="#112" id="112">112</a>
+<a href="#113" id="113">113</a>
+<a href="#114" id="114">114</a>
+<a href="#115" id="115">115</a>
+<a href="#116" id="116">116</a>
+<a href="#117" id="117">117</a>
+<a href="#118" id="118">118</a>
+<a href="#119" id="119">119</a>
+<a href="#120" id="120">120</a>
+<a href="#121" id="121">121</a>
+<a href="#122" id="122">122</a>
+<a href="#123" id="123">123</a>
+<a href="#124" id="124">124</a>
+<a href="#125" id="125">125</a>
+<a href="#126" id="126">126</a>
+<a href="#127" id="127">127</a>
+<a href="#128" id="128">128</a>
+<a href="#129" id="129">129</a>
+<a href="#130" id="130">130</a>
+<a href="#131" id="131">131</a>
+<a href="#132" id="132">132</a>
+<a href="#133" id="133">133</a>
+<a href="#134" id="134">134</a>
+<a href="#135" id="135">135</a>
+<a href="#136" id="136">136</a>
+<a href="#137" id="137">137</a>
+<a href="#138" id="138">138</a>
+<a href="#139" id="139">139</a>
+<a href="#140" id="140">140</a>
+<a href="#141" id="141">141</a>
+<a href="#142" id="142">142</a>
+<a href="#143" id="143">143</a>
+<a href="#144" id="144">144</a>
+<a href="#145" id="145">145</a>
+<a href="#146" id="146">146</a>
+<a href="#147" id="147">147</a>
+<a href="#148" id="148">148</a>
+<a href="#149" id="149">149</a>
+<a href="#150" id="150">150</a>
+<a href="#151" id="151">151</a>
+<a href="#152" id="152">152</a>
+<a href="#153" id="153">153</a>
+<a href="#154" id="154">154</a>
+<a href="#155" id="155">155</a>
+<a href="#156" id="156">156</a>
+<a href="#157" id="157">157</a>
+<a href="#158" id="158">158</a>
+<a href="#159" id="159">159</a>
+<a href="#160" id="160">160</a>
+<a href="#161" id="161">161</a>
+<a href="#162" id="162">162</a>
+<a href="#163" id="163">163</a>
+<a href="#164" id="164">164</a>
+<a href="#165" id="165">165</a>
+<a href="#166" id="166">166</a>
+<a href="#167" id="167">167</a>
+<a href="#168" id="168">168</a>
+<a href="#169" id="169">169</a>
+<a href="#170" id="170">170</a>
+<a href="#171" id="171">171</a>
+<a href="#172" id="172">172</a>
+<a href="#173" id="173">173</a>
+<a href="#174" id="174">174</a>
+<a href="#175" id="175">175</a>
+<a href="#176" id="176">176</a>
+<a href="#177" id="177">177</a>
+<a href="#178" id="178">178</a>
+<a href="#179" id="179">179</a>
+<a href="#180" id="180">180</a>
+<a href="#181" id="181">181</a>
+<a href="#182" id="182">182</a>
+<a href="#183" id="183">183</a>
+<a href="#184" id="184">184</a>
+<a href="#185" id="185">185</a>
+<a href="#186" id="186">186</a>
+<a href="#187" id="187">187</a>
+<a href="#188" id="188">188</a>
+<a href="#189" id="189">189</a>
+<a href="#190" id="190">190</a>
+<a href="#191" id="191">191</a>
+<a href="#192" id="192">192</a>
+<a href="#193" id="193">193</a>
+<a href="#194" id="194">194</a>
+<a href="#195" id="195">195</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -129,55 +213,18 @@
 
 </span><span class="doccomment">//! Pub-Sub types.
 
-</span><span class="kw">use </span>ethereum_types::H256;
+</span><span class="kw">use </span>std::collections::BTreeMap;
+
+<span class="kw">use </span>ethereum::{
+	BlockV2 <span class="kw">as </span>EthereumBlock, ReceiptV3 <span class="kw">as </span>EthereumReceipt, TransactionV2 <span class="kw">as </span>EthereumTransaction,
+};
+<span class="kw">use </span>ethereum_types::{H256, U256};
 <span class="kw">use </span>serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 <span class="kw">use </span>serde_json::{from_value, Value};
+<span class="comment">// Substrate
+</span><span class="kw">use </span>sp_core_hashing::keccak_256;
 
-<span class="kw">use </span><span class="kw">crate</span>::types::{Filter, Log, RichHeader};
-
-<span class="doccomment">/// Subscription result.
-</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq)]
-</span><span class="kw">pub enum </span><span class="prelude-ty">Result </span>{
-	<span class="doccomment">/// New block header.
-	</span>Header(Box&lt;RichHeader&gt;),
-	<span class="doccomment">/// Log
-	</span>Log(Box&lt;Log&gt;),
-	<span class="doccomment">/// Transaction hash
-	</span>TransactionHash(H256),
-	<span class="doccomment">/// SyncStatus
-	</span>SyncState(PubSubSyncStatus),
-}
-<span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(untagged)]
-</span><span class="kw">pub enum </span>PubSubSyncStatus {
-	Simple(bool),
-	Detailed(SyncStatusMetadata),
-}
-
-<span class="doccomment">/// PubSbub sync status
-</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
-</span><span class="kw">pub struct </span>SyncStatusMetadata {
-	<span class="kw">pub </span>syncing: bool,
-	<span class="kw">pub </span>starting_block: u64,
-	<span class="kw">pub </span>current_block: u64,
-	<span class="attr">#[serde(default = <span class="string">&quot;Default::default&quot;</span>, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
-	</span><span class="kw">pub </span>highest_block: <span class="prelude-ty">Option</span>&lt;u64&gt;,
-}
-
-<span class="kw">impl </span>Serialize <span class="kw">for </span><span class="prelude-ty">Result </span>{
-	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; ::std::result::Result&lt;S::Ok, S::Error&gt;
-	<span class="kw">where
-		</span>S: Serializer,
-	{
-		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
-			Result::Header(<span class="kw-2">ref </span>header) =&gt; header.serialize(serializer),
-			Result::Log(<span class="kw-2">ref </span>log) =&gt; log.serialize(serializer),
-			Result::TransactionHash(<span class="kw-2">ref </span>hash) =&gt; hash.serialize(serializer),
-			Result::SyncState(<span class="kw-2">ref </span>sync) =&gt; sync.serialize(serializer),
-		}
-	}
-}
+<span class="kw">use </span><span class="kw">crate</span>::types::{Bytes, Filter, FilteredParams, Header, Log, Rich, RichHeader};
 
 <span class="doccomment">/// Subscription kind.
 </span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Hash, Deserialize)]
@@ -205,7 +252,7 @@
 }
 
 <span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; Deserialize&lt;<span class="lifetime">&#39;a</span>&gt; <span class="kw">for </span>Params {
-	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; ::std::result::Result&lt;Params, D::Error&gt;
+	<span class="kw">fn </span>deserialize&lt;D&gt;(deserializer: D) -&gt; <span class="prelude-ty">Result</span>&lt;Params, D::Error&gt;
 	<span class="kw">where
 		</span>D: Deserializer&lt;<span class="lifetime">&#39;a</span>&gt;,
 	{
@@ -219,5 +266,126 @@
 			.map(Params::Logs)
 			.map_err(|e| D::Error::custom(<span class="macro">format!</span>(<span class="string">&quot;Invalid Pub-Sub parameters: {}&quot;</span>, e)))
 	}
+}
+
+<span class="doccomment">/// Subscription result.
+</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq)]
+</span><span class="kw">pub enum </span>PubSubResult {
+	<span class="doccomment">/// New block header.
+	</span>Header(Box&lt;RichHeader&gt;),
+	<span class="doccomment">/// Log
+	</span>Log(Box&lt;Log&gt;),
+	<span class="doccomment">/// Transaction hash
+	</span>TransactionHash(H256),
+	<span class="doccomment">/// SyncStatus
+	</span>SyncingStatus(PubSubSyncing),
+}
+
+<span class="kw">impl </span>PubSubResult {
+	<span class="kw">pub fn </span>header(block: EthereumBlock) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>::Header(Box::new(Rich {
+			inner: Header {
+				hash: <span class="prelude-val">Some</span>(H256::from(keccak_256(<span class="kw-2">&amp;</span>rlp::encode(<span class="kw-2">&amp;</span>block.header)))),
+				parent_hash: block.header.parent_hash,
+				uncles_hash: block.header.ommers_hash,
+				author: block.header.beneficiary,
+				miner: <span class="prelude-val">Some</span>(block.header.beneficiary),
+				state_root: block.header.state_root,
+				transactions_root: block.header.transactions_root,
+				receipts_root: block.header.receipts_root,
+				number: <span class="prelude-val">Some</span>(block.header.number),
+				gas_used: block.header.gas_used,
+				gas_limit: block.header.gas_limit,
+				extra_data: Bytes(block.header.extra_data.clone()),
+				logs_bloom: block.header.logs_bloom,
+				timestamp: U256::from(block.header.timestamp),
+				difficulty: block.header.difficulty,
+				nonce: <span class="prelude-val">Some</span>(block.header.nonce),
+				size: <span class="prelude-val">Some</span>(U256::from(rlp::encode(<span class="kw-2">&amp;</span>block.header).len() <span class="kw">as </span>u32)),
+			},
+			extra_info: BTreeMap::new(),
+		}))
+	}
+
+	<span class="kw">pub fn </span>logs(
+		block: EthereumBlock,
+		receipts: Vec&lt;EthereumReceipt&gt;,
+		params: <span class="kw-2">&amp;</span>FilteredParams,
+	) -&gt; <span class="kw">impl </span>Iterator&lt;Item = <span class="self">Self</span>&gt; {
+		<span class="kw">let </span>block_number = block.header.number;
+		<span class="kw">let </span>block_hash = block.header.hash();
+
+		<span class="kw">let </span><span class="kw-2">mut </span>logs: Vec&lt;Log&gt; = <span class="macro">vec!</span>[];
+		<span class="kw">let </span><span class="kw-2">mut </span>log_index: u32 = <span class="number">0</span>;
+		<span class="kw">for </span>(receipt_index, receipt) <span class="kw">in </span>receipts.into_iter().enumerate() {
+			<span class="kw">let </span>receipt_logs = <span class="kw">match </span>receipt {
+				EthereumReceipt::Legacy(d)
+				| EthereumReceipt::EIP2930(d)
+				| EthereumReceipt::EIP1559(d) =&gt; d.logs,
+			};
+
+			<span class="kw">let </span>transaction_hash: <span class="prelude-ty">Option</span>&lt;H256&gt; = <span class="kw">if </span>!receipt_logs.is_empty() {
+				<span class="prelude-val">Some</span>(block.transactions[receipt_index].hash())
+			} <span class="kw">else </span>{
+				<span class="prelude-val">None
+			</span>};
+
+			<span class="kw">let </span><span class="kw-2">mut </span>transaction_log_index = <span class="number">0</span>;
+			<span class="kw">for </span>log <span class="kw">in </span>receipt_logs {
+				<span class="kw">if </span>params.is_not_filtered(block_number, block_hash, <span class="kw-2">&amp;</span>log.address, <span class="kw-2">&amp;</span>log.topics) {
+					logs.push(Log {
+						address: log.address,
+						topics: log.topics,
+						data: Bytes(log.data),
+						block_hash: <span class="prelude-val">Some</span>(block_hash),
+						block_number: <span class="prelude-val">Some</span>(block_number),
+						transaction_hash,
+						transaction_index: <span class="prelude-val">Some</span>(U256::from(receipt_index)),
+						log_index: <span class="prelude-val">Some</span>(U256::from(log_index)),
+						transaction_log_index: <span class="prelude-val">Some</span>(U256::from(transaction_log_index)),
+						removed: <span class="bool-val">false</span>,
+					});
+				}
+				transaction_log_index += <span class="number">1</span>;
+				log_index += <span class="number">1</span>;
+			}
+		}
+		logs.into_iter().map(|log| <span class="self">Self</span>::Log(Box::new(log)))
+	}
+
+	<span class="kw">pub fn </span>transaction_hash(tx: <span class="kw-2">&amp;</span>EthereumTransaction) -&gt; <span class="self">Self </span>{
+		<span class="self">Self</span>::TransactionHash(tx.hash())
+	}
+}
+
+<span class="kw">impl </span>Serialize <span class="kw">for </span>PubSubResult {
+	<span class="kw">fn </span>serialize&lt;S&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, serializer: S) -&gt; <span class="prelude-ty">Result</span>&lt;S::Ok, S::Error&gt;
+	<span class="kw">where
+		</span>S: Serializer,
+	{
+		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
+			<span class="self">Self</span>::Header(<span class="kw-2">ref </span>header) =&gt; header.serialize(serializer),
+			<span class="self">Self</span>::Log(<span class="kw-2">ref </span>log) =&gt; log.serialize(serializer),
+			<span class="self">Self</span>::TransactionHash(<span class="kw-2">ref </span>hash) =&gt; hash.serialize(serializer),
+			<span class="self">Self</span>::SyncingStatus(<span class="kw-2">ref </span>sync) =&gt; sync.serialize(serializer),
+		}
+	}
+}
+
+<span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(untagged)]
+</span><span class="kw">pub enum </span>PubSubSyncing {
+	Synced(bool),
+	Syncing(SyncingStatus),
+}
+
+<span class="doccomment">/// Pubsub sync status
+</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Serialize)]
+#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+</span><span class="kw">pub struct </span>SyncingStatus {
+	<span class="kw">pub </span>starting_block: u64,
+	<span class="kw">pub </span>current_block: u64,
+	<span class="attr">#[serde(default = <span class="string">&quot;Default::default&quot;</span>, skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="kw">pub </span>highest_block: <span class="prelude-ty">Option</span>&lt;u64&gt;,
 }
 </code></pre></div></section></main></body></html>

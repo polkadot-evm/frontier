@@ -175,7 +175,7 @@
 <span class="kw">use </span><span class="kw">crate</span>::types::{Bytes, Transaction};
 
 <span class="doccomment">/// Block Transactions
-</span><span class="attr">#[derive(Debug)]
+</span><span class="attr">#[derive(Clone, Debug)]
 </span><span class="kw">pub enum </span>BlockTransactions {
 	<span class="doccomment">/// Only hashes
 	</span>Hashes(Vec&lt;H256&gt;),
@@ -196,7 +196,7 @@
 }
 
 <span class="doccomment">/// Block representation
-</span><span class="attr">#[derive(Debug, Serialize)]
+</span><span class="attr">#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>Block {
 	<span class="doccomment">/// Header of the block

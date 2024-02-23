@@ -79,7 +79,7 @@
 <span class="kw">use </span>serde::Serialize;
 
 <span class="doccomment">/// `eth_feeHistory` response
-</span><span class="attr">#[derive(Debug, Serialize)]
+</span><span class="attr">#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
 </span><span class="kw">pub struct </span>FeeHistory {
 	<span class="doccomment">/// Lowest number block of the returned range.

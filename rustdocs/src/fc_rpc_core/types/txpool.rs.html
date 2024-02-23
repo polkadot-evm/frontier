@@ -113,7 +113,7 @@
 </span><span class="kw">pub type </span>TransactionMap&lt;T&gt; = HashMap&lt;H160, HashMap&lt;U256, T&gt;&gt;;
 
 <span class="doccomment">/// The result type of `txpool` API.
-</span><span class="attr">#[derive(Debug, Serialize)]
+</span><span class="attr">#[derive(Clone, Debug, Serialize)]
 </span><span class="kw">pub struct </span>TxPoolResult&lt;T: Serialize&gt; {
 	<span class="kw">pub </span>pending: T,
 	<span class="kw">pub </span>queued: T,

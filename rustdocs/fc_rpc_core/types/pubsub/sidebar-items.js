@@ -1,1 +1,1 @@
-window.SIDEBAR_ITEMS = {"enum":["Kind","Params","PubSubSyncStatus","Result"],"struct":["SyncStatusMetadata"]};
+window.SIDEBAR_ITEMS = {"enum":["Kind","Params","PubSubResult","PubSubSyncing"],"struct":["SyncingStatus"]};

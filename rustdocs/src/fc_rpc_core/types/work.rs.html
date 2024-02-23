@@ -73,7 +73,7 @@
 
 <span class="doccomment">/// The result of an `eth_getWork` call: it differs based on an option
 /// whether to send the block number.
-</span><span class="attr">#[derive(Debug, Eq, PartialEq, Default)]
+</span><span class="attr">#[derive(Clone, Debug, Eq, PartialEq, Default)]
 </span><span class="kw">pub struct </span>Work {
 	<span class="doccomment">/// The proof-of-work hash.
 	</span><span class="kw">pub </span>pow_hash: H256,
