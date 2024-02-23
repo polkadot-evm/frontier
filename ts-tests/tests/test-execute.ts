@@ -261,6 +261,6 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 				input: "0x12345678",
 			},
 		]);
-		expect((result as any).error.message).to.match(/^Ambiguous value for `data` and `input`/);
+		expect(result.error.data).to.match(/^Ambiguous value for `data` and `input`/);
 	});
 });

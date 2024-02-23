@@ -188,7 +188,7 @@ where
 				from_number: NumberFor<B>,
 				current_number: NumberFor<B>,
 			},
-			Error(jsonrpsee::core::Error),
+			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
 
 		let key = U256::from(index.value());

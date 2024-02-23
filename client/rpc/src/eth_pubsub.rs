@@ -20,14 +20,17 @@ use std::{marker::PhantomData, sync::Arc};
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use futures::{future, FutureExt as _, StreamExt as _};
-use jsonrpsee::{core::traits::IdProvider, server::SubscriptionSink, types::SubscriptionResult};
+use jsonrpsee::{core::traits::IdProvider, server::PendingSubscriptionSink};
 // Substrate
 use sc_client_api::{
 	backend::{Backend, StorageProvider},
 	client::BlockchainEvents,
 };
 use sc_network_sync::SyncingService;
-use sc_rpc::SubscriptionTaskExecutor;
+use sc_rpc::{
+	utils::{pipe_from_stream, to_sub_message},
+	SubscriptionTaskExecutor,
+};
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool, TxHash};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -231,14 +234,7 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
 {
-	fn subscribe(
-		&self,
-		mut sink: SubscriptionSink,
-		kind: Kind,
-		params: Option<Params>,
-	) -> SubscriptionResult {
-		sink.accept()?;
-
+	fn subscribe(&self, pending: PendingSubscriptionSink, kind: Kind, params: Option<Params>) {
 		let filtered_params = match params {
 			Some(Params::Logs(filter)) => FilteredParams::new(Some(filter)),
 			_ => FilteredParams::default(),
@@ -255,7 +251,7 @@ where
 				Kind::NewHeads => {
 					let stream = block_notification_stream
 						.filter_map(move |notification| pubsub.notify_header(notification));
-					sink.pipe_from_stream(stream).await;
+					pipe_from_stream(pending, stream).await
 				}
 				Kind::Logs => {
 					let stream = block_notification_stream
@@ -263,21 +259,25 @@ where
 							pubsub.notify_logs(notification, &filtered_params)
 						})
 						.flat_map(futures::stream::iter);
-					sink.pipe_from_stream(stream).await;
+					pipe_from_stream(pending, stream).await
 				}
 				Kind::NewPendingTransactions => {
 					let pool = pubsub.pool.clone();
 					let stream = pool
 						.import_notification_stream()
 						.filter_map(move |hash| pubsub.pending_transaction(&hash));
-					sink.pipe_from_stream(stream).await;
+					pipe_from_stream(pending, stream).await;
 				}
 				Kind::Syncing => {
+					let Ok(sink) = pending.accept().await else {
+						return;
+					};
 					// On connection subscriber expects a value.
 					// Because import notifications are only emitted when the node is synced or
 					// in case of reorg, the first event is emitted right away.
-					let sync_status = pubsub.syncing_status().await;
-					let _ = sink.send(&PubSubResult::SyncingStatus(sync_status));
+					let syncing_status = pubsub.syncing_status().await;
+					let msg = to_sub_message(&sink, &PubSubResult::SyncingStatus(syncing_status));
+					let _ = sink.send(msg).await;
 
 					// When the node is not under a major syncing (i.e. from genesis), react
 					// normally to import notifications.
@@ -288,8 +288,10 @@ where
 					while (stream.next().await).is_some() {
 						let syncing_status = pubsub.sync.is_major_syncing();
 						if syncing_status != last_syncing_status {
-							let sync_status = pubsub.syncing_status().await;
-							let _ = sink.send(&PubSubResult::SyncingStatus(sync_status));
+							let syncing_status = pubsub.syncing_status().await;
+							let msg =
+								to_sub_message(&sink, &PubSubResult::SyncingStatus(syncing_status));
+							let _ = sink.send(msg).await;
 						}
 						last_syncing_status = syncing_status;
 					}
@@ -298,11 +300,7 @@ where
 		}
 		.boxed();
 
-		self.executor.spawn(
-			"frontier-rpc-subscription",
-			Some("rpc"),
-			fut.map(drop).boxed(),
-		);
-		Ok(())
+		self.executor
+			.spawn("frontier-rpc-subscription", Some("rpc"), fut);
 	}
 }
