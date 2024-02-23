@@ -62,7 +62,7 @@ jsonrpsee = "0.20.3"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.20", default-features = false }
-num_enum = { version = "0.7.0", default-features = false }
+num_enum = { version = "0.7.2", default-features = false }
 parity-db = "0.4.12"
 parking_lot = "0.12.1"
 rlp = { version = "0.5.2", default-features = false }
@@ -73,7 +73,7 @@ serde_json = "1.0"
 similar-asserts = "1.5.0"
 sqlx = { version = "0.7.3", default-features = false, features = ["macros"] }
 thiserror = "1.0"
-tokio = "1.35.1"
+tokio = "1.36.0"
 
 # Substrate Client
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.7.0" }
