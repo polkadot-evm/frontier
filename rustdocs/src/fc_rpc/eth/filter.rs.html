@@ -1008,7 +1008,7 @@
 				from_number: NumberFor&lt;B&gt;,
 				current_number: NumberFor&lt;B&gt;,
 			},
-			Error(jsonrpsee::core::Error),
+			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
 
 		<span class="kw">let </span>key = U256::from(index.value());

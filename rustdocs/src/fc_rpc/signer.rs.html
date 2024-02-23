@@ -181,7 +181,7 @@
 
 </span><span class="kw">use </span>ethereum::TransactionV2 <span class="kw">as </span>EthereumTransaction;
 <span class="kw">use </span>ethereum_types::{H160, H256};
-<span class="kw">use </span>jsonrpsee::core::Error;
+<span class="kw">use </span>jsonrpsee::types::ErrorObjectOwned;
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sp_core::hashing::keccak_256;
 <span class="comment">// Frontier
@@ -198,7 +198,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		message: TransactionMessage,
 		address: <span class="kw-2">&amp;</span>H160,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;EthereumTransaction, Error&gt;;
+	) -&gt; <span class="prelude-ty">Result</span>&lt;EthereumTransaction, ErrorObjectOwned&gt;;
 }
 
 <span class="kw">pub struct </span>EthDevSigner {
@@ -238,7 +238,7 @@
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		message: TransactionMessage,
 		address: <span class="kw-2">&amp;</span>H160,
-	) -&gt; <span class="prelude-ty">Result</span>&lt;EthereumTransaction, Error&gt; {
+	) -&gt; <span class="prelude-ty">Result</span>&lt;EthereumTransaction, ErrorObjectOwned&gt; {
 		<span class="kw">let </span><span class="kw-2">mut </span>transaction = <span class="prelude-val">None</span>;
 
 		<span class="kw">for </span>secret <span class="kw">in </span><span class="kw-2">&amp;</span><span class="self">self</span>.keys {

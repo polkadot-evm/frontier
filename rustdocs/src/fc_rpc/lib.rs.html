@@ -490,6 +490,11 @@
 <a href="#490" id="490">490</a>
 <a href="#491" id="491">491</a>
 <a href="#492" id="492">492</a>
+<a href="#493" id="493">493</a>
+<a href="#494" id="494">494</a>
+<a href="#495" id="495">495</a>
+<a href="#496" id="496">496</a>
+<a href="#497" id="497">497</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -779,24 +784,29 @@
 	}
 }
 
-<span class="kw">pub fn </span>err&lt;T: ToString&gt;(code: i32, message: T, data: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>[u8]&gt;) -&gt; jsonrpsee::core::Error {
-	jsonrpsee::core::Error::Call(jsonrpsee::types::error::CallError::Custom(
-		jsonrpsee::types::error::ErrorObject::owned(
-			code,
-			message.to_string(),
-			data.map(|bytes| {
-				jsonrpsee::core::to_json_raw_value(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(bytes)))
-					.expect(<span class="string">&quot;fail to serialize data&quot;</span>)
-			}),
-		),
-	))
+<span class="kw">pub fn </span>err&lt;T: ToString&gt;(
+	code: i32,
+	message: T,
+	data: <span class="prelude-ty">Option</span>&lt;<span class="kw-2">&amp;</span>[u8]&gt;,
+) -&gt; jsonrpsee::types::error::ErrorObjectOwned {
+	jsonrpsee::types::error::ErrorObject::owned(
+		code,
+		message.to_string(),
+		data.map(|bytes| {
+			jsonrpsee::core::to_json_raw_value(<span class="kw-2">&amp;</span><span class="macro">format!</span>(<span class="string">&quot;0x{}&quot;</span>, hex::encode(bytes)))
+				.expect(<span class="string">&quot;fail to serialize data&quot;</span>)
+		}),
+	)
 }
 
-<span class="kw">pub fn </span>internal_err&lt;T: ToString&gt;(message: T) -&gt; jsonrpsee::core::Error {
+<span class="kw">pub fn </span>internal_err&lt;T: ToString&gt;(message: T) -&gt; jsonrpsee::types::error::ErrorObjectOwned {
 	err(jsonrpsee::types::error::INTERNAL_ERROR_CODE, message, <span class="prelude-val">None</span>)
 }
 
-<span class="kw">pub fn </span>internal_err_with_data&lt;T: ToString&gt;(message: T, data: <span class="kw-2">&amp;</span>[u8]) -&gt; jsonrpsee::core::Error {
+<span class="kw">pub fn </span>internal_err_with_data&lt;T: ToString&gt;(
+	message: T,
+	data: <span class="kw-2">&amp;</span>[u8],
+) -&gt; jsonrpsee::types::error::ErrorObjectOwned {
 	err(
 		jsonrpsee::types::error::INTERNAL_ERROR_CODE,
 		message,

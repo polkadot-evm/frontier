@@ -739,7 +739,7 @@
 <span class="kw">use </span>sc_client_api::{Backend, BlockBackend};
 <span class="kw">use </span>sc_consensus::BasicQueue;
 <span class="kw">use </span>sc_executor::NativeExecutionDispatch;
-<span class="kw">use </span>sc_network_sync::warp::{WarpSyncParams, WarpSyncProvider};
+<span class="kw">use </span>sc_network_sync::strategy::warp::{WarpSyncParams, WarpSyncProvider};
 <span class="kw">use </span>sc_service::{error::Error <span class="kw">as </span>ServiceError, Configuration, PartialComponents, TaskManager};
 <span class="kw">use </span>sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 <span class="kw">use </span>sc_transaction_pool_api::OffchainTransactionPoolFactory;
