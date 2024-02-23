@@ -46,7 +46,7 @@ repository = "https://github.com/paritytech/frontier/"
 [workspace.dependencies]
 async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
-clap = { version = "4.4.12", features = ["derive", "deprecated"] }
+clap = { version = "4.5.1", features = ["derive", "deprecated"] }
 derive_more = "0.99"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.15.0", default-features = false }
