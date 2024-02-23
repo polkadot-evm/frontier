@@ -25,7 +25,7 @@ use frame_support::{ensure, traits::ConstU32};
 use sp_core::H256;
 use sp_std::vec::Vec;
 use sp_weights::Weight;
-use xcm::latest::{Junction, Junctions, MultiLocation, NetworkId};
+use xcm::latest::{Junction, Junctions, Location, NetworkId};
 
 use crate::solidity::{
 	codec::{bytes::*, Codec, Reader, Writer},
@@ -358,12 +358,12 @@ impl Codec for Junctions {
 }
 
 // Cannot used derive macro since it is a foreign struct.
-impl Codec for MultiLocation {
+impl Codec for Location {
 	fn read(reader: &mut Reader) -> MayRevert<Self> {
 		let (parents, interior) = reader
 			.read()
 			.map_in_tuple_to_field(&["parents", "interior"])?;
-		Ok(MultiLocation { parents, interior })
+		Ok(Location { parents, interior })
 	}
 
 	fn write(writer: &mut Writer, value: Self) {

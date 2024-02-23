@@ -14,9 +14,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 ethereum = { workspace = true, features = ["with-codec", "with-serde"] }
 ethereum-types = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
+rlp = { workspace = true }
 rustc-hex = "2.1.0"
 serde = { workspace = true }
 serde_json = { workspace = true }
+
+# Substrate
+sp-core-hashing = { workspace = true, features = ["default"] }
 
 [features]
 txpool = []

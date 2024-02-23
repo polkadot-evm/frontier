@@ -21,7 +21,7 @@ use serde::{Serialize, Serializer};
 
 /// The result of an `eth_getWork` call: it differs based on an option
 /// whether to send the block number.
-#[derive(Debug, Eq, PartialEq, Default)]
+#[derive(Clone, Debug, Eq, PartialEq, Default)]
 pub struct Work {
 	/// The proof-of-work hash.
 	pub pow_hash: H256,
