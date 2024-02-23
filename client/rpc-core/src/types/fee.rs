@@ -25,7 +25,7 @@ use ethereum_types::U256;
 use serde::Serialize;
 
 /// `eth_feeHistory` response
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct FeeHistory {
 	/// Lowest number block of the returned range.

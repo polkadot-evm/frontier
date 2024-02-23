@@ -29,7 +29,7 @@ use crate::types::BuildFrom;
 pub type TransactionMap<T> = HashMap<H160, HashMap<U256, T>>;
 
 /// The result type of `txpool` API.
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 pub struct TxPoolResult<T: Serialize> {
 	pub pending: T,
 	pub queued: T,

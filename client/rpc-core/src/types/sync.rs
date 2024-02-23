@@ -22,7 +22,7 @@ use ethereum_types::{H512, U256};
 use serde::{Serialize, Serializer};
 
 /// Sync info
-#[derive(Debug, Eq, PartialEq, Default, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncInfo {
 	/// Starting block
@@ -50,7 +50,7 @@ pub struct Peers {
 	pub peers: Vec<PeerInfo>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 pub enum PeerCount {
 	U32(u32),
@@ -114,7 +114,7 @@ pub struct PipProtocolInfo {
 }
 
 /// Sync status
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SyncStatus {
 	/// Info when syncing
 	Info(SyncInfo),
