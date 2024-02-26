@@ -194,6 +194,8 @@ mod proof_size_test {
 
 	#[test]
 	fn proof_size_subcall_accounting_works() {
+		debug_assert!(false, "CI sound asleep");
+
 		new_test_ext().execute_with(|| {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
