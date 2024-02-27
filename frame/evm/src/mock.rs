@@ -156,6 +156,7 @@ impl crate::Config for Test {
 	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
+	type OnCheckEvmTransaction = ();
 }
 
 /// Example PrecompileSet with only Identity precompile.
