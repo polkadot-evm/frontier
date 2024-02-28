@@ -15,27 +15,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg_attr(not(feature = "std"), no_std)]
-//#![deny(unused_crate_dependencies)]
+//! Storage cleaner precompile. This precompile is used to clean the storage of a suicided contract.
 
 extern crate alloc;
 
 pub const ARRAY_LIMIT: u32 = 1_000;
 
 use core::marker::PhantomData;
-use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
+use fp_evm::{ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE};
 use pallet_evm::AddressMapping;
 use precompile_utils::{prelude::*, EvmResult};
 use sp_runtime::traits::ConstU32;
+
 #[cfg(test)]
 mod mock;
-
 #[cfg(test)]
 mod tests;
 
 type GetArrayLimit = ConstU32<ARRAY_LIMIT>;
 
-/// Storage cleaner precompile. This precompile is used to clear the storage of a suicided contract.
 #[derive(Debug, Clone)]
 pub struct StorageCleanerPrecompile<Runtime>(PhantomData<Runtime>);
 
@@ -44,6 +42,11 @@ impl<Runtime> StorageCleanerPrecompile<Runtime>
 where
 	Runtime: pallet_evm::Config,
 {
+	/// Clear Storage entries of smart contracts that has been marked as suicided (self-destructed) up to a certain limit.
+	///
+	/// The function iterates over the addresses, checks if each address is marked as suicided, and then deletes the storage 
+	/// entries associated with that address. If there are no remaining entries, the function clears the suicided contract 
+	/// by removing the address from the list of suicided contracts and decrementing the sufficients of the associated account.
 	#[precompile::public("clearSuicidedStorage(address[],uint32)")]
 	fn clear_suicided_storage(
 		handle: &mut impl PrecompileHandle,
@@ -53,9 +56,13 @@ where
 		let addresses: Vec<_> = addresses.into();
 		let mut deleted_entries = 0;
 
+		if limit == 0 {
+			return Err(revert("Limit should be greater than zero"));
+		}
+
 		for address in &addresses {
 			// Read Suicided storage item
-			// Suicided: Blake2128(16) + H160(20)
+			// Suicided: Hash (Blake2128(16) + Key (H160(20))
 			handle.record_db_read::<Runtime>(36)?;
 			if !pallet_evm::Pallet::<Runtime>::is_account_suicided(&address.0) {
 				return Err(revert(format!("NotSuicided: {}", address.0)));
@@ -75,14 +82,15 @@ where
 						deleted_entries += 1;
 						if deleted_entries >= limit {
 							// Check if there are no remaining entries. If there aren't any, clear the contract.
+							// Read AccountStorages storage item
 							handle
 								.record_db_read::<Runtime>(ACCOUNT_STORAGE_PROOF_SIZE as usize)?;
+							// We perform an additional iteration at the end because we cannot predict if there are
+							// remaining entries without checking the next item. If there are no more entries, we clear
+							// the contract and refund the cost of the last empty iteration.
 							if iter.next().is_none() {
-								// We perform an additional iteration at the end because we cannot determine the end of
-								// the iteration in advance. Therefore, we reimburse the cost of this last iteration
-								// when it is empty.
 								handle.refund_external_cost(None, Some(ACCOUNT_STORAGE_PROOF_SIZE));
-								Self::clear_suicided_contract(address);
+								Self::clear_suicided_contract(handle, address)?;
 							}
 							return Ok(());
 						}
@@ -91,7 +99,7 @@ where
 						// No more entries, clear the contract.
 						// Refund the cost of the last iteration.
 						handle.refund_external_cost(None, Some(ACCOUNT_STORAGE_PROOF_SIZE));
-						Self::clear_suicided_contract(address);
+						Self::clear_suicided_contract(handle, address)?;
 						break;
 					}
 				}
@@ -100,11 +108,20 @@ where
 		Ok(())
 	}
 
-	fn clear_suicided_contract(address: &Address) {
-		// Remove the address from the list of suicided contracts
+	/// Clears the storage of a suicided contract.
+	///
+	/// This function will remove the given address from the list of suicided contracts
+	/// and decrement the sufficients of the account associated with the address.
+	fn clear_suicided_contract(handle: &mut impl PrecompileHandle, address: &Address) -> EvmResult {
+		handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
 		pallet_evm::Suicided::<Runtime>::remove(address.0);
-		// Decrement the sufficients of the account
+
 		let account_id = Runtime::AddressMapping::into_account_id(address.0);
+		// dec_sufficients mutates the account, so we need to read it first.
+		// Read Account storage item (AccountBasicProof)
+		handle.record_db_read::<Runtime>(ACCOUNT_BASIC_PROOF_SIZE as usize)?;
+		handle.record_cost(RuntimeHelper::<Runtime>::db_write_gas_cost())?;
 		let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);
+		Ok(())
 	}
 }

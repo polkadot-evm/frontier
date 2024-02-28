@@ -1,8 +1,8 @@
 [package]
-name = "pallet-evm-precompile-clear-storage"
-version = "2.0.0-dev"
+name = "pallet-evm-precompile-storage-cleaner"
+version = "0.1.0"
 license = "Apache-2.0"
-description = "Storage cleanner precompiles for EVM pallet."
+description = "Storage cleaner precompile to clean storage of a suicided contracts"
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
