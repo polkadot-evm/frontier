@@ -15,7 +15,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Storage cleaner precompile. This precompile is used to clean the storage of a suicided contract.
+//! Storage cleaner precompile. This precompile is used to clean the storage entries of smart contract that 
+//! has been marked as suicided (self-destructed).
 
 extern crate alloc;
 
