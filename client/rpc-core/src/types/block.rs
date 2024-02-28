@@ -24,7 +24,7 @@ use serde::{ser::Error, Serialize, Serializer};
 use crate::types::{Bytes, Transaction};
 
 /// Block Transactions
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum BlockTransactions {
 	/// Only hashes
 	Hashes(Vec<H256>),
@@ -45,7 +45,7 @@ impl Serialize for BlockTransactions {
 }
 
 /// Block representation
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Block {
 	/// Header of the block

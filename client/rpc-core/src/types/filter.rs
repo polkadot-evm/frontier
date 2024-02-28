@@ -173,7 +173,7 @@ impl FilteredParams {
 	}
 
 	/// Build an address-based BloomFilter.
-	pub fn adresses_bloom_filter(address: &Option<FilterAddress>) -> BloomFilter<'_> {
+	pub fn address_bloom_filter(address: &Option<FilterAddress>) -> BloomFilter<'_> {
 		if let Some(address) = address {
 			return address.into();
 		}
@@ -301,7 +301,7 @@ impl FilteredParams {
 	}
 
 	/// Replace None values - aka wildcards - for the log input value in that position.
-	pub fn replace(&self, log: &Log, topic: FlatTopic) -> Option<Vec<H256>> {
+	pub fn replace(&self, topics: &[H256], topic: FlatTopic) -> Option<Vec<H256>> {
 		let mut out: Vec<H256> = Vec::new();
 		match topic {
 			VariadicValue::Single(Some(value)) => {
@@ -312,7 +312,7 @@ impl FilteredParams {
 					if let Some(v) = v {
 						out.push(v);
 					} else {
-						out.push(log.topics[k]);
+						out.push(topics[k]);
 					}
 				}
 			}
@@ -322,6 +322,26 @@ impl FilteredParams {
 			return None;
 		}
 		Some(out)
+	}
+
+	pub fn is_not_filtered(
+		&self,
+		block_number: U256,
+		block_hash: H256,
+		address: &H160,
+		topics: &[H256],
+	) -> bool {
+		if self.filter.is_some() {
+			let block_number = block_number.as_u64();
+			if !self.filter_block_range(block_number)
+				|| !self.filter_block_hash(block_hash)
+				|| !self.filter_address(address)
+				|| !self.filter_topics(topics)
+			{
+				return false;
+			}
+		}
+		true
 	}
 
 	pub fn filter_block_range(&self, block_number: u64) -> bool {
@@ -357,16 +377,16 @@ impl FilteredParams {
 		true
 	}
 
-	pub fn filter_address(&self, log: &Log) -> bool {
+	pub fn filter_address(&self, address: &H160) -> bool {
 		if let Some(input_address) = &self.filter.clone().unwrap().address {
 			match input_address {
 				VariadicValue::Single(x) => {
-					if log.address != *x {
+					if address != x {
 						return false;
 					}
 				}
 				VariadicValue::Multiple(x) => {
-					if !x.contains(&log.address) {
+					if !x.contains(address) {
 						return false;
 					}
 				}
@@ -378,13 +398,13 @@ impl FilteredParams {
 		true
 	}
 
-	pub fn filter_topics(&self, log: &Log) -> bool {
+	pub fn filter_topics(&self, topics: &[H256]) -> bool {
 		let mut out: bool = true;
 		for topic in self.flat_topics.clone() {
 			match topic {
 				VariadicValue::Single(single) => {
 					if let Some(single) = single {
-						if !log.topics.starts_with(&[single]) {
+						if !topics.starts_with(&[single]) {
 							out = false;
 						}
 					}
@@ -401,15 +421,15 @@ impl FilteredParams {
 						new_multi.pop();
 					}
 					// We can discard right away any logs with lesser topics than the filter.
-					if new_multi.len() > log.topics.len() {
+					if new_multi.len() > topics.len() {
 						out = false;
 						break;
 					}
 					let replaced: Option<Vec<H256>> =
-						self.replace(log, VariadicValue::Multiple(new_multi));
+						self.replace(topics, VariadicValue::Multiple(new_multi));
 					if let Some(replaced) = replaced {
 						out = false;
-						if log.topics.starts_with(&replaced[..]) {
+						if topics.starts_with(&replaced[..]) {
 							out = true;
 							break;
 						}
@@ -425,7 +445,7 @@ impl FilteredParams {
 }
 
 /// Results of the filter_changes RPC.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum FilterChanges {
 	/// New logs.
 	Logs(Vec<Log>),
@@ -497,7 +517,7 @@ mod tests {
 			address: Some(VariadicValue::Single(test_address)),
 			topics: None,
 		};
-		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		let address_bloom = FilteredParams::address_bloom_filter(&filter.address);
 		assert!(FilteredParams::address_in_bloom(
 			block_bloom(),
 			&address_bloom
@@ -514,7 +534,7 @@ mod tests {
 			address: Some(VariadicValue::Single(test_address)),
 			topics: None,
 		};
-		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		let address_bloom = FilteredParams::address_bloom_filter(&filter.address);
 		assert!(!FilteredParams::address_in_bloom(
 			block_bloom(),
 			&address_bloom
@@ -635,7 +655,7 @@ mod tests {
 		} else {
 			None
 		};
-		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		let address_bloom = FilteredParams::address_bloom_filter(&filter.address);
 		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
 		let matches = FilteredParams::address_in_bloom(block_bloom(), &address_bloom)
 			&& FilteredParams::topics_in_bloom(block_bloom(), &topics_bloom);
@@ -669,7 +689,7 @@ mod tests {
 		} else {
 			None
 		};
-		let address_bloom = FilteredParams::adresses_bloom_filter(&filter.address);
+		let address_bloom = FilteredParams::address_bloom_filter(&filter.address);
 		let topics_bloom = FilteredParams::topics_bloom_filter(&topics_input);
 		let matches = FilteredParams::address_in_bloom(block_bloom(), &address_bloom)
 			&& FilteredParams::topics_in_bloom(block_bloom(), &topics_bloom);
