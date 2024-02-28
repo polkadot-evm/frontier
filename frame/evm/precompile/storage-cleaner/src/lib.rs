@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Storage cleaner precompile. This precompile is used to clean the storage entries of smart contract that 
+//! Storage cleaner precompile. This precompile is used to clean the storage entries of smart contract that
 //! has been marked as suicided (self-destructed).
 
 extern crate alloc;
@@ -45,8 +45,8 @@ where
 {
 	/// Clear Storage entries of smart contracts that has been marked as suicided (self-destructed) up to a certain limit.
 	///
-	/// The function iterates over the addresses, checks if each address is marked as suicided, and then deletes the storage 
-	/// entries associated with that address. If there are no remaining entries, the function clears the suicided contract 
+	/// The function iterates over the addresses, checks if each address is marked as suicided, and then deletes the storage
+	/// entries associated with that address. If there are no remaining entries, the function clears the suicided contract
 	/// by removing the address from the list of suicided contracts and decrementing the sufficients of the associated account.
 	#[precompile::public("clearSuicidedStorage(address[],uint32)")]
 	fn clear_suicided_storage(
