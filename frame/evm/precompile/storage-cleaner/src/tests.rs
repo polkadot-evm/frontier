@@ -81,7 +81,7 @@ fn test_clear_suicided_contract_succesfull() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![suicided_address.into()].into(),
-						limit: u32::MAX,
+						limit: u64::MAX,
 					},
 				)
 				.execute_returns(());
@@ -117,7 +117,7 @@ fn test_clear_suicided_contract_failed() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![non_suicided_address.into()].into(),
-						limit: u32::MAX,
+						limit: u64::MAX,
 					},
 				)
 				.execute_reverts(|output| {
@@ -148,7 +148,7 @@ fn test_clear_suicided_empty_input() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![].into(),
-						limit: u32::MAX,
+						limit: u64::MAX,
 					},
 				)
 				.execute_returns(());
@@ -182,7 +182,7 @@ fn test_clear_suicided_contract_multiple_addresses() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: addresses.clone().into(),
-						limit: u32::MAX,
+						limit: u64::MAX,
 					},
 				)
 				.execute_returns(());
@@ -217,7 +217,7 @@ fn test_clear_suicided_mixed_suicided_and_non_suicided() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: addresses.clone().into(),
-						limit: u32::MAX,
+						limit: u64::MAX,
 					},
 				)
 				.execute_reverts(|output| {
@@ -246,7 +246,7 @@ fn test_clear_suicided_no_storage_entries() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: addresses.clone().into(),
-						limit: u32::MAX,
+						limit: u64::MAX,
 					},
 				)
 				.execute_returns(());
@@ -280,7 +280,7 @@ fn test_clear_suicided_contract_limit_works() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: addresses.clone().into(),
-						limit: 4,
+						limit: 5,
 					},
 				)
 				.execute_returns(());
@@ -320,7 +320,7 @@ fn test_clear_suicided_contract_limit_respected() {
 					Precompile1,
 					PCall::clear_suicided_storage {
 						addresses: vec![suicided_address.into()].into(),
-						limit: 4,
+						limit: 5,
 					},
 				)
 				.execute_returns(());
