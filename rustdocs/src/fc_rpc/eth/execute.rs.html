@@ -1050,10 +1050,6 @@
 <a href="#1050" id="1050">1050</a>
 <a href="#1051" id="1051">1051</a>
 <a href="#1052" id="1052">1052</a>
-<a href="#1053" id="1053">1053</a>
-<a href="#1054" id="1054">1054</a>
-<a href="#1055" id="1055">1055</a>
-<a href="#1056" id="1056">1056</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1076,7 +1072,7 @@
 
 <span class="kw">use </span>ethereum_types::{H160, H256, U256};
 <span class="kw">use </span>evm::{ExitError, ExitReason};
-<span class="kw">use </span>jsonrpsee::core::RpcResult;
+<span class="kw">use </span>jsonrpsee::{core::RpcResult, types::error::CALL_EXECUTION_FAILED_CODE};
 <span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="comment">// Substrate
 </span><span class="kw">use </span>sc_client_api::backend::{Backend, StorageProvider};
@@ -1103,9 +1099,6 @@
 	frontier_backend_client, internal_err,
 };
 
-<span class="doccomment">/// Default JSONRPC error code return by geth
-</span><span class="kw">pub const </span>JSON_RPC_ERROR_DEFAULT: i32 = -<span class="number">32000</span>;
-
 <span class="doccomment">/// Allow to adapt a request for `estimate_gas`.
 /// Can be used to estimate gas of some contracts using a different function
 /// in the case the normal gas estimation doesn&#39;t work.
@@ -1115,11 +1108,11 @@
 /// to the minimum, while we want to estimate a gas limit that will allow the subcall to
 /// have enough gas to succeed.
 </span><span class="kw">pub trait </span>EstimateGasAdapter {
-	<span class="kw">fn </span>adapt_request(request: CallRequest) -&gt; CallRequest;
+	<span class="kw">fn </span>adapt_request(request: TransactionRequest) -&gt; TransactionRequest;
 }
 
 <span class="kw">impl </span>EstimateGasAdapter <span class="kw">for </span>() {
-	<span class="kw">fn </span>adapt_request(request: CallRequest) -&gt; CallRequest {
+	<span class="kw">fn </span>adapt_request(request: TransactionRequest) -&gt; TransactionRequest {
 		request
 	}
 }
@@ -1137,11 +1130,11 @@
 {
 	<span class="kw">pub async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 		state_overrides: <span class="prelude-ty">Option</span>&lt;BTreeMap&lt;H160, CallStateOverride&gt;&gt;,
 	) -&gt; RpcResult&lt;Bytes&gt; {
-		<span class="kw">let </span>CallRequest {
+		<span class="kw">let </span>TransactionRequest {
 			from,
 			to,
 			gas_price,
@@ -1172,10 +1165,9 @@
 		.<span class="kw">await</span><span class="question-mark">?
 		</span>{
 			<span class="prelude-val">Some</span>(id) =&gt; {
-				<span class="kw">let </span>hash = <span class="self">self
-					</span>.client
-					.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-					.map_err(|<span class="kw">_</span>| <span class="kw">crate</span>::err(JSON_RPC_ERROR_DEFAULT, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
+				<span class="kw">let </span>hash = <span class="self">self</span>.client.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id).map_err(|<span class="kw">_</span>| {
+					<span class="kw">crate</span>::err(CALL_EXECUTION_FAILED_CODE, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>)
+				})<span class="question-mark">?</span>;
 				(hash, <span class="self">self</span>.client.runtime_api())
 			}
 			<span class="prelude-val">None </span>=&gt; {
@@ -1231,7 +1223,7 @@
 			},
 		};
 
-		<span class="kw">let </span>data = data.map(|d| d.<span class="number">0</span>).unwrap_or_default();
+		<span class="kw">let </span>data = data.into_bytes().map(|d| d.into_vec()).unwrap_or_default();
 		<span class="kw">match </span>to {
 			<span class="prelude-val">Some</span>(to) =&gt; {
 				<span class="kw">if </span>api_version == <span class="number">1 </span>{
@@ -1468,7 +1460,7 @@
 
 	<span class="kw">pub async fn </span>estimate_gas(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: <span class="prelude-ty">Option</span>&lt;BlockNumberOrHash&gt;,
 	) -&gt; RpcResult&lt;U256&gt; {
 		<span class="kw">let </span>client = Arc::clone(<span class="kw-2">&amp;</span><span class="self">self</span>.client);
@@ -1486,9 +1478,9 @@
 		.<span class="kw">await</span><span class="question-mark">?
 		</span>{
 			<span class="prelude-val">Some</span>(id) =&gt; {
-				<span class="kw">let </span>hash = client
-					.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-					.map_err(|<span class="kw">_</span>| <span class="kw">crate</span>::err(JSON_RPC_ERROR_DEFAULT, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>))<span class="question-mark">?</span>;
+				<span class="kw">let </span>hash = client.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id).map_err(|<span class="kw">_</span>| {
+					<span class="kw">crate</span>::err(CALL_EXECUTION_FAILED_CODE, <span class="string">&quot;header not found&quot;</span>, <span class="prelude-val">None</span>)
+				})<span class="question-mark">?</span>;
 				(hash, client.runtime_api())
 			}
 			<span class="prelude-val">None </span>=&gt; {
@@ -1504,7 +1496,7 @@
 		</span><span class="kw">let </span>request = EC::EstimateGasAdapter::adapt_request(request);
 
 		<span class="comment">// For simple transfer to simple account, return MIN_GAS_PER_TX directly
-		</span><span class="kw">let </span>is_simple_transfer = <span class="kw">match </span><span class="kw-2">&amp;</span>request.data {
+		</span><span class="kw">let </span>is_simple_transfer = <span class="kw">match </span><span class="kw-2">&amp;</span>request.data() {
 			<span class="prelude-val">None </span>=&gt; <span class="bool-val">true</span>,
 			<span class="prelude-val">Some</span>(vec) =&gt; vec.<span class="number">0</span>.is_empty(),
 		};
@@ -1613,7 +1605,7 @@
 			</span><span class="kw">let </span>executable = <span class="kw">move </span>|
 				request, gas_limit, api_version, api: sp_api::ApiRef&lt;<span class="lifetime">&#39;_</span>, C::Api&gt;, estimate_mode
 			| -&gt; RpcResult&lt;ExecutableResult&gt; {
-				<span class="kw">let </span>CallRequest {
+				<span class="kw">let </span>TransactionRequest {
 					from,
 					to,
 					gas,
@@ -1627,7 +1619,7 @@
 				<span class="comment">// Use request gas limit only if it less than gas_limit parameter
 				</span><span class="kw">let </span>gas_limit = core::cmp::min(gas.unwrap_or(gas_limit), gas_limit);
 
-				<span class="kw">let </span>data = data.map(|d| d.<span class="number">0</span>).unwrap_or_default();
+				<span class="kw">let </span>data = data.into_bytes().map(|d| d.<span class="number">0</span>).unwrap_or_default();
 
 				<span class="kw">let </span>(exit_reason, data, used_gas) = <span class="kw">match </span>to {
 					<span class="prelude-val">Some</span>(to) =&gt; {
@@ -1825,7 +1817,7 @@
 			<span class="kw">return </span><span class="prelude-val">Err</span>(internal_err(<span class="string">&quot;failed to retrieve Runtime Api version&quot;</span>));
 		};
 
-		<span class="comment">// Verify that the transaction succeed with highest capacity
+		<span class="comment">// Verify that the transaction succeed with the highest capacity
 		</span><span class="kw">let </span>cap = highest;
 		<span class="kw">let </span>estimate_mode = !<span class="macro">cfg!</span>(feature = <span class="string">&quot;rpc-binary-search-estimate&quot;</span>);
 		<span class="kw">let </span>ExecutableResult {
