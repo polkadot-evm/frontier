@@ -1,19 +1,9 @@
-# Substrate Frontier Node Template
+# Frontier Node Template
 
 A [FRAME](https://docs.substrate.io/v3/runtime/frame)-based
-[Substrate](https://substrate.io) node with the Ethereum RPC support, ready for hacking
-:rocket:
+[Substrate](https://substrate.io) node with the Ethereum RPC support, ready for hacking.
 
 ## Generation & Upstream
-
-This template is maintained in the
-[Frontier](https://github.com/paritytech/frontier/tree/master/template) project repository, and can
-be used to generate a stand-alone template for use in an independent project via the included
-[template generation script](https://github.com/paritytech/frontier/blob/master/docs/node-template-release.md).
-
-A ready-to-use template generated this way is hosted for each Frontier release on the
-[substrate-developer-hub/frontier-node-template](https://github.com/substrate-developer-hub/frontier-node-template)
-repository.
 
 This template was originally forked from the
 [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template). You
@@ -41,24 +31,6 @@ This is also used by the ts-tests:
 $ ./target/release/frontier-template-node --dev --sealing=manual
 # Or
 $ ./target/release/frontier-template-node --dev --sealing=instant
-```
-
-### Docker Based Development
-
-Optionally, You can build and run the frontier node within Docker directly.  
-The Dockerfile is optimized for development speed.  
-(Running the `docker run...` command will recompile the binaries but not the dependencies)
-
-Building (takes 5-10 min):
-
-```bash
-docker build -t frontier-node-dev .
-```
-
-Running (takes 1 min to rebuild binaries):
-
-```bash
-docker run -t frontier-node-dev
 ```
 
 ## Genesis Configuration
