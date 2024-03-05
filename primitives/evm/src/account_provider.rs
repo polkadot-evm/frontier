@@ -16,11 +16,11 @@ pub trait AccountProvider {
 	///
 	/// Represent the account itself in accounts records.
 	type AccountId;
-	/// Account index (aka nonce) type.
+	/// Account nonce type.
 	///
 	/// The number that helps to ensure that each transaction in the network is unique
 	/// for particular account.
-	type Index: AtLeast32Bit;
+	type Nonce: AtLeast32Bit;
 
 	/// Creates a new account in accounts records.
 	///
@@ -33,7 +33,7 @@ pub trait AccountProvider {
 	/// Return current account nonce value.
 	///
 	/// Used to represent account basic information in EVM format.
-	fn account_nonce(who: &Self::AccountId) -> Self::Index;
+	fn account_nonce(who: &Self::AccountId) -> Self::Nonce;
 	/// Increment a particular account's nonce value.
 	///
 	/// Incremented with each new transaction submitted by the account.

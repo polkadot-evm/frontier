@@ -132,14 +132,15 @@ parameter_types! {
 	pub SuicideQuickClearLimit: u32 = 0;
 }
 impl crate::Config for Test {
+	type AccountProvider = crate::NativeSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CallOrigin = EnsureAddressRoot<crate::AccountIdOf<Self>>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<crate::AccountIdOf<Self>>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 

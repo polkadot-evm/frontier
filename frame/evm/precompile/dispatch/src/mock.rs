@@ -134,14 +134,15 @@ parameter_types! {
 	pub SuicideQuickClearLimit: u32 = 0;
 }
 impl pallet_evm::Config for Test {
+	type AccountProvider = pallet_evm::NativeSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CallOrigin = EnsureAddressRoot<pallet_evm::AccountIdOf<Self>>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<pallet_evm::AccountIdOf<Self>>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
