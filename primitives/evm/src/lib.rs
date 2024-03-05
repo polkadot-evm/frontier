@@ -20,6 +20,7 @@
 
 mod precompile;
 mod validation;
+mod account_provider;
 
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
@@ -36,6 +37,7 @@ pub use evm::{
 };
 
 pub use self::{
+	account_provider::AccountProvider,
 	precompile::{
 		Context, ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, LinearCostPrecompile,
 		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
