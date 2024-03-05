@@ -98,9 +98,10 @@ use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
-	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
+	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo,
+	FeeCalculator, IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
+	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+	TransactionValidationError, Vicinity,
 };
 
 pub use self::{
@@ -583,12 +584,10 @@ pub mod pallet {
 pub type AccountIdOf<T> = <<T as Config>::AccountProvider as AccountProvider>::AccountId;
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
+pub type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> =
-	<C as Currency<AccountIdOf<T>>>::NegativeImbalance;
+type NegativeImbalanceOf<C, T> = <C as Currency<AccountIdOf<T>>>::NegativeImbalance;
 
 #[derive(
 	Debug,
@@ -955,14 +954,10 @@ impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
 where
 	T: Config,
 	C: Currency<AccountIdOf<T>>,
-	C::PositiveImbalance: Imbalance<
-		<C as Currency<AccountIdOf<T>>>::Balance,
-		Opposite = C::NegativeImbalance,
-	>,
-	C::NegativeImbalance: Imbalance<
-		<C as Currency<AccountIdOf<T>>>::Balance,
-		Opposite = C::PositiveImbalance,
-	>,
+	C::PositiveImbalance:
+		Imbalance<<C as Currency<AccountIdOf<T>>>::Balance, Opposite = C::NegativeImbalance>,
+	C::NegativeImbalance:
+		Imbalance<<C as Currency<AccountIdOf<T>>>::Balance, Opposite = C::PositiveImbalance>,
 	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
 	U256: UniqueSaturatedInto<<C as Currency<AccountIdOf<T>>>::Balance>,
 {
@@ -1046,22 +1041,22 @@ where
 
 /// Implementation for () does not specify what to do with imbalance
 impl<T> OnChargeEVMTransaction<T> for ()
-	where
+where
 	T: Config,
-	<T::Currency as Currency<AccountIdOf<T>>>::PositiveImbalance:
-		Imbalance<<T::Currency as Currency<AccountIdOf<T>>>::Balance, Opposite = <T::Currency as Currency<AccountIdOf<T>>>::NegativeImbalance>,
-	<T::Currency as Currency<AccountIdOf<T>>>::NegativeImbalance:
-Imbalance<<T::Currency as Currency<AccountIdOf<T>>>::Balance, Opposite = <T::Currency as Currency<AccountIdOf<T>>>::PositiveImbalance>,
-U256: UniqueSaturatedInto<BalanceOf<T>>,
-
+	<T::Currency as Currency<AccountIdOf<T>>>::PositiveImbalance: Imbalance<
+		<T::Currency as Currency<AccountIdOf<T>>>::Balance,
+		Opposite = <T::Currency as Currency<AccountIdOf<T>>>::NegativeImbalance,
+	>,
+	<T::Currency as Currency<AccountIdOf<T>>>::NegativeImbalance: Imbalance<
+		<T::Currency as Currency<AccountIdOf<T>>>::Balance,
+		Opposite = <T::Currency as Currency<AccountIdOf<T>>>::PositiveImbalance,
+	>,
+	U256: UniqueSaturatedInto<BalanceOf<T>>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
 
-	fn withdraw_fee(
-		who: &H160,
-		fee: U256,
-	) -> Result<Self::LiquidityInfo, Error<T>> {
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
 		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::withdraw_fee(who, fee)
 	}
 
