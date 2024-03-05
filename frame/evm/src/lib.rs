@@ -1099,17 +1099,17 @@ impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T>
 	type Nonce = T::Nonce;
 
 	fn account_nonce(who: &Self::AccountId) -> Self::Nonce {
-		frame_system::Pallet::<T>::account_nonce(&who)
+		frame_system::Pallet::<T>::account_nonce(who)
 	}
 
 	fn inc_account_nonce(who: &Self::AccountId) {
-		frame_system::Pallet::<T>::inc_account_nonce(&who)
+		frame_system::Pallet::<T>::inc_account_nonce(who)
 	}
 
 	fn create_account(who: &Self::AccountId) {
-		let _ = frame_system::Pallet::<T>::inc_sufficients(&who);
+		let _ = frame_system::Pallet::<T>::inc_sufficients(who);
 	}
 	fn remove_account(who: &Self::AccountId) {
-		let _ = frame_system::Pallet::<T>::dec_sufficients(&who);
+		let _ = frame_system::Pallet::<T>::dec_sufficients(who);
 	}
 }
