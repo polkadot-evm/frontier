@@ -140,9 +140,9 @@ impl pallet_evm::Config for Test {
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<pallet_evm::AccountIdOf<Self>>;
+	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
 
-	type WithdrawOrigin = EnsureAddressNever<pallet_evm::AccountIdOf<Self>>;
+	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
