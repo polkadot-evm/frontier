@@ -37,7 +37,7 @@ std = [
 	"sp-runtime/std",
 	"sp-std/std",
 	# Frontier
-  	"fp-evm/std",
+	"fp-evm/std",
 ]
 try-runtime = [
 	"frame-support/try-runtime",
