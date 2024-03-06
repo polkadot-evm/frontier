@@ -49,7 +49,7 @@ fn create_account_fails() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		<Account<Test>>::insert(account_id, AccountInfo::<_, _>::default());
 
 		// Invoke the function under test.
 		assert_noop!(
@@ -65,7 +65,7 @@ fn remove_account_works() {
 	new_test_ext().execute_with_ext(|_| {
 		// Prepare test data.
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
-		<Account<Test>>::insert(account_id.clone(), AccountInfo::<_, _>::default());
+		<Account<Test>>::insert(account_id, AccountInfo::<_, _>::default());
 
 		// Set block number to enable events.
 		System::set_block_number(1);
@@ -175,7 +175,7 @@ fn try_mutate_exists_account_updated() {
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 1;
 		let data = 1;
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+		<Account<Test>>::insert(account_id, AccountInfo { nonce, data });
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
@@ -207,7 +207,7 @@ fn try_mutate_exists_account_removed() {
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 1;
 		let data = 1;
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+		<Account<Test>>::insert(account_id, AccountInfo { nonce, data });
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
@@ -276,7 +276,7 @@ fn try_mutate_exists_fails_without_changes() {
 		let account_id = H160::from_str("1000000000000000000000000000000000000001").unwrap();
 		let nonce = 1;
 		let data = 1;
-		<Account<Test>>::insert(account_id.clone(), AccountInfo { nonce, data });
+		<Account<Test>>::insert(account_id, AccountInfo { nonce, data });
 
 		// Check test preconditions.
 		assert!(EvmSystem::account_exists(&account_id));
