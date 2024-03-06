@@ -5,6 +5,7 @@ members = [
 	"frame/ethereum",
 	"frame/evm",
 	"frame/evm-chain-id",
+	"frame/evm-system",
 	"frame/hotfix-sufficients",
 	"frame/evm/precompile/sha3fips",
 	"frame/evm/precompile/simple",
@@ -62,6 +63,7 @@ jsonrpsee = "0.20.3"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.21", default-features = false }
+mockall = "0.11"
 num_enum = { version = "0.7.2", default-features = false }
 parity-db = "0.4.13"
 parking_lot = "0.12.1"
