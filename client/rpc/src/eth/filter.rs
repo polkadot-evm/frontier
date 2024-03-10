@@ -97,10 +97,11 @@ where
 					self.max_stored_filters
 				)));
 			}
-			let last_key = match {
+			let next_back = {
 				let mut iter = locked.iter();
 				iter.next_back()
-			} {
+			};
+			let last_key = match next_back {
 				Some((k, _)) => *k,
 				None => U256::zero(),
 			};
