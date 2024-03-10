@@ -20,9 +20,10 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2023-11-01
+        toolchain: nightly-2024-01-22
         target: wasm32-unknown-unknown
         override: true
+        components: rust-src
     - name: Install protoc
       uses: arduino/setup-protoc@v3
       with:
@@ -39,9 +40,10 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2023-11-01
+        toolchain: nightly-2024-01-22
         target: wasm32-unknown-unknown
         override: true
+        components: rust-src
     - name: Install protoc
       uses: arduino/setup-protoc@v3
       with:
@@ -72,10 +74,10 @@ jobs:
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
-        toolchain: nightly-2023-11-01
+        toolchain: nightly-2024-01-22
         target: wasm32-unknown-unknown
         override: true
-        components: rustfmt, clippy
+        components: rustfmt, clippy, rust-src
     - name: Install protoc
       uses: arduino/setup-protoc@v3
       with:
