@@ -186,6 +186,16 @@ where
 		current_syncing_tips.append(&mut leaves);
 	}
 
+	let best_hash = client.info().best_hash;
+	if SyncStrategy::Parachain == strategy
+		&& !frontier_backend
+			.mapping()
+			.is_synced(&best_hash)?
+	{
+		// Add best block to current_syncing_tips
+		current_syncing_tips.push(best_hash);
+	}
+
 	let mut operating_header = None;
 	while let Some(checking_tip) = current_syncing_tips.pop() {
 		if let Some(checking_header) = fetch_header(
