@@ -27,7 +27,7 @@ use ethereum_types::{H256, U256};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{from_value, Value};
 // Substrate
-use sp_core_hashing::keccak_256;
+use sp_crypto_hashing::keccak_256;
 
 use crate::types::{Bytes, Filter, FilteredParams, Header, Log, Rich, RichHeader};
 

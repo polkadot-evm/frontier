@@ -85,6 +85,9 @@ pub type Nonce = u32;
 /// A hash of some data used by the chain.
 pub type Hash = H256;
 
+/// The hashing algorithm used by the chain.
+pub type Hashing = BlakeTwo256;
+
 /// Digest item type.
 pub type DigestItem = generic::DigestItem;
 
@@ -183,7 +186,7 @@ impl frame_system::Config for Runtime {
 	/// The type for hashing blocks and tries.
 	type Hash = Hash;
 	/// The hashing algorithm used.
-	type Hashing = BlakeTwo256;
+	type Hashing = Hashing;
 	/// The identifier used to distinguish between accounts.
 	type AccountId = AccountId;
 	/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
