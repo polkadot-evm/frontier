@@ -86,7 +86,7 @@ where
 			deleted_entries = deleted_entries.saturating_add(deleted as u64);
 
 			// Check if the storage of this contract has been completly removed
-			if pallet_evm::AccountStorages::<Runtime>::iter_key_prefix(&address)
+			if pallet_evm::AccountStorages::<Runtime>::iter_key_prefix(address)
 				.next()
 				.is_none()
 			{
@@ -115,7 +115,7 @@ where
 		let write_cost = RuntimeHelper::<Runtime>::db_write_gas_cost();
 		let ref_time = 0u64
 			// EVM:: Suicided (reads = nb_addresses)
-			.saturating_add(read_cost.saturating_mul(nb_addresses.into()))
+			.saturating_add(read_cost.saturating_mul(nb_addresses))
 			// EVM:: Suicided (writes = nb_addresses)
 			.saturating_add(write_cost.saturating_mul(nb_addresses))
 			// System: AccountInfo (reads = nb_addresses) for decrementing sufficients
