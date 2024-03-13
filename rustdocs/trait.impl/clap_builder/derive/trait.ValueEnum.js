@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"frontier_template_node":[["impl ValueEnum for <a class=\"enum\" href=\"frontier_template_node/eth/enum.BackendType.html\" title=\"enum frontier_template_node::eth::BackendType\">BackendType</a>"],["impl ValueEnum for <a class=\"enum\" href=\"frontier_template_node/cli/enum.Sealing.html\" title=\"enum frontier_template_node::cli::Sealing\">Sealing</a>"]]
+"frontier_template_node":[["impl ValueEnum for <a class=\"enum\" href=\"frontier_template_node/cli/enum.Sealing.html\" title=\"enum frontier_template_node::cli::Sealing\">Sealing</a>"],["impl ValueEnum for <a class=\"enum\" href=\"frontier_template_node/eth/enum.BackendType.html\" title=\"enum frontier_template_node::eth::BackendType\">BackendType</a>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()
