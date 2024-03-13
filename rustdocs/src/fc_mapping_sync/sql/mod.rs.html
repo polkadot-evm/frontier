@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/mapping-sync/src/sql/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_mapping_sync" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/mapping-sync/src/sql/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_mapping_sync" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../fc_mapping_sync/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -2028,8 +2030,8 @@
 		enacted: Vec&lt;H256&gt;,
 		retracted: Vec&lt;H256&gt;,
 	},
-	<span class="doccomment">/// Verify indexed blocks&#39; consistency.
-	/// Check for any canon blocks that haven&#39;t had their logs indexed.
+	<span class="doccomment">/// Verify indexed blocks' consistency.
+	/// Check for any canon blocks that haven't had their logs indexed.
 	/// Check for any missing parent blocks from the latest canon block.
 	</span>CheckIndexedBlocks,
 }
@@ -2050,8 +2052,8 @@
 	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
-	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
-	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">'static</span>,
+	Backend: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="doccomment">/// Spawn the indexing worker. The worker can be given commands via the sender channel.
@@ -2067,13 +2069,13 @@
 		<span class="kw">let </span>(tx, <span class="kw-2">mut </span>rx) = tokio::sync::mpsc::channel(<span class="number">100</span>);
 		tokio::task::spawn(<span class="kw">async move </span>{
 			<span class="kw">while let </span><span class="prelude-val">Some</span>(cmd) = rx.recv().<span class="kw">await </span>{
-				<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;💬 Recv Worker Command {cmd:?}&quot;</span>);
+				<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"💬 Recv Worker Command {cmd:?}"</span>);
 				<span class="kw">match </span>cmd {
 					WorkerCommand::ResumeSync =&gt; {
 						<span class="comment">// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
 						</span><span class="kw">match </span>indexer_backend.get_last_indexed_canon_block().<span class="kw">await</span>.ok() {
 							<span class="prelude-val">Some</span>(last_block_hash) =&gt; {
-								<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Resume from last block {last_block_hash:?}&quot;</span>);
+								<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Resume from last block {last_block_hash:?}"</span>);
 								<span class="kw">if let </span><span class="prelude-val">Some</span>(parent_hash) = client
 									.header(last_block_hash)
 									.ok()
@@ -2134,7 +2136,7 @@
 						</span><span class="kw">if let </span><span class="prelude-val">Some</span>(block_hash) =
 							indexer_backend.get_first_pending_canon_block().<span class="kw">await
 						</span>{
-							<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Indexing pending canonical block {block_hash:?}&quot;</span>);
+							<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Indexing pending canonical block {block_hash:?}"</span>);
 							indexer_backend
 								.index_block_logs(client.clone(), block_hash)
 								.<span class="kw">await</span>;
@@ -2163,7 +2165,7 @@
 		import_notifications: sc_client_api::ImportNotifications&lt;Block&gt;,
 		worker_config: SyncWorkerConfig,
 		_sync_strategy: SyncStrategy,
-		sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">&#39;static</span>&gt;,
+		sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">'static</span>&gt;,
 		pubsub_notification_sinks: Arc&lt;
 			EthereumBlockNotificationSinks&lt;EthereumBlockNotification&lt;Block&gt;&gt;,
 		&gt;,
@@ -2206,8 +2208,8 @@
 				}
 				notification = notifications.next() =&gt; <span class="kw">if let </span><span class="prelude-val">Some</span>(notification) = notification {
 					<span class="macro">log::debug!</span>(
-						target: <span class="string">&quot;frontier-sql&quot;</span>,
-						<span class="string">&quot;📣  New notification: #{} {:?} (parent {}), best = {}&quot;</span>,
+						target: <span class="string">"frontier-sql"</span>,
+						<span class="string">"📣  New notification: #{} {:?} (parent {}), best = {}"</span>,
 						notification.header.number(),
 						notification.hash,
 						notification.header.parent_hash(),
@@ -2216,8 +2218,8 @@
 					<span class="kw">if </span>notification.is_new_best {
 						<span class="kw">if let </span><span class="prelude-val">Some</span>(tree_route) = notification.tree_route {
 							<span class="macro">log::debug!</span>(
-								target: <span class="string">&quot;frontier-sql&quot;</span>,
-								<span class="string">&quot;🔀  Re-org happened at new best {}, proceeding to canonicalize db&quot;</span>,
+								target: <span class="string">"frontier-sql"</span>,
+								<span class="string">"🔀  Re-org happened at new best {}, proceeding to canonicalize db"</span>,
 								notification.hash
 							);
 							<span class="kw">let </span>retracted = tree_route
@@ -2260,8 +2262,8 @@
 	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
-	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
-	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">'static</span>,
+	Backend: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">let </span>blockchain_backend = substrate_backend.blockchain();
@@ -2274,18 +2276,18 @@
 
 		<span class="comment">// exit if block is already imported
 		</span><span class="kw">if </span>indexer_backend.is_block_indexed(hash).<span class="kw">await </span>{
-			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🔴 Block {hash:?} already imported&quot;</span>);
+			<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"🔴 Block {hash:?} already imported"</span>);
 			<span class="kw">break</span>;
 		}
 
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  Importing {hash:?}&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"🛠️  Importing {hash:?}"</span>);
 		<span class="kw">let _ </span>= indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.<span class="kw">await
 			</span>.map_err(|e| {
-				<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;{e}&quot;</span>);
+				<span class="macro">log::error!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"{e}"</span>);
 			});
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Inserted block metadata&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Inserted block metadata"</span>);
 		indexer_backend.index_block_logs(client.clone(), hash).<span class="kw">await</span>;
 
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = blockchain_backend.header(hash) {
@@ -2308,8 +2310,8 @@
 	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
-	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
-	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">'static</span>,
+	Backend: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">let </span>blockchain_backend = substrate_backend.blockchain();
@@ -2324,18 +2326,18 @@
 
 		<span class="comment">// exit if canonical block is already imported
 		</span><span class="kw">if </span>status.indexed &amp;&amp; status.canon {
-			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🔴 Block {hash:?} already imported&quot;</span>);
+			<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"🔴 Block {hash:?} already imported"</span>);
 			<span class="kw">break</span>;
 		}
 
 		<span class="comment">// If block was previously indexed as non-canon then mark it as canon
 		</span><span class="kw">if </span>status.indexed &amp;&amp; !status.canon {
 			<span class="kw">if let </span><span class="prelude-val">Err</span>(err) = indexer_backend.set_block_as_canon(hash).<span class="kw">await </span>{
-				<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed setting block {hash:?} as canon: {err:?}&quot;</span>);
+				<span class="macro">log::error!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Failed setting block {hash:?} as canon: {err:?}"</span>);
 				<span class="kw">continue</span>;
 			}
 
-			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  Marked block as canon {hash:?}&quot;</span>);
+			<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"🛠️  Marked block as canon {hash:?}"</span>);
 
 			<span class="comment">// Check parent block
 			</span><span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = blockchain_backend.header(hash) {
@@ -2346,14 +2348,14 @@
 		}
 
 		<span class="comment">// Else, import the new block
-		</span><span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  Importing {hash:?}&quot;</span>);
+		</span><span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"🛠️  Importing {hash:?}"</span>);
 		<span class="kw">let _ </span>= indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.<span class="kw">await
 			</span>.map_err(|e| {
-				<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;{e}&quot;</span>);
+				<span class="macro">log::error!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"{e}"</span>);
 			});
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Inserted block metadata  {hash:?}&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Inserted block metadata  {hash:?}"</span>);
 		indexer_backend.index_block_logs(client.clone(), hash).<span class="kw">await</span>;
 
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = blockchain_backend.header(hash) {
@@ -2373,8 +2375,8 @@
 ) {
 	<span class="kw">if </span>(indexer_backend.canonicalize(<span class="kw-2">&amp;</span>retracted, <span class="kw-2">&amp;</span>enacted).<span class="kw">await</span>).is_err() {
 		<span class="macro">log::error!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;❌  Canonicalization failed for common ancestor {}, potentially corrupted db. Retracted: {:?}, Enacted: {:?}&quot;</span>,
+			target: <span class="string">"frontier-sql"</span>,
+			<span class="string">"❌  Canonicalization failed for common ancestor {}, potentially corrupted db. Retracted: {:?}, Enacted: {:?}"</span>,
 			common,
 			retracted,
 			enacted,
@@ -2393,18 +2395,18 @@
 	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
-	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
-	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">'static</span>,
+	Backend: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="kw">if let </span><span class="prelude-val">Some</span>(block_number) = indexer_backend.get_first_missing_canon_block().<span class="kw">await </span>{
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Missing {block_number:?}&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Missing {block_number:?}"</span>);
 		<span class="kw">if </span>block_number == <span class="number">0 </span>{
 			index_genesis_block(client.clone(), indexer_backend.clone()).<span class="kw">await</span>;
 		} <span class="kw">else if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(block_hash)) = client.hash(block_number.unique_saturated_into()) {
 			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;Indexing past canonical blocks from #{} {:?}&quot;</span>,
+				target: <span class="string">"frontier-sql"</span>,
+				<span class="string">"Indexing past canonical blocks from #{} {:?}"</span>,
 				block_number,
 				block_hash,
 			);
@@ -2416,7 +2418,7 @@
 			)
 			.<span class="kw">await</span>;
 		} <span class="kw">else </span>{
-			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed retrieving hash for block #{block_number}&quot;</span>);
+			<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Failed retrieving hash for block #{block_number}"</span>);
 		}
 	}
 }
@@ -2431,21 +2433,21 @@
 	</span>Block: BlockT&lt;Hash = H256&gt;,
 	Client: ProvideRuntimeApi&lt;Block&gt;,
 	Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
-	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">&#39;static</span>,
-	Backend: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+	Client: HeaderBackend&lt;Block&gt; + StorageProvider&lt;Block, Backend&gt; + <span class="lifetime">'static</span>,
+	Backend: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 	Backend::State: StateBackend&lt;BlakeTwo256&gt;,
 {
 	<span class="macro">log::info!</span>(
-		target: <span class="string">&quot;frontier-sql&quot;</span>,
-		<span class="string">&quot;Import genesis&quot;</span>,
+		target: <span class="string">"frontier-sql"</span>,
+		<span class="string">"Import genesis"</span>,
 	);
 	<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(substrate_genesis_hash)) = indexer_backend
 		.insert_genesis_block_metadata(client.clone())
 		.<span class="kw">await
 		</span>.map_err(|e| {
-			<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;💔  Cannot sync genesis block: {e}&quot;</span>);
+			<span class="macro">log::error!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"💔  Cannot sync genesis block: {e}"</span>);
 		}) {
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Imported genesis block {substrate_genesis_hash:?}&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Imported genesis block {substrate_genesis_hash:?}"</span>);
 	}
 }
 
@@ -2528,7 +2530,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>interval_indexing_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="comment">// Initialize storage with schema V3
 		</span><span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -2553,9 +2555,9 @@
 		<span class="comment">// Indexer backend
 		</span><span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -2567,7 +2569,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
 
@@ -2583,7 +2585,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="comment">// Addresses
 			</span><span class="kw">let </span>address_1 = H160::repeat_byte(<span class="number">0x01</span>);
 			<span class="kw">let </span>address_2 = H160::repeat_byte(<span class="number">0x02</span>);
@@ -2687,7 +2689,7 @@
 
 		<span class="comment">// Query db
 		</span><span class="kw">let </span>db_logs = sqlx::query(
-			<span class="string">&quot;SELECT
+			<span class="string">"SELECT
 					b.block_number,
 					address,
 					topic_1,
@@ -2698,11 +2700,11 @@
 					transaction_index,
 					a.substrate_block_hash
 				FROM logs AS a INNER JOIN blocks AS b ON a.substrate_block_hash = b.substrate_block_hash
-				ORDER BY b.block_number ASC, log_index ASC, transaction_index ASC&quot;</span>,
+				ORDER BY b.block_number ASC, log_index ASC, transaction_index ASC"</span>,
 		)
 		.fetch_all(<span class="kw-2">&amp;</span>pool)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+		</span>.expect(<span class="string">"test query result"</span>)
 		.iter()
 		.map(|row| {
 			<span class="kw">let </span>block_number = row.get::&lt;i32, <span class="kw">_</span>&gt;(<span class="number">0</span>);
@@ -2739,7 +2741,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>notification_indexing_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="comment">// Initialize storage with schema V3
 		</span><span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -2764,9 +2766,9 @@
 		<span class="comment">// Indexer backend
 		</span><span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -2778,7 +2780,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
 
@@ -2824,7 +2826,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="comment">// Addresses
 			</span><span class="kw">let </span>address_1 = H160::random();
 			<span class="kw">let </span>address_2 = H160::random();
@@ -2893,13 +2895,13 @@
 					substrate_block_hash: block_hash.as_bytes().to_owned(),
 				},
 			));
-			<span class="comment">// Let&#39;s not notify too quickly
+			<span class="comment">// Let's not notify too quickly
 			</span>futures_timer::Delay::new(std::time::Duration::from_millis(<span class="number">100</span>)).<span class="kw">await</span>;
 		}
 
 		<span class="comment">// Query db
 		</span><span class="kw">let </span>db_logs = sqlx::query(
-			<span class="string">&quot;SELECT
+			<span class="string">"SELECT
 					b.block_number,
 					address,
 					topic_1,
@@ -2910,11 +2912,11 @@
 					transaction_index,
 					a.substrate_block_hash
 				FROM logs AS a INNER JOIN blocks AS b ON a.substrate_block_hash = b.substrate_block_hash
-				ORDER BY b.block_number ASC, log_index ASC, transaction_index ASC&quot;</span>,
+				ORDER BY b.block_number ASC, log_index ASC, transaction_index ASC"</span>,
 		)
 		.fetch_all(<span class="kw-2">&amp;</span>pool)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+		</span>.expect(<span class="string">"test query result"</span>)
 		.iter()
 		.map(|row| {
 			<span class="kw">let </span>block_number = row.get::&lt;i32, <span class="kw">_</span>&gt;(<span class="number">0</span>);
@@ -2951,7 +2953,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>canonicalize_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="comment">// Initialize storage with schema V3
 		</span><span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -2976,9 +2978,9 @@
 		<span class="comment">// Indexer backend
 		</span><span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -2990,7 +2992,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3027,7 +3029,7 @@
 		</span><span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>common_ancestor = parent_hash;
 		<span class="kw">let </span><span class="kw-2">mut </span>hashes_to_be_orphaned: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>block_number <span class="kw">in </span><span class="number">1</span>..<span class="number">11 </span>{
@@ -3040,7 +3042,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
@@ -3051,15 +3053,15 @@
 				hashes_to_be_orphaned.push(block_hash);
 			}
 			parent_hash = block_hash;
-			<span class="comment">// Let&#39;s not notify too quickly
+			<span class="comment">// Let's not notify too quickly
 			</span>futures_timer::Delay::new(std::time::Duration::from_millis(<span class="number">100</span>)).<span class="kw">await</span>;
 		}
 
 		<span class="comment">// Test all blocks are initially canon.
-		</span><span class="kw">let </span><span class="kw-2">mut </span>res = sqlx::query(<span class="string">&quot;SELECT is_canon FROM blocks&quot;</span>)
+		</span><span class="kw">let </span><span class="kw-2">mut </span>res = sqlx::query(<span class="string">"SELECT is_canon FROM blocks"</span>)
 			.fetch_all(<span class="kw-2">&amp;</span>pool)
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+			</span>.expect(<span class="string">"test query result"</span>)
 			.iter()
 			.map(|row| row.get::&lt;i32, <span class="kw">_</span>&gt;(<span class="number">0</span>))
 			.collect::&lt;Vec&lt;i32&gt;&gt;();
@@ -3080,20 +3082,20 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 			parent_hash = block_hash;
-			<span class="comment">// Let&#39;s not notify too quickly
+			<span class="comment">// Let's not notify too quickly
 			</span>futures_timer::Delay::new(std::time::Duration::from_millis(<span class="number">100</span>)).<span class="kw">await</span>;
 		}
 
 		<span class="comment">// Test the reorged chain is correctly indexed.
-		</span><span class="kw">let </span>res = sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+		</span><span class="kw">let </span>res = sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 			.fetch_all(<span class="kw-2">&amp;</span>pool)
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+			</span>.expect(<span class="string">"test query result"</span>)
 			.iter()
 			.map(|row| {
 				<span class="kw">let </span>substrate_block_hash = H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]);
@@ -3125,7 +3127,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>resuming_from_last_indexed_block_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="comment">// Initialize storage with schema V3
 		</span><span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -3150,9 +3152,9 @@
 		<span class="comment">// Indexer backend
 		</span><span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3164,7 +3166,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3173,7 +3175,7 @@
 		</span><span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">5 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3184,7 +3186,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
@@ -3194,18 +3196,18 @@
 
 		<span class="comment">// Mark the block as canon and indexed
 		</span><span class="kw">let </span>block_resume_at = best_block_hashes[<span class="number">0</span>];
-		sqlx::query(<span class="string">&quot;INSERT INTO blocks(substrate_block_hash, ethereum_block_hash, ethereum_storage_schema, block_number, is_canon) VALUES (?, ?, ?, 5, 1)&quot;</span>)
+		sqlx::query(<span class="string">"INSERT INTO blocks(substrate_block_hash, ethereum_block_hash, ethereum_storage_schema, block_number, is_canon) VALUES (?, ?, ?, 5, 1)"</span>)
 			.bind(block_resume_at.as_bytes())
 			.bind(H256::zero().as_bytes())
 			.bind(H256::zero().as_bytes())
 			.execute(<span class="kw-2">&amp;</span>pool)
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;sql query must succeed&quot;</span>);
-		sqlx::query(<span class="string">&quot;INSERT INTO sync_status(substrate_block_hash, status) VALUES (?, 1)&quot;</span>)
+			</span>.expect(<span class="string">"sql query must succeed"</span>);
+		sqlx::query(<span class="string">"INSERT INTO sync_status(substrate_block_hash, status) VALUES (?, 1)"</span>)
 			.bind(block_resume_at.as_bytes())
 			.execute(<span class="kw-2">&amp;</span>pool)
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;sql query must succeed&quot;</span>);
+			</span>.expect(<span class="string">"sql query must succeed"</span>);
 
 		<span class="comment">// Spawn indexer task
 		</span><span class="kw">let </span>test_sync_oracle = TestSyncOracleNotSyncing {};
@@ -3238,10 +3240,10 @@
 
 		<span class="comment">// Test the reorged chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();
@@ -3254,7 +3256,7 @@
 	}
 	<span class="kw">impl </span>sp_consensus::SyncOracle <span class="kw">for </span>TestSyncOracle {
 		<span class="kw">fn </span>is_major_syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
-			<span class="kw-2">*</span><span class="self">self</span>.sync_status.lock().expect(<span class="string">&quot;failed getting lock&quot;</span>)
+			<span class="kw-2">*</span><span class="self">self</span>.sync_status.lock().expect(<span class="string">"failed getting lock"</span>)
 		}
 		<span class="kw">fn </span>is_offline(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; bool {
 			<span class="bool-val">false
@@ -3276,13 +3278,13 @@
 			}
 		}
 		<span class="kw">fn </span>set_sync_status(<span class="kw-2">&amp;mut </span><span class="self">self</span>, value: bool) {
-			<span class="kw-2">*</span><span class="self">self</span>.sync_status.lock().expect(<span class="string">&quot;failed getting lock&quot;</span>) = value;
+			<span class="kw-2">*</span><span class="self">self</span>.sync_status.lock().expect(<span class="string">"failed getting lock"</span>) = value;
 		}
 	}
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sync_strategy_normal_indexes_best_blocks_if_not_major_sync() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -3302,9 +3304,9 @@
 		});
 		<span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3316,7 +3318,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3353,7 +3355,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">3 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3364,7 +3366,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 
@@ -3378,10 +3380,10 @@
 
 		<span class="comment">// Test the chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();
@@ -3391,7 +3393,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sync_strategy_normal_ignores_non_best_block_if_not_major_sync() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -3411,9 +3413,9 @@
 		});
 		<span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3425,7 +3427,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3462,7 +3464,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">3 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3473,7 +3475,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 
@@ -3491,7 +3493,7 @@
 			.unwrap();
 		builder
 			.push_deposit_log_digest_item(ethereum_digest())
-			.expect(<span class="string">&quot;deposit log&quot;</span>);
+			.expect(<span class="string">"deposit log"</span>);
 		<span class="kw">let </span>block = builder.build().unwrap().block;
 
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
@@ -3501,10 +3503,10 @@
 
 		<span class="comment">// Test the chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();
@@ -3514,7 +3516,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sync_strategy_parachain_indexes_best_blocks_if_not_major_sync() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -3534,9 +3536,9 @@
 		});
 		<span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3548,7 +3550,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3585,7 +3587,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">3 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3596,7 +3598,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 
@@ -3610,10 +3612,10 @@
 
 		<span class="comment">// Test the chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();
@@ -3623,7 +3625,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sync_strategy_parachain_ignores_non_best_blocks_if_not_major_sync() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -3643,9 +3645,9 @@
 		});
 		<span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3657,7 +3659,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3694,7 +3696,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">3 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3705,7 +3707,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 
@@ -3723,7 +3725,7 @@
 			.unwrap();
 		builder
 			.push_deposit_log_digest_item(ethereum_digest())
-			.expect(<span class="string">&quot;deposit log&quot;</span>);
+			.expect(<span class="string">"deposit log"</span>);
 		<span class="kw">let </span>block = builder.build().unwrap().block;
 
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
@@ -3733,10 +3735,10 @@
 
 		<span class="comment">// Test the chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();
@@ -3746,7 +3748,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sync_strategy_normal_ignores_best_blocks_if_major_sync() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -3766,9 +3768,9 @@
 		});
 		<span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3780,7 +3782,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3817,7 +3819,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">3 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3828,7 +3830,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 
@@ -3842,10 +3844,10 @@
 
 		<span class="comment">// Test the chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();
@@ -3855,7 +3857,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sync_strategy_parachain_ignores_best_blocks_if_major_sync() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -3875,9 +3877,9 @@
 		});
 		<span class="kw">let </span>indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3889,7 +3891,7 @@
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Pool
 		</span><span class="kw">let </span>pool = indexer_backend.pool().clone();
@@ -3926,7 +3928,7 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>parent_hash = client
 			.hash(sp_runtime::traits::Zero::zero())
 			.unwrap()
-			.expect(<span class="string">&quot;genesis hash&quot;</span>);
+			.expect(<span class="string">"genesis hash"</span>);
 		<span class="kw">let </span><span class="kw-2">mut </span>best_block_hashes: Vec&lt;H256&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">for </span>_block_number <span class="kw">in </span><span class="number">1</span>..=<span class="number">3 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -3937,7 +3939,7 @@
 				.unwrap();
 			builder
 				.push_deposit_log_digest_item(ethereum_digest())
-				.expect(<span class="string">&quot;deposit log&quot;</span>);
+				.expect(<span class="string">"deposit log"</span>);
 			<span class="kw">let </span>block = builder.build().unwrap().block;
 			<span class="kw">let </span>block_hash = block.header.hash();
 
@@ -3951,10 +3953,10 @@
 
 		<span class="comment">// Test the chain is correctly indexed.
 		</span><span class="kw">let </span>actual_imported_blocks =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon, block_number FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon, block_number FROM blocks"</span>)
 				.fetch_all(<span class="kw-2">&amp;</span>pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;test query result&quot;</span>)
+				</span>.expect(<span class="string">"test query result"</span>)
 				.iter()
 				.map(|row| H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]))
 				.collect::&lt;Vec&lt;H256&gt;&gt;();

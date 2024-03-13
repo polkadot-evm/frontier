@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/runner/stack.rs`."><title>stack.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pallet_evm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/runner/stack.rs`."><title>stack.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="pallet_evm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../pallet_evm/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1261,14 +1263,14 @@
 //
 // Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 // 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -1311,7 +1313,7 @@
 	OnCreate, Pallet, RunnerError,
 };
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"forbid-evm-reentrancy"</span>)]
 </span><span class="macro">environmental::thread_local_impl!</span>(<span class="kw">static </span>IN_EVM: environmental::RefCell&lt;bool&gt; = environmental::RefCell::new(<span class="bool-val">false</span>));
 
 <span class="attr">#[derive(Default)]
@@ -1325,14 +1327,14 @@
 {
 	<span class="attr">#[allow(clippy::let_and_return)]
 	</span><span class="doccomment">/// Execute an already validated EVM operation.
-	</span><span class="kw">fn </span>execute&lt;<span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, F, R&gt;(
+	</span><span class="kw">fn </span>execute&lt;<span class="lifetime">'config</span>, <span class="lifetime">'precompiles</span>, F, R&gt;(
 		source: H160,
 		value: U256,
 		gas_limit: u64,
 		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
-		config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config </span>evm::Config,
-		precompiles: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles </span>T::PrecompilesType,
+		config: <span class="kw-2">&amp;</span><span class="lifetime">'config </span>evm::Config,
+		precompiles: <span class="kw-2">&amp;</span><span class="lifetime">'precompiles </span>T::PrecompilesType,
 		is_transactional: bool,
 		weight_limit: <span class="prelude-ty">Option</span>&lt;Weight&gt;,
 		proof_size_base_cost: <span class="prelude-ty">Option</span>&lt;u64&gt;,
@@ -1341,9 +1343,9 @@
 	<span class="kw">where
 		</span>F: FnOnce(
 			<span class="kw-2">&amp;mut </span>StackExecutor&lt;
-				<span class="lifetime">&#39;config</span>,
-				<span class="lifetime">&#39;precompiles</span>,
-				SubstrateStackState&lt;<span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, T&gt;,
+				<span class="lifetime">'config</span>,
+				<span class="lifetime">'precompiles</span>,
+				SubstrateStackState&lt;<span class="lifetime">'_</span>, <span class="lifetime">'config</span>, T&gt;,
 				T::PrecompilesType,
 			&gt;,
 		) -&gt; (ExitReason, R),
@@ -1351,7 +1353,7 @@
 	{
 		<span class="kw">let </span>(base_fee, weight) = T::FeeCalculator::min_gas_price();
 
-		<span class="attr">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+		<span class="attr">#[cfg(feature = <span class="string">"forbid-evm-reentrancy"</span>)]
 		</span><span class="kw">if </span>IN_EVM.with(|in_evm| in_evm.replace(<span class="bool-val">true</span>)) {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(RunnerError {
 				error: Error::&lt;T&gt;::Reentrancy,
@@ -1377,21 +1379,21 @@
 
 		<span class="comment">// Set IN_EVM to false
 		// We should make sure that this line is executed whatever the execution path.
-		</span><span class="attr">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+		</span><span class="attr">#[cfg(feature = <span class="string">"forbid-evm-reentrancy"</span>)]
 		</span><span class="kw">let _ </span>= IN_EVM.with(|in_evm| in_evm.take());
 
 		res
 	}
 
 	<span class="comment">// Execute an already validated EVM operation.
-	</span><span class="kw">fn </span>execute_inner&lt;<span class="lifetime">&#39;config</span>, <span class="lifetime">&#39;precompiles</span>, F, R&gt;(
+	</span><span class="kw">fn </span>execute_inner&lt;<span class="lifetime">'config</span>, <span class="lifetime">'precompiles</span>, F, R&gt;(
 		source: H160,
 		value: U256,
 		<span class="kw-2">mut </span>gas_limit: u64,
 		max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 		max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
-		config: <span class="kw-2">&amp;</span><span class="lifetime">&#39;config </span>evm::Config,
-		precompiles: <span class="kw-2">&amp;</span><span class="lifetime">&#39;precompiles </span>T::PrecompilesType,
+		config: <span class="kw-2">&amp;</span><span class="lifetime">'config </span>evm::Config,
+		precompiles: <span class="kw-2">&amp;</span><span class="lifetime">'precompiles </span>T::PrecompilesType,
 		is_transactional: bool,
 		f: F,
 		base_fee: U256,
@@ -1402,9 +1404,9 @@
 	<span class="kw">where
 		</span>F: FnOnce(
 			<span class="kw-2">&amp;mut </span>StackExecutor&lt;
-				<span class="lifetime">&#39;config</span>,
-				<span class="lifetime">&#39;precompiles</span>,
-				SubstrateStackState&lt;<span class="lifetime">&#39;_</span>, <span class="lifetime">&#39;config</span>, T&gt;,
+				<span class="lifetime">'config</span>,
+				<span class="lifetime">'precompiles</span>,
+				SubstrateStackState&lt;<span class="lifetime">'_</span>, <span class="lifetime">'config</span>, T&gt;,
 				T::PrecompilesType,
 			&gt;,
 		) -&gt; (ExitReason, R),
@@ -1520,8 +1522,8 @@
 		<span class="kw">let </span>actual_base_fee = effective_gas.saturating_mul(base_fee);
 
 		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;evm&quot;</span>,
-			<span class="string">&quot;Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, used_gas: {}, effective_gas: {}, base_fee: {}, total_fee_per_gas: {}, is_transactional: {}]&quot;</span>,
+			target: <span class="string">"evm"</span>,
+			<span class="string">"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, used_gas: {}, effective_gas: {}, base_fee: {}, total_fee_per_gas: {}, is_transactional: {}]"</span>,
 			reason,
 			source,
 			value,
@@ -1569,8 +1571,8 @@
 
 		<span class="kw">for </span>address <span class="kw">in </span><span class="kw-2">&amp;</span>state.substate.deletes {
 			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;evm&quot;</span>,
-				<span class="string">&quot;Deleting account at {:?}&quot;</span>,
+				target: <span class="string">"evm"</span>,
+				<span class="string">"Deleting account at {:?}"</span>,
 				address
 			);
 			Pallet::&lt;T&gt;::remove_account(address)
@@ -1578,8 +1580,8 @@
 
 		<span class="kw">for </span>log <span class="kw">in </span><span class="kw-2">&amp;</span>state.substate.logs {
 			<span class="macro">log::trace!</span>(
-				target: <span class="string">&quot;evm&quot;</span>,
-				<span class="string">&quot;Inserting log for {:?}, topics ({}) {:?}, data ({}): {:?}]&quot;</span>,
+				target: <span class="string">"evm"</span>,
+				<span class="string">"Inserting log for {:?}, topics ({}) {:?}, data ({}): {:?}]"</span>,
 				log.address,
 				log.topics.len(),
 				log.topics,
@@ -1827,19 +1829,19 @@
 	}
 }
 
-<span class="kw">struct </span>SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt; {
-	metadata: StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt;,
+<span class="kw">struct </span>SubstrateStackSubstate&lt;<span class="lifetime">'config</span>&gt; {
+	metadata: StackSubstateMetadata&lt;<span class="lifetime">'config</span>&gt;,
 	deletes: BTreeSet&lt;H160&gt;,
 	logs: Vec&lt;Log&gt;,
-	parent: <span class="prelude-ty">Option</span>&lt;Box&lt;SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt;&gt;&gt;,
+	parent: <span class="prelude-ty">Option</span>&lt;Box&lt;SubstrateStackSubstate&lt;<span class="lifetime">'config</span>&gt;&gt;&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;config</span>&gt; SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt; {
-	<span class="kw">pub fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'config</span>&gt; SubstrateStackSubstate&lt;<span class="lifetime">'config</span>&gt; {
+	<span class="kw">pub fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StackSubstateMetadata&lt;<span class="lifetime">'config</span>&gt; {
 		<span class="kw-2">&amp;</span><span class="self">self</span>.metadata
 	}
 
-	<span class="kw">pub fn </span>metadata_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+	<span class="kw">pub fn </span>metadata_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>StackSubstateMetadata&lt;<span class="lifetime">'config</span>&gt; {
 		<span class="kw-2">&amp;mut </span><span class="self">self</span>.metadata
 	}
 
@@ -1858,7 +1860,7 @@
 	}
 
 	<span class="kw">pub fn </span>exit_commit(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">&quot;Cannot commit on root substate&quot;</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">"Cannot commit on root substate"</span>);
 		mem::swap(<span class="kw-2">&amp;mut </span>exited, <span class="self">self</span>);
 
 		<span class="self">self</span>.metadata.swallow_commit(exited.metadata)<span class="question-mark">?</span>;
@@ -1870,7 +1872,7 @@
 	}
 
 	<span class="kw">pub fn </span>exit_revert(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">"Cannot discard on root substate"</span>);
 		mem::swap(<span class="kw-2">&amp;mut </span>exited, <span class="self">self</span>);
 		<span class="self">self</span>.metadata.swallow_revert(exited.metadata)<span class="question-mark">?</span>;
 
@@ -1879,7 +1881,7 @@
 	}
 
 	<span class="kw">pub fn </span>exit_discard(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;(), ExitError&gt; {
-		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">&quot;Cannot discard on root substate&quot;</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>exited = <span class="kw-2">*</span><span class="self">self</span>.parent.take().expect(<span class="string">"Cannot discard on root substate"</span>);
 		mem::swap(<span class="kw-2">&amp;mut </span>exited, <span class="self">self</span>);
 		<span class="self">self</span>.metadata.swallow_discard(exited.metadata)<span class="question-mark">?</span>;
 
@@ -1931,20 +1933,20 @@
 }
 
 <span class="doccomment">/// Substrate backend for EVM.
-</span><span class="kw">pub struct </span>SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt; {
-	vicinity: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity </span>Vicinity,
-	substate: SubstrateStackSubstate&lt;<span class="lifetime">&#39;config</span>&gt;,
+</span><span class="kw">pub struct </span>SubstrateStackState&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T&gt; {
+	vicinity: <span class="kw-2">&amp;</span><span class="lifetime">'vicinity </span>Vicinity,
+	substate: SubstrateStackSubstate&lt;<span class="lifetime">'config</span>&gt;,
 	original_storage: BTreeMap&lt;(H160, H256), H256&gt;,
 	recorded: Recorded,
 	weight_info: <span class="prelude-ty">Option</span>&lt;WeightInfo&gt;,
 	_marker: PhantomData&lt;T&gt;,
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T: Config&gt; SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt; {
+<span class="kw">impl</span>&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T: Config&gt; SubstrateStackState&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T&gt; {
 	<span class="doccomment">/// Create a new backend with given vicinity.
 	</span><span class="kw">pub fn </span>new(
-		vicinity: <span class="kw-2">&amp;</span><span class="lifetime">&#39;vicinity </span>Vicinity,
-		metadata: StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt;,
+		vicinity: <span class="kw-2">&amp;</span><span class="lifetime">'vicinity </span>Vicinity,
+		metadata: StackSubstateMetadata&lt;<span class="lifetime">'config</span>&gt;,
 		weight_info: <span class="prelude-ty">Option</span>&lt;WeightInfo&gt;,
 	) -&gt; <span class="self">Self </span>{
 		<span class="self">Self </span>{
@@ -1975,7 +1977,7 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T: Config&gt; BackendT <span class="kw">for </span>SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T: Config&gt; BackendT <span class="kw">for </span>SubstrateStackState&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T&gt;
 <span class="kw">where
 	</span>BalanceOf&lt;T&gt;: TryFrom&lt;U256&gt; + Into&lt;U256&gt;,
 {
@@ -2060,16 +2062,16 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T: Config&gt; StackStateT&lt;<span class="lifetime">&#39;config</span>&gt;
-	<span class="kw">for </span>SubstrateStackState&lt;<span class="lifetime">&#39;vicinity</span>, <span class="lifetime">&#39;config</span>, T&gt;
+<span class="kw">impl</span>&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T: Config&gt; StackStateT&lt;<span class="lifetime">'config</span>&gt;
+	<span class="kw">for </span>SubstrateStackState&lt;<span class="lifetime">'vicinity</span>, <span class="lifetime">'config</span>, T&gt;
 <span class="kw">where
 	</span>BalanceOf&lt;T&gt;: TryFrom&lt;U256&gt; + Into&lt;U256&gt;,
 {
-	<span class="kw">fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+	<span class="kw">fn </span>metadata(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;</span>StackSubstateMetadata&lt;<span class="lifetime">'config</span>&gt; {
 		<span class="self">self</span>.substate.metadata()
 	}
 
-	<span class="kw">fn </span>metadata_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>StackSubstateMetadata&lt;<span class="lifetime">&#39;config</span>&gt; {
+	<span class="kw">fn </span>metadata_mut(<span class="kw-2">&amp;mut </span><span class="self">self</span>) -&gt; <span class="kw-2">&amp;mut </span>StackSubstateMetadata&lt;<span class="lifetime">'config</span>&gt; {
 		<span class="self">self</span>.substate.metadata_mut()
 	}
 
@@ -2118,16 +2120,16 @@
 		<span class="comment">// Then we insert or remove the entry based on the value.
 		</span><span class="kw">if </span>value == H256::default() {
 			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;evm&quot;</span>,
-				<span class="string">&quot;Removing storage for {:?} [index: {:?}]&quot;</span>,
+				target: <span class="string">"evm"</span>,
+				<span class="string">"Removing storage for {:?} [index: {:?}]"</span>,
 				address,
 				index,
 			);
 			&lt;AccountStorages&lt;T&gt;&gt;::remove(address, index);
 		} <span class="kw">else </span>{
 			<span class="macro">log::debug!</span>(
-				target: <span class="string">&quot;evm&quot;</span>,
-				<span class="string">&quot;Updating storage for {:?} [index: {:?}, value: {:?}]&quot;</span>,
+				target: <span class="string">"evm"</span>,
+				<span class="string">"Updating storage for {:?} [index: {:?}, value: {:?}]"</span>,
 				address,
 				index,
 				value,
@@ -2151,8 +2153,8 @@
 
 	<span class="kw">fn </span>set_code(<span class="kw-2">&amp;mut </span><span class="self">self</span>, address: H160, code: Vec&lt;u8&gt;) {
 		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;evm&quot;</span>,
-			<span class="string">&quot;Inserting code ({} bytes) at {:?}&quot;</span>,
+			target: <span class="string">"evm"</span>,
+			<span class="string">"Inserting code ({} bytes) at {:?}"</span>,
 			code.len(),
 			address
 		);
@@ -2378,7 +2380,7 @@
 					weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)<span class="question-mark">?</span>;
 				}
 				<span class="comment">// When calling SUICIDE a target account will receive the self destructing
-				// address&#39;s balance. We need to account for both:
+				// address's balance. We need to account for both:
 				//	- Target basic account read
 				//	- 5 bytes of `decode_len`
 				</span>Opcode::SUICIDE =&gt; {
@@ -2425,7 +2427,7 @@
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;forbid-evm-reentrancy&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"forbid-evm-reentrancy"</span>)]
 #[cfg(test)]
 </span><span class="kw">mod </span>tests {
 	<span class="kw">use super</span>::<span class="kw-2">*</span>;
@@ -2436,14 +2438,14 @@
 		( <span class="macro-nonterminal">$left</span>:expr, $(|)<span class="question-mark">? </span>$( <span class="macro-nonterminal">$pattern</span>:pat_param )|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard</span>: expr )<span class="question-mark">? </span>$(,)<span class="question-mark">? </span>) =&gt; {
 			<span class="kw">match </span><span class="macro-nonterminal">$left </span>{
 				$( <span class="macro-nonterminal">$pattern </span>)|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard </span>)<span class="question-mark">? </span>=&gt; {}
-				<span class="kw-2">ref </span>left_val =&gt; <span class="macro">panic!</span>(<span class="string">&quot;assertion failed: `{:?}` does not match `{}`&quot;</span>,
+				<span class="kw-2">ref </span>left_val =&gt; <span class="macro">panic!</span>(<span class="string">"assertion failed: `{:?}` does not match `{}`"</span>,
 					left_val, <span class="macro">stringify!</span>($(<span class="macro-nonterminal">$pattern</span>)|+ $(<span class="kw">if </span><span class="macro-nonterminal">$guard</span>)<span class="question-mark">?</span>))
 			}
 		};
 		( <span class="macro-nonterminal">$left</span>:expr, $(|)<span class="question-mark">? </span>$( <span class="macro-nonterminal">$pattern</span>:pat_param )|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard</span>: expr )<span class="question-mark">?</span>, $(<span class="macro-nonterminal">$arg</span>:tt)+ ) =&gt; {
 			<span class="kw">match </span><span class="macro-nonterminal">$left </span>{
 				$( <span class="macro-nonterminal">$pattern </span>)|+ $( <span class="kw">if </span><span class="macro-nonterminal">$guard </span>)<span class="question-mark">? </span>=&gt; {}
-				<span class="kw-2">ref </span>left_val =&gt; <span class="macro">panic!</span>(<span class="string">&quot;assertion failed: `{:?}` does not match `{}`&quot;</span>,
+				<span class="kw-2">ref </span>left_val =&gt; <span class="macro">panic!</span>(<span class="string">"assertion failed: `{:?}` does not match `{}`"</span>,
 					left_val, <span class="macro">stringify!</span>($(<span class="macro-nonterminal">$pattern</span>)|+ $(<span class="kw">if </span><span class="macro-nonterminal">$guard</span>)<span class="question-mark">?</span>))
 			}
 		};

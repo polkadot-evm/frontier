@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/service.rs`."><title>service.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../frontier_template_node/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -798,9 +800,9 @@
 &gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi: Send + Sync + <span class="lifetime">'static</span>,
 	RuntimeApi::RuntimeApi: BaseRuntimeApiCollection + EthCompatRuntimeApiCollection,
-	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	Executor: NativeExecutionDispatch + <span class="lifetime">'static</span>,
 	BIQ: FnOnce(
 		Arc&lt;FullClient&lt;RuntimeApi, Executor&gt;&gt;,
 		<span class="kw-2">&amp;</span>Configuration,
@@ -834,7 +836,7 @@
 	<span class="kw">let </span>telemetry = telemetry.map(|(worker, telemetry)| {
 		task_manager
 			.spawn_handle()
-			.spawn(<span class="string">&quot;telemetry&quot;</span>, <span class="prelude-val">None</span>, worker.run());
+			.spawn(<span class="string">"telemetry"</span>, <span class="prelude-val">None</span>, worker.run());
 		telemetry
 	});
 
@@ -855,13 +857,13 @@
 			<span class="kw-2">&amp;</span>db_config_dir(config),
 		)<span class="question-mark">?</span>),
 		BackendType::Sql =&gt; {
-			<span class="kw">let </span>db_path = db_config_dir(config).join(<span class="string">&quot;sql&quot;</span>);
-			std::fs::create_dir_all(<span class="kw-2">&amp;</span>db_path).expect(<span class="string">&quot;failed creating sql db directory&quot;</span>);
+			<span class="kw">let </span>db_path = db_config_dir(config).join(<span class="string">"sql"</span>);
+			std::fs::create_dir_all(<span class="kw-2">&amp;</span>db_path).expect(<span class="string">"failed creating sql db directory"</span>);
 			<span class="kw">let </span>backend = futures::executor::block_on(fc_db::sql::Backend::new(
 				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
-					path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+					path: Path::new(<span class="string">"sqlite:///"</span>)
 						.join(db_path)
-						.join(<span class="string">&quot;frontier.db3&quot;</span>)
+						.join(<span class="string">"frontier.db3"</span>)
 						.to_str()
 						.unwrap(),
 					create_if_missing: <span class="bool-val">true</span>,
@@ -872,7 +874,7 @@
 				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
 				overrides.clone(),
 			))
-			.unwrap_or_else(|err| <span class="macro">panic!</span>(<span class="string">&quot;failed creating sql backend: {:?}&quot;</span>, err));
+			.unwrap_or_else(|err| <span class="macro">panic!</span>(<span class="string">"failed creating sql backend: {:?}"</span>, err));
 			FrontierBackend::Sql(backend)
 		}
 	};
@@ -923,9 +925,9 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(BasicImportQueue, BoxBlockImport), ServiceError&gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi: Send + Sync + <span class="lifetime">'static</span>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection,
-	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	Executor: NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
 	<span class="kw">let </span>frontier_block_import =
 		FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
@@ -972,9 +974,9 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(BasicImportQueue, BoxBlockImport), ServiceError&gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi: Send + Sync + <span class="lifetime">'static</span>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection,
-	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	Executor: NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
 	<span class="kw">let </span>frontier_block_import = FrontierBlockImport::new(client.clone(), client);
 	<span class="prelude-val">Ok</span>((
@@ -995,9 +997,9 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;TaskManager, ServiceError&gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi: Send + Sync + <span class="lifetime">'static</span>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection,
-	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	Executor: NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
 	<span class="kw">let </span>build_import_queue = <span class="kw">if </span>sealing.is_some() {
 		build_manual_seal_import_queue::&lt;RuntimeApi, Executor&gt;
@@ -1024,7 +1026,7 @@
 
 	<span class="kw">let </span><span class="kw-2">mut </span>net_config = sc_network::config::FullNetworkConfiguration::new(<span class="kw-2">&amp;</span>config.network);
 	<span class="kw">let </span>grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
-		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>)<span class="question-mark">?</span>.expect(<span class="string">&quot;Genesis block exists; qed&quot;</span>),
+		<span class="kw-2">&amp;</span>client.block_hash(<span class="number">0</span>)<span class="question-mark">?</span>.expect(<span class="string">"Genesis block exists; qed"</span>),
 		<span class="kw-2">&amp;</span>config.chain_spec,
 	);
 	<span class="kw">let </span>(grandpa_protocol_config, grandpa_notification_service) =
@@ -1058,8 +1060,8 @@
 
 	<span class="kw">if </span>config.offchain_worker.enabled {
 		task_manager.spawn_handle().spawn(
-			<span class="string">&quot;offchain-workers-runner&quot;</span>,
-			<span class="string">&quot;offchain-worker&quot;</span>,
+			<span class="string">"offchain-workers-runner"</span>,
+			<span class="string">"offchain-worker"</span>,
 			sc_offchain::OffchainWorkers::new(sc_offchain::OffchainWorkerOptions {
 				runtime_api_provider: client.clone(),
 				is_validator: config.role.is_authority(),
@@ -1225,7 +1227,7 @@
 			)<span class="question-mark">?</span>;
 
 			network_starter.start_network();
-			<span class="macro">log::info!</span>(<span class="string">&quot;Manual Seal Ready&quot;</span>);
+			<span class="macro">log::info!</span>(<span class="string">"Manual Seal Ready"</span>);
 			<span class="kw">return </span><span class="prelude-val">Ok</span>(task_manager);
 		}
 
@@ -1272,11 +1274,11 @@
 		// fails we take down the service with it.
 		</span>task_manager
 			.spawn_essential_handle()
-			.spawn_blocking(<span class="string">&quot;aura&quot;</span>, <span class="prelude-val">Some</span>(<span class="string">&quot;block-authoring&quot;</span>), aura);
+			.spawn_blocking(<span class="string">"aura"</span>, <span class="prelude-val">Some</span>(<span class="string">"block-authoring"</span>), aura);
 	}
 
 	<span class="kw">if </span>enable_grandpa {
-		<span class="comment">// if the node isn&#39;t actively participating in consensus then it doesn&#39;t
+		<span class="comment">// if the node isn't actively participating in consensus then it doesn't
 		// need a keystore, regardless of which protocol we use below.
 		</span><span class="kw">let </span>keystore = <span class="kw">if </span>role.is_authority() {
 			<span class="prelude-val">Some</span>(keystore_container.keystore())
@@ -1320,7 +1322,7 @@
 		// if it fails we take down the service with it.
 		</span>task_manager
 			.spawn_essential_handle()
-			.spawn_blocking(<span class="string">&quot;grandpa-voter&quot;</span>, <span class="prelude-val">None</span>, grandpa_voter);
+			.spawn_blocking(<span class="string">"grandpa-voter"</span>, <span class="prelude-val">None</span>, grandpa_voter);
 	}
 
 	network_starter.start_network();
@@ -1341,9 +1343,9 @@
 ) -&gt; <span class="prelude-ty">Result</span>&lt;(), ServiceError&gt;
 <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi: Send + Sync + <span class="lifetime">'static</span>,
 	RuntimeApi::RuntimeApi: RuntimeApiCollection,
-	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	Executor: NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
 	<span class="kw">let </span>proposer_factory = sc_basic_authorship::ProposerFactory::new(
 		task_manager.spawn_handle(),
@@ -1353,7 +1355,7 @@
 		telemetry.as_ref().map(|x| x.handle()),
 	);
 
-	<span class="macro">thread_local!</span>(<span class="kw">static </span>TIMESTAMP: RefCell&lt;u64&gt; = RefCell::new(<span class="number">0</span>));
+	<span class="macro">thread_local!</span>(<span class="kw">static </span>TIMESTAMP: RefCell&lt;u64&gt; = <span class="kw">const </span>{ RefCell::new(<span class="number">0</span>) });
 
 	<span class="doccomment">/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
 	/// Each call will increment timestamp by slot_duration making Aura think time has passed.
@@ -1417,7 +1419,7 @@
 	<span class="comment">// we spawn the future on a background thread managed by service.
 	</span>task_manager
 		.spawn_essential_handle()
-		.spawn_blocking(<span class="string">&quot;manual-seal&quot;</span>, <span class="prelude-val">None</span>, manual_seal);
+		.spawn_blocking(<span class="string">"manual-seal"</span>, <span class="prelude-val">None</span>, manual_seal);
 	<span class="prelude-val">Ok</span>(())
 }
 

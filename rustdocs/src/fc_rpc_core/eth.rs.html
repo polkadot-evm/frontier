@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/eth.rs`."><title>eth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/eth.rs`."><title>eth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../fc_rpc_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -328,29 +330,29 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Returns protocol version encoded as a string (quotes are necessary).
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_protocolVersion&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_protocolVersion"</span>)]
 	</span><span class="kw">fn </span>protocol_version(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;u64&gt;;
 
 	<span class="doccomment">/// Returns an object with data about the sync status or false. (wtf?)
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_syncing&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_syncing"</span>)]
 	</span><span class="kw">async fn </span>syncing(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;SyncStatus&gt;;
 
 	<span class="doccomment">/// Returns block author.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_coinbase&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_coinbase"</span>)]
 	</span><span class="kw">fn </span>author(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;H160&gt;;
 
 	<span class="doccomment">/// Returns accounts list.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_accounts&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_accounts"</span>)]
 	</span><span class="kw">fn </span>accounts(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Vec&lt;H160&gt;&gt;;
 
 	<span class="doccomment">/// Returns highest block number.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_blockNumber&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_blockNumber"</span>)]
 	</span><span class="kw">fn </span>block_number(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the chain ID used for transaction signing at the
 	/// current best block. None is returned if not
 	/// available.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_chainId&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_chainId"</span>)]
 	</span><span class="kw">fn </span>chain_id(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U64&gt;&gt;;
 
 	<span class="comment">// ########################################################################
@@ -358,11 +360,11 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Returns block with given hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockByHash&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getBlockByHash"</span>)]
 	</span><span class="kw">async fn </span>block_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256, full: bool) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="doccomment">/// Returns block with given number.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockByNumber&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getBlockByNumber"</span>)]
 	</span><span class="kw">async fn </span>block_by_number(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number_or_hash: BlockNumberOrHash,
@@ -370,33 +372,33 @@
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions in a block with given hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockTransactionCountByHash&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getBlockTransactionCountByHash"</span>)]
 	</span><span class="kw">async fn </span>block_transaction_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions in a block with given block number.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockTransactionCountByNumber&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getBlockTransactionCountByNumber"</span>)]
 	</span><span class="kw">async fn </span>block_transaction_count_by_number(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number_or_hash: BlockNumberOrHash,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;U256&gt;&gt;;
 
 	<span class="doccomment">/// Returns the receipts of a block by number or hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBlockReceipts&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getBlockReceipts"</span>)]
 	</span><span class="kw">async fn </span>block_transaction_receipts(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number_or_hash: BlockNumberOrHash,
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Receipt&gt;&gt;&gt;;
 
 	<span class="doccomment">/// Returns the number of uncles in a block with given hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleCountByBlockHash&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getUncleCountByBlockHash"</span>)]
 	</span><span class="kw">fn </span>block_uncles_count_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the number of uncles in a block with given block number.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleCountByBlockNumber&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getUncleCountByBlockNumber"</span>)]
 	</span><span class="kw">fn </span>block_uncles_count_by_number(<span class="kw-2">&amp;</span><span class="self">self</span>, number_or_hash: BlockNumberOrHash) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns an uncles at given block and index.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleByBlockHashAndIndex&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getUncleByBlockHashAndIndex"</span>)]
 	</span><span class="kw">fn </span>uncle_by_block_hash_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: H256,
@@ -404,7 +406,7 @@
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;RichBlock&gt;&gt;;
 
 	<span class="doccomment">/// Returns an uncles at given block and index.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getUncleByBlockNumberAndIndex&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getUncleByBlockNumberAndIndex"</span>)]
 	</span><span class="kw">fn </span>uncle_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number_or_hash: BlockNumberOrHash,
@@ -416,11 +418,11 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Get transaction by its hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByHash&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getTransactionByHash"</span>)]
 	</span><span class="kw">async fn </span>transaction_by_hash(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
 	<span class="doccomment">/// Returns transaction at given block hash and index.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByBlockHashAndIndex&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getTransactionByBlockHashAndIndex"</span>)]
 	</span><span class="kw">async fn </span>transaction_by_block_hash_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		hash: H256,
@@ -428,7 +430,7 @@
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
 	<span class="doccomment">/// Returns transaction by given block number and index.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionByBlockNumberAndIndex&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getTransactionByBlockNumberAndIndex"</span>)]
 	</span><span class="kw">async fn </span>transaction_by_block_number_and_index(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		number_or_hash: BlockNumberOrHash,
@@ -436,7 +438,7 @@
 	) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Transaction&gt;&gt;;
 
 	<span class="doccomment">/// Returns transaction receipt by transaction hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionReceipt&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getTransactionReceipt"</span>)]
 	</span><span class="kw">async fn </span>transaction_receipt(<span class="kw-2">&amp;</span><span class="self">self</span>, hash: H256) -&gt; RpcResult&lt;<span class="prelude-ty">Option</span>&lt;Receipt&gt;&gt;;
 
 	<span class="comment">// ########################################################################
@@ -444,7 +446,7 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Returns balance of the given account.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getBalance&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getBalance"</span>)]
 	</span><span class="kw">async fn </span>balance(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
@@ -452,7 +454,7 @@
 	) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns content of the storage at given address.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getStorageAt&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getStorageAt"</span>)]
 	</span><span class="kw">async fn </span>storage_at(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
@@ -461,7 +463,7 @@
 	) -&gt; RpcResult&lt;H256&gt;;
 
 	<span class="doccomment">/// Returns the number of transactions sent from given address at given time (block number).
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getTransactionCount&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getTransactionCount"</span>)]
 	</span><span class="kw">async fn </span>transaction_count(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
@@ -469,7 +471,7 @@
 	) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the code at given address at given time (block number).
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getCode&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getCode"</span>)]
 	</span><span class="kw">async fn </span>code_at(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		address: H160,
@@ -481,7 +483,7 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Call contract, returning the output data.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_call&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_call"</span>)]
 	</span><span class="kw">async fn </span>call(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: TransactionRequest,
@@ -490,7 +492,7 @@
 	) -&gt; RpcResult&lt;Bytes&gt;;
 
 	<span class="doccomment">/// Estimate gas needed for execution of given contract.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_estimateGas&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_estimateGas"</span>)]
 	</span><span class="kw">async fn </span>estimate_gas(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		request: TransactionRequest,
@@ -502,11 +504,11 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Returns current gas_price.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_gasPrice&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_gasPrice"</span>)]
 	</span><span class="kw">fn </span>gas_price(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Introduced in EIP-1159 for getting information on the appropriate priority fee to use.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_feeHistory&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_feeHistory"</span>)]
 	</span><span class="kw">async fn </span>fee_history(
 		<span class="kw-2">&amp;</span><span class="self">self</span>,
 		block_count: U256,
@@ -516,7 +518,7 @@
 
 	<span class="doccomment">/// Introduced in EIP-1159, a Geth-specific and simplified priority fee oracle.
 	/// Leverages the already existing fee history cache.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_maxPriorityFeePerGas&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_maxPriorityFeePerGas"</span>)]
 	</span><span class="kw">fn </span>max_priority_fee_per_gas(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="comment">// ########################################################################
@@ -524,23 +526,23 @@
 	// ########################################################################
 
 	</span><span class="doccomment">/// Returns true if client is actively mining new blocks.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_mining&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_mining"</span>)]
 	</span><span class="kw">fn </span>is_mining(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="doccomment">/// Returns the number of hashes per second that the node is mining with.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_hashrate&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_hashrate"</span>)]
 	</span><span class="kw">fn </span>hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns the hash of the current block, the seedHash, and the boundary condition to be met.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getWork&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getWork"</span>)]
 	</span><span class="kw">fn </span>work(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;Work&gt;;
 
 	<span class="doccomment">/// Used for submitting mining hashrate.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_submitHashrate&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_submitHashrate"</span>)]
 	</span><span class="kw">fn </span>submit_hashrate(<span class="kw-2">&amp;</span><span class="self">self</span>, hashrate: U256, id: H256) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="doccomment">/// Used for submitting a proof-of-work solution.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_submitWork&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_submitWork"</span>)]
 	</span><span class="kw">fn </span>submit_work(<span class="kw-2">&amp;</span><span class="self">self</span>, nonce: H64, pow_hash: H256, mix_digest: H256) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="comment">// ########################################################################
@@ -549,11 +551,11 @@
 
 	</span><span class="doccomment">/// Sends transaction; will block waiting for signer to return the
 	/// transaction hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_sendTransaction&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_sendTransaction"</span>)]
 	</span><span class="kw">async fn </span>send_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, request: TransactionRequest) -&gt; RpcResult&lt;H256&gt;;
 
 	<span class="doccomment">/// Sends signed transaction, returning its hash.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_sendRawTransaction&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_sendRawTransaction"</span>)]
 	</span><span class="kw">async fn </span>send_raw_transaction(<span class="kw-2">&amp;</span><span class="self">self</span>, bytes: Bytes) -&gt; RpcResult&lt;H256&gt;;
 }
 
@@ -561,31 +563,31 @@
 </span><span class="attr">#[rpc(server)]
 </span><span class="kw">pub trait </span>EthFilterApi {
 	<span class="doccomment">/// Returns id of new filter.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_newFilter&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_newFilter"</span>)]
 	</span><span class="kw">fn </span>new_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns id of new block filter.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_newBlockFilter&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_newBlockFilter"</span>)]
 	</span><span class="kw">fn </span>new_block_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns id of new block filter.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_newPendingTransactionFilter&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_newPendingTransactionFilter"</span>)]
 	</span><span class="kw">fn </span>new_pending_transaction_filter(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; RpcResult&lt;U256&gt;;
 
 	<span class="doccomment">/// Returns filter changes since last poll.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getFilterChanges&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getFilterChanges"</span>)]
 	</span><span class="kw">async fn </span>filter_changes(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;FilterChanges&gt;;
 
-	<span class="doccomment">/// Returns all logs matching given filter (in a range &#39;from&#39; - &#39;to&#39;).
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getFilterLogs&quot;</span>)]
+	<span class="doccomment">/// Returns all logs matching given filter (in a range 'from' - 'to').
+	</span><span class="attr">#[method(name = <span class="string">"eth_getFilterLogs"</span>)]
 	</span><span class="kw">async fn </span>filter_logs(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;Vec&lt;Log&gt;&gt;;
 
 	<span class="doccomment">/// Uninstalls filter.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_uninstallFilter&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_uninstallFilter"</span>)]
 	</span><span class="kw">fn </span>uninstall_filter(<span class="kw-2">&amp;</span><span class="self">self</span>, index: Index) -&gt; RpcResult&lt;bool&gt;;
 
 	<span class="doccomment">/// Returns logs matching given filter object.
-	</span><span class="attr">#[method(name = <span class="string">&quot;eth_getLogs&quot;</span>)]
+	</span><span class="attr">#[method(name = <span class="string">"eth_getLogs"</span>)]
 	</span><span class="kw">async fn </span>logs(<span class="kw-2">&amp;</span><span class="self">self</span>, filter: Filter) -&gt; RpcResult&lt;Vec&lt;Log&gt;&gt;;
 }
 </code></pre></div></section></main></body></html>

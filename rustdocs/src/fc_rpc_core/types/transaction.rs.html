@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/transaction.rs`."><title>transaction.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/rpc-core/src/types/transaction.rs`."><title>transaction.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_rpc_core" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../fc_rpc_core/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -284,10 +286,10 @@
 
 <span class="doccomment">/// Transaction
 </span><span class="attr">#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize)]
-#[serde(rename_all = <span class="string">&quot;camelCase&quot;</span>)]
+#[serde(rename_all = <span class="string">"camelCase"</span>)]
 </span><span class="kw">pub struct </span>Transaction {
 	<span class="doccomment">/// EIP-2718 transaction type
-	</span><span class="attr">#[serde(rename = <span class="string">&quot;type&quot;</span>)]
+	</span><span class="attr">#[serde(rename = <span class="string">"type"</span>)]
 	</span><span class="kw">pub </span>transaction_type: U256,
 	<span class="doccomment">/// Hash
 	</span><span class="kw">pub </span>hash: H256,
@@ -308,32 +310,32 @@
 	<span class="doccomment">/// Gas
 	</span><span class="kw">pub </span>gas: U256,
 	<span class="doccomment">/// Gas Price
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>gas_price: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	<span class="doccomment">/// Max BaseFeePerGas the user is willing to pay.
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>max_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
-	<span class="doccomment">/// The miner&#39;s tip.
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	<span class="doccomment">/// The miner's tip.
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>max_priority_fee_per_gas: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	<span class="doccomment">/// Data
 	</span><span class="kw">pub </span>input: Bytes,
 	<span class="doccomment">/// Creates contract
 	</span><span class="kw">pub </span>creates: <span class="prelude-ty">Option</span>&lt;H160&gt;,
 	<span class="doccomment">/// The network id of the transaction, if any.
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>chain_id: <span class="prelude-ty">Option</span>&lt;U64&gt;,
 	<span class="doccomment">/// Pre-pay to warm storage access.
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>access_list: <span class="prelude-ty">Option</span>&lt;Vec&lt;AccessListItem&gt;&gt;,
 	<span class="doccomment">/// The parity (0 for even, 1 for odd) of the y-value of the secp256k1 signature.
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>y_parity: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	<span class="doccomment">/// The standardised V field of the signature.
 	///
 	/// For backwards compatibility, `v` is optionally provided as an alternative to `yParity`.
 	/// This field is DEPRECATED and all use of it should migrate to `yParity`.
-	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">&quot;Option::is_none&quot;</span>)]
+	</span><span class="attr">#[serde(skip_serializing_if = <span class="string">"Option::is_none"</span>)]
 	</span><span class="kw">pub </span>v: <span class="prelude-ty">Option</span>&lt;U256&gt;,
 	<span class="doccomment">/// The R field of the signature.
 	</span><span class="kw">pub </span>r: U256,
@@ -465,43 +467,43 @@
 			Replaced(..) =&gt; <span class="number">4</span>,
 		};
 
-		<span class="kw">let </span>status = <span class="string">&quot;status&quot;</span>;
-		<span class="kw">let </span>transaction = <span class="string">&quot;transaction&quot;</span>;
+		<span class="kw">let </span>status = <span class="string">"status"</span>;
+		<span class="kw">let </span>transaction = <span class="string">"transaction"</span>;
 
-		<span class="kw">let </span><span class="kw-2">mut </span>struc = serializer.serialize_struct(<span class="string">&quot;LocalTransactionStatus&quot;</span>, elems)<span class="question-mark">?</span>;
+		<span class="kw">let </span><span class="kw-2">mut </span>struc = serializer.serialize_struct(<span class="string">"LocalTransactionStatus"</span>, elems)<span class="question-mark">?</span>;
 		<span class="kw">match </span><span class="kw-2">*</span><span class="self">self </span>{
-			Pending =&gt; struc.serialize_field(status, <span class="string">&quot;pending&quot;</span>)<span class="question-mark">?</span>,
-			Future =&gt; struc.serialize_field(status, <span class="string">&quot;future&quot;</span>)<span class="question-mark">?</span>,
+			Pending =&gt; struc.serialize_field(status, <span class="string">"pending"</span>)<span class="question-mark">?</span>,
+			Future =&gt; struc.serialize_field(status, <span class="string">"future"</span>)<span class="question-mark">?</span>,
 			Mined(<span class="kw-2">ref </span>tx) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;mined&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"mined"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
 			}
 			Culled(<span class="kw-2">ref </span>tx) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;culled&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"culled"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
 			}
 			Dropped(<span class="kw-2">ref </span>tx) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;dropped&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"dropped"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
 			}
 			Canceled(<span class="kw-2">ref </span>tx) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;canceled&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"canceled"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
 			}
 			Invalid(<span class="kw-2">ref </span>tx) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;invalid&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"invalid"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
 			}
 			Rejected(<span class="kw-2">ref </span>tx, <span class="kw-2">ref </span>reason) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;rejected&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"rejected"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
-				struc.serialize_field(<span class="string">&quot;error&quot;</span>, reason)<span class="question-mark">?</span>;
+				struc.serialize_field(<span class="string">"error"</span>, reason)<span class="question-mark">?</span>;
 			}
 			Replaced(<span class="kw-2">ref </span>tx, <span class="kw-2">ref </span>gas_price, <span class="kw-2">ref </span>hash) =&gt; {
-				struc.serialize_field(status, <span class="string">&quot;replaced&quot;</span>)<span class="question-mark">?</span>;
+				struc.serialize_field(status, <span class="string">"replaced"</span>)<span class="question-mark">?</span>;
 				struc.serialize_field(transaction, tx)<span class="question-mark">?</span>;
-				struc.serialize_field(<span class="string">&quot;hash&quot;</span>, hash)<span class="question-mark">?</span>;
-				struc.serialize_field(<span class="string">&quot;gasPrice&quot;</span>, gas_price)<span class="question-mark">?</span>;
+				struc.serialize_field(<span class="string">"hash"</span>, hash)<span class="question-mark">?</span>;
+				struc.serialize_field(<span class="string">"gasPrice"</span>, gas_price)<span class="question-mark">?</span>;
 			}
 		}
 
@@ -515,7 +517,7 @@
 	<span class="doccomment">/// Raw transaction RLP
 	</span><span class="kw">pub </span>raw: Bytes,
 	<span class="doccomment">/// Transaction details
-	</span><span class="attr">#[serde(rename = <span class="string">&quot;tx&quot;</span>)]
+	</span><span class="attr">#[serde(rename = <span class="string">"tx"</span>)]
 	</span><span class="kw">pub </span>transaction: Transaction,
 }
 </code></pre></div></section></main></body></html>

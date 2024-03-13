@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/bls12377/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_bls12377" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/bls12377/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_bls12377" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_evm_precompile_bls12377/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -666,19 +668,19 @@
 //
 // Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 // 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="comment">// Arkworks
 </span><span class="kw">use </span>ark_bls12_377::{
@@ -788,7 +790,7 @@
 	<span class="kw">let </span>fq = decode_fq(bytes);
 	<span class="kw">match </span>fq {
 		<span class="prelude-val">None </span>=&gt; <span class="prelude-val">Err</span>(PrecompileFailure::Error {
-			exit_status: ExitError::Other(<span class="string">&quot;invalid Fq&quot;</span>.into()),
+			exit_status: ExitError::Other(<span class="string">"invalid Fq"</span>.into()),
 		}),
 		<span class="prelude-val">Some</span>(c) =&gt; <span class="prelude-val">Ok</span>(c),
 	}
@@ -839,7 +841,7 @@
 		<span class="kw">let </span>g1 = G1Affine::new_unchecked(px, py);
 		<span class="kw">if </span>!g1.is_on_curve() {
 			<span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;point is not on curve&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"point is not on curve"</span>.into()),
 			})
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Ok</span>(g1.into())
@@ -872,7 +874,7 @@
 		<span class="kw">let </span>g2 = G2Affine::new_unchecked(px, py);
 		<span class="kw">if </span>!g2.is_on_curve() {
 			<span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;point is not on curve&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"point is not on curve"</span>.into()),
 			})
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Ok</span>(g2.into())
@@ -898,7 +900,7 @@
 		<span class="kw">let </span>input = handle.input();
 		<span class="kw">if </span>input.len() != <span class="number">256 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -936,7 +938,7 @@
 		<span class="kw">let </span>input = handle.input();
 		<span class="kw">if </span>input.len() != <span class="number">160 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -992,7 +994,7 @@
 		<span class="kw">let </span>k = handle.input().len() / <span class="number">160</span>;
 		<span class="kw">if </span>handle.input().is_empty() || handle.input().len() % <span class="number">160 </span>!= <span class="number">0 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1014,7 +1016,7 @@
 		<span class="comment">// Compute r = e_0 * p_0 + e_1 * p_1 + ... + e_(k-1) * p_(k-1)
 		</span><span class="kw">let </span>r = G1Projective::msm(<span class="kw-2">&amp;</span>points.to_vec(), <span class="kw-2">&amp;</span>scalars.to_vec()).map_err(|<span class="kw">_</span>| {
 			PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;MSM failed&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"MSM failed"</span>.into()),
 			}
 		})<span class="question-mark">?</span>;
 
@@ -1045,7 +1047,7 @@
 		<span class="kw">let </span>input = handle.input();
 		<span class="kw">if </span>input.len() != <span class="number">512 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1083,7 +1085,7 @@
 		<span class="kw">let </span>input = handle.input();
 		<span class="kw">if </span>input.len() != <span class="number">288 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1139,7 +1141,7 @@
 		<span class="kw">let </span>k = handle.input().len() / <span class="number">288</span>;
 		<span class="kw">if </span>handle.input().is_empty() || handle.input().len() % <span class="number">288 </span>!= <span class="number">0 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1161,7 +1163,7 @@
 		<span class="comment">// Compute r = e_0 * p_0 + e_1 * p_1 + ... + e_(k-1) * p_(k-1)
 		</span><span class="kw">let </span>r = G2Projective::msm(<span class="kw-2">&amp;</span>points.to_vec(), <span class="kw-2">&amp;</span>scalars.to_vec()).map_err(|<span class="kw">_</span>| {
 			PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;MSM failed&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"MSM failed"</span>.into()),
 			}
 		})<span class="question-mark">?</span>;
 
@@ -1193,7 +1195,7 @@
 	</span><span class="kw">fn </span>execute(handle: <span class="kw-2">&amp;mut </span><span class="kw">impl </span>PrecompileHandle) -&gt; PrecompileResult {
 		<span class="kw">if </span>handle.input().is_empty() || handle.input().len() % <span class="number">384 </span>!= <span class="number">0 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1214,16 +1216,16 @@
 			<span class="comment">// Decode G2 point
 			</span><span class="kw">let </span>g2 = decode_g2(input, offset + <span class="number">128</span>)<span class="question-mark">?</span>;
 
-			<span class="comment">// &#39;point is on curve&#39; check already done,
+			<span class="comment">// 'point is on curve' check already done,
 			// Here we need to apply subgroup checks.
 			</span><span class="kw">if </span>!g1.into_affine().is_in_correct_subgroup_assuming_on_curve() {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-					exit_status: ExitError::Other(<span class="string">&quot;g1 point is not on correct subgroup&quot;</span>.into()),
+					exit_status: ExitError::Other(<span class="string">"g1 point is not on correct subgroup"</span>.into()),
 				});
 			}
 			<span class="kw">if </span>!g2.into_affine().is_in_correct_subgroup_assuming_on_curve() {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-					exit_status: ExitError::Other(<span class="string">&quot;g2 point is not on correct subgroup&quot;</span>.into()),
+					exit_status: ExitError::Other(<span class="string">"g2 point is not on correct subgroup"</span>.into()),
 				});
 			}
 
@@ -1261,7 +1263,7 @@
 		<span class="kw">let </span>input = handle.input();
 		<span class="kw">if </span>input.len() != <span class="number">64 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1270,7 +1272,7 @@
 			<span class="prelude-val">Ok</span>(point) =&gt; point.clear_cofactor(),
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-					exit_status: ExitError::Other(<span class="string">&quot;map to curve failed&quot;</span>.into()),
+					exit_status: ExitError::Other(<span class="string">"map to curve failed"</span>.into()),
 				})
 			}
 		};
@@ -1300,7 +1302,7 @@
 		<span class="kw">let </span>input = handle.input();
 		<span class="kw">if </span>input.len() != <span class="number">128 </span>{
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;invalid input length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"invalid input length"</span>.into()),
 			});
 		}
 
@@ -1309,7 +1311,7 @@
 			<span class="prelude-val">Ok</span>(point) =&gt; point.clear_cofactor(),
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
 				<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-					exit_status: ExitError::Other(<span class="string">&quot;map to curve failed&quot;</span>.into()),
+					exit_status: ExitError::Other(<span class="string">"map to curve failed"</span>.into()),
 				})
 			}
 		};

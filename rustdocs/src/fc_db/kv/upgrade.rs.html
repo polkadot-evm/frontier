@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/kv/upgrade.rs`."><title>upgrade.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_db" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/kv/upgrade.rs`."><title>upgrade.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_db" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../fc_db/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -573,7 +575,7 @@
 <span class="kw">use </span>sp_runtime::traits::Block <span class="kw">as </span>BlockT;
 
 <span class="doccomment">/// Version file name.
-</span><span class="kw">const </span>VERSION_FILE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">&quot;db_version&quot;</span>;
+</span><span class="kw">const </span>VERSION_FILE_NAME: <span class="kw-2">&amp;</span>str = <span class="string">"db_version"</span>;
 
 <span class="doccomment">/// Current db version.
 </span><span class="kw">const </span>CURRENT_VERSION: u32 = <span class="number">2</span>;
@@ -609,25 +611,25 @@
 }
 
 <span class="kw">impl </span>fmt::Display <span class="kw">for </span>UpgradeError {
-	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; fmt::Result {
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; fmt::Result {
 		<span class="kw">match </span><span class="self">self </span>{
 			UpgradeError::UnknownDatabaseVersion =&gt; {
 				<span class="macro">write!</span>(
 					f,
-					<span class="string">&quot;Database version cannot be read from existing db_version file&quot;
+					<span class="string">"Database version cannot be read from existing db_version file"
 				</span>)
 			}
 			UpgradeError::UnsupportedVersion(version) =&gt; {
-				<span class="macro">write!</span>(f, <span class="string">&quot;Database version no longer supported: {}&quot;</span>, version)
+				<span class="macro">write!</span>(f, <span class="string">"Database version no longer supported: {}"</span>, version)
 			}
 			UpgradeError::FutureDatabaseVersion(version) =&gt; {
 				<span class="macro">write!</span>(
 					f,
-					<span class="string">&quot;Database version comes from future version of the client: {}&quot;</span>,
+					<span class="string">"Database version comes from future version of the client: {}"</span>,
 					version
 				)
 			}
-			UpgradeError::Io(err) =&gt; <span class="macro">write!</span>(f, <span class="string">&quot;Io error: {}&quot;</span>, err),
+			UpgradeError::Io(err) =&gt; <span class="macro">write!</span>(f, <span class="string">"Io error: {}"</span>, err),
 		}
 	}
 }
@@ -646,17 +648,17 @@
 				DatabaseSource::ParityDb { .. } =&gt; {
 					migrate_1_to_2_parity_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?
 				</span>}
-				<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+				<span class="attr">#[cfg(feature = <span class="string">"rocksdb"</span>)]
 				</span>DatabaseSource::RocksDb { .. } =&gt; migrate_1_to_2_rocks_db::&lt;Block, C&gt;(client, db_path)<span class="question-mark">?</span>,
-				<span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">&quot;DatabaseSource required for upgrade ParityDb | RocksDb&quot;</span>),
+				<span class="kw">_ </span>=&gt; <span class="macro">panic!</span>(<span class="string">"DatabaseSource required for upgrade ParityDb | RocksDb"</span>),
 			};
 			<span class="kw">if </span>!summary.error.is_empty() {
 				<span class="macro">panic!</span>(
-					<span class="string">&quot;Inconsistent migration from version 1 to 2. Failed on {:?}&quot;</span>,
+					<span class="string">"Inconsistent migration from version 1 to 2. Failed on {:?}"</span>,
 					summary.error
 				);
 			} <span class="kw">else </span>{
-				<span class="macro">log::info!</span>(<span class="string">&quot;✔️ Successful Frontier DB migration from version 1 to version 2 ({:?} entries).&quot;</span>, summary.success);
+				<span class="macro">log::info!</span>(<span class="string">"✔️ Successful Frontier DB migration from version 1 to version 2 ({:?} entries)."</span>, summary.success);
 			}
 		}
 		CURRENT_VERSION =&gt; (),
@@ -673,7 +675,7 @@
 		<span class="prelude-val">Err</span>(<span class="kw-2">ref </span>err) <span class="kw">if </span>err.kind() == ErrorKind::NotFound =&gt; {
 			fs::create_dir_all(path)<span class="question-mark">?</span>;
 			<span class="kw">let </span><span class="kw-2">mut </span>file = fs::File::create(version_file_path(path))<span class="question-mark">?</span>;
-			file.write_all(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, CURRENT_VERSION).as_bytes())<span class="question-mark">?</span>;
+			file.write_all(<span class="macro">format!</span>(<span class="string">"{}"</span>, CURRENT_VERSION).as_bytes())<span class="question-mark">?</span>;
 			<span class="prelude-val">Ok</span>(CURRENT_VERSION)
 		}
 		<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; <span class="prelude-val">Err</span>(UpgradeError::UnknownDatabaseVersion),
@@ -692,7 +694,7 @@
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>update_version(path: <span class="kw-2">&amp;</span>Path) -&gt; io::Result&lt;()&gt; {
 	fs::create_dir_all(path)<span class="question-mark">?</span>;
 	<span class="kw">let </span><span class="kw-2">mut </span>file = fs::File::create(version_file_path(path))<span class="question-mark">?</span>;
-	file.write_all(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, CURRENT_VERSION).as_bytes())<span class="question-mark">?</span>;
+	file.write_all(<span class="macro">format!</span>(<span class="string">"{}"</span>, CURRENT_VERSION).as_bytes())<span class="question-mark">?</span>;
 	<span class="prelude-val">Ok</span>(())
 }
 
@@ -706,12 +708,12 @@
 <span class="doccomment">/// Migration from version1 to version2:
 /// - The format of the Ethereum&lt;&gt;Substrate block mapping changed to support equivocation.
 /// - Migrating schema from One-to-one to One-to-many (EthHash: Vec&lt;SubstrateHash&gt;) relationship.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"rocksdb"</span>)]
 </span><span class="kw">pub</span>(<span class="kw">crate</span>) <span class="kw">fn </span>migrate_1_to_2_rocks_db&lt;Block: BlockT, C: HeaderBackend&lt;Block&gt;&gt;(
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
 ) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt; {
-	<span class="macro">log::info!</span>(<span class="string">&quot;🔨 Running Frontier DB migration from version 1 to version 2. Please wait.&quot;</span>);
+	<span class="macro">log::info!</span>(<span class="string">"🔨 Running Frontier DB migration from version 1 to version 2. Please wait."</span>);
 	<span class="kw">let </span><span class="kw-2">mut </span>res = UpgradeVersion1To2Summary {
 		success: <span class="number">0</span>,
 		error: <span class="macro">vec!</span>[],
@@ -753,10 +755,10 @@
 			}
 		}
 		db.write(transaction)
-			.map_err(|<span class="kw">_</span>| io::Error::new(ErrorKind::Other, <span class="string">&quot;Failed to commit on migrate_1_to_2&quot;</span>))<span class="question-mark">?</span>;
+			.map_err(|<span class="kw">_</span>| io::Error::new(ErrorKind::Other, <span class="string">"Failed to commit on migrate_1_to_2"</span>))<span class="question-mark">?</span>;
 		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;fc-db-upgrade&quot;</span>,
-			<span class="string">&quot;🔨 Success {}, error {}.&quot;</span>,
+			target: <span class="string">"fc-db-upgrade"</span>,
+			<span class="string">"🔨 Success {}, error {}."</span>,
 			res.success,
 			res.error.len()
 		);
@@ -779,8 +781,8 @@
 	<span class="kw">for </span>(i, chunk) <span class="kw">in </span>chunks.enumerate() {
 		process_chunk(<span class="kw-2">&amp;</span>db, chunk)<span class="question-mark">?</span>;
 		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;fc-db-upgrade&quot;</span>,
-			<span class="string">&quot;🔨 Processed {} of {} entries.&quot;</span>,
+			target: <span class="string">"fc-db-upgrade"</span>,
+			<span class="string">"🔨 Processed {} of {} entries."</span>,
 			(CHUNK_SIZE * (i + <span class="number">1</span>)),
 			all_len
 		);
@@ -792,7 +794,7 @@
 	client: Arc&lt;C&gt;,
 	db_path: <span class="kw-2">&amp;</span>Path,
 ) -&gt; UpgradeResult&lt;UpgradeVersion1To2Summary&gt; {
-	<span class="macro">log::info!</span>(<span class="string">&quot;🔨 Running Frontier DB migration from version 1 to version 2. Please wait.&quot;</span>);
+	<span class="macro">log::info!</span>(<span class="string">"🔨 Running Frontier DB migration from version 1 to version 2. Please wait."</span>);
 	<span class="kw">let </span><span class="kw-2">mut </span>res = UpgradeVersion1To2Summary {
 		success: <span class="number">0</span>,
 		error: <span class="macro">vec!</span>[],
@@ -807,7 +809,7 @@
 		<span class="kw">for </span>ethereum_hash <span class="kw">in </span>ethereum_hashes {
 			<span class="kw">let </span><span class="kw-2">mut </span>maybe_error = <span class="bool-val">true</span>;
 			<span class="kw">if let </span><span class="prelude-val">Some</span>(substrate_hash) = db.get(<span class="kw">super</span>::columns::BLOCK_MAPPING <span class="kw">as </span>u8, ethereum_hash).map_err(|<span class="kw">_</span>|
-				io::Error::new(ErrorKind::Other, <span class="string">&quot;Key does not exist&quot;</span>)
+				io::Error::new(ErrorKind::Other, <span class="string">"Key does not exist"</span>)
 			)<span class="question-mark">? </span>{
 				<span class="comment">// Only update version1 data
 				</span><span class="kw">let </span>decoded = Vec::&lt;Block::Hash&gt;::decode(<span class="kw-2">&amp;mut &amp;</span>substrate_hash[..]);
@@ -831,7 +833,7 @@
 			}
 		}
 		db.commit(transaction)
-			.map_err(|<span class="kw">_</span>| io::Error::new(ErrorKind::Other, <span class="string">&quot;Failed to commit on migrate_1_to_2&quot;</span>))<span class="question-mark">?</span>;
+			.map_err(|<span class="kw">_</span>| io::Error::new(ErrorKind::Other, <span class="string">"Failed to commit on migrate_1_to_2"</span>))<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	};
 
@@ -839,7 +841,7 @@
 	db_cfg.columns[<span class="kw">super</span>::columns::BLOCK_MAPPING <span class="kw">as </span>usize].btree_index = <span class="bool-val">true</span>;
 
 	<span class="kw">let </span>db = parity_db::Db::open_or_create(<span class="kw-2">&amp;</span>db_cfg)
-		.map_err(|<span class="kw">_</span>| io::Error::new(ErrorKind::Other, <span class="string">&quot;Failed to open db&quot;</span>))<span class="question-mark">?</span>;
+		.map_err(|<span class="kw">_</span>| io::Error::new(ErrorKind::Other, <span class="string">"Failed to open db"</span>))<span class="question-mark">?</span>;
 
 	<span class="comment">// Get all the block hashes we need to update
 	</span><span class="kw">let </span>ethereum_hashes: Vec&lt;<span class="kw">_</span>&gt; = <span class="kw">match </span>db.iter(<span class="kw">super</span>::columns::BLOCK_MAPPING <span class="kw">as </span>u8) {
@@ -894,16 +896,16 @@
 		<span class="prelude-val">Ok</span>(Arc::new(<span class="kw">crate</span>::kv::Backend::&lt;Block&gt;::new(client, setting)<span class="question-mark">?</span>))
 	}
 
-	<span class="attr">#[cfg_attr(not(feature = <span class="string">&quot;rocksdb&quot;</span>), ignore)]
+	<span class="attr">#[cfg_attr(not(feature = <span class="string">"rocksdb"</span>), ignore)]
 	#[test]
 	</span><span class="kw">fn </span>upgrade_1_to_2_works() {
 		<span class="kw">let </span>settings: Vec&lt;<span class="kw">crate</span>::kv::DatabaseSettings&gt; = <span class="macro">vec!</span>[
 			<span class="comment">// Rocks db
-			</span><span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+			</span><span class="attr">#[cfg(feature = <span class="string">"rocksdb"</span>)]
 			</span><span class="kw">crate</span>::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path: tempdir()
-						.expect(<span class="string">&quot;create a temporary directory&quot;</span>)
+						.expect(<span class="string">"create a temporary directory"</span>)
 						.path()
 						.to_owned(),
 					cache_size: <span class="number">0</span>,
@@ -913,7 +915,7 @@
 			</span><span class="kw">crate</span>::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::ParityDb {
 					path: tempdir()
-						.expect(<span class="string">&quot;create a temporary directory&quot;</span>)
+						.expect(<span class="string">"create a temporary directory"</span>)
 						.path()
 						.to_owned(),
 				},
@@ -948,7 +950,7 @@
 			{
 				<span class="comment">// Create a temporary frontier secondary DB.
 				</span><span class="kw">let </span>backend = open_frontier_backend::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), <span class="kw-2">&amp;</span>setting)
-					.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
+					.expect(<span class="string">"a temporary db was created"</span>);
 
 				<span class="comment">// Fill the tmp db with some data
 				</span><span class="kw">let </span><span class="kw-2">mut </span>transaction = sp_database::Transaction::new();
@@ -1013,23 +1015,23 @@
 			}
 
 			<span class="comment">// Writes version 1 to file.
-			</span>std::fs::create_dir_all(path).expect(<span class="string">&quot;db path created&quot;</span>);
+			</span>std::fs::create_dir_all(path).expect(<span class="string">"db path created"</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>version_path = path.to_owned();
-			version_path.push(<span class="string">&quot;db_version&quot;</span>);
+			version_path.push(<span class="string">"db_version"</span>);
 			<span class="kw">let </span><span class="kw-2">mut </span>version_file =
-				std::fs::File::create(version_path).expect(<span class="string">&quot;db version file path created&quot;</span>);
+				std::fs::File::create(version_path).expect(<span class="string">"db version file path created"</span>);
 			version_file
-				.write_all(<span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, <span class="number">1</span>).as_bytes())
-				.expect(<span class="string">&quot;write version 1&quot;</span>);
+				.write_all(<span class="macro">format!</span>(<span class="string">"{}"</span>, <span class="number">1</span>).as_bytes())
+				.expect(<span class="string">"write version 1"</span>);
 
 			<span class="comment">// Upgrade database from version 1 to 2
 			</span><span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client.clone(), path, <span class="kw-2">&amp;</span>setting.source);
 
 			<span class="comment">// Check data after migration
 			</span><span class="kw">let </span>backend = open_frontier_backend::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client, <span class="kw-2">&amp;</span>setting)
-				.expect(<span class="string">&quot;a temporary db was created&quot;</span>);
+				.expect(<span class="string">"a temporary db was created"</span>);
 			<span class="kw">for </span>(i, original_ethereum_hash) <span class="kw">in </span>ethereum_hashes.iter().enumerate() {
-				<span class="kw">let </span>canon_substrate_block_hash = substrate_hashes.get(i).expect(<span class="string">&quot;Block hash&quot;</span>);
+				<span class="kw">let </span>canon_substrate_block_hash = substrate_hashes.get(i).expect(<span class="string">"Block hash"</span>);
 				<span class="kw">let </span>mapped_block = backend
 					.mapping()
 					.block_hash(original_ethereum_hash)
@@ -1042,7 +1044,7 @@
 				<span class="comment">// Transaction hash still holds canon block data
 				</span><span class="kw">let </span>mapped_transaction = backend
 					.mapping()
-					.transaction_metadata(transaction_hashes.get(i).expect(<span class="string">&quot;Transaction hash&quot;</span>))
+					.transaction_metadata(transaction_hashes.get(i).expect(<span class="string">"Transaction hash"</span>))
 					.unwrap();
 				<span class="macro">assert!</span>(mapped_transaction
 					.into_iter()
@@ -1050,14 +1052,14 @@
 			}
 
 			<span class="comment">// Upgrade db version file
-			</span><span class="macro">assert_eq!</span>(<span class="kw">super</span>::current_version(path).expect(<span class="string">&quot;version&quot;</span>), <span class="number">2u32</span>);
+			</span><span class="macro">assert_eq!</span>(<span class="kw">super</span>::current_version(path).expect(<span class="string">"version"</span>), <span class="number">2u32</span>);
 		}
 	}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;rocksdb&quot;</span>)]
+	<span class="attr">#[cfg(feature = <span class="string">"rocksdb"</span>)]
 	#[test]
 	</span><span class="kw">fn </span>create_db_with_current_version_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 
 		<span class="kw">let </span>(client, <span class="kw">_</span>) = TestClientBuilder::new()
 			.build_with_native_executor::&lt;substrate_test_runtime_client::runtime::RuntimeApi, <span class="kw">_</span>&gt;(
@@ -1075,11 +1077,11 @@
 		<span class="kw">let _ </span>= <span class="kw">super</span>::upgrade_db::&lt;OpaqueBlock, <span class="kw">_</span>&gt;(client, path, <span class="kw-2">&amp;</span>setting.source);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>file =
-			std::fs::File::open(<span class="kw">crate</span>::kv::upgrade::version_file_path(path)).expect(<span class="string">&quot;file exist&quot;</span>);
+			std::fs::File::open(<span class="kw">crate</span>::kv::upgrade::version_file_path(path)).expect(<span class="string">"file exist"</span>);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>s = String::new();
-		file.read_to_string(<span class="kw-2">&amp;mut </span>s).expect(<span class="string">&quot;read file contents&quot;</span>);
-		<span class="macro">assert_eq!</span>(s.parse::&lt;u32&gt;().expect(<span class="string">&quot;parse file contents&quot;</span>), <span class="number">2u32</span>);
+		file.read_to_string(<span class="kw-2">&amp;mut </span>s).expect(<span class="string">"read file contents"</span>);
+		<span class="macro">assert_eq!</span>(s.parse::&lt;u32&gt;().expect(<span class="string">"parse file contents"</span>), <span class="number">2u32</span>);
 	}
 }
 </code></pre></div></section></main></body></html>

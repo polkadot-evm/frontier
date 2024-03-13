@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/sql/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_db" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/db/src/sql/mod.rs`."><title>mod.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_db" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../fc_db/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1924,14 +1926,14 @@
 <span class="doccomment">/// Represents the Sqlite connection options that are
 /// used to establish a database connection.
 </span><span class="attr">#[derive(Debug)]
-</span><span class="kw">pub struct </span>SqliteBackendConfig&lt;<span class="lifetime">&#39;a</span>&gt; {
-	<span class="kw">pub </span>path: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>str,
+</span><span class="kw">pub struct </span>SqliteBackendConfig&lt;<span class="lifetime">'a</span>&gt; {
+	<span class="kw">pub </span>path: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>str,
 	<span class="kw">pub </span>create_if_missing: bool,
 	<span class="kw">pub </span>thread_count: u32,
 	<span class="kw">pub </span>cache_size: u64,
 }
 
-<span class="doccomment">/// Represents the indexed status of a block and if it&#39;s canon or not.
+<span class="doccomment">/// Represents the indexed status of a block and if it's canon or not.
 </span><span class="attr">#[derive(Debug, Default)]
 </span><span class="kw">pub struct </span>BlockIndexedStatus {
 	<span class="kw">pub </span>indexed: bool,
@@ -1940,8 +1942,8 @@
 
 <span class="doccomment">/// Represents the backend configurations.
 </span><span class="attr">#[derive(Debug)]
-</span><span class="kw">pub enum </span>BackendConfig&lt;<span class="lifetime">&#39;a</span>&gt; {
-	Sqlite(SqliteBackendConfig&lt;<span class="lifetime">&#39;a</span>&gt;),
+</span><span class="kw">pub enum </span>BackendConfig&lt;<span class="lifetime">'a</span>&gt; {
+	Sqlite(SqliteBackendConfig&lt;<span class="lifetime">'a</span>&gt;),
 }
 
 <span class="attr">#[derive(Clone)]
@@ -1963,7 +1965,7 @@
 {
 	<span class="doccomment">/// Creates a new instance of the SQL backend.
 	</span><span class="kw">pub async fn </span>new(
-		config: BackendConfig&lt;<span class="lifetime">&#39;_</span>&gt;,
+		config: BackendConfig&lt;<span class="lifetime">'_</span>&gt;,
 		pool_size: u32,
 		num_ops_timeout: <span class="prelude-ty">Option</span>&lt;NonZeroU32&gt;,
 		overrides: Arc&lt;OverrideHandle&lt;Block&gt;&gt;,
@@ -1987,19 +1989,19 @@
 	<span class="kw">fn </span>connect_options(config: <span class="kw-2">&amp;</span>BackendConfig) -&gt; <span class="prelude-ty">Result</span>&lt;SqliteConnectOptions, Error&gt; {
 		<span class="kw">match </span>config {
 			BackendConfig::Sqlite(config) =&gt; {
-				<span class="macro">log::info!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;📑 Connection configuration: {config:?}&quot;</span>);
+				<span class="macro">log::info!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"📑 Connection configuration: {config:?}"</span>);
 				<span class="kw">let </span>config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)<span class="question-mark">?
 					</span>.create_if_missing(config.create_if_missing)
 					<span class="comment">// https://www.sqlite.org/pragma.html#pragma_busy_timeout
 					</span>.busy_timeout(std::time::Duration::from_secs(<span class="number">8</span>))
 					<span class="comment">// 200MB, https://www.sqlite.org/pragma.html#pragma_cache_size
-					</span>.pragma(<span class="string">&quot;cache_size&quot;</span>, <span class="macro">format!</span>(<span class="string">&quot;-{}&quot;</span>, config.cache_size))
+					</span>.pragma(<span class="string">"cache_size"</span>, <span class="macro">format!</span>(<span class="string">"-{}"</span>, config.cache_size))
 					<span class="comment">// https://www.sqlite.org/pragma.html#pragma_analysis_limit
-					</span>.pragma(<span class="string">&quot;analysis_limit&quot;</span>, <span class="string">&quot;1000&quot;</span>)
+					</span>.pragma(<span class="string">"analysis_limit"</span>, <span class="string">"1000"</span>)
 					<span class="comment">// https://www.sqlite.org/pragma.html#pragma_threads
-					</span>.pragma(<span class="string">&quot;threads&quot;</span>, config.thread_count.to_string())
+					</span>.pragma(<span class="string">"threads"</span>, config.thread_count.to_string())
 					<span class="comment">// https://www.sqlite.org/pragma.html#pragma_threads
-					</span>.pragma(<span class="string">&quot;temp_store&quot;</span>, <span class="string">&quot;memory&quot;</span>)
+					</span>.pragma(<span class="string">"temp_store"</span>, <span class="string">"memory"</span>)
 					<span class="comment">// https://www.sqlite.org/wal.html
 					</span>.journal_mode(sqlx::sqlite::SqliteJournalMode::Wal)
 					<span class="comment">// https://www.sqlite.org/pragma.html#pragma_synchronous
@@ -2021,25 +2023,25 @@
 
 		<span class="comment">// Retracted
 		</span><span class="kw">let </span><span class="kw-2">mut </span>builder: QueryBuilder&lt;Sqlite&gt; =
-			QueryBuilder::new(<span class="string">&quot;UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash IN (&quot;</span>);
-		<span class="kw">let </span><span class="kw-2">mut </span>retracted_hashes = builder.separated(<span class="string">&quot;, &quot;</span>);
+			QueryBuilder::new(<span class="string">"UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash IN ("</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>retracted_hashes = builder.separated(<span class="string">", "</span>);
 		<span class="kw">for </span>hash <span class="kw">in </span>retracted.iter() {
 			<span class="kw">let </span>hash = hash.as_bytes();
 			retracted_hashes.push_bind(hash);
 		}
-		retracted_hashes.push_unseparated(<span class="string">&quot;)&quot;</span>);
+		retracted_hashes.push_unseparated(<span class="string">")"</span>);
 		<span class="kw">let </span>query = builder.build();
 		query.execute(<span class="kw-2">&amp;mut *</span>tx).<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="comment">// Enacted
 		</span><span class="kw">let </span><span class="kw-2">mut </span>builder: QueryBuilder&lt;Sqlite&gt; =
-			QueryBuilder::new(<span class="string">&quot;UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash IN (&quot;</span>);
-		<span class="kw">let </span><span class="kw-2">mut </span>enacted_hashes = builder.separated(<span class="string">&quot;, &quot;</span>);
+			QueryBuilder::new(<span class="string">"UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash IN ("</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>enacted_hashes = builder.separated(<span class="string">", "</span>);
 		<span class="kw">for </span>hash <span class="kw">in </span>enacted.iter() {
 			<span class="kw">let </span>hash = hash.as_bytes();
 			enacted_hashes.push_bind(hash);
 		}
-		enacted_hashes.push_unseparated(<span class="string">&quot;)&quot;</span>);
+		enacted_hashes.push_unseparated(<span class="string">")"</span>);
 		<span class="kw">let </span>query = builder.build();
 		query.execute(<span class="kw-2">&amp;mut *</span>tx).<span class="kw">await</span><span class="question-mark">?</span>;
 
@@ -2052,16 +2054,16 @@
 		client: Arc&lt;Client&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;H256&gt;, Error&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
 		Client: ProvideRuntimeApi&lt;Block&gt;,
 		Client::Api: EthereumRuntimeRPCApi&lt;Block&gt;,
-		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		BE: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
 		<span class="kw">let </span>id = BlockId::Number(Zero::zero());
 		<span class="kw">let </span>substrate_genesis_hash = client
 			.expect_block_hash_from_id(<span class="kw-2">&amp;</span>id)
-			.map_err(|<span class="kw">_</span>| Error::Protocol(<span class="string">&quot;Cannot resolve genesis hash&quot;</span>.to_string()))<span class="question-mark">?</span>;
+			.map_err(|<span class="kw">_</span>| Error::Protocol(<span class="string">"Cannot resolve genesis hash"</span>.to_string()))<span class="question-mark">?</span>;
 		<span class="kw">let </span>maybe_substrate_hash: <span class="prelude-ty">Option</span>&lt;H256&gt; = <span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(<span class="kw">_</span>)) =
 			client.header(substrate_genesis_hash)
 		{
@@ -2071,9 +2073,9 @@
 					substrate_genesis_hash,
 					|version| version &gt;= <span class="number">1</span>,
 				)
-				.expect(<span class="string">&quot;runtime api reachable&quot;</span>);
+				.expect(<span class="string">"runtime api reachable"</span>);
 
-			<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Index genesis block, has_api={has_api}, hash={substrate_genesis_hash:?}&quot;</span>);
+			<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Index genesis block, has_api={has_api}, hash={substrate_genesis_hash:?}"</span>);
 
 			<span class="kw">if </span>has_api {
 				<span class="comment">// The chain has frontier support from genesis.
@@ -2081,8 +2083,8 @@
 				</span><span class="kw">let </span>ethereum_block = client
 					.runtime_api()
 					.current_block(substrate_genesis_hash)
-					.expect(<span class="string">&quot;runtime api reachable&quot;</span>)
-					.expect(<span class="string">&quot;ethereum genesis block&quot;</span>);
+					.expect(<span class="string">"runtime api reachable"</span>)
+					.expect(<span class="string">"ethereum genesis block"</span>);
 
 				<span class="kw">let </span>schema =
 					<span class="self">Self</span>::onchain_storage_schema(client.as_ref(), substrate_genesis_hash).encode();
@@ -2092,13 +2094,13 @@
 				<span class="kw">let </span>is_canon = <span class="number">1i32</span>;
 
 				<span class="kw">let _ </span>= sqlx::query(
-					<span class="string">&quot;INSERT OR IGNORE INTO blocks(
+					<span class="string">"INSERT OR IGNORE INTO blocks(
 						ethereum_block_hash,
 						substrate_block_hash,
 						block_number,
 						ethereum_storage_schema,
 						is_canon)
-					VALUES (?, ?, ?, ?, ?)&quot;</span>,
+					VALUES (?, ?, ?, ?, ?)"</span>,
 				)
 				.bind(ethereum_block_hash)
 				.bind(substrate_block_hash)
@@ -2121,11 +2123,11 @@
 		overrides: Arc&lt;OverrideHandle&lt;Block&gt;&gt;,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;BlockMetadata, Error&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
+		BE: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
-		<span class="macro">log::trace!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;🛠️  [Metadata] Retrieving digest data for block {hash:?}&quot;</span>);
+		<span class="macro">log::trace!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"🛠️  [Metadata] Retrieving digest data for block {hash:?}"</span>);
 		<span class="kw">if let </span><span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(header)) = client.header(hash) {
 			<span class="kw">match </span>fp_consensus::find_log(header.digest()) {
 				<span class="prelude-val">Ok</span>(log) =&gt; {
@@ -2144,9 +2146,9 @@
 									<span class="kw">let </span>got_eth_block_hash = block.header.hash();
 									<span class="kw">if </span>got_eth_block_hash != expect_eth_block_hash {
 										<span class="kw">return </span><span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-											<span class="string">&quot;Ethereum block hash mismatch: \
+											<span class="string">"Ethereum block hash mismatch: \
 											frontier consensus digest ({expect_eth_block_hash:?}), \
-											db state ({got_eth_block_hash:?})&quot;
+											db state ({got_eth_block_hash:?})"
 										</span>)));
 									} <span class="kw">else </span>{
 										Hashes::from_block(block)
@@ -2154,7 +2156,7 @@
 								}
 								<span class="prelude-val">None </span>=&gt; {
 									<span class="kw">return </span><span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-										<span class="string">&quot;Missing ethereum block for hash mismatch {expect_eth_block_hash:?}&quot;
+										<span class="string">"Missing ethereum block for hash mismatch {expect_eth_block_hash:?}"
 									</span>)))
 								}
 							}
@@ -2168,21 +2170,21 @@
 					<span class="kw">let </span>is_canon = <span class="kw">match </span>client.hash(header_number) {
 						<span class="prelude-val">Ok</span>(<span class="prelude-val">Some</span>(inner_hash)) =&gt; (inner_hash == hash) <span class="kw">as </span>i32,
 						<span class="prelude-val">Ok</span>(<span class="prelude-val">None</span>) =&gt; {
-							<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;[Metadata] Missing header for block #{block_number} ({hash:?})&quot;</span>);
+							<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"[Metadata] Missing header for block #{block_number} ({hash:?})"</span>);
 							<span class="number">0
 						</span>}
 						<span class="prelude-val">Err</span>(err) =&gt; {
 							<span class="macro">log::debug!</span>(
-								target: <span class="string">&quot;frontier-sql&quot;</span>,
-								<span class="string">&quot;[Metadata] Failed to retrieve header for block #{block_number} ({hash:?}): {err:?}&quot;</span>,
+								target: <span class="string">"frontier-sql"</span>,
+								<span class="string">"[Metadata] Failed to retrieve header for block #{block_number} ({hash:?}): {err:?}"</span>,
 							);
 							<span class="number">0
 						</span>}
 					};
 
 					<span class="macro">log::trace!</span>(
-						target: <span class="string">&quot;frontier-sql&quot;</span>,
-						<span class="string">&quot;[Metadata] Prepared block metadata for #{block_number} ({hash:?}) canon={is_canon}&quot;</span>,
+						target: <span class="string">"frontier-sql"</span>,
+						<span class="string">"[Metadata] Prepared block metadata for #{block_number} ({hash:?}) canon={is_canon}"</span>,
 					);
 					<span class="prelude-val">Ok</span>(BlockMetadata {
 						substrate_block_hash: hash,
@@ -2193,15 +2195,15 @@
 					})
 				}
 				<span class="prelude-val">Err</span>(FindLogError::NotFound) =&gt; <span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-					<span class="string">&quot;[Metadata] No logs found for hash {hash:?}&quot;</span>,
+					<span class="string">"[Metadata] No logs found for hash {hash:?}"</span>,
 				))),
 				<span class="prelude-val">Err</span>(FindLogError::MultipleLogs) =&gt; <span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-					<span class="string">&quot;[Metadata] Multiple logs found for hash {hash:?}&quot;</span>,
+					<span class="string">"[Metadata] Multiple logs found for hash {hash:?}"</span>,
 				))),
 			}
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Err</span>(Error::Protocol(<span class="macro">format!</span>(
-				<span class="string">&quot;[Metadata] Failed retrieving header for hash {hash:?}&quot;
+				<span class="string">"[Metadata] Failed retrieving header for hash {hash:?}"
 			</span>)))
 		}
 	}
@@ -2213,8 +2215,8 @@
 		hash: H256,
 	) -&gt; <span class="prelude-ty">Result</span>&lt;(), Error&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
+		BE: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
 		<span class="comment">// Spawn a blocking task to get block metadata from substrate backend.
@@ -2223,13 +2225,13 @@
 			<span class="self">Self</span>::insert_block_metadata_inner(client.clone(), hash, overrides)
 		})
 		.<span class="kw">await
-		</span>.map_err(|<span class="kw">_</span>| Error::Protocol(<span class="string">&quot;tokio blocking metadata task failed&quot;</span>.to_string()))<span class="question-mark">??</span>;
+		</span>.map_err(|<span class="kw">_</span>| Error::Protocol(<span class="string">"tokio blocking metadata task failed"</span>.to_string()))<span class="question-mark">??</span>;
 
 		<span class="kw">let </span><span class="kw-2">mut </span>tx = <span class="self">self</span>.pool().begin().<span class="kw">await</span><span class="question-mark">?</span>;
 
 		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;🛠️  [Metadata] Starting execution of statements on db transaction&quot;
+			target: <span class="string">"frontier-sql"</span>,
+			<span class="string">"🛠️  [Metadata] Starting execution of statements on db transaction"
 		</span>);
 		<span class="kw">let </span>post_hashes = metadata.post_hashes;
 		<span class="kw">let </span>ethereum_block_hash = post_hashes.block_hash.as_bytes();
@@ -2239,13 +2241,13 @@
 		<span class="kw">let </span>is_canon = metadata.is_canon;
 
 		<span class="kw">let _ </span>= sqlx::query(
-			<span class="string">&quot;INSERT OR IGNORE INTO blocks(
+			<span class="string">"INSERT OR IGNORE INTO blocks(
 					ethereum_block_hash,
 					substrate_block_hash,
 					block_number,
 					ethereum_storage_schema,
 					is_canon)
-				VALUES (?, ?, ?, ?, ?)&quot;</span>,
+				VALUES (?, ?, ?, ?, ?)"</span>,
 		)
 		.bind(ethereum_block_hash)
 		.bind(substrate_block_hash)
@@ -2258,16 +2260,16 @@
 			<span class="kw">let </span>ethereum_transaction_hash = transaction_hash.as_bytes();
 			<span class="kw">let </span>ethereum_transaction_index = i <span class="kw">as </span>i32;
 			<span class="macro">log::trace!</span>(
-				target: <span class="string">&quot;frontier-sql&quot;</span>,
-				<span class="string">&quot;[Metadata] Inserting TX for block #{block_number} - {transaction_hash:?} index {ethereum_transaction_index}&quot;</span>,
+				target: <span class="string">"frontier-sql"</span>,
+				<span class="string">"[Metadata] Inserting TX for block #{block_number} - {transaction_hash:?} index {ethereum_transaction_index}"</span>,
 			);
 			<span class="kw">let _ </span>= sqlx::query(
-				<span class="string">&quot;INSERT OR IGNORE INTO transactions(
+				<span class="string">"INSERT OR IGNORE INTO transactions(
 						ethereum_transaction_hash,
 						substrate_block_hash,
 						ethereum_block_hash,
 						ethereum_transaction_index)
-					VALUES (?, ?, ?, ?)&quot;</span>,
+					VALUES (?, ?, ?, ?)"</span>,
 			)
 			.bind(ethereum_transaction_hash)
 			.bind(substrate_block_hash)
@@ -2277,20 +2279,20 @@
 			.<span class="kw">await</span><span class="question-mark">?</span>;
 		}
 
-		sqlx::query(<span class="string">&quot;INSERT INTO sync_status(substrate_block_hash) VALUES (?)&quot;</span>)
+		sqlx::query(<span class="string">"INSERT INTO sync_status(substrate_block_hash) VALUES (?)"</span>)
 			.bind(hash.as_bytes())
 			.execute(<span class="kw-2">&amp;mut *</span>tx)
 			.<span class="kw">await</span><span class="question-mark">?</span>;
 
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;[Metadata] Ready to commit&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"[Metadata] Ready to commit"</span>);
 		tx.commit().<span class="kw">await
 	</span>}
 
 	<span class="doccomment">/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
 	</span><span class="kw">pub async fn </span>index_block_logs&lt;Client, BE&gt;(<span class="kw-2">&amp;</span><span class="self">self</span>, client: Arc&lt;Client&gt;, block_hash: Block::Hash)
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
+		BE: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
 		<span class="kw">let </span>pool = <span class="self">self</span>.pool().clone();
@@ -2299,7 +2301,7 @@
 			<span class="comment">// The overarching db transaction for the task.
 			// Due to the async nature of this task, the same work is likely to happen
 			// more than once. For example when a new batch is scheduled when the previous one
-			// didn&#39;t finished yet and the new batch happens to select the same substrate
+			// didn't finished yet and the new batch happens to select the same substrate
 			// block hashes for the update.
 			// That is expected, we are exchanging extra work for *acid*ity.
 			// There is no case of unique constrain violation or race condition as already
@@ -2307,12 +2309,12 @@
 			</span><span class="kw">let </span><span class="kw-2">mut </span>tx = pool.begin().<span class="kw">await</span><span class="question-mark">?</span>;
 			<span class="comment">// Update statement returning the substrate block hashes for this batch.
 			</span><span class="kw">match </span>sqlx::query(
-				<span class="string">&quot;UPDATE sync_status
+				<span class="string">"UPDATE sync_status
 			SET status = 1
 			WHERE substrate_block_hash IN
 				(SELECT substrate_block_hash
 				FROM sync_status
-				WHERE status = 0 AND substrate_block_hash = ?) RETURNING substrate_block_hash&quot;</span>,
+				WHERE status = 0 AND substrate_block_hash = ?) RETURNING substrate_block_hash"</span>,
 			)
 			.bind(block_hash.as_bytes())
 			.fetch_one(<span class="kw-2">&amp;mut *</span>tx)
@@ -2324,11 +2326,11 @@
 						<span class="self">Self</span>::get_logs(client.clone(), overrides, block_hash)
 					})
 					.<span class="kw">await
-					</span>.map_err(|<span class="kw">_</span>| Error::Protocol(<span class="string">&quot;tokio blocking task failed&quot;</span>.to_string()))<span class="question-mark">?</span>;
+					</span>.map_err(|<span class="kw">_</span>| Error::Protocol(<span class="string">"tokio blocking task failed"</span>.to_string()))<span class="question-mark">?</span>;
 
 					<span class="kw">for </span>log <span class="kw">in </span>logs {
 						<span class="kw">let _ </span>= sqlx::query(
-							<span class="string">&quot;INSERT OR IGNORE INTO logs(
+							<span class="string">"INSERT OR IGNORE INTO logs(
 						address,
 						topic_1,
 						topic_2,
@@ -2337,7 +2339,7 @@
 						log_index,
 						transaction_index,
 						substrate_block_hash)
-					VALUES (?, ?, ?, ?, ?, ?, ?, ?)&quot;</span>,
+					VALUES (?, ?, ?, ?, ?, ?, ?, ?)"</span>,
 						)
 						.bind(log.address)
 						.bind(log.topic_1)
@@ -2357,11 +2359,11 @@
 		}
 		.<span class="kw">await
 		</span>.map_err(|e| {
-			<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;{e}&quot;</span>);
+			<span class="macro">log::error!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"{e}"</span>);
 		});
 		<span class="comment">// https://www.sqlite.org/pragma.html#pragma_optimize
-		</span><span class="kw">let _ </span>= sqlx::query(<span class="string">&quot;PRAGMA optimize&quot;</span>).execute(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span>;
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Batch committed&quot;</span>);
+		</span><span class="kw">let _ </span>= sqlx::query(<span class="string">"PRAGMA optimize"</span>).execute(<span class="kw-2">&amp;</span>pool).<span class="kw">await</span>;
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Batch committed"</span>);
 	}
 
 	<span class="kw">fn </span>get_logs&lt;Client, BE&gt;(
@@ -2370,8 +2372,8 @@
 		substrate_block_hash: H256,
 	) -&gt; Vec&lt;Log&gt;
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
+		BE: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
 		<span class="kw">let </span><span class="kw-2">mut </span>logs: Vec&lt;Log&gt; = <span class="macro">vec!</span>[];
@@ -2411,16 +2413,16 @@
 			}
 		}
 		<span class="macro">log::debug!</span>(
-			target: <span class="string">&quot;frontier-sql&quot;</span>,
-			<span class="string">&quot;Ready to commit {log_count} logs from {transaction_count} transactions&quot;
+			target: <span class="string">"frontier-sql"</span>,
+			<span class="string">"Ready to commit {log_count} logs from {transaction_count} transactions"
 		</span>);
 		logs
 	}
 
 	<span class="kw">fn </span>onchain_storage_schema&lt;Client, BE&gt;(client: <span class="kw-2">&amp;</span>Client, at: Block::Hash) -&gt; EthereumStorageSchema
 	<span class="kw">where
-		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
-		BE: BackendT&lt;Block&gt; + <span class="lifetime">&#39;static</span>,
+		</span>Client: StorageProvider&lt;Block, BE&gt; + HeaderBackend&lt;Block&gt; + <span class="lifetime">'static</span>,
+		BE: BackendT&lt;Block&gt; + <span class="lifetime">'static</span>,
 		BE::State: StateBackend&lt;BlakeTwo256&gt;,
 	{
 		<span class="kw">match </span>client.storage(at, <span class="kw-2">&amp;</span>sp_storage::StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
@@ -2433,7 +2435,7 @@
 
 	<span class="doccomment">/// Retrieves the status if a block has been already indexed.
 	</span><span class="kw">pub async fn </span>is_block_indexed(<span class="kw-2">&amp;</span><span class="self">self</span>, block_hash: Block::Hash) -&gt; bool {
-		sqlx::query(<span class="string">&quot;SELECT substrate_block_hash FROM sync_status WHERE substrate_block_hash = ?&quot;</span>)
+		sqlx::query(<span class="string">"SELECT substrate_block_hash FROM sync_status WHERE substrate_block_hash = ?"</span>)
 			.bind(block_hash.as_bytes().to_owned())
 			.fetch_optional(<span class="self">self</span>.pool())
 			.<span class="kw">await
@@ -2447,10 +2449,10 @@
 		block_hash: Block::Hash,
 	) -&gt; BlockIndexedStatus {
 		sqlx::query(
-			<span class="string">&quot;SELECT b.is_canon FROM sync_status AS s
+			<span class="string">"SELECT b.is_canon FROM sync_status AS s
 			INNER JOIN blocks AS b
 			ON s.substrate_block_hash = b.substrate_block_hash
-			WHERE s.substrate_block_hash = ?&quot;</span>,
+			WHERE s.substrate_block_hash = ?"</span>,
 		)
 		.bind(block_hash.as_bytes().to_owned())
 		.fetch_optional(<span class="self">self</span>.pool())
@@ -2471,18 +2473,18 @@
 
 	<span class="doccomment">/// Sets the provided block as canon.
 	</span><span class="kw">pub async fn </span>set_block_as_canon(<span class="kw-2">&amp;</span><span class="self">self</span>, block_hash: H256) -&gt; <span class="prelude-ty">Result</span>&lt;SqliteQueryResult, Error&gt; {
-		sqlx::query(<span class="string">&quot;UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash = ?&quot;</span>)
+		sqlx::query(<span class="string">"UPDATE blocks SET is_canon = 1 WHERE substrate_block_hash = ?"</span>)
 			.bind(block_hash.as_bytes())
 			.execute(<span class="self">self</span>.pool())
 			.<span class="kw">await
 	</span>}
 
-	<span class="doccomment">/// Retrieves the first missing canonical block number in decreasing order that hasn&#39;t been indexed yet.
+	<span class="doccomment">/// Retrieves the first missing canonical block number in decreasing order that hasn't been indexed yet.
 	/// If no unindexed block exists or the table or the rows do not exist, then the function
 	/// returns `None`.
 	</span><span class="kw">pub async fn </span>get_first_missing_canon_block(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;u32&gt; {
 		<span class="kw">match </span>sqlx::query(
-			<span class="string">&quot;SELECT b1.block_number-1
+			<span class="string">"SELECT b1.block_number-1
 			FROM blocks as b1
 			WHERE b1.block_number &gt; 0 AND b1.is_canon=1 AND NOT EXISTS (
 				SELECT 1 FROM blocks AS b2
@@ -2490,7 +2492,7 @@
 				AND b1.is_canon=1
 				AND b2.is_canon=1
 			)
-			ORDER BY block_number LIMIT 1&quot;</span>,
+			ORDER BY block_number LIMIT 1"</span>,
 		)
 		.fetch_optional(<span class="self">self</span>.pool())
 		.<span class="kw">await
@@ -2502,23 +2504,23 @@
 				}
 			}
 			<span class="prelude-val">Err</span>(err) =&gt; {
-				<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed retrieving missing block {err:?}&quot;</span>);
+				<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Failed retrieving missing block {err:?}"</span>);
 			}
 		}
 
 		<span class="prelude-val">None
 	</span>}
 
-	<span class="doccomment">/// Retrieves the first pending canonical block hash in decreasing order that hasn&#39;t had
+	<span class="doccomment">/// Retrieves the first pending canonical block hash in decreasing order that hasn't had
 	</span><span class="comment">// its logs indexed yet. If no unindexed block exists or the table or the rows do not exist,
 	</span><span class="doccomment">/// then the function returns `None`.
 	</span><span class="kw">pub async fn </span>get_first_pending_canon_block(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Option</span>&lt;H256&gt; {
 		<span class="kw">match </span>sqlx::query(
-			<span class="string">&quot;SELECT s.substrate_block_hash FROM sync_status AS s
+			<span class="string">"SELECT s.substrate_block_hash FROM sync_status AS s
 			INNER JOIN blocks as b
 			ON s.substrate_block_hash = b.substrate_block_hash
 			WHERE b.is_canon = 1 AND s.status = 0
-			ORDER BY b.block_number LIMIT 1&quot;</span>,
+			ORDER BY b.block_number LIMIT 1"</span>,
 		)
 		.fetch_optional(<span class="self">self</span>.pool())
 		.<span class="kw">await
@@ -2531,7 +2533,7 @@
 				}
 			}
 			<span class="prelude-val">Err</span>(err) =&gt; {
-				<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed retrieving missing block {err:?}&quot;</span>);
+				<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Failed retrieving missing block {err:?}"</span>);
 			}
 		}
 
@@ -2541,11 +2543,11 @@
 	<span class="doccomment">/// Retrieve the block hash for the last indexed canon block.
 	</span><span class="kw">pub async fn </span>get_last_indexed_canon_block(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; <span class="prelude-ty">Result</span>&lt;H256, Error&gt; {
 		<span class="kw">let </span>row = sqlx::query(
-			<span class="string">&quot;SELECT b.substrate_block_hash FROM blocks AS b
+			<span class="string">"SELECT b.substrate_block_hash FROM blocks AS b
 			INNER JOIN sync_status AS s
 			ON s.substrate_block_hash = b.substrate_block_hash
 			WHERE b.is_canon=1 AND s.status = 1
-			ORDER BY b.id DESC LIMIT 1&quot;</span>,
+			ORDER BY b.id DESC LIMIT 1"</span>,
 		)
 		.fetch_one(<span class="self">self</span>.pool())
 		.<span class="kw">await</span><span class="question-mark">?</span>;
@@ -2557,7 +2559,7 @@
 	<span class="doccomment">/// Create the Sqlite database if it does not already exist.
 	</span><span class="kw">async fn </span>create_database_if_not_exists(pool: <span class="kw-2">&amp;</span>SqlitePool) -&gt; <span class="prelude-ty">Result</span>&lt;SqliteQueryResult, Error&gt; {
 		sqlx::query(
-			<span class="string">&quot;BEGIN;
+			<span class="string">"BEGIN;
 			CREATE TABLE IF NOT EXISTS logs (
 				id INTEGER PRIMARY KEY,
 				address BLOB NOT NULL,
@@ -2605,7 +2607,7 @@
 					substrate_block_hash
 				)
 			);
-			COMMIT;&quot;</span>,
+			COMMIT;"</span>,
 		)
 		.execute(pool)
 		.<span class="kw">await
@@ -2614,7 +2616,7 @@
 	<span class="doccomment">/// Create the Sqlite database indices if it does not already exist.
 	</span><span class="kw">async fn </span>create_indexes_if_not_exist(pool: <span class="kw-2">&amp;</span>SqlitePool) -&gt; <span class="prelude-ty">Result</span>&lt;SqliteQueryResult, Error&gt; {
 		sqlx::query(
-			<span class="string">&quot;BEGIN;
+			<span class="string">"BEGIN;
 			CREATE INDEX IF NOT EXISTS logs_main_idx ON logs (
 				address,
 				topic_1,
@@ -2641,7 +2643,7 @@
 				ethereum_block_hash,
 				ethereum_transaction_index
 			);
-			COMMIT;&quot;</span>,
+			COMMIT;"</span>,
 		)
 		.execute(pool)
 		.<span class="kw">await
@@ -2656,7 +2658,7 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="prelude-ty">Option</span>&lt;Vec&lt;Block::Hash&gt;&gt;, String&gt; {
 		<span class="kw">let </span>ethereum_block_hash = ethereum_block_hash.as_bytes();
 		<span class="kw">let </span>res =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash FROM blocks WHERE ethereum_block_hash = ?"</span>)
 				.bind(ethereum_block_hash)
 				.fetch_all(<span class="kw-2">&amp;</span><span class="self">self</span>.pool)
 				.<span class="kw">await
@@ -2677,9 +2679,9 @@
 	) -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;TransactionMetadata&lt;Block&gt;&gt;, String&gt; {
 		<span class="kw">let </span>ethereum_transaction_hash = ethereum_transaction_hash.as_bytes();
 		<span class="kw">let </span>out = sqlx::query(
-			<span class="string">&quot;SELECT
+			<span class="string">"SELECT
 				substrate_block_hash, ethereum_block_hash, ethereum_transaction_index
-			FROM transactions WHERE ethereum_transaction_hash = ?&quot;</span>,
+			FROM transactions WHERE ethereum_transaction_hash = ?"</span>,
 		)
 		.bind(ethereum_transaction_hash)
 		.fetch_all(<span class="kw-2">&amp;</span><span class="self">self</span>.pool)
@@ -2730,7 +2732,7 @@
 		<span class="kw">for </span>topic_combination <span class="kw">in </span>topics.into_iter() {
 			<span class="kw">for </span>(topic_index, topic) <span class="kw">in </span>topic_combination.into_iter().enumerate() {
 				<span class="kw">if </span>topic_index == MAX_TOPIC_COUNT <span class="kw">as </span>usize {
-					<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Invalid topic input. Maximum length is 4.&quot;</span>.to_string());
+					<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Invalid topic input. Maximum length is 4."</span>.to_string());
 				}
 
 				<span class="kw">if let </span><span class="prelude-val">Some</span>(topic) = topic {
@@ -2739,8 +2741,8 @@
 			}
 		}
 
-		<span class="kw">let </span>log_key = <span class="macro">format!</span>(<span class="string">&quot;{from_block}-{to_block}-{addresses:?}-{unique_topics:?}&quot;</span>);
-		<span class="kw">let </span><span class="kw-2">mut </span>qb = QueryBuilder::new(<span class="string">&quot;&quot;</span>);
+		<span class="kw">let </span>log_key = <span class="macro">format!</span>(<span class="string">"{from_block}-{to_block}-{addresses:?}-{unique_topics:?}"</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>qb = QueryBuilder::new(<span class="string">""</span>);
 		<span class="kw">let </span>query = build_query(<span class="kw-2">&amp;mut </span>qb, from_block, to_block, addresses, unique_topics);
 		<span class="kw">let </span>sql = query.sql();
 
@@ -2748,16 +2750,16 @@
 			</span>.pool()
 			.acquire()
 			.<span class="kw">await
-			</span>.map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;failed acquiring sqlite connection: {}&quot;</span>, err))<span class="question-mark">?</span>;
+			</span>.map_err(|err| <span class="macro">format!</span>(<span class="string">"failed acquiring sqlite connection: {}"</span>, err))<span class="question-mark">?</span>;
 		<span class="kw">let </span>log_key2 = log_key.clone();
 		conn.lock_handle()
 			.<span class="kw">await
-			</span>.map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err))<span class="question-mark">?
+			</span>.map_err(|err| <span class="macro">format!</span>(<span class="string">"{:?}"</span>, err))<span class="question-mark">?
 			</span>.set_progress_handler(<span class="self">self</span>.num_ops_timeout, <span class="kw">move </span>|| {
-				<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Sqlite progress_handler triggered for {log_key2}&quot;</span>);
+				<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Sqlite progress_handler triggered for {log_key2}"</span>);
 				<span class="bool-val">false
 			</span>});
-		<span class="macro">log::debug!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Query: {sql:?} - {log_key}&quot;</span>);
+		<span class="macro">log::debug!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Query: {sql:?} - {log_key}"</span>);
 
 		<span class="kw">let </span><span class="kw-2">mut </span>out: Vec&lt;FilteredLog&lt;Block&gt;&gt; = <span class="macro">vec!</span>[];
 		<span class="kw">let </span><span class="kw-2">mut </span>rows = query.fetch(<span class="kw-2">&amp;mut *</span>conn);
@@ -2776,7 +2778,7 @@
 					</span><span class="kw">let </span>ethereum_storage_schema: EthereumStorageSchema =
 						Decode::decode(<span class="kw-2">&amp;mut &amp;</span>row.try_get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">3</span>).unwrap_or_default()[..])
 							.map_err(|<span class="kw">_</span>| {
-								<span class="string">&quot;Cannot decode EthereumStorageSchema for block&quot;</span>.to_string()
+								<span class="string">"Cannot decode EthereumStorageSchema for block"</span>.to_string()
 							})<span class="question-mark">?</span>;
 					<span class="comment">// Transaction index
 					</span><span class="kw">let </span>transaction_index = row.try_get::&lt;i32, <span class="kw">_</span>&gt;(<span class="number">4</span>).unwrap_or_default() <span class="kw">as </span>u32;
@@ -2798,29 +2800,29 @@
 		drop(rows);
 		conn.lock_handle()
 			.<span class="kw">await
-			</span>.map_err(|err| <span class="macro">format!</span>(<span class="string">&quot;{:?}&quot;</span>, err))<span class="question-mark">?
+			</span>.map_err(|err| <span class="macro">format!</span>(<span class="string">"{:?}"</span>, err))<span class="question-mark">?
 			</span>.remove_progress_handler();
 
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(err) = maybe_err {
-			<span class="macro">log::error!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;Failed to query sql db: {err:?} - {log_key}&quot;</span>);
-			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Failed to query sql db with statement&quot;</span>.to_string());
+			<span class="macro">log::error!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"Failed to query sql db: {err:?} - {log_key}"</span>);
+			<span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Failed to query sql db with statement"</span>.to_string());
 		}
 
-		<span class="macro">log::info!</span>(target: <span class="string">&quot;frontier-sql&quot;</span>, <span class="string">&quot;FILTER remove handler - {log_key}&quot;</span>);
+		<span class="macro">log::info!</span>(target: <span class="string">"frontier-sql"</span>, <span class="string">"FILTER remove handler - {log_key}"</span>);
 		<span class="prelude-val">Ok</span>(out)
 	}
 }
 
 <span class="doccomment">/// Build a SQL query to retrieve a list of logs given certain constraints.
-</span><span class="kw">fn </span>build_query&lt;<span class="lifetime">&#39;a</span>&gt;(
-	qb: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span><span class="kw-2">mut </span>QueryBuilder&lt;Sqlite&gt;,
+</span><span class="kw">fn </span>build_query&lt;<span class="lifetime">'a</span>&gt;(
+	qb: <span class="kw-2">&amp;</span><span class="lifetime">'a </span><span class="kw-2">mut </span>QueryBuilder&lt;Sqlite&gt;,
 	from_block: u64,
 	to_block: u64,
 	addresses: Vec&lt;H160&gt;,
 	topics: [HashSet&lt;H256&gt;; <span class="number">4</span>],
-) -&gt; Query&lt;<span class="lifetime">&#39;a</span>, Sqlite, SqliteArguments&lt;<span class="lifetime">&#39;a</span>&gt;&gt; {
+) -&gt; Query&lt;<span class="lifetime">'a</span>, Sqlite, SqliteArguments&lt;<span class="lifetime">'a</span>&gt;&gt; {
 	qb.push(
-		<span class="string">&quot;
+		<span class="string">"
 SELECT
 	l.substrate_block_hash,
 	b.ethereum_block_hash,
@@ -2830,41 +2832,41 @@ SELECT
 	l.log_index
 FROM logs AS l
 INNER JOIN blocks AS b
-ON (b.block_number BETWEEN &quot;</span>,
+ON (b.block_number BETWEEN "</span>,
 	);
-	qb.separated(<span class="string">&quot; AND &quot;</span>)
+	qb.separated(<span class="string">" AND "</span>)
 		.push_bind(from_block <span class="kw">as </span>i64)
 		.push_bind(to_block <span class="kw">as </span>i64)
-		.push_unseparated(<span class="string">&quot;)&quot;</span>);
-	qb.push(<span class="string">&quot; AND b.substrate_block_hash = l.substrate_block_hash&quot;</span>)
-		.push(<span class="string">&quot; AND b.is_canon = 1&quot;</span>)
-		.push(<span class="string">&quot;\nWHERE 1&quot;</span>);
+		.push_unseparated(<span class="string">")"</span>);
+	qb.push(<span class="string">" AND b.substrate_block_hash = l.substrate_block_hash"</span>)
+		.push(<span class="string">" AND b.is_canon = 1"</span>)
+		.push(<span class="string">"\nWHERE 1"</span>);
 
 	<span class="kw">if </span>!addresses.is_empty() {
-		qb.push(<span class="string">&quot; AND l.address IN (&quot;</span>);
-		<span class="kw">let </span><span class="kw-2">mut </span>qb_addr = qb.separated(<span class="string">&quot;, &quot;</span>);
+		qb.push(<span class="string">" AND l.address IN ("</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>qb_addr = qb.separated(<span class="string">", "</span>);
 		addresses.iter().for_each(|addr| {
 			qb_addr.push_bind(addr.as_bytes().to_owned());
 		});
-		qb_addr.push_unseparated(<span class="string">&quot;)&quot;</span>);
+		qb_addr.push_unseparated(<span class="string">")"</span>);
 	}
 
 	<span class="kw">for </span>(i, topic_options) <span class="kw">in </span>topics.iter().enumerate() {
 		<span class="kw">match </span>topic_options.len().cmp(<span class="kw-2">&amp;</span><span class="number">1</span>) {
 			Ordering::Greater =&gt; {
-				qb.push(<span class="macro">format!</span>(<span class="string">&quot; AND l.topic_{} IN (&quot;</span>, i + <span class="number">1</span>));
-				<span class="kw">let </span><span class="kw-2">mut </span>qb_topic = qb.separated(<span class="string">&quot;, &quot;</span>);
+				qb.push(<span class="macro">format!</span>(<span class="string">" AND l.topic_{} IN ("</span>, i + <span class="number">1</span>));
+				<span class="kw">let </span><span class="kw-2">mut </span>qb_topic = qb.separated(<span class="string">", "</span>);
 				topic_options.iter().for_each(|t| {
 					qb_topic.push_bind(t.as_bytes().to_owned());
 				});
-				qb_topic.push_unseparated(<span class="string">&quot;)&quot;</span>);
+				qb_topic.push_unseparated(<span class="string">")"</span>);
 			}
 			Ordering::Equal =&gt; {
-				qb.push(<span class="macro">format!</span>(<span class="string">&quot; AND l.topic_{} = &quot;</span>, i + <span class="number">1</span>)).push_bind(
+				qb.push(<span class="macro">format!</span>(<span class="string">" AND l.topic_{} = "</span>, i + <span class="number">1</span>)).push_bind(
 					topic_options
 						.iter()
 						.next()
-						.expect(<span class="string">&quot;length is 1, must exist; qed&quot;</span>)
+						.expect(<span class="string">"length is 1, must exist; qed"</span>)
 						.as_bytes()
 						.to_owned(),
 				);
@@ -2874,9 +2876,9 @@ ON (b.block_number BETWEEN &quot;</span>,
 	}
 
 	qb.push(
-		<span class="string">&quot;
+		<span class="string">"
 ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
-LIMIT 10001&quot;</span>,
+LIMIT 10001"</span>,
 	);
 
 	qb.build()
@@ -2968,7 +2970,7 @@ LIMIT 10001&quot;</span>,
 	}
 
 	<span class="kw">async fn </span>prepare() -&gt; TestData {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="comment">// Initialize storage with schema V3
 		</span><span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
@@ -2994,9 +2996,9 @@ LIMIT 10001&quot;</span>,
 		<span class="comment">// Indexer backend
 		</span><span class="kw">let </span>indexer_backend = Backend::new(
 			BackendConfig::Sqlite(SqliteBackendConfig {
-				path: Path::new(<span class="string">&quot;sqlite:///&quot;</span>)
+				path: Path::new(<span class="string">"sqlite:///"</span>)
 					.join(tmp.path())
-					.join(<span class="string">&quot;test.db3&quot;</span>)
+					.join(<span class="string">"test.db3"</span>)
 					.to_str()
 					.unwrap(),
 				create_if_missing: <span class="bool-val">true</span>,
@@ -3008,7 +3010,7 @@ LIMIT 10001&quot;</span>,
 			overrides.clone(),
 		)
 		.<span class="kw">await
-		</span>.expect(<span class="string">&quot;indexer pool to be created&quot;</span>);
+		</span>.expect(<span class="string">"indexer pool to be created"</span>);
 
 		<span class="comment">// Prepare test db data
 		// Addresses
@@ -3054,13 +3056,13 @@ LIMIT 10001&quot;</span>,
 			),
 		];
 		<span class="kw">let </span><span class="kw-2">mut </span>builder = QueryBuilder::new(
-			<span class="string">&quot;INSERT INTO blocks(
+			<span class="string">"INSERT INTO blocks(
 				block_number,
 				ethereum_block_hash,
 				substrate_block_hash,
 				ethereum_storage_schema,
 				is_canon
-			)&quot;</span>,
+			)"</span>,
 		);
 		builder.push_values(block_entries, |<span class="kw-2">mut </span>b, entry| {
 			<span class="kw">let </span>block_number = entry.<span class="number">0</span>;
@@ -3078,7 +3080,7 @@ LIMIT 10001&quot;</span>,
 		<span class="kw">let _ </span>= query
 			.execute(indexer_backend.pool())
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;insert should succeed&quot;</span>);
+			</span>.expect(<span class="string">"insert should succeed"</span>);
 
 		<span class="comment">// log_{BLOCK}_{TOPICS}_{LOG_INDEX}_{TX_INDEX}
 		</span><span class="kw">let </span>log_1_abcd_0_0_alice = Log {
@@ -3180,7 +3182,7 @@ LIMIT 10001&quot;</span>,
 		];
 
 		<span class="kw">let </span><span class="kw-2">mut </span>builder: QueryBuilder&lt;sqlx::Sqlite&gt; = QueryBuilder::new(
-			<span class="string">&quot;INSERT INTO logs(
+			<span class="string">"INSERT INTO logs(
 				address,
 				topic_1,
 				topic_2,
@@ -3189,7 +3191,7 @@ LIMIT 10001&quot;</span>,
 				log_index,
 				transaction_index,
 				substrate_block_hash
-			)&quot;</span>,
+			)"</span>,
 		);
 		builder.push_values(log_entries, |<span class="kw-2">mut </span>b, entry| {
 			<span class="kw">let </span>address = entry.address.as_bytes().to_owned();
@@ -3256,11 +3258,11 @@ LIMIT 10001&quot;</span>,
 
 	<span class="kw">async fn </span>assert_blocks_canon(pool: <span class="kw-2">&amp;</span>SqlitePool, expected: Vec&lt;(H256, u32)&gt;) {
 		<span class="kw">let </span>actual: Vec&lt;(H256, u32)&gt; =
-			sqlx::query(<span class="string">&quot;SELECT substrate_block_hash, is_canon FROM blocks&quot;</span>)
+			sqlx::query(<span class="string">"SELECT substrate_block_hash, is_canon FROM blocks"</span>)
 				.map(|row: SqliteRow| (H256::from_slice(<span class="kw-2">&amp;</span>row.get::&lt;Vec&lt;u8&gt;, <span class="kw">_</span>&gt;(<span class="number">0</span>)[..]), row.get(<span class="number">1</span>)))
 				.fetch_all(pool)
 				.<span class="kw">await
-				</span>.expect(<span class="string">&quot;sql query must succeed&quot;</span>);
+				</span>.expect(<span class="string">"sql query must succeed"</span>);
 		<span class="macro">assert_eq!</span>(expected, actual);
 	}
 
@@ -3274,7 +3276,7 @@ LIMIT 10001&quot;</span>,
 			topics: <span class="macro">vec!</span>[],
 			expected_result: <span class="macro">vec!</span>[],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3288,7 +3290,7 @@ LIMIT 10001&quot;</span>,
 			topics: <span class="macro">vec!</span>[<span class="macro">vec!</span>[<span class="prelude-val">None</span>], <span class="macro">vec!</span>[<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">None</span>]],
 			expected_result: <span class="macro">vec!</span>[],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3309,7 +3311,7 @@ LIMIT 10001&quot;</span>,
 		};
 		run_test_case(backend, <span class="kw-2">&amp;</span>filter)
 			.<span class="kw">await
-			</span>.expect_err(<span class="string">&quot;Invalid topic input. Maximum length is 4.&quot;</span>);
+			</span>.expect_err(<span class="string">"Invalid topic input. Maximum length is 4."</span>);
 	}
 
 	<span class="attr">#[tokio::test]
@@ -3336,7 +3338,7 @@ LIMIT 10001&quot;</span>,
 			</span>],
 			expected_result: <span class="macro">vec!</span>[log_1_badc_2_0_alice.into()],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3367,7 +3369,7 @@ LIMIT 10001&quot;</span>,
 				log_2_badc_2_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3392,7 +3394,7 @@ LIMIT 10001&quot;</span>,
 				log_1_badc_2_0_alice.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3417,7 +3419,7 @@ LIMIT 10001&quot;</span>,
 				log_3_dcba_1_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3438,7 +3440,7 @@ LIMIT 10001&quot;</span>,
 			topics: <span class="macro">vec!</span>[<span class="macro">vec!</span>[<span class="prelude-val">Some</span>(topics_b)]],
 			expected_result: <span class="macro">vec!</span>[log_2_badc_2_0_bob.into(), log_3_badc_2_0_bob.into()],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3465,7 +3467,7 @@ LIMIT 10001&quot;</span>,
 				log_3_badc_2_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3493,7 +3495,7 @@ LIMIT 10001&quot;</span>,
 				log_3_abcd_0_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3521,7 +3523,7 @@ LIMIT 10001&quot;</span>,
 				log_3_dcba_1_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3541,7 +3543,7 @@ LIMIT 10001&quot;</span>,
 			topics: <span class="macro">vec!</span>[<span class="macro">vec!</span>[<span class="prelude-val">None</span>, <span class="prelude-val">None</span>, <span class="prelude-val">Some</span>(topics_b), <span class="prelude-val">None</span>]],
 			expected_result: <span class="macro">vec!</span>[log_1_dcba_1_0_alice.into()],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3577,7 +3579,7 @@ LIMIT 10001&quot;</span>,
 				log_3_dcba_1_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3614,7 +3616,7 @@ LIMIT 10001&quot;</span>,
 				log_3_badc_2_0_bob.into(),
 			],
 		};
-		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+		<span class="kw">let </span>result = run_test_case(backend, <span class="kw-2">&amp;</span>filter).<span class="kw">await</span>.expect(<span class="string">"must succeed"</span>);
 		<span class="macro">assert_eq!</span>(result, filter.expected_result);
 	}
 
@@ -3629,11 +3631,11 @@ LIMIT 10001&quot;</span>,
 		} = prepare().<span class="kw">await</span>;
 
 		<span class="comment">// set block #1 to non canon
-		</span>sqlx::query(<span class="string">&quot;UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash = ?&quot;</span>)
+		</span>sqlx::query(<span class="string">"UPDATE blocks SET is_canon = 0 WHERE substrate_block_hash = ?"</span>)
 			.bind(substrate_hash_1.as_bytes())
 			.execute(backend.pool())
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;sql query must succeed&quot;</span>);
+			</span>.expect(<span class="string">"sql query must succeed"</span>);
 		assert_blocks_canon(
 			backend.pool(),
 			<span class="macro">vec!</span>[
@@ -3647,7 +3649,7 @@ LIMIT 10001&quot;</span>,
 		backend
 			.canonicalize(<span class="kw-2">&amp;</span>[substrate_hash_2], <span class="kw-2">&amp;</span>[substrate_hash_1])
 			.<span class="kw">await
-			</span>.expect(<span class="string">&quot;must succeed&quot;</span>);
+			</span>.expect(<span class="string">"must succeed"</span>);
 
 		assert_blocks_canon(
 			backend.pool(),
@@ -3682,7 +3684,7 @@ LIMIT 10001&quot;</span>,
 			<span class="macro">hashset!</span>[H256::repeat_byte(<span class="number">0x06</span>)],
 		];
 
-		<span class="kw">let </span>expected_query_sql = <span class="string">&quot;
+		<span class="kw">let </span>expected_query_sql = <span class="string">"
 SELECT
 	l.substrate_block_hash,
 	b.ethereum_block_hash,
@@ -3695,9 +3697,9 @@ INNER JOIN blocks AS b
 ON (b.block_number BETWEEN ? AND ?) AND b.substrate_block_hash = l.substrate_block_hash AND b.is_canon = 1
 WHERE 1 AND l.address IN (?, ?, ?) AND l.topic_1 IN (?, ?, ?) AND l.topic_2 IN (?, ?) AND l.topic_4 = ?
 ORDER BY b.block_number ASC, l.transaction_index ASC, l.log_index ASC
-LIMIT 10001&quot;</span>;
+LIMIT 10001"</span>;
 
-		<span class="kw">let </span><span class="kw-2">mut </span>qb = QueryBuilder::new(<span class="string">&quot;&quot;</span>);
+		<span class="kw">let </span><span class="kw-2">mut </span>qb = QueryBuilder::new(<span class="string">""</span>);
 		<span class="kw">let </span>actual_query_sql = build_query(<span class="kw-2">&amp;mut </span>qb, from_block, to_block, addresses, topics).sql();
 		<span class="macro">assert_eq!</span>(expected_query_sql, actual_query_sql);
 	}

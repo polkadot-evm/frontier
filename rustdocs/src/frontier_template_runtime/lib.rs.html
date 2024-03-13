@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/runtime/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/runtime/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_runtime" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../frontier_template_runtime/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1004,17 +1006,20 @@
 <a href="#1004" id="1004">1004</a>
 <a href="#1005" id="1005">1005</a>
 <a href="#1006" id="1006">1006</a>
+<a href="#1007" id="1007">1007</a>
+<a href="#1008" id="1008">1008</a>
+<a href="#1009" id="1009">1009</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 </span><span class="comment">// `construct_runtime!` does a lot of recursion and requires us to increase the limit to 256.
-</span><span class="attr">#![recursion_limit = <span class="string">&quot;256&quot;</span>]
+</span><span class="attr">#![recursion_limit = <span class="string">"256"</span>]
 #![allow(clippy::new_without_default, clippy::or_fun_call)]
-#![cfg_attr(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>, warn(unused_crate_dependencies))]
+#![cfg_attr(feature = <span class="string">"runtime-benchmarks"</span>, warn(unused_crate_dependencies))]
 
 </span><span class="comment">// Make the WASM binary available.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
-</span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">&quot;OUT_DIR&quot;</span>), <span class="string">&quot;/wasm_binary.rs&quot;</span>));
+</span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
+</span><span class="macro">include!</span>(<span class="macro">concat!</span>(<span class="macro">env!</span>(<span class="string">"OUT_DIR"</span>), <span class="string">"/wasm_binary.rs"</span>));
 
 <span class="kw">use </span>scale_codec::{Decode, Encode};
 <span class="kw">use </span>sp_api::impl_runtime_apis;
@@ -1036,9 +1041,9 @@
 <span class="kw">use </span>sp_std::{marker::PhantomData, prelude::<span class="kw-2">*</span>};
 <span class="kw">use </span>sp_version::RuntimeVersion;
 <span class="comment">// Substrate FRAME
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;with-paritydb-weights&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"with-paritydb-weights"</span>)]
 </span><span class="kw">use </span>frame_support::weights::constants::ParityDbWeight <span class="kw">as </span>RuntimeDbWeight;
-<span class="attr">#[cfg(feature = <span class="string">&quot;with-rocksdb-weights&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"with-rocksdb-weights"</span>)]
 </span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::{
 	genesis_builder_helper::{build_config, create_default_config},
@@ -1078,7 +1083,7 @@
 /// to the public key of our transaction signing scheme.
 </span><span class="kw">pub type </span>AccountId = &lt;&lt;Signature <span class="kw">as </span>Verify&gt;::Signer <span class="kw">as </span>IdentifyAccount&gt;::AccountId;
 
-<span class="doccomment">/// The type for looking up accounts. We don&#39;t expect more than 4 billion of them, but you
+<span class="doccomment">/// The type for looking up accounts. We don't expect more than 4 billion of them, but you
 /// never know...
 </span><span class="kw">pub type </span>AccountIndex = u32;
 
@@ -1091,10 +1096,13 @@
 <span class="doccomment">/// A hash of some data used by the chain.
 </span><span class="kw">pub type </span>Hash = H256;
 
+<span class="doccomment">/// The hashing algorithm used by the chain.
+</span><span class="kw">pub type </span>Hashing = BlakeTwo256;
+
 <span class="doccomment">/// Digest item type.
 </span><span class="kw">pub type </span>DigestItem = generic::DigestItem;
 
-<span class="doccomment">/// Opaque types. These are used by the CLI to instantiate machinery that don&#39;t need to know
+<span class="doccomment">/// Opaque types. These are used by the CLI to instantiate machinery that don't need to know
 /// the specifics of the runtime. They can then be made to be agnostic over specific formats
 /// of data like extrinsics, allowing for them to continue syncing the network through upgrades
 /// to even the core data structures.
@@ -1120,8 +1128,8 @@
 
 <span class="attr">#[sp_version::runtime_version]
 </span><span class="kw">pub const </span>VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frontier-template&quot;</span>),
-	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">&quot;frontier-template&quot;</span>),
+	spec_name: <span class="macro">create_runtime_str!</span>(<span class="string">"frontier-template"</span>),
+	impl_name: <span class="macro">create_runtime_str!</span>(<span class="string">"frontier-template"</span>),
 	authoring_version: <span class="number">1</span>,
 	spec_version: <span class="number">1</span>,
 	impl_version: <span class="number">1</span>,
@@ -1140,7 +1148,7 @@
 <span class="kw">pub const </span>DAYS: BlockNumber = HOURS * <span class="number">24</span>;
 
 <span class="doccomment">/// The version information used to identify this runtime when compiled natively.
-</span><span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+</span><span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">pub fn </span>native_version() -&gt; sp_version::NativeVersion {
 	sp_version::NativeVersion {
 		runtime_version: VERSION,
@@ -1189,7 +1197,7 @@
 	<span class="doccomment">/// The type for hashing blocks and tries.
 	</span><span class="kw">type </span>Hash = Hash;
 	<span class="doccomment">/// The hashing algorithm used.
-	</span><span class="kw">type </span>Hashing = BlakeTwo256;
+	</span><span class="kw">type </span>Hashing = Hashing;
 	<span class="doccomment">/// The identifier used to distinguish between accounts.
 	</span><span class="kw">type </span>AccountId = AccountId;
 	<span class="doccomment">/// The lookup mechanism to get account ID from whatever is passed in dispatchers.
@@ -1216,7 +1224,7 @@
 	</span><span class="kw">type </span>SystemWeightInfo = ();
 	<span class="doccomment">/// This is used as an identifier of the chain. 42 is the generic substrate prefix.
 	</span><span class="kw">type </span>SS58Prefix = SS58Prefix;
-	<span class="doccomment">/// The set code logic, just the default since we&#39;re not a parachain.
+	<span class="doccomment">/// The set code logic, just the default since we're not a parachain.
 	</span><span class="kw">type </span>OnSetCode = ();
 	<span class="kw">type </span>MaxConsumers = ConstU32&lt;<span class="number">16</span>&gt;;
 }
@@ -1312,9 +1320,9 @@
 
 <span class="kw">pub struct </span>FindAuthorTruncated&lt;F&gt;(PhantomData&lt;F&gt;);
 <span class="kw">impl</span>&lt;F: FindAuthor&lt;u32&gt;&gt; FindAuthor&lt;H160&gt; <span class="kw">for </span>FindAuthorTruncated&lt;F&gt; {
-	<span class="kw">fn </span>find_author&lt;<span class="lifetime">&#39;a</span>, I&gt;(digests: I) -&gt; <span class="prelude-ty">Option</span>&lt;H160&gt;
+	<span class="kw">fn </span>find_author&lt;<span class="lifetime">'a</span>, I&gt;(digests: I) -&gt; <span class="prelude-ty">Option</span>&lt;H160&gt;
 	<span class="kw">where
-		</span>I: <span class="lifetime">&#39;a </span>+ IntoIterator&lt;Item = (ConsensusEngineId, <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8])&gt;,
+		</span>I: <span class="lifetime">'a </span>+ IntoIterator&lt;Item = (ConsensusEngineId, <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8])&gt;,
 	{
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(author_index) = F::find_author(digests) {
 			<span class="kw">let </span>authority_id = Aura::authorities()[author_index <span class="kw">as </span>usize].clone();
@@ -1479,7 +1487,7 @@
 		);
 		<span class="kw">let </span>encoded = extrinsic.encode();
 		opaque::UncheckedExtrinsic::decode(<span class="kw-2">&amp;mut &amp;</span>encoded[..])
-			.expect(<span class="string">&quot;Encoded extrinsic is always valid&quot;</span>)
+			.expect(<span class="string">"Encoded extrinsic is always valid"</span>)
 	}
 }
 
@@ -1579,11 +1587,11 @@
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 #[macro_use]
 </span><span class="kw">extern crate </span>frame_benchmarking;
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">mod </span>benches {
 	<span class="macro">define_benchmarks!</span>(
 		[frame_benchmarking, BaselineBench::&lt;Runtime&gt;]
@@ -1716,7 +1724,7 @@
 			_set_id: sp_consensus_grandpa::SetId,
 			_authority_id: GrandpaId,
 		) -&gt; <span class="prelude-ty">Option</span>&lt;sp_consensus_grandpa::OpaqueKeyOwnershipProof&gt; {
-			<span class="comment">// NOTE: this is the only implementation possible since we&#39;ve
+			<span class="comment">// NOTE: this is the only implementation possible since we've
 			// defined our key owner proof type as a bottom type (i.e. a type
 			// with no values).
 			</span><span class="prelude-val">None
@@ -1951,7 +1959,7 @@
 		}
 	}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+	<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 	</span><span class="kw">impl </span>frame_benchmarking::Benchmark&lt;Block&gt; <span class="kw">for </span>Runtime {
 		<span class="kw">fn </span>benchmark_metadata(extra: bool) -&gt; (
 			Vec&lt;frame_benchmarking::BenchmarkList&gt;,
@@ -1992,7 +2000,7 @@
 			<span class="macro">add_benchmark!</span>(params, batches, pallet_evm, PalletEvmBench::&lt;Runtime&gt;);
 			<span class="macro">add_benchmark!</span>(params, batches, pallet_hotfix_sufficients, PalletHotfixSufficientsBench::&lt;Runtime&gt;);
 
-			<span class="kw">if </span>batches.is_empty() { <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">&quot;Benchmark not found for this pallet.&quot;</span>.into()) }
+			<span class="kw">if </span>batches.is_empty() { <span class="kw">return </span><span class="prelude-val">Err</span>(<span class="string">"Benchmark not found for this pallet."</span>.into()) }
 			<span class="prelude-val">Ok</span>(batches)
 		}
 	}

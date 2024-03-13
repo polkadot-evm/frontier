@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/ethereum/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_ethereum" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/ethereum/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_ethereum" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_ethereum/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1027,14 +1029,14 @@
 //
 // Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 // 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -1044,14 +1046,14 @@
 //! The Ethereum pallet works together with EVM pallet to provide full emulation
 //! for Ethereum block processing.
 
-</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="comment">// Ensure we're `no_std` when compiling for Wasm.
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
 #![warn(unused_crate_dependencies)]
 
-#[cfg(all(feature = <span class="string">&quot;std&quot;</span>, test))]
+#[cfg(all(feature = <span class="string">"std"</span>, test))]
 </span><span class="kw">mod </span>mock;
-<span class="attr">#[cfg(all(feature = <span class="string">&quot;std&quot;</span>, test))]
+<span class="attr">#[cfg(all(feature = <span class="string">"std"</span>, test))]
 </span><span class="kw">mod </span>tests;
 
 <span class="kw">pub use </span>ethereum::{
@@ -1097,13 +1099,13 @@
 	EthereumTransaction(H160),
 }
 
-<span class="kw">pub fn </span>ensure_ethereum_transaction&lt;OuterOrigin&gt;(o: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;H160, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt;
+<span class="kw">pub fn </span>ensure_ethereum_transaction&lt;OuterOrigin&gt;(o: OuterOrigin) -&gt; <span class="prelude-ty">Result</span>&lt;H160, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt;
 <span class="kw">where
 	</span>OuterOrigin: Into&lt;<span class="prelude-ty">Result</span>&lt;RawOrigin, OuterOrigin&gt;&gt;,
 {
 	<span class="kw">match </span>o.into() {
 		<span class="prelude-val">Ok</span>(RawOrigin::EthereumTransaction(n)) =&gt; <span class="prelude-val">Ok</span>(n),
-		<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="string">&quot;bad origin: expected to be an Ethereum transaction&quot;</span>),
+		<span class="kw">_ </span>=&gt; <span class="prelude-val">Err</span>(<span class="string">"bad origin: expected to be an Ethereum transaction"</span>),
 	}
 }
 
@@ -1118,7 +1120,7 @@
 		})
 	}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+	<span class="attr">#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 	</span><span class="kw">fn </span>try_successful_origin() -&gt; <span class="prelude-ty">Result</span>&lt;O, ()&gt; {
 		<span class="prelude-val">Ok</span>(O::from(RawOrigin::EthereumTransaction(Default::default())))
 	}
@@ -1219,7 +1221,7 @@
 		</span><span class="kw">type </span>RuntimeEvent: From&lt;Event&gt; + IsType&lt;&lt;<span class="self">Self </span><span class="kw">as </span>frame_system::Config&gt;::RuntimeEvent&gt;;
 		<span class="doccomment">/// How Ethereum state root is calculated.
 		</span><span class="kw">type </span>StateRoot: Get&lt;H256&gt;;
-		<span class="doccomment">/// What&#39;s included in the PostLog.
+		<span class="doccomment">/// What's included in the PostLog.
 		</span><span class="kw">type </span>PostLogContent: Get&lt;PostLogContent&gt;;
 		<span class="doccomment">/// The maximum length of the extra data in the Executed event.
 		</span><span class="kw">type </span>ExtraDataLength: Get&lt;u32&gt;;
@@ -1261,14 +1263,14 @@
 
 				<span class="kw">for </span>transaction <span class="kw">in </span>block.transactions {
 					<span class="kw">let </span>source = <span class="self">Self</span>::recover_signer(<span class="kw-2">&amp;</span>transaction).expect(
-						<span class="string">&quot;pre-block transaction signature invalid; the block cannot be built&quot;</span>,
+						<span class="string">"pre-block transaction signature invalid; the block cannot be built"</span>,
 					);
 
 					<span class="self">Self</span>::validate_transaction_in_block(source, <span class="kw-2">&amp;</span>transaction).expect(
-						<span class="string">&quot;pre-block transaction verification failed; the block cannot be built&quot;</span>,
+						<span class="string">"pre-block transaction verification failed; the block cannot be built"</span>,
 					);
 					<span class="kw">let </span>(r, <span class="kw">_</span>) = <span class="self">Self</span>::apply_validated_transaction(source, transaction)
-						.expect(<span class="string">&quot;pre-block apply transaction failed; the block cannot be built&quot;</span>);
+						.expect(<span class="string">"pre-block apply transaction failed; the block cannot be built"</span>);
 
 					weight = weight.saturating_add(r.actual_weight.unwrap_or_default());
 				}
@@ -1313,7 +1315,7 @@
 			<span class="comment">// Disable transact functionality if PreLog exist.
 			</span><span class="macro">assert!</span>(
 				fp_consensus::find_pre_log(<span class="kw-2">&amp;</span>frame_system::Pallet::&lt;T&gt;::digest()).is_err(),
-				<span class="string">&quot;pre log already exists; block is invalid&quot;</span>,
+				<span class="string">"pre log already exists; block is invalid"</span>,
 			);
 
 			<span class="self">Self</span>::apply_validated_transaction(source, transaction).map(|(post_info, <span class="kw">_</span>)| post_info)
@@ -1341,7 +1343,7 @@
 		</span>PreLogExists,
 	}
 
-	<span class="doccomment">/// Current building block&#39;s transactions and receipts.
+	<span class="doccomment">/// Current building block's transactions and receipts.
 	</span><span class="attr">#[pallet::storage]
 	</span><span class="kw">pub</span>(<span class="kw">super</span>) <span class="kw">type </span>Pending&lt;T: Config&gt; =
 		StorageValue&lt;<span class="kw">_</span>, Vec&lt;(Transaction, TransactionStatus, Receipt)&gt;, ValueQuery&gt;;
@@ -1910,7 +1912,7 @@
 	<span class="kw">pub fn </span>migrate_block_v0_to_v2() -&gt; Weight {
 		<span class="kw">let </span>db_weights = T::DbWeight::get();
 		<span class="kw">let </span><span class="kw-2">mut </span>weight: Weight = db_weights.reads(<span class="number">1</span>);
-		<span class="kw">let </span>item = <span class="string">b&quot;CurrentBlock&quot;</span>;
+		<span class="kw">let </span>item = <span class="string">b"CurrentBlock"</span>;
 		<span class="kw">let </span>block_v0 = frame_support::storage::migration::get_storage_value::&lt;ethereum::BlockV0&gt;(
 			<span class="self">Self</span>::name().as_bytes(),
 			item,
@@ -1929,9 +1931,9 @@
 		weight
 	}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
-	</span><span class="kw">pub fn </span>pre_migrate_block_v2() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
-		<span class="kw">let </span>item = <span class="string">b&quot;CurrentBlock&quot;</span>;
+	<span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+	</span><span class="kw">pub fn </span>pre_migrate_block_v2() -&gt; <span class="prelude-ty">Result</span>&lt;Vec&lt;u8&gt;, <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
+		<span class="kw">let </span>item = <span class="string">b"CurrentBlock"</span>;
 		<span class="kw">let </span>block_v0 = frame_support::storage::migration::get_storage_value::&lt;ethereum::BlockV0&gt;(
 			<span class="self">Self</span>::name().as_bytes(),
 			item,
@@ -1949,13 +1951,13 @@
 		}
 	}
 
-	<span class="attr">#[cfg(feature = <span class="string">&quot;try-runtime&quot;</span>)]
-	</span><span class="kw">pub fn </span>post_migrate_block_v2(v0_data: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str&gt; {
+	<span class="attr">#[cfg(feature = <span class="string">"try-runtime"</span>)]
+	</span><span class="kw">pub fn </span>post_migrate_block_v2(v0_data: Vec&lt;u8&gt;) -&gt; <span class="prelude-ty">Result</span>&lt;(), <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str&gt; {
 		<span class="kw">let </span>(v0_number, v0_parent_hash, v0_transaction_len): (U256, H256, u64) = Decode::decode(
 			<span class="kw-2">&amp;mut </span>v0_data.as_slice(),
 		)
-		.expect(<span class="string">&quot;the state parameter should be something that was generated by pre_upgrade&quot;</span>);
-		<span class="kw">let </span>item = <span class="string">b&quot;CurrentBlock&quot;</span>;
+		.expect(<span class="string">"the state parameter should be something that was generated by pre_upgrade"</span>);
+		<span class="kw">let </span>item = <span class="string">b"CurrentBlock"</span>;
 		<span class="kw">let </span>block_v2 = frame_support::storage::migration::get_storage_value::&lt;ethereum::BlockV2&gt;(
 			<span class="self">Self</span>::name().as_bytes(),
 			item,
@@ -1993,7 +1995,7 @@
 	<span class="kw">fn </span>get() -&gt; H256 {
 		<span class="kw">let </span>version = T::Version::get().state_version();
 		H256::decode(<span class="kw-2">&amp;mut &amp;</span>sp_io::storage::root(version)[..])
-			.expect(<span class="string">&quot;Node is configured to use the same hash; qed&quot;</span>)
+			.expect(<span class="string">"Node is configured to use the same hash; qed"</span>)
 	}
 }
 

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/modexp/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_modexp" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/precompile/modexp/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm_precompile_modexp" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_evm_precompile_modexp/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -527,19 +529,19 @@
 //
 // Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 // 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 #![allow(clippy::comparison_chain)]
 #![warn(unused_crate_dependencies)]
 
@@ -575,7 +577,7 @@
 			words += <span class="number">1</span>;
 		}
 
-		<span class="comment">// Note: can&#39;t overflow because we take words to be some u64 value / 8, which is
+		<span class="comment">// Note: can't overflow because we take words to be some u64 value / 8, which is
 		// necessarily less than sqrt(u64::MAX).
 		// Additionally, both base_length and mod_length are bounded to 1024, so this has
 		// an upper bound of roughly (1024 / 8) squared
@@ -598,7 +600,7 @@
 			// * exp_length is bounded to 1024 and is &gt; 32
 			// * exponent can be zero, so we subtract 1 after adding the other terms (whose sum
 			//   must be &gt; 0)
-			// * the addition can&#39;t overflow because the terms are both capped at roughly
+			// * the addition can't overflow because the terms are both capped at roughly
 			//   8 * max size of exp_length (1024)
 			// * the EIP spec is written in python, in which (exponent &amp; (2**256 - 1)) takes the
 			//   FIRST 32 bytes. However this `BigUint` `&amp;` operator takes the LAST 32 bytes.
@@ -667,34 +669,34 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>mod_len_buf = [<span class="number">0u8</span>; <span class="number">32</span>];
 		read_input(input, <span class="kw-2">&amp;mut </span>mod_len_buf, <span class="kw-2">&amp;mut </span>input_offset);
 
-		<span class="comment">// reasonable assumption: this must fit within the Ethereum EVM&#39;s max stack size
-		</span><span class="kw">let </span>max_size_big = BigUint::from_u32(<span class="number">1024</span>).expect(<span class="string">&quot;can&#39;t create BigUint&quot;</span>);
+		<span class="comment">// reasonable assumption: this must fit within the Ethereum EVM's max stack size
+		</span><span class="kw">let </span>max_size_big = BigUint::from_u32(<span class="number">1024</span>).expect(<span class="string">"can't create BigUint"</span>);
 
 		<span class="kw">let </span>base_len_big = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>base_len_buf);
 		<span class="kw">if </span>base_len_big &gt; max_size_big {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;unreasonably large base length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"unreasonably large base length"</span>.into()),
 			});
 		}
 
 		<span class="kw">let </span>exp_len_big = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>exp_len_buf);
 		<span class="kw">if </span>exp_len_big &gt; max_size_big {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;unreasonably large exponent length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"unreasonably large exponent length"</span>.into()),
 			});
 		}
 
 		<span class="kw">let </span>mod_len_big = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>mod_len_buf);
 		<span class="kw">if </span>mod_len_big &gt; max_size_big {
 			<span class="kw">return </span><span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;unreasonably large modulus length&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"unreasonably large modulus length"</span>.into()),
 			});
 		}
 
 		<span class="comment">// bounds check handled above
-		</span><span class="kw">let </span>base_len = base_len_big.to_usize().expect(<span class="string">&quot;base_len out of bounds&quot;</span>);
-		<span class="kw">let </span>exp_len = exp_len_big.to_usize().expect(<span class="string">&quot;exp_len out of bounds&quot;</span>);
-		<span class="kw">let </span>mod_len = mod_len_big.to_usize().expect(<span class="string">&quot;mod_len out of bounds&quot;</span>);
+		</span><span class="kw">let </span>base_len = base_len_big.to_usize().expect(<span class="string">"base_len out of bounds"</span>);
+		<span class="kw">let </span>exp_len = exp_len_big.to_usize().expect(<span class="string">"exp_len out of bounds"</span>);
+		<span class="kw">let </span>mod_len = mod_len_big.to_usize().expect(<span class="string">"mod_len out of bounds"</span>);
 
 		<span class="comment">// if mod_len is 0 output must be empty
 		</span><span class="kw">if </span>mod_len == <span class="number">0 </span>{
@@ -760,7 +762,7 @@
 			})
 		} <span class="kw">else </span>{
 			<span class="prelude-val">Err</span>(PrecompileFailure::Error {
-				exit_status: ExitError::Other(<span class="string">&quot;failed&quot;</span>.into()),
+				exit_status: ExitError::Other(<span class="string">"failed"</span>.into()),
 			})
 		}
 	}
@@ -775,7 +777,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>process_consensus_tests() -&gt; <span class="prelude-ty">Result</span>&lt;(), String&gt; {
-		test_precompile_test_vectors::&lt;Modexp&gt;(<span class="string">&quot;../testdata/modexp_eip2565.json&quot;</span>)<span class="question-mark">?</span>;
+		test_precompile_test_vectors::&lt;Modexp&gt;(<span class="string">"../testdata/modexp_eip2565.json"</span>)<span class="question-mark">?</span>;
 		<span class="prelude-val">Ok</span>(())
 	}
 
@@ -798,7 +800,7 @@
 				<span class="macro">assert_eq!</span>(precompile_result.output.len(), <span class="number">0</span>);
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?
+				<span class="macro">panic!</span>(<span class="string">"Modexp::execute() returned error"</span>); <span class="comment">// TODO: how to pass error on?
 			</span>}
 		}
 	}
@@ -806,11 +808,11 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_insufficient_input() {
 		<span class="kw">let </span>input = hex::decode(
-			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001\
+			<span class="string">"0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
-			0000000000000000000000000000000000000000000000000000000000000001&quot;</span>,
+			0000000000000000000000000000000000000000000000000000000000000001"</span>,
 		)
-		.expect(<span class="string">&quot;Decode failed&quot;</span>);
+		.expect(<span class="string">"Decode failed"</span>);
 
 		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
@@ -828,7 +830,7 @@
 				<span class="macro">assert_eq!</span>(precompile_result.output, <span class="macro">vec!</span>[<span class="number">0x00</span>]);
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?
+				<span class="macro">panic!</span>(<span class="string">"Modexp::execute() returned error"</span>); <span class="comment">// TODO: how to pass error on?
 			</span>}
 		}
 	}
@@ -836,11 +838,11 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_excessive_input() -&gt; <span class="prelude-ty">Result</span>&lt;(), PrecompileFailure&gt; {
 		<span class="kw">let </span>input = hex::decode(
-			<span class="string">&quot;1000000000000000000000000000000000000000000000000000000000000001\
+			<span class="string">"1000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
-			0000000000000000000000000000000000000000000000000000000000000001&quot;</span>,
+			0000000000000000000000000000000000000000000000000000000000000001"</span>,
 		)
-		.expect(<span class="string">&quot;Decode failed&quot;</span>);
+		.expect(<span class="string">"Decode failed"</span>);
 
 		<span class="kw">let </span>cost: u64 = <span class="number">1</span>;
 
@@ -854,13 +856,13 @@
 
 		<span class="kw">match </span>Modexp::execute(<span class="kw-2">&amp;mut </span>handle) {
 			<span class="prelude-val">Ok</span>(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Test not expected to pass&quot;</span>);
+				<span class="macro">panic!</span>(<span class="string">"Test not expected to pass"</span>);
 			}
 			<span class="prelude-val">Err</span>(e) =&gt; {
 				<span class="macro">assert_eq!</span>(
 					e,
 					PrecompileFailure::Error {
-						exit_status: ExitError::Other(<span class="string">&quot;unreasonably large base length&quot;</span>.into())
+						exit_status: ExitError::Other(<span class="string">"unreasonably large base length"</span>.into())
 					}
 				);
 				<span class="prelude-val">Ok</span>(())
@@ -871,14 +873,14 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_simple_inputs() {
 		<span class="kw">let </span>input = hex::decode(
-			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001\
+			<span class="string">"0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000001\
 			03\
 			05\
-			07&quot;</span>,
+			07"</span>,
 		)
-		.expect(<span class="string">&quot;Decode failed&quot;</span>);
+		.expect(<span class="string">"Decode failed"</span>);
 
 		<span class="comment">// 3 ^ 5 % 7 == 5
 
@@ -896,11 +898,11 @@
 			<span class="prelude-val">Ok</span>(precompile_result) =&gt; {
 				<span class="macro">assert_eq!</span>(precompile_result.output.len(), <span class="number">1</span>); <span class="comment">// should be same length as mod
 				</span><span class="kw">let </span>result = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>precompile_result.output[..]);
-				<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b&quot;5&quot;</span>, <span class="number">10</span>).unwrap();
+				<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b"5"</span>, <span class="number">10</span>).unwrap();
 				<span class="macro">assert_eq!</span>(result, expected);
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?
+				<span class="macro">panic!</span>(<span class="string">"Modexp::execute() returned error"</span>); <span class="comment">// TODO: how to pass error on?
 			</span>}
 		}
 	}
@@ -908,14 +910,14 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_large_inputs() {
 		<span class="kw">let </span>input = hex::decode(
-			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000020\
+			<span class="string">"0000000000000000000000000000000000000000000000000000000000000020\
 			0000000000000000000000000000000000000000000000000000000000000020\
 			0000000000000000000000000000000000000000000000000000000000000020\
 			000000000000000000000000000000000000000000000000000000000000EA5F\
 			0000000000000000000000000000000000000000000000000000000000000015\
-			0000000000000000000000000000000000000000000000000000000000003874&quot;</span>,
+			0000000000000000000000000000000000000000000000000000000000003874"</span>,
 		)
-		.expect(<span class="string">&quot;Decode failed&quot;</span>);
+		.expect(<span class="string">"Decode failed"</span>);
 
 		<span class="comment">// 59999 ^ 21 % 14452 = 10055
 
@@ -933,11 +935,11 @@
 			<span class="prelude-val">Ok</span>(precompile_result) =&gt; {
 				<span class="macro">assert_eq!</span>(precompile_result.output.len(), <span class="number">32</span>); <span class="comment">// should be same length as mod
 				</span><span class="kw">let </span>result = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>precompile_result.output[..]);
-				<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b&quot;10055&quot;</span>, <span class="number">10</span>).unwrap();
+				<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b"10055"</span>, <span class="number">10</span>).unwrap();
 				<span class="macro">assert_eq!</span>(result, expected);
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?
+				<span class="macro">panic!</span>(<span class="string">"Modexp::execute() returned error"</span>); <span class="comment">// TODO: how to pass error on?
 			</span>}
 		}
 	}
@@ -945,14 +947,14 @@
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_large_computation() {
 		<span class="kw">let </span>input = hex::decode(
-			<span class="string">&quot;0000000000000000000000000000000000000000000000000000000000000001\
+			<span class="string">"0000000000000000000000000000000000000000000000000000000000000001\
 			0000000000000000000000000000000000000000000000000000000000000020\
 			0000000000000000000000000000000000000000000000000000000000000020\
 			03\
 			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2e\
-			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f&quot;</span>,
+			fffffffffffffffffffffffffffffffffffffffffffffffffffffffefffffc2f"</span>,
 		)
-		.expect(<span class="string">&quot;Decode failed&quot;</span>);
+		.expect(<span class="string">"Decode failed"</span>);
 
 		<span class="kw">let </span>cost: u64 = <span class="number">100000</span>;
 
@@ -968,19 +970,19 @@
 			<span class="prelude-val">Ok</span>(precompile_result) =&gt; {
 				<span class="macro">assert_eq!</span>(precompile_result.output.len(), <span class="number">32</span>); <span class="comment">// should be same length as mod
 				</span><span class="kw">let </span>result = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>precompile_result.output[..]);
-				<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b&quot;1&quot;</span>, <span class="number">10</span>).unwrap();
+				<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b"1"</span>, <span class="number">10</span>).unwrap();
 				<span class="macro">assert_eq!</span>(result, expected);
 			}
 			<span class="prelude-val">Err</span>(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Modexp::execute() returned error&quot;</span>); <span class="comment">// TODO: how to pass error on?
+				<span class="macro">panic!</span>(<span class="string">"Modexp::execute() returned error"</span>); <span class="comment">// TODO: how to pass error on?
 			</span>}
 		}
 	}
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_zero_exp_with_33_length() {
-		<span class="comment">// This is a regression test which ensures that the &#39;iteration_count&#39; calculation
-		// in &#39;calculate_iteration_count&#39; cannot underflow.
+		<span class="comment">// This is a regression test which ensures that the 'iteration_count' calculation
+		// in 'calculate_iteration_count' cannot underflow.
 		//
 		// In debug mode, this underflow could cause a panic. Otherwise, it causes N**0 to
 		// be calculated at more-than-normal expense.
@@ -1006,11 +1008,11 @@
 		<span class="kw">let </span><span class="kw-2">mut </span>handle = MockHandle::new(input, <span class="prelude-val">Some</span>(cost), context);
 
 		<span class="kw">let </span>precompile_result =
-			Modexp::execute(<span class="kw-2">&amp;mut </span>handle).expect(<span class="string">&quot;Modexp::execute() returned error&quot;</span>);
+			Modexp::execute(<span class="kw-2">&amp;mut </span>handle).expect(<span class="string">"Modexp::execute() returned error"</span>);
 
 		<span class="macro">assert_eq!</span>(precompile_result.output.len(), <span class="number">1</span>); <span class="comment">// should be same length as mod
 		</span><span class="kw">let </span>result = BigUint::from_bytes_be(<span class="kw-2">&amp;</span>precompile_result.output[..]);
-		<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b&quot;0&quot;</span>, <span class="number">10</span>).unwrap();
+		<span class="kw">let </span>expected = BigUint::parse_bytes(<span class="string">b"0"</span>, <span class="number">10</span>).unwrap();
 		<span class="macro">assert_eq!</span>(result, expected);
 	}
 
@@ -1041,7 +1043,7 @@
 
 		<span class="kw">let </span><span class="kw-2">mut </span>handle = MockHandle::new(input, <span class="prelude-val">Some</span>(<span class="number">100_000</span>), context);
 
-		<span class="kw">let _ </span>= Modexp::execute(<span class="kw-2">&amp;mut </span>handle).expect(<span class="string">&quot;Modexp::execute() returned error&quot;</span>);
+		<span class="kw">let _ </span>= Modexp::execute(<span class="kw-2">&amp;mut </span>handle).expect(<span class="string">"Modexp::execute() returned error"</span>);
 
 		<span class="macro">assert_eq!</span>(handle.gas_used, <span class="number">7104 </span>* <span class="number">20</span>); <span class="comment">// gas used when ran in geth (x20)
 	</span>}

@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/eth.rs`."><title>eth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `template/node/src/eth.rs`."><title>eth.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="frontier_template_node" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../frontier_template_node/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -253,52 +255,52 @@
 </span><span class="attr">#[derive(Clone, Debug, clap::Parser)]
 </span><span class="kw">pub struct </span>EthConfiguration {
 	<span class="doccomment">/// Maximum number of logs in a query.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;10000&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"10000"</span>)]
 	</span><span class="kw">pub </span>max_past_logs: u32,
 
 	<span class="doccomment">/// Maximum fee history cache size.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;2048&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"2048"</span>)]
 	</span><span class="kw">pub </span>fee_history_limit: u64,
 
 	<span class="attr">#[arg(long)]
 	</span><span class="kw">pub </span>enable_dev_signer: bool,
 
 	<span class="doccomment">/// The dynamic-fee pallet target gas price set by block author
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;1&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"1"</span>)]
 	</span><span class="kw">pub </span>target_gas_price: u64,
 
 	<span class="doccomment">/// Maximum allowed gas limit will be `block.gas_limit * execute_gas_limit_multiplier`
 	/// when using eth_call/eth_estimateGas.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;10&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"10"</span>)]
 	</span><span class="kw">pub </span>execute_gas_limit_multiplier: u64,
 
 	<span class="doccomment">/// Size in bytes of the LRU cache for block data.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;50&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"50"</span>)]
 	</span><span class="kw">pub </span>eth_log_block_cache: usize,
 
 	<span class="doccomment">/// Size in bytes of the LRU cache for transactions statuses data.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;50&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"50"</span>)]
 	</span><span class="kw">pub </span>eth_statuses_cache: usize,
 
 	<span class="doccomment">/// Sets the frontier backend type (KeyValue or Sql)
 	</span><span class="attr">#[arg(long, value_enum, ignore_case = <span class="bool-val">true</span>, default_value_t = BackendType::default())]
 	</span><span class="kw">pub </span>frontier_backend_type: BackendType,
 
-	<span class="comment">// Sets the SQL backend&#39;s pool size.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;100&quot;</span>)]
+	<span class="comment">// Sets the SQL backend's pool size.
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"100"</span>)]
 	</span><span class="kw">pub </span>frontier_sql_backend_pool_size: u32,
 
-	<span class="doccomment">/// Sets the SQL backend&#39;s query timeout in number of VM ops.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;10000000&quot;</span>)]
+	<span class="doccomment">/// Sets the SQL backend's query timeout in number of VM ops.
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"10000000"</span>)]
 	</span><span class="kw">pub </span>frontier_sql_backend_num_ops_timeout: u32,
 
-	<span class="doccomment">/// Sets the SQL backend&#39;s auxiliary thread limit.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;4&quot;</span>)]
+	<span class="doccomment">/// Sets the SQL backend's auxiliary thread limit.
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"4"</span>)]
 	</span><span class="kw">pub </span>frontier_sql_backend_thread_count: u32,
 
-	<span class="doccomment">/// Sets the SQL backend&#39;s query timeout in number of VM ops.
+	<span class="doccomment">/// Sets the SQL backend's query timeout in number of VM ops.
 	/// Default value is 200MB.
-	</span><span class="attr">#[arg(long, default_value = <span class="string">&quot;209715200&quot;</span>)]
+	</span><span class="attr">#[arg(long, default_value = <span class="string">"209715200"</span>)]
 	</span><span class="kw">pub </span>frontier_sql_backend_cache_size: u64,
 }
 
@@ -350,16 +352,16 @@
 	&gt;,
 ) <span class="kw">where
 	</span>RuntimeApi: ConstructRuntimeApi&lt;Block, FullClient&lt;RuntimeApi, Executor&gt;&gt;,
-	RuntimeApi: Send + Sync + <span class="lifetime">&#39;static</span>,
+	RuntimeApi: Send + Sync + <span class="lifetime">'static</span>,
 	RuntimeApi::RuntimeApi: EthCompatRuntimeApiCollection,
-	Executor: NativeExecutionDispatch + <span class="lifetime">&#39;static</span>,
+	Executor: NativeExecutionDispatch + <span class="lifetime">'static</span>,
 {
 	<span class="comment">// Spawn main mapping sync worker background task.
 	</span><span class="kw">match </span>frontier_backend {
 		fc_db::Backend::KeyValue(b) =&gt; {
 			task_manager.spawn_essential_handle().spawn(
-				<span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
-				<span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+				<span class="string">"frontier-mapping-sync-worker"</span>,
+				<span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
 				fc_mapping_sync::kv::MappingSyncWorker::new(
 					client.import_notification_stream(),
 					Duration::new(<span class="number">6</span>, <span class="number">0</span>),
@@ -378,8 +380,8 @@
 		}
 		fc_db::Backend::Sql(b) =&gt; {
 			task_manager.spawn_essential_handle().spawn_blocking(
-				<span class="string">&quot;frontier-mapping-sync-worker&quot;</span>,
-				<span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+				<span class="string">"frontier-mapping-sync-worker"</span>,
+				<span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
 				fc_mapping_sync::sql::SyncWorker::run(
 					client.clone(),
 					backend,
@@ -402,16 +404,16 @@
 		<span class="comment">// Each filter is allowed to stay in the pool for 100 blocks.
 		</span><span class="kw">const </span>FILTER_RETAIN_THRESHOLD: u64 = <span class="number">100</span>;
 		task_manager.spawn_essential_handle().spawn(
-			<span class="string">&quot;frontier-filter-pool&quot;</span>,
-			<span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+			<span class="string">"frontier-filter-pool"</span>,
+			<span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
 			EthTask::filter_pool_task(client.clone(), filter_pool, FILTER_RETAIN_THRESHOLD),
 		);
 	}
 
 	<span class="comment">// Spawn Frontier FeeHistory cache maintenance task.
 	</span>task_manager.spawn_essential_handle().spawn(
-		<span class="string">&quot;frontier-fee-history&quot;</span>,
-		<span class="prelude-val">Some</span>(<span class="string">&quot;frontier&quot;</span>),
+		<span class="string">"frontier-fee-history"</span>,
+		<span class="prelude-val">Some</span>(<span class="string">"frontier"</span>),
 		EthTask::fee_history_task(
 			client,
 			overrides,

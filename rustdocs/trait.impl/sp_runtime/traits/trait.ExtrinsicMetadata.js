@@ -1,3 +1,3 @@
 (function() {var implementors = {
-"fp_self_contained":[["impl&lt;Address, Call, Signature, Extra&gt; ExtrinsicMetadata for <a class=\"struct\" href=\"fp_self_contained/struct.UncheckedExtrinsic.html\" title=\"struct fp_self_contained::UncheckedExtrinsic\">UncheckedExtrinsic</a>&lt;Address, Call, Signature, Extra&gt;<span class=\"where fmt-newline\">where\n    Extra: SignedExtension,</span>"]]
+"fp_self_contained":[["impl&lt;Address, Call, Signature, Extra&gt; ExtrinsicMetadata for <a class=\"struct\" href=\"fp_self_contained/struct.UncheckedExtrinsic.html\" title=\"struct fp_self_contained::UncheckedExtrinsic\">UncheckedExtrinsic</a>&lt;Address, Call, Signature, Extra&gt;<div class=\"where\">where\n    Extra: SignedExtension,</div>"]]
 };if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

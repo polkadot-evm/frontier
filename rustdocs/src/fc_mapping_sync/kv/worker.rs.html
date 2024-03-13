@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/mapping-sync/src/kv/worker.rs`."><title>worker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_mapping_sync" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `client/mapping-sync/src/kv/worker.rs`."><title>worker.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../../" data-static-root-path="../../../static.files/" data-current-crate="fc_mapping_sync" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../../src-files.js"></script><script defer src="../../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../../fc_mapping_sync/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -540,7 +542,7 @@
 	sync_from: &lt;Block::Header <span class="kw">as </span>HeaderT&gt;::Number,
 	strategy: SyncStrategy,
 
-	sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">&#39;static</span>&gt;,
+	sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">'static</span>&gt;,
 	pubsub_notification_sinks:
 		Arc&lt;<span class="kw">crate</span>::EthereumBlockNotificationSinks&lt;<span class="kw">crate</span>::EthereumBlockNotification&lt;Block&gt;&gt;&gt;,
 }
@@ -558,7 +560,7 @@
 		retry_times: usize,
 		sync_from: &lt;Block::Header <span class="kw">as </span>HeaderT&gt;::Number,
 		strategy: SyncStrategy,
-		sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">&#39;static</span>&gt;,
+		sync_oracle: Arc&lt;<span class="kw">dyn </span>SyncOracle + Send + Sync + <span class="lifetime">'static</span>&gt;,
 		pubsub_notification_sinks: Arc&lt;
 			<span class="kw">crate</span>::EthereumBlockNotificationSinks&lt;<span class="kw">crate</span>::EthereumBlockNotification&lt;Block&gt;&gt;,
 		&gt;,
@@ -640,7 +642,7 @@
 				}
 				<span class="prelude-val">Err</span>(e) =&gt; {
 					<span class="self">self</span>.have_next = <span class="bool-val">false</span>;
-					<span class="macro">debug!</span>(target: <span class="string">&quot;mapping-sync&quot;</span>, <span class="string">&quot;Syncing failed with error {:?}, retrying.&quot;</span>, e);
+					<span class="macro">debug!</span>(target: <span class="string">"mapping-sync"</span>, <span class="string">"Syncing failed with error {:?}, retrying."</span>, e);
 					Poll::Ready(<span class="prelude-val">Some</span>(()))
 				}
 			}
@@ -721,7 +723,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>block_import_notification_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -754,7 +756,7 @@
 					},
 				},
 			)
-			.expect(<span class="string">&quot;frontier backend&quot;</span>),
+			.expect(<span class="string">"frontier backend"</span>),
 		);
 
 		<span class="kw">let </span>notification_stream = client.clone().import_notification_stream();
@@ -788,7 +790,7 @@
 		{
 			<span class="comment">// A new mpsc channel
 			</span><span class="kw">let </span>(inner_sink, <span class="kw-2">mut </span>block_notification_stream) =
-				sc_utils::mpsc::tracing_unbounded(<span class="string">&quot;pubsub_notification_stream&quot;</span>, <span class="number">100_000</span>);
+				sc_utils::mpsc::tracing_unbounded(<span class="string">"pubsub_notification_stream"</span>, <span class="number">100_000</span>);
 
 			{
 				<span class="comment">// This scope represents a call to eth_subscribe, where it briefly locks the pool
@@ -798,7 +800,7 @@
 				</span>sinks.push(inner_sink);
 			}
 
-			<span class="comment">// Let&#39;s produce a block, which we expect to trigger a channel message
+			<span class="comment">// Let's produce a block, which we expect to trigger a channel message
 			</span><span class="kw">let </span>chain_info = client.chain_info();
 			<span class="kw">let </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
 				.on_parent_block(chain_info.best_hash)
@@ -815,7 +817,7 @@
 				block_notification_stream
 					.next()
 					.<span class="kw">await
-					</span>.expect(<span class="string">&quot;a message&quot;</span>)
+					</span>.expect(<span class="string">"a message"</span>)
 					.hash,
 				block_hash
 			);
@@ -830,7 +832,7 @@
 		{
 			<span class="comment">// Create yet another mpsc channel
 			</span><span class="kw">let </span>(inner_sink, <span class="kw-2">mut </span>block_notification_stream) =
-				sc_utils::mpsc::tracing_unbounded(<span class="string">&quot;pubsub_notification_stream&quot;</span>, <span class="number">100_000</span>);
+				sc_utils::mpsc::tracing_unbounded(<span class="string">"pubsub_notification_stream"</span>, <span class="number">100_000</span>);
 
 			{
 				<span class="kw">let </span>sinks = <span class="kw-2">&amp;mut </span>pubsub_notification_sinks.lock();
@@ -840,7 +842,7 @@
 				</span><span class="macro">assert_eq!</span>(sinks.len(), <span class="number">2</span>);
 			}
 
-			<span class="comment">// Let&#39;s produce another block, this not only triggers a message in the new channel
+			<span class="comment">// Let's produce another block, this not only triggers a message in the new channel
 			// but also removes the closed channels from the pool.
 			</span><span class="kw">let </span>chain_info = client.chain_info();
 			<span class="kw">let </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
@@ -858,7 +860,7 @@
 				block_notification_stream
 					.next()
 					.<span class="kw">await
-					</span>.expect(<span class="string">&quot;a message&quot;</span>)
+					</span>.expect(<span class="string">"a message"</span>)
 					.hash,
 				block_hash
 			);
@@ -871,7 +873,7 @@
 
 	<span class="attr">#[tokio::test]
 	</span><span class="kw">async fn </span>sink_removal_when_syncing_works() {
-		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">&quot;create a temporary directory&quot;</span>);
+		<span class="kw">let </span>tmp = tempdir().expect(<span class="string">"create a temporary directory"</span>);
 		<span class="kw">let </span>builder = TestClientBuilder::new().add_extra_storage(
 			PALLET_ETHEREUM_SCHEMA.to_vec(),
 			Encode::encode(<span class="kw-2">&amp;</span>EthereumStorageSchema::V3),
@@ -904,7 +906,7 @@
 					},
 				},
 			)
-			.expect(<span class="string">&quot;frontier backend&quot;</span>),
+			.expect(<span class="string">"frontier backend"</span>),
 		);
 
 		<span class="kw">let </span>notification_stream = client.clone().import_notification_stream();
@@ -938,7 +940,7 @@
 		{
 			<span class="comment">// A new mpsc channel
 			</span><span class="kw">let </span>(inner_sink, <span class="kw-2">mut </span>block_notification_stream) =
-				sc_utils::mpsc::tracing_unbounded(<span class="string">&quot;pubsub_notification_stream&quot;</span>, <span class="number">100_000</span>);
+				sc_utils::mpsc::tracing_unbounded(<span class="string">"pubsub_notification_stream"</span>, <span class="number">100_000</span>);
 
 			{
 				<span class="comment">// This scope represents a call to eth_subscribe, where it briefly locks the pool
@@ -948,7 +950,7 @@
 				</span>sinks.push(inner_sink);
 			}
 
-			<span class="comment">// Let&#39;s produce a block, which we expect to trigger a channel message
+			<span class="comment">// Let's produce a block, which we expect to trigger a channel message
 			</span><span class="kw">let </span>chain_info = client.chain_info();
 			<span class="kw">let </span>builder = BlockBuilderBuilder::new(<span class="kw-2">&amp;*</span>client)
 				.on_parent_block(chain_info.best_hash)

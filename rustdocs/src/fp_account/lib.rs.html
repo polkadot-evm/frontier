@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/account/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fp_account" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `primitives/account/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="fp_account" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../fp_account/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -296,19 +298,19 @@
 //
 // Copyright (c) 2020-2023 Parity Technologies (UK) Ltd.
 //
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 // 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 
 </span><span class="kw">use </span>scale_codec::{Decode, Encode, MaxEncodedLen};
 <span class="kw">use </span>scale_info::TypeInfo;
@@ -325,32 +327,32 @@
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 </span><span class="kw">pub struct </span>AccountId20(<span class="kw">pub </span>[u8; <span class="number">20</span>]);
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;serde&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"serde"</span>)]
 </span><span class="macro">impl_serde::impl_fixed_hash_serde!</span>(AccountId20, <span class="number">20</span>);
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl </span>std::str::FromStr <span class="kw">for </span>AccountId20 {
-	<span class="kw">type </span><span class="prelude-val">Err </span>= <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>str;
+	<span class="kw">type </span><span class="prelude-val">Err </span>= <span class="kw-2">&amp;</span><span class="lifetime">'static </span>str;
 
 	<span class="kw">fn </span>from_str(s: <span class="kw-2">&amp;</span>str) -&gt; <span class="prelude-ty">Result</span>&lt;<span class="self">Self</span>, <span class="self">Self</span>::Err&gt; {
 		H160::from_str(s)
 			.map(Into::into)
-			.map_err(|<span class="kw">_</span>| <span class="string">&quot;invalid hex address.&quot;</span>)
+			.map_err(|<span class="kw">_</span>| <span class="string">"invalid hex address."</span>)
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>AccountId20 {
-	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; std::fmt::Result {
-		<span class="kw">let </span>address = hex::encode(<span class="self">self</span>.<span class="number">0</span>).trim_start_matches(<span class="string">&quot;0x&quot;</span>).to_lowercase();
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; std::fmt::Result {
+		<span class="kw">let </span>address = hex::encode(<span class="self">self</span>.<span class="number">0</span>).trim_start_matches(<span class="string">"0x"</span>).to_lowercase();
 		<span class="kw">let </span>address_hash = hex::encode(keccak_256(address.as_bytes()));
 
 		<span class="kw">let </span>checksum: String =
 			address
 				.char_indices()
-				.fold(String::from(<span class="string">&quot;0x&quot;</span>), |<span class="kw-2">mut </span>acc, (index, address_char)| {
+				.fold(String::from(<span class="string">"0x"</span>), |<span class="kw-2">mut </span>acc, (index, address_char)| {
 					<span class="kw">let </span>n = u16::from_str_radix(<span class="kw-2">&amp;</span>address_hash[index..index + <span class="number">1</span>], <span class="number">16</span>)
-						.expect(<span class="string">&quot;Keccak256 hashed; qed&quot;</span>);
+						.expect(<span class="string">"Keccak256 hashed; qed"</span>);
 
 					<span class="kw">if </span>n &gt; <span class="number">7 </span>{
 						<span class="comment">// make char uppercase if ith character is 9..f
@@ -362,13 +364,13 @@
 
 					acc
 				});
-		<span class="macro">write!</span>(f, <span class="string">&quot;{checksum}&quot;</span>)
+		<span class="macro">write!</span>(f, <span class="string">"{checksum}"</span>)
 	}
 }
 
 <span class="kw">impl </span>sp_std::fmt::Debug <span class="kw">for </span>AccountId20 {
-	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>sp_std::fmt::Formatter&lt;<span class="lifetime">&#39;_</span>&gt;) -&gt; sp_std::fmt::Result {
-		<span class="macro">write!</span>(f, <span class="string">&quot;{:?}&quot;</span>, H160(<span class="self">self</span>.<span class="number">0</span>))
+	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, f: <span class="kw-2">&amp;mut </span>sp_std::fmt::Formatter&lt;<span class="lifetime">'_</span>&gt;) -&gt; sp_std::fmt::Result {
+		<span class="macro">write!</span>(f, <span class="string">"{:?}"</span>, H160(<span class="self">self</span>.<span class="number">0</span>))
 	}
 }
 
@@ -378,9 +380,9 @@
 	}
 }
 
-<span class="kw">impl</span>&lt;<span class="lifetime">&#39;a</span>&gt; TryFrom&lt;<span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]&gt; <span class="kw">for </span>AccountId20 {
+<span class="kw">impl</span>&lt;<span class="lifetime">'a</span>&gt; TryFrom&lt;<span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8]&gt; <span class="kw">for </span>AccountId20 {
 	<span class="kw">type </span>Error = ();
-	<span class="kw">fn </span>try_from(x: <span class="kw-2">&amp;</span><span class="lifetime">&#39;a </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;AccountId20, ()&gt; {
+	<span class="kw">fn </span>try_from(x: <span class="kw-2">&amp;</span><span class="lifetime">'a </span>[u8]) -&gt; <span class="prelude-ty">Result</span>&lt;AccountId20, ()&gt; {
 		<span class="kw">if </span>x.len() == <span class="number">20 </span>{
 			<span class="kw">let </span><span class="kw-2">mut </span>data = [<span class="number">0</span>; <span class="number">20</span>];
 			data.copy_from_slice(x);
@@ -436,7 +438,7 @@
 <span class="kw">impl </span>From&lt;ecdsa::Public&gt; <span class="kw">for </span>AccountId20 {
 	<span class="kw">fn </span>from(pk: ecdsa::Public) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>decompressed = libsecp256k1::PublicKey::parse_compressed(<span class="kw-2">&amp;</span>pk.<span class="number">0</span>)
-			.expect(<span class="string">&quot;Wrong compressed public key provided&quot;</span>)
+			.expect(<span class="string">"Wrong compressed public key provided"</span>)
 			.serialize();
 		<span class="kw">let </span><span class="kw-2">mut </span>m = [<span class="number">0u8</span>; <span class="number">64</span>];
 		m.copy_from_slice(<span class="kw-2">&amp;</span>decompressed[<span class="number">1</span>..<span class="number">65</span>]);
@@ -461,7 +463,7 @@
 }
 
 <span class="attr">#[derive(Eq, PartialEq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
-#[cfg_attr(feature = <span class="string">&quot;serde&quot;</span>, derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = <span class="string">"serde"</span>, derive(serde::Serialize, serde::Deserialize))]
 </span><span class="kw">pub struct </span>EthereumSignature(ecdsa::Signature);
 
 <span class="kw">impl </span>sp_runtime::traits::Verify <span class="kw">for </span>EthereumSignature {
@@ -471,15 +473,15 @@
 		<span class="kw">match </span>sp_io::crypto::secp256k1_ecdsa_recover(<span class="self">self</span>.<span class="number">0</span>.as_ref(), <span class="kw-2">&amp;</span>m) {
 			<span class="prelude-val">Ok</span>(pubkey) =&gt; AccountId20(H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>pubkey))).<span class="number">0</span>) == <span class="kw-2">*</span>signer,
 			<span class="prelude-val">Err</span>(sp_io::EcdsaVerifyError::BadRS) =&gt; {
-				<span class="macro">log::error!</span>(target: <span class="string">&quot;evm&quot;</span>, <span class="string">&quot;Error recovering: Incorrect value of R or S&quot;</span>);
+				<span class="macro">log::error!</span>(target: <span class="string">"evm"</span>, <span class="string">"Error recovering: Incorrect value of R or S"</span>);
 				<span class="bool-val">false
 			</span>}
 			<span class="prelude-val">Err</span>(sp_io::EcdsaVerifyError::BadV) =&gt; {
-				<span class="macro">log::error!</span>(target: <span class="string">&quot;evm&quot;</span>, <span class="string">&quot;Error recovering: Incorrect value of V&quot;</span>);
+				<span class="macro">log::error!</span>(target: <span class="string">"evm"</span>, <span class="string">"Error recovering: Incorrect value of V"</span>);
 				<span class="bool-val">false
 			</span>}
 			<span class="prelude-val">Err</span>(sp_io::EcdsaVerifyError::BadSignature) =&gt; {
-				<span class="macro">log::error!</span>(target: <span class="string">&quot;evm&quot;</span>, <span class="string">&quot;Error recovering: Invalid signature&quot;</span>);
+				<span class="macro">log::error!</span>(target: <span class="string">"evm"</span>, <span class="string">"Error recovering: Invalid signature"</span>);
 				<span class="bool-val">false
 			</span>}
 		}
@@ -490,10 +492,10 @@
 	<span class="kw">fn </span>from(signature: MultiSignature) -&gt; <span class="self">Self </span>{
 		<span class="kw">match </span>signature {
 			MultiSignature::Ed25519(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Ed25519 not supported for EthereumSignature&quot;</span>)
+				<span class="macro">panic!</span>(<span class="string">"Ed25519 not supported for EthereumSignature"</span>)
 			}
 			MultiSignature::Sr25519(<span class="kw">_</span>) =&gt; {
-				<span class="macro">panic!</span>(<span class="string">&quot;Sr25519 not supported for EthereumSignature&quot;</span>)
+				<span class="macro">panic!</span>(<span class="string">"Sr25519 not supported for EthereumSignature"</span>)
 			}
 			MultiSignature::Ecdsa(sig) =&gt; <span class="self">Self</span>(sig),
 		}
@@ -523,17 +525,17 @@
 	}
 }
 
-<span class="attr">#[cfg(feature = <span class="string">&quot;std&quot;</span>)]
+<span class="attr">#[cfg(feature = <span class="string">"std"</span>)]
 </span><span class="kw">impl </span>std::fmt::Display <span class="kw">for </span>EthereumSigner {
 	<span class="kw">fn </span>fmt(<span class="kw-2">&amp;</span><span class="self">self</span>, fmt: <span class="kw-2">&amp;mut </span>std::fmt::Formatter) -&gt; std::fmt::Result {
-		<span class="macro">write!</span>(fmt, <span class="string">&quot;{:?}&quot;</span>, H160::from(<span class="self">self</span>.<span class="number">0</span>))
+		<span class="macro">write!</span>(fmt, <span class="string">"{:?}"</span>, H160::from(<span class="self">self</span>.<span class="number">0</span>))
 	}
 }
 
 <span class="kw">impl </span>From&lt;ecdsa::Public&gt; <span class="kw">for </span>EthereumSigner {
 	<span class="kw">fn </span>from(pk: ecdsa::Public) -&gt; <span class="self">Self </span>{
 		<span class="kw">let </span>decompressed = libsecp256k1::PublicKey::parse_compressed(<span class="kw-2">&amp;</span>pk.<span class="number">0</span>)
-			.expect(<span class="string">&quot;Wrong compressed public key provided&quot;</span>)
+			.expect(<span class="string">"Wrong compressed public key provided"</span>)
 			.serialize();
 		<span class="kw">let </span><span class="kw-2">mut </span>m = [<span class="number">0u8</span>; <span class="number">64</span>];
 		m.copy_from_slice(<span class="kw-2">&amp;</span>decompressed[<span class="number">1</span>..<span class="number">65</span>]);
@@ -550,9 +552,9 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_derive_from_secret_key() {
-		<span class="kw">let </span>sk = hex::decode(<span class="string">&quot;eb3d6b0b0c794f6fd8964b4a28df99d4baa5f9c8d33603c4cc62504daa259358&quot;</span>)
+		<span class="kw">let </span>sk = hex::decode(<span class="string">"eb3d6b0b0c794f6fd8964b4a28df99d4baa5f9c8d33603c4cc62504daa259358"</span>)
 			.unwrap();
-		<span class="kw">let </span>hex_acc: [u8; <span class="number">20</span>] = hex::decode(<span class="string">&quot;98fa2838ee6471ae87135880f870a785318e6787&quot;</span>)
+		<span class="kw">let </span>hex_acc: [u8; <span class="number">20</span>] = hex::decode(<span class="string">"98fa2838ee6471ae87135880f870a785318e6787"</span>)
 			.unwrap()
 			.try_into()
 			.unwrap();
@@ -566,7 +568,7 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_from_h160() {
-		<span class="kw">let </span>m = hex::decode(<span class="string">&quot;28490327ff4e60d44b8aadf5478266422ed01232cc712c2d617e5c650ca15b85&quot;</span>)
+		<span class="kw">let </span>m = hex::decode(<span class="string">"28490327ff4e60d44b8aadf5478266422ed01232cc712c2d617e5c650ca15b85"</span>)
 			.unwrap();
 		<span class="kw">let </span>old: AccountId20 = H160::from(H256::from(keccak_256(<span class="kw-2">&amp;</span>m))).into();
 		<span class="kw">let </span>new: AccountId20 = H160::from_slice(<span class="kw-2">&amp;</span>keccak_256(<span class="kw-2">&amp;</span>m)[<span class="number">12</span>..<span class="number">32</span>]).into();
@@ -575,13 +577,13 @@
 
 	<span class="attr">#[test]
 	</span><span class="kw">fn </span>test_account_display() {
-		<span class="kw">let </span>pk = ecdsa::Pair::from_string(<span class="string">&quot;//Alice&quot;</span>, <span class="prelude-val">None</span>)
-			.expect(<span class="string">&quot;static values are valid; qed&quot;</span>)
+		<span class="kw">let </span>pk = ecdsa::Pair::from_string(<span class="string">"//Alice"</span>, <span class="prelude-val">None</span>)
+			.expect(<span class="string">"static values are valid; qed"</span>)
 			.public();
 		<span class="kw">let </span>signer: EthereumSigner = pk.into();
 		<span class="kw">let </span>account: AccountId20 = signer.into_account();
-		<span class="kw">let </span>account_fmt = <span class="macro">format!</span>(<span class="string">&quot;{}&quot;</span>, account);
-		<span class="macro">assert_eq!</span>(account_fmt, <span class="string">&quot;0xE04CC55ebEE1cBCE552f250e85c57B70B2E2625b&quot;</span>);
+		<span class="kw">let </span>account_fmt = <span class="macro">format!</span>(<span class="string">"{}"</span>, account);
+		<span class="macro">assert_eq!</span>(account_fmt, <span class="string">"0xE04CC55ebEE1cBCE552f250e85c57B70B2E2625b"</span>);
 	}
 }
 </code></pre></div></section></main></body></html>

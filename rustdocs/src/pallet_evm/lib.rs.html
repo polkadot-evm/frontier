@@ -1,4 +1,6 @@
-<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Bold-a2c9cd1067f8b328.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-9ee3a5e31a2afa3e.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.75.0-nightly (9d83ac217 2023-10-31)" data-channel="nightly" data-search-js="search-8fbf244ebcf71464.js" data-settings-js="settings-74424d7eec62a23e.js" ><script src="../../static.files/storage-fec3eaa3851e447d.js"></script><script defer src="../../static.files/src-script-3280b574d94e47b4.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-9dd44ab47b99a0fb.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-5d8b3c7633ad77ba.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"></nav><main><nav class="sub"><form class="search-form"><span></span><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" title="help" tabindex="-1"><a href="../../help.html">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
+<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="generator" content="rustdoc"><meta name="description" content="Source of the Rust file `frame/evm/src/lib.rs`."><title>lib.rs - source</title><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceSerif4-Regular-46f98efaafac5295.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Regular-018c141bf0843ffd.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/FiraSans-Medium-8f9a781e4970d388.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Regular-562dcc5011b6de7d.ttf.woff2"><link rel="preload" as="font" type="font/woff2" crossorigin href="../../static.files/SourceCodePro-Semibold-d899c5a5c4aeb14a.ttf.woff2"><link rel="stylesheet" href="../../static.files/normalize-76eba96aa4d2e634.css"><link rel="stylesheet" href="../../static.files/rustdoc-b1a3e7f8283b8434.css"><meta name="rustdoc-vars" data-root-path="../../" data-static-root-path="../../static.files/" data-current-crate="pallet_evm" data-themes="" data-resource-suffix="" data-rustdoc-version="1.77.0-nightly (ef71f1047 2024-01-21)" data-channel="nightly" data-search-js="search-dd67cee4cfa65049.js" data-settings-js="settings-4313503d2e1961c2.js" ><script src="../../static.files/storage-f2adc0d6ca4d09fb.js"></script><script defer src="../../static.files/src-script-e66d777a5a92e9b2.js"></script><script defer src="../../src-files.js"></script><script defer src="../../static.files/main-0b2e2def73e61cbe.js"></script><noscript><link rel="stylesheet" href="../../static.files/noscript-04d5337699b92874.css"></noscript><link rel="alternate icon" type="image/png" href="../../static.files/favicon-16x16-8b506e7a72182f1c.png"><link rel="alternate icon" type="image/png" href="../../static.files/favicon-32x32-422f7d1d52889060.png"><link rel="icon" type="image/svg+xml" href="../../static.files/favicon-2c020d218678b618.svg"></head><body class="rustdoc src"><!--[if lte IE 11]><div class="warning">This old browser is unsupported and will most likely display funky things.</div><![endif]--><nav class="sidebar"><div class="src-sidebar-title">
+            <h2>Files</h2></div></nav><div class="sidebar-resizer"></div>
+    <main><nav class="sub"><form class="search-form"><span></span><div id="sidebar-button" tabindex="-1"><a href="../../pallet_evm/all.html" title="show sidebar"></a></div><input class="search-input" name="search" aria-label="Run search in the documentation" autocomplete="off" spellcheck="false" placeholder="Click or press ‘S’ to search, ‘?’ for more options…" type="search"><div id="help-button" tabindex="-1"><a href="../../help.html" title="help">?</a></div><div id="settings-menu" tabindex="-1"><a href="../../settings.html" title="settings"><img width="22" height="22" alt="Change settings" src="../../static.files/wheel-7b819b6101059cd0.svg"></a></div></form></nav><section id="main-content" class="content"><div class="example-wrap"><div data-nosnippet><pre class="src-line-numbers"><a href="#1" id="1">1</a>
 <a href="#2" id="2">2</a>
 <a href="#3" id="3">3</a>
 <a href="#4" id="4">4</a>
@@ -1089,19 +1091,22 @@
 <a href="#1089" id="1089">1089</a>
 <a href="#1090" id="1090">1090</a>
 <a href="#1091" id="1091">1091</a>
+<a href="#1092" id="1092">1092</a>
+<a href="#1093" id="1093">1093</a>
+<a href="#1094" id="1094">1094</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
 // Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
 //
-// Licensed under the Apache License, Version 2.0 (the &quot;License&quot;);
+// Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
 // 	http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an &quot;AS IS&quot; BASIS,
+// distributed under the License is distributed on an "AS IS" BASIS,
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
@@ -1114,7 +1119,7 @@
 //! ## EVM Engine
 //!
 //! The EVM pallet uses [`SputnikVM`](https://github.com/rust-blockchain/evm) as the underlying EVM engine.
-//! The engine is overhauled so that it&#39;s [`modular`](https://github.com/corepaper/evm).
+//! The engine is overhauled so that it's [`modular`](https://github.com/corepaper/evm).
 //!
 //! ## Execution Lifecycle
 //!
@@ -1122,7 +1127,7 @@
 //! to deposit or withdraw balance from the Substrate base-currency into a different balance managed and used by
 //! the EVM pallet. Once a user has populated their balance, they can create and call smart contracts using this pallet.
 //!
-//! There&#39;s one-to-one mapping from Substrate accounts and EVM external accounts that is defined by a conversion function.
+//! There's one-to-one mapping from Substrate accounts and EVM external accounts that is defined by a conversion function.
 //!
 //! ## EVM Pallet vs Ethereum Network
 //!
@@ -1135,18 +1140,18 @@
 //! in the Substrate runtime.
 //! - Difficulty and coinbase, which do not make sense in this pallet and is currently hard coded to zero.
 //!
-//! We currently do not aim to make unobservable behaviors, such as state root, to be the same. We also don&#39;t aim to follow
-//! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account&#39;s
+//! We currently do not aim to make unobservable behaviors, such as state root, to be the same. We also don't aim to follow
+//! the exact same transaction / receipt format. However, given one Ethereum transaction and one Substrate account's
 //! private key, one should be able to convert any Ethereum transaction into a transaction compatible with this pallet.
 //!
 //! The gas configurations are configurable. Right now, a pre-defined London hard fork configuration option is provided.
 
-</span><span class="comment">// Ensure we&#39;re `no_std` when compiling for Wasm.
-</span><span class="attr">#![cfg_attr(not(feature = <span class="string">&quot;std&quot;</span>), no_std)]
+</span><span class="comment">// Ensure we're `no_std` when compiling for Wasm.
+</span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
 #![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
-#[cfg(feature = <span class="string">&quot;runtime-benchmarks&quot;</span>)]
+#[cfg(feature = <span class="string">"runtime-benchmarks"</span>)]
 </span><span class="kw">pub mod </span>benchmarking;
 
 <span class="attr">#[cfg(test)]
@@ -1270,7 +1275,7 @@
 		</span><span class="kw">type </span>WeightInfo: WeightInfo;
 
 		<span class="doccomment">/// EVM config used in the module.
-		</span><span class="kw">fn </span>config() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">&#39;static </span>EvmConfig {
+		</span><span class="kw">fn </span>config() -&gt; <span class="kw-2">&amp;</span><span class="lifetime">'static </span>EvmConfig {
 			<span class="kw-2">&amp;</span>SHANGHAI_CONFIG
 		}
 	}
@@ -1641,7 +1646,10 @@
 					frame_system::Pallet::&lt;T&gt;::inc_account_nonce(<span class="kw-2">&amp;</span>account_id);
 				}
 
-				T::Currency::deposit_creating(<span class="kw-2">&amp;</span>account_id, account.balance.unique_saturated_into());
+				<span class="kw">let _ </span>= T::Currency::deposit_creating(
+					<span class="kw-2">&amp;</span>account_id,
+					account.balance.unique_saturated_into(),
+				);
 
 				Pallet::&lt;T&gt;::create_account(<span class="kw-2">*</span>address, account.code.clone());
 
@@ -1823,7 +1831,7 @@
 <span class="kw">impl</span>&lt;H: Hasher&lt;Out = H256&gt;&gt; AddressMapping&lt;AccountId32&gt; <span class="kw">for </span>HashedAddressMapping&lt;H&gt; {
 	<span class="kw">fn </span>into_account_id(address: H160) -&gt; AccountId32 {
 		<span class="kw">let </span><span class="kw-2">mut </span>data = [<span class="number">0u8</span>; <span class="number">24</span>];
-		data[<span class="number">0</span>..<span class="number">4</span>].copy_from_slice(<span class="string">b&quot;evm:&quot;</span>);
+		data[<span class="number">0</span>..<span class="number">4</span>].copy_from_slice(<span class="string">b"evm:"</span>);
 		data[<span class="number">4</span>..<span class="number">24</span>].copy_from_slice(<span class="kw-2">&amp;</span>address[..]);
 		<span class="kw">let </span>hash = H::hash(<span class="kw-2">&amp;</span>data);
 
@@ -1952,7 +1960,7 @@
 	}
 
 	<span class="doccomment">/// Get the account metadata (hash and size) from storage if it exists,
-	/// or compute it from code and store it if it doesn&#39;t exist.
+	/// or compute it from code and store it if it doesn't exist.
 	</span><span class="kw">pub fn </span>account_code_metadata(address: H160) -&gt; CodeMetadata {
 		<span class="kw">if let </span><span class="prelude-val">Some</span>(meta) = &lt;AccountCodesMetadata&lt;T&gt;&gt;::get(address) {
 			<span class="kw">return </span>meta;
@@ -1961,10 +1969,10 @@
 		<span class="kw">let </span>code = &lt;AccountCodes&lt;T&gt;&gt;::get(address);
 
 		<span class="comment">// If code is empty we return precomputed hash for empty code.
-		// We don&#39;t store it as this address could get code deployed in the future.
+		// We don't store it as this address could get code deployed in the future.
 		</span><span class="kw">if </span>code.is_empty() {
 			<span class="kw">const </span>EMPTY_CODE_HASH: [u8; <span class="number">32</span>] = <span class="macro">hex_literal::hex!</span>(
-				<span class="string">&quot;c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470&quot;
+				<span class="string">"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
 			</span>);
 			<span class="kw">return </span>CodeMetadata {
 				size: <span class="number">0</span>,
@@ -1983,7 +1991,7 @@
 		<span class="kw">let </span>account_id = T::AddressMapping::into_account_id(<span class="kw-2">*</span>address);
 
 		<span class="kw">let </span>nonce = frame_system::Pallet::&lt;T&gt;::account_nonce(<span class="kw-2">&amp;</span>account_id);
-		<span class="comment">// keepalive `true` takes into account ExistentialDeposit as part of what&#39;s considered liquid balance.
+		<span class="comment">// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
 		</span><span class="kw">let </span>balance =
 			T::Currency::reducible_balance(<span class="kw-2">&amp;</span>account_id, Preservation::Preserve, Fortitude::Polite);
 
@@ -2084,7 +2092,7 @@
 				.saturating_sub(corrected_fee.unique_saturated_into());
 			<span class="comment">// refund to the account that paid the fees. If this fails, the
 			// account might have dropped below the existential balance. In
-			// that case we don&#39;t refund anything.
+			// that case we don't refund anything.
 			</span><span class="kw">let </span>refund_imbalance = C::deposit_into_existing(<span class="kw-2">&amp;</span>account_id, refund_amount)
 				.unwrap_or_else(|<span class="kw">_</span>| C::PositiveImbalance::zero());
 
