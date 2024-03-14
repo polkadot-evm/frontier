@@ -479,7 +479,7 @@ where
 
 	async fn call(
 		&self,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: Option<BlockNumberOrHash>,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<Bytes> {
@@ -488,7 +488,7 @@ where
 
 	async fn estimate_gas(
 		&self,
-		request: CallRequest,
+		request: TransactionRequest,
 		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		self.estimate_gas(request, number_or_hash).await

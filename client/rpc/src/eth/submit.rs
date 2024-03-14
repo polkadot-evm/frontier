@@ -73,10 +73,13 @@ where
 			},
 		};
 
-		let chain_id = match self.chain_id() {
-			Ok(Some(chain_id)) => chain_id.as_u64(),
-			Ok(None) => return Err(internal_err("chain id not available")),
-			Err(e) => return Err(e),
+		let chain_id = match (request.chain_id, self.chain_id()) {
+			(Some(id), Ok(Some(chain_id))) if id != chain_id => {
+				return Err(internal_err("chain id is mismatch"))
+			}
+			(_, Ok(Some(chain_id))) => chain_id.as_u64(),
+			(_, Ok(None)) => return Err(internal_err("chain id not available")),
+			(_, Err(e)) => return Err(e),
 		};
 
 		let block_hash = self.client.info().best_hash;
@@ -85,8 +88,7 @@ where
 		let gas_limit = match request.gas {
 			Some(gas_limit) => gas_limit,
 			None => {
-				let block = self.client.runtime_api().current_block(block_hash);
-				if let Ok(Some(block)) = block {
+				if let Ok(Some(block)) = self.client.runtime_api().current_block(block_hash) {
 					block.header.gas_limit
 				} else {
 					return Err(internal_err("block unavailable, cannot query gas limit"));
