@@ -10,6 +10,7 @@
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
+use frame_support::weights::WeightToFee;
 use scale_codec::{Decode, Encode};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -25,10 +26,11 @@ use sp_runtime::{
 		IdentityLookup, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
+	ApplyExtrinsicResult, ConsensusEngineId, FixedPointNumber, Perbill, Permill,
 };
 use sp_std::{marker::PhantomData, prelude::*};
 use sp_version::RuntimeVersion;
+// substrate
 // Substrate FRAME
 #[cfg(feature = "with-paritydb-weights")]
 use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
@@ -332,8 +334,28 @@ parameter_types! {
 	pub SuicideQuickClearLimit: u32 = 0;
 }
 
+pub struct TransactionPaymentGasPrice;
+impl pallet_evm::FeeCalculator for TransactionPaymentGasPrice {
+	fn min_gas_price() -> (sp_core::U256, frame_support::weights::Weight) {
+		(
+			TransactionPayment::next_fee_multiplier()
+				.saturating_mul_int::<Balance>(
+					<Runtime as pallet_transaction_payment::Config>::WeightToFee::weight_to_fee(
+						&WeightPerGas::get(),
+					),
+				)
+				.into(),
+			<Runtime as frame_system::Config>::DbWeight::get().reads(1),
+		)
+	}
+}
+
 impl pallet_evm::Config for Runtime {
-	type FeeCalculator = BaseFee;
+	// The FeeCalculator can be customized to suit your requirements.
+	// For simplicity, the default implementation in the template runtime is TransactionPaymentGasPrice.
+	// There are also two other implementations available: pallet_base_fee and pallet_dynamic_fee.
+	// You can select the one that best fits your needs. To understand how to configure them, take a look at PR https://github.com/polkadot-evm/frontier/pull/1303.
+	type FeeCalculator = TransactionPaymentGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
@@ -365,39 +387,6 @@ impl pallet_ethereum::Config for Runtime {
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self>;
 	type PostLogContent = PostBlockAndTxnHashes;
 	type ExtraDataLength = ConstU32<30>;
-}
-
-parameter_types! {
-	pub BoundDivision: U256 = U256::from(1024);
-}
-
-impl pallet_dynamic_fee::Config for Runtime {
-	type MinGasPriceBoundDivisor = BoundDivision;
-}
-
-parameter_types! {
-	pub DefaultBaseFeePerGas: U256 = U256::from(1_000_000_000);
-	pub DefaultElasticity: Permill = Permill::from_parts(125_000);
-}
-
-pub struct BaseFeeThreshold;
-impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
-	fn lower() -> Permill {
-		Permill::zero()
-	}
-	fn ideal() -> Permill {
-		Permill::from_parts(500_000)
-	}
-	fn upper() -> Permill {
-		Permill::from_parts(1_000_000)
-	}
-}
-
-impl pallet_base_fee::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
-	type Threshold = BaseFeeThreshold;
-	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
-	type DefaultElasticity = DefaultElasticity;
 }
 
 impl pallet_hotfix_sufficients::Config for Runtime {
@@ -447,8 +436,6 @@ frame_support::construct_runtime!(
 		Ethereum: pallet_ethereum,
 		EVM: pallet_evm,
 		EVMChainId: pallet_evm_chain_id,
-		DynamicFee: pallet_dynamic_fee,
-		BaseFee: pallet_base_fee,
 		HotfixSufficients: pallet_hotfix_sufficients,
 
 		ManualSeal: pallet_manual_seal,
@@ -919,7 +906,7 @@ impl_runtime_apis! {
 		}
 
 		fn elasticity() -> Option<Permill> {
-			Some(pallet_base_fee::Elasticity::<Runtime>::get())
+			None
 		}
 
 		fn gas_limit_multiplier_support() {}

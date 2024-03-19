@@ -52,10 +52,6 @@ pub struct EthConfiguration {
 	#[arg(long)]
 	pub enable_dev_signer: bool,
 
-	/// The dynamic-fee pallet target gas price set by block author
-	#[arg(long, default_value = "1")]
-	pub target_gas_price: u64,
-
 	/// Maximum allowed gas limit will be `block.gas_limit * execute_gas_limit_multiplier`
 	/// when using eth_call/eth_estimateGas.
 	#[arg(long, default_value = "10")]

@@ -14,7 +14,6 @@ use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::AuthorityPair as AuraPair;
-use sp_core::U256;
 // Runtime
 use frontier_template_runtime::{opaque::Block, Hash, TransactionConverter};
 
@@ -73,7 +72,6 @@ where
 	BIQ: FnOnce(
 		Arc<FullClient<RuntimeApi, Executor>>,
 		&Configuration,
-		&EthConfiguration,
 		&TaskManager,
 		Option<TelemetryHandle>,
 		GrandpaBlockImport<FullClient<RuntimeApi, Executor>>,
@@ -149,7 +147,6 @@ where
 	let (import_queue, block_import) = build_import_queue(
 		client.clone(),
 		config,
-		eth_config,
 		&task_manager,
 		telemetry.as_ref().map(|x| x.handle()),
 		grandpa_block_import,
@@ -185,7 +182,6 @@ where
 pub fn build_aura_grandpa_import_queue<RuntimeApi, Executor>(
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	config: &Configuration,
-	eth_config: &EthConfiguration,
 	task_manager: &TaskManager,
 	telemetry: Option<TelemetryHandle>,
 	grandpa_block_import: GrandpaBlockImport<FullClient<RuntimeApi, Executor>>,
@@ -200,7 +196,6 @@ where
 		FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
 
 	let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-	let target_gas_price = eth_config.target_gas_price;
 	let create_inherent_data_providers = move |_, ()| async move {
 		let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 		let slot =
@@ -208,8 +203,7 @@ where
 				*timestamp,
 				slot_duration,
 			);
-		let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-		Ok((slot, timestamp, dynamic_fee))
+		Ok((slot, timestamp))
 	};
 
 	let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
@@ -234,7 +228,6 @@ where
 pub fn build_manual_seal_import_queue<RuntimeApi, Executor>(
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	config: &Configuration,
-	_eth_config: &EthConfiguration,
 	task_manager: &TaskManager,
 	_telemetry: Option<TelemetryHandle>,
 	_grandpa_block_import: GrandpaBlockImport<FullClient<RuntimeApi, Executor>>,
@@ -391,7 +384,6 @@ where
 		));
 
 		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-		let target_gas_price = eth_config.target_gas_price;
 		let pending_create_inherent_data_providers = move |_, ()| async move {
 			let current = sp_timestamp::InherentDataProvider::from_system_time();
 			let next_slot = current.timestamp().as_millis() + slot_duration.as_millis();
@@ -400,8 +392,7 @@ where
 				*timestamp,
 				slot_duration,
 			);
-			let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-			Ok((slot, timestamp, dynamic_fee))
+			Ok((slot, timestamp))
 		};
 
 		Box::new(move |deny_unsafe, subscription_task_executor| {
@@ -481,7 +472,6 @@ where
 		// manual-seal authorship
 		if let Some(sealing) = sealing {
 			run_manual_seal_authorship(
-				&eth_config,
 				sealing,
 				client,
 				transaction_pool,
@@ -507,15 +497,13 @@ where
 		);
 
 		let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
-		let target_gas_price = eth_config.target_gas_price;
 		let create_inherent_data_providers = move |_, ()| async move {
 			let timestamp = sp_timestamp::InherentDataProvider::from_system_time();
 			let slot = sp_consensus_aura::inherents::InherentDataProvider::from_timestamp_and_slot_duration(
 				*timestamp,
 				slot_duration,
 			);
-			let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-			Ok((slot, timestamp, dynamic_fee))
+			Ok((slot, timestamp))
 		};
 
 		let aura = sc_consensus_aura::start_aura::<AuraPair, _, _, _, _, _, _, _, _, _, _>(
@@ -597,7 +585,6 @@ where
 }
 
 fn run_manual_seal_authorship<RuntimeApi, Executor>(
-	eth_config: &EthConfiguration,
 	sealing: Sealing,
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	transaction_pool: Arc<FullPool<FullClient<RuntimeApi, Executor>>>,
@@ -650,11 +637,9 @@ where
 		}
 	}
 
-	let target_gas_price = eth_config.target_gas_price;
 	let create_inherent_data_providers = move |_, ()| async move {
 		let timestamp = MockTimestampInherentDataProvider;
-		let dynamic_fee = fp_dynamic_fee::InherentDataProvider(U256::from(target_gas_price));
-		Ok((timestamp, dynamic_fee))
+		Ok(timestamp)
 	};
 
 	let manual_seal = match sealing {
