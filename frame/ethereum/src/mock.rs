@@ -21,6 +21,7 @@ use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
 use frame_support::{
+	derive_impl,
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
@@ -53,6 +54,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;

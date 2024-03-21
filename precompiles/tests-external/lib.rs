@@ -22,7 +22,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 // Substrate
-use frame_support::{construct_runtime, parameter_types, traits::Everything, weights::Weight};
+use frame_support::{derive_impl, construct_runtime, parameter_types, traits::Everything, weights::Weight};
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
@@ -58,6 +58,7 @@ parameter_types! {
 	pub const SS58Prefix: u8 = 42;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = Everything;

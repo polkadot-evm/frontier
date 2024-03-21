@@ -258,6 +258,7 @@ where
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: "EthereumRuntimeRPCApi_call",
 										error,
+										raw: r
 									},
 								)
 							})
@@ -276,6 +277,7 @@ where
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: "EthereumRuntimeRPCApi_call",
 										error,
+										raw: r
 									},
 								)
 							})

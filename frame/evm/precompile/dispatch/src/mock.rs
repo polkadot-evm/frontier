@@ -18,6 +18,7 @@
 //! Test mock for unit tests and benchmarking
 
 use frame_support::{
+	derive_impl,
 	parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
@@ -48,6 +49,7 @@ parameter_types! {
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig)]
 impl frame_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;
