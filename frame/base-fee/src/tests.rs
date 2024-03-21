@@ -16,8 +16,7 @@
 // limitations under the License.
 
 use frame_support::{
-	derive_impl,
-	assert_ok,
+	assert_ok, derive_impl,
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{ConstU32, OnFinalize},

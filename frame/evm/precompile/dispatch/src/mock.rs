@@ -18,8 +18,7 @@
 //! Test mock for unit tests and benchmarking
 
 use frame_support::{
-	derive_impl,
-	parameter_types,
+	derive_impl, parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
 	ConsensusEngineId,

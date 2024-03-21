@@ -19,8 +19,7 @@ use super::*;
 use crate as pallet_dynamic_fee;
 
 use frame_support::{
-	derive_impl,
-	assert_ok, parameter_types,
+	assert_ok, derive_impl, parameter_types,
 	traits::{ConstU32, OnFinalize, OnInitialize},
 	weights::Weight,
 };
