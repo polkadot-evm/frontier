@@ -1,0 +1,59 @@
+name: Lint
+
+on:
+  push:
+    branches:
+      - master
+      - 'polkadot-v**'
+  pull_request:
+    branches:
+      - master
+      - 'polkadot-v**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTC_WRAPPER: "sccache"
+  SCCACHE_GHA_ENABLED: "true"
+
+jobs:
+  lint:
+    name: Run Code Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Sources
+        uses: actions/checkout@v4
+
+      - name: Cache Cargo Registry & Git Sources
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-lint-${{ hashFiles('**/Cargo.lock') }}
+            ${{ runner.os }}-cargo-lint-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache
+        uses: mozilla-actions/sccache-action@v0.0.4
+
+      - name: Install Rust Toolchain
+        run: make setup
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check Code Format
+        run: make fmt-check
+
+      - name: Run Clippy
+        run: make clippy-release

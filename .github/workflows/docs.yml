@@ -2,7 +2,11 @@ name: Docs
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -10,16 +14,12 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout Sources
         uses: actions/checkout@v4
-      - name: Rust Setup
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: nightly-2024-01-22
-          target: wasm32-unknown-unknown
-          override: true
-          components: rust-docs
+
+      - name: Install Rust Toolchain
+        run: make setup
+
       - name: Install protoc
         uses: arduino/setup-protoc@v3
         with:
@@ -32,14 +32,10 @@ jobs:
           yarn run build
 
       - name: Build rustdocs
-        uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --all --no-deps
+        run: cargo doc --all --no-deps
 
       - name: Copy rustdocs
-        run: |
-          cp -r ./target/doc docs/.vuepress/dist/rustdocs
+        run: cp -r ./target/doc docs/.vuepress/dist/rustdocs
 
       - name: Deploy documentation
         uses: peaceiris/actions-gh-pages@v3
