@@ -14,10 +14,10 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Sources
+      - name: Checkout sources
         uses: actions/checkout@v4
 
-      - name: Install Rust Toolchain
+      - name: Install Rust toolchain
         run: make setup
 
       - name: Install protoc
