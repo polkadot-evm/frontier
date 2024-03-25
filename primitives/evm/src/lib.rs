@@ -18,6 +18,7 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_crate_dependencies)]
 
+mod account_provider;
 mod precompile;
 mod validation;
 
@@ -36,6 +37,7 @@ pub use evm::{
 };
 
 pub use self::{
+	account_provider::AccountProvider,
 	precompile::{
 		Context, ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, LinearCostPrecompile,
 		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
