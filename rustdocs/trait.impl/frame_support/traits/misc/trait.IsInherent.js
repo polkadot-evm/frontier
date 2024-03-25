@@ -1,0 +1,3 @@
+(function() {var implementors = {
+"frontier_template_runtime":[["impl IsInherent&lt;&lt;&lt;<a class=\"struct\" href=\"frontier_template_runtime/struct.Runtime.html\" title=\"struct frontier_template_runtime::Runtime\">Runtime</a> as Config&gt;::Block as Block&gt;::Extrinsic&gt; for <a class=\"struct\" href=\"frontier_template_runtime/struct.Runtime.html\" title=\"struct frontier_template_runtime::Runtime\">Runtime</a>"]]
+};if (window.register_implementors) {window.register_implementors(implementors);} else {window.pending_implementors = implementors;}})()

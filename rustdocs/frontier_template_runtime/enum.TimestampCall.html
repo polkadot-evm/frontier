@@ -6,7 +6,22 @@
     },
     <span class="comment">// some variants omitted</span>
 }</code></pre><details class="toggle top-doc" open><summary class="hideme"><span>Expand description</span></summary><div class="docblock"><p>Contains a variant per dispatchable extrinsic that this pallet has.</p>
-</div></details><h2 id="variants" class="variants section-header">Variants<a href="#variants" class="anchor">§</a></h2><div class="variants"><section id="variant.set" class="variant"><a href="#variant.set" class="anchor">§</a><h3 class="code-header">set</h3></section><div class="sub-variant" id="variant.set.fields"><h4>Fields</h4><div class="sub-variant-field"><span id="variant.set.field.now" class="section-header"><a href="#variant.set.field.now" class="anchor field">§</a><code>now: &lt;T as Config&gt;::Moment</code></span></div></div><div class="docblock"><p>See [<code>Pallet::set</code>].</p>
+</div></details><h2 id="variants" class="variants section-header">Variants<a href="#variants" class="anchor">§</a></h2><div class="variants"><section id="variant.set" class="variant"><a href="#variant.set" class="anchor">§</a><h3 class="code-header">set</h3></section><div class="sub-variant" id="variant.set.fields"><h4>Fields</h4><div class="sub-variant-field"><span id="variant.set.field.now" class="section-header"><a href="#variant.set.field.now" class="anchor field">§</a><code>now: &lt;T as Config&gt;::Moment</code></span></div></div><div class="docblock"><p>Set the current time.</p>
+<p>This call should be invoked exactly once per block. It will panic at the finalization
+phase, if this call hasn’t been invoked by that time.</p>
+<p>The timestamp should be greater than the previous one by the amount specified by
+[<code>Config::MinimumPeriod</code>].</p>
+<p>The dispatch origin for this call must be <em>None</em>.</p>
+<p>This dispatch class is <em>Mandatory</em> to ensure it gets executed in the block. Be aware
+that changing the complexity of this call could result exhausting the resources in a
+block to execute any other calls.</p>
+<h5 id="complexity"><a class="doc-anchor" href="#complexity">§</a>Complexity</h5>
+<ul>
+<li><code>O(1)</code> (Note that implementations of <code>OnTimestampSet</code> must also be <code>O(1)</code>)</li>
+<li>1 storage read and 1 storage mutation (codec <code>O(1)</code> because of <code>DidUpdate::take</code> in
+<code>on_finalize</code>)</li>
+<li>1 event handler <code>on_timestamp_set</code>. Must be <code>O(1)</code>.</li>
+</ul>
 </div></div><h2 id="implementations" class="section-header">Implementations<a href="#implementations" class="anchor">§</a></h2><div id="implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-Call%3CT%3E" class="impl"><a href="#impl-Call%3CT%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; <a class="enum" href="enum.TimestampCall.html" title="enum frontier_template_runtime::TimestampCall">Call</a>&lt;T&gt;<div class="where">where
     T: Config,</div></h3></section></summary><div class="impl-items"><details class="toggle method-toggle" open><summary><section id="method.new_call_variant_set" class="method"><h4 class="code-header">pub fn <a href="#method.new_call_variant_set" class="fn">new_call_variant_set</a>(now: &lt;T as Config&gt;::Moment) -&gt; <a class="enum" href="enum.TimestampCall.html" title="enum frontier_template_runtime::TimestampCall">Call</a>&lt;T&gt;</h4></section></summary><div class="docblock"><p>Create a call with the variant <code>set</code>.</p>
 </div></details></div></details></div><h2 id="trait-implementations" class="section-header">Trait Implementations<a href="#trait-implementations" class="anchor">§</a></h2><div id="trait-implementations-list"><details class="toggle implementors-toggle" open><summary><section id="impl-CheckIfFeeless-for-Call%3CT%3E" class="impl"><a href="#impl-CheckIfFeeless-for-Call%3CT%3E" class="anchor">§</a><h3 class="code-header">impl&lt;T&gt; CheckIfFeeless for <a class="enum" href="enum.TimestampCall.html" title="enum frontier_template_runtime::TimestampCall">Call</a>&lt;T&gt;<div class="where">where

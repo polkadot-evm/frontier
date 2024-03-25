@@ -1052,6 +1052,8 @@
 <a href="#1050" id="1050">1050</a>
 <a href="#1051" id="1051">1051</a>
 <a href="#1052" id="1052">1052</a>
+<a href="#1053" id="1053">1053</a>
+<a href="#1054" id="1054">1054</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -1312,6 +1314,7 @@
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: <span class="string">"EthereumRuntimeRPCApi_call"</span>,
 										error,
+										raw: r
 									},
 								)
 							})
@@ -1330,6 +1333,7 @@
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: <span class="string">"EthereumRuntimeRPCApi_call"</span>,
 										error,
+										raw: r
 									},
 								)
 							})

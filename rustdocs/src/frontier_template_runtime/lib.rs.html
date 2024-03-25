@@ -1009,6 +1009,7 @@
 <a href="#1007" id="1007">1007</a>
 <a href="#1008" id="1008">1008</a>
 <a href="#1009" id="1009">1009</a>
+<a href="#1010" id="1010">1010</a>
 </pre></div><pre class="rust"><code><span class="doccomment">//! The Substrate Node Template runtime. This can be compiled with `#[no_std]`, ready for Wasm.
 
 </span><span class="attr">#![cfg_attr(not(feature = <span class="string">"std"</span>), no_std)]
@@ -1036,7 +1037,7 @@
 		IdentityLookup, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
-	ApplyExtrinsicResult, ConsensusEngineId, Perbill, Permill,
+	ApplyExtrinsicResult, ConsensusEngineId, ExtrinsicInclusionMode, Perbill, Permill,
 };
 <span class="kw">use </span>sp_std::{marker::PhantomData, prelude::<span class="kw-2">*</span>};
 <span class="kw">use </span>sp_version::RuntimeVersion;
@@ -1046,6 +1047,7 @@
 <span class="attr">#[cfg(feature = <span class="string">"with-rocksdb-weights"</span>)]
 </span><span class="kw">use </span>frame_support::weights::constants::RocksDbWeight <span class="kw">as </span>RuntimeDbWeight;
 <span class="kw">use </span>frame_support::{
+	derive_impl,
 	genesis_builder_helper::{build_config, create_default_config},
 	parameter_types,
 	traits::{ConstBool, ConstU32, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
@@ -1176,7 +1178,7 @@
 }
 
 <span class="comment">// Configure FRAME pallets to include in runtime.
-
+</span><span class="attr">#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig <span class="kw">as </span>frame_system::DefaultConfig)]
 </span><span class="kw">impl </span>frame_system::Config <span class="kw">for </span>Runtime {
 	<span class="doccomment">/// The ubiquitous event type.
 	</span><span class="kw">type </span>RuntimeEvent = RuntimeEvent;
@@ -1613,7 +1615,7 @@
 			Executive::execute_block(block)
 		}
 
-		<span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) {
+		<span class="kw">fn </span>initialize_block(header: <span class="kw-2">&amp;</span>&lt;Block <span class="kw">as </span>BlockT&gt;::Header) -&gt; ExtrinsicInclusionMode {
 			Executive::initialize_block(header)
 		}
 	}
