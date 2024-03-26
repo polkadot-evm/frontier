@@ -622,7 +622,7 @@ where
 		telemetry.as_ref().map(|x| x.handle()),
 	);
 
-	thread_local!(static TIMESTAMP: RefCell<u64> = RefCell::new(0));
+	thread_local!(static TIMESTAMP: RefCell<u64> = const { RefCell::new(0) });
 
 	/// Provide a mock duration starting at 0 in millisecond for timestamp inherent.
 	/// Each call will increment timestamp by slot_duration making Aura think time has passed.

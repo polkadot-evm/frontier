@@ -22,7 +22,7 @@ extern crate proc_macro;
 
 use proc_macro::TokenStream;
 use quote::{quote, quote_spanned};
-use sp_core_hashing::keccak_256;
+use sp_crypto_hashing::keccak_256;
 use syn::{parse_macro_input, spanned::Spanned, Expr, Ident, ItemType, Lit, LitStr};
 
 mod derive_codec;

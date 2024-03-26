@@ -22,7 +22,7 @@
 use proc_macro::TokenStream;
 use proc_macro2::Span;
 use quote::{format_ident, quote, quote_spanned, ToTokens};
-use sp_core_hashing::keccak_256;
+use sp_crypto_hashing::keccak_256;
 use std::collections::BTreeMap;
 use syn::{parse_macro_input, spanned::Spanned};
 

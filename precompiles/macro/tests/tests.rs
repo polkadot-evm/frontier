@@ -17,7 +17,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use sp_core_hashing::keccak_256;
+use sp_crypto_hashing::keccak_256;
 
 #[test]
 fn test_keccak256() {
