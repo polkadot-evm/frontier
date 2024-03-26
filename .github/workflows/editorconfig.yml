@@ -16,12 +16,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Submodules
-        run: git submodule update --init --recursive
-      - name: Init
-        run: |
-          wget https://github.com/editorconfig-checker/editorconfig-checker/releases/download/2.1.0/ec-linux-amd64.tar.gz
-          tar xvf ec-linux-amd64.tar.gz
-          chmod +x bin/ec-linux-amd64
-      - name: Check
-        run: bin/ec-linux-amd64
+      - uses: editorconfig-checker/action-editorconfig-checker@main
+      - run: editorconfig-checker

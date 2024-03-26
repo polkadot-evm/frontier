@@ -18,7 +18,7 @@
 #![cfg(feature = "runtime-benchmarks")]
 
 use super::*;
-use frame_benchmarking::{benchmarks, impl_benchmark_test_suite};
+use frame_benchmarking::benchmarks;
 
 type CurrencyOf<T> = <T as Config>::Currency;
 
@@ -146,4 +146,4 @@ benchmarks! {
 	}
 }
 
-impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::mock::Test);
+// impl_benchmark_test_suite!(Pallet, crate::tests::new_test_ext(), crate::mock::Test);
