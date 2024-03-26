@@ -7,7 +7,7 @@ It is written in typescript, using Mocha/Chai as Test framework.
 ## Test flow
 
 Tests are separated depending on their genesis requirements.
-Each group will start a `frontier test node` with a given `spec` before executing the tests.
+Each group will start a `frontier template test node` with a given `spec` before executing the tests.
 
 ## Build the node for tests
 
