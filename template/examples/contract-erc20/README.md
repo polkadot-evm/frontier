@@ -13,7 +13,7 @@ template node is running in `--dev` mode.
 
 ### Expected output
 
-The ouput of the command should look similar to this:
+The output of the command should look similar to this:
 
 ```
 └────╼ ts-node create-erc20.ts
