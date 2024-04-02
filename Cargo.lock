@@ -5799,6 +5799,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "pallet-utility",
+ "parity-scale-codec",
  "precompile-utils",
  "rlp",
  "scale-info",
