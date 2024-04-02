@@ -18,12 +18,16 @@
 //! Storage cleaner precompile. This precompile is used to clean the storage entries of smart contract that
 //! has been marked as suicided (self-destructed).
 
+#![cfg_attr(not(feature = "std"), no_std)]
+extern crate alloc;
+
 use core::marker::PhantomData;
 use fp_evm::{PrecompileFailure, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE};
 use pallet_evm::AddressMapping;
 use precompile_utils::{prelude::*, EvmResult};
 use sp_core::H160;
 use sp_runtime::traits::ConstU32;
+use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;
@@ -77,7 +81,7 @@ where
 
 		for Address(address) in addresses {
 			if !pallet_evm::Pallet::<Runtime>::is_account_suicided(&address) {
-				return Err(revert(format!("NotSuicided: {}", address)));
+				return Err(revert(alloc::format!("NotSuicided: {}", address)));
 			}
 
 			let deleted = pallet_evm::AccountStorages::<Runtime>::drain_prefix(address)

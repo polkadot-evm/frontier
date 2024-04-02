@@ -45,8 +45,9 @@ std = [
 	"frame-system/std",
 	"sp-runtime/std",
 	"sp-core/std",
-	"sp-io/std",
+	"sp-std/std",
 	# Frontier
 	"fp-evm/std",
 	"pallet-evm/std",
+	"precompile-utils/std",
 ]
