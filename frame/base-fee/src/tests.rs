@@ -16,7 +16,7 @@
 // limitations under the License.
 
 use frame_support::{
-	assert_ok,
+	assert_ok, derive_impl,
 	dispatch::DispatchClass,
 	parameter_types,
 	traits::{ConstU32, OnFinalize},
@@ -35,9 +35,9 @@ use crate::BaseFeeThreshold as BaseFeeThresholdT;
 
 parameter_types! {
 	pub const BlockHashCount: u64 = 250;
-	pub BlockWeights: frame_system::limits::BlockWeights =
-		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;
