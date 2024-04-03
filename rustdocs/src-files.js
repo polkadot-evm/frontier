@@ -33,6 +33,7 @@ var srcIndex = new Map(JSON.parse('[\
 ["pallet_evm_precompile_modexp",["",[],["lib.rs"]]],\
 ["pallet_evm_precompile_sha3fips",["",[],["lib.rs"]]],\
 ["pallet_evm_precompile_simple",["",[],["lib.rs"]]],\
+["pallet_evm_precompile_storage_cleaner",["",[],["lib.rs"]]],\
 ["pallet_evm_test_vector_support",["",[],["lib.rs"]]],\
 ["pallet_hotfix_sufficients",["",[],["lib.rs","weights.rs"]]],\
 ["precompile_utils",["",[["evm",[],["costs.rs","handle.rs","logs.rs","mod.rs"]],["solidity",[["codec",[],["bytes.rs","mod.rs","native.rs"]]],["mod.rs","modifier.rs","revert.rs"]],["testing",[],["account.rs","execution.rs","handle.rs","mod.rs","modifier.rs","solidity.rs"]]],["lib.rs","precompile_set.rs","substrate.rs"]]],\

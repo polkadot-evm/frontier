@@ -1094,6 +1094,14 @@
 <a href="#1092" id="1092">1092</a>
 <a href="#1093" id="1093">1093</a>
 <a href="#1094" id="1094">1094</a>
+<a href="#1095" id="1095">1095</a>
+<a href="#1096" id="1096">1096</a>
+<a href="#1097" id="1097">1097</a>
+<a href="#1098" id="1098">1098</a>
+<a href="#1099" id="1099">1099</a>
+<a href="#1100" id="1100">1100</a>
+<a href="#1101" id="1101">1101</a>
+<a href="#1102" id="1102">1102</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
 //
@@ -1171,7 +1179,7 @@
 <span class="comment">// Substrate
 </span><span class="kw">use </span>frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
-	storage::child::KillStorageResult,
+	storage::{child::KillStorageResult, KeyPrefixIterator},
 	traits::{
 		tokens::{
 			currency::Currency,
@@ -1894,6 +1902,14 @@
 
 		account.nonce == U256::zero() &amp;&amp; account.balance == U256::zero() &amp;&amp; code_len == <span class="number">0
 	</span>}
+	<span class="doccomment">/// Check whether an account is a suicided contract
+	</span><span class="kw">pub fn </span>is_account_suicided(address: <span class="kw-2">&amp;</span>H160) -&gt; bool {
+		&lt;Suicided&lt;T&gt;&gt;::contains_key(address)
+	}
+
+	<span class="kw">pub fn </span>iter_account_storages(address: <span class="kw-2">&amp;</span>H160) -&gt; KeyPrefixIterator&lt;H256&gt; {
+		&lt;AccountStorages&lt;T&gt;&gt;::iter_key_prefix(address)
+	}
 
 	<span class="doccomment">/// Remove an account if its empty.
 	</span><span class="kw">pub fn </span>remove_account_if_empty(address: <span class="kw-2">&amp;</span>H160) {

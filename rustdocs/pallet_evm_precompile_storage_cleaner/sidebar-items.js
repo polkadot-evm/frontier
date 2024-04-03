@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"constant":["ARRAY_LIMIT","SUICIDED_STORAGE_KEY"],"enum":["StorageCleanerPrecompileCall"],"struct":["StorageCleanerPrecompile"]};
