@@ -1,9 +1,0 @@
-{
-  "name": "substrate-evm-utils",
-  "version": "0.0.0",
-  "dependencies": {
-    "@polkadot/util-crypto": "^2.2.1",
-    "keccak": "^3.0.0",
-    "web3": "^4.0.2"
-  }
-}
