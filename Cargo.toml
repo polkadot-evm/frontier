@@ -17,6 +17,7 @@ members = [
 	"frame/evm/precompile/bls12381",
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
+	"frame/evm/precompile/storage-cleaner",
 	"client/api",
 	"client/consensus",
 	"client/rpc-core",
