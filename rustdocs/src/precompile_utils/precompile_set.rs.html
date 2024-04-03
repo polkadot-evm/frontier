@@ -1102,6 +1102,7 @@
 <a href="#1100" id="1100">1100</a>
 <a href="#1101" id="1101">1101</a>
 <a href="#1102" id="1102">1102</a>
+<a href="#1103" id="1103">1103</a>
 </pre></div><pre class="rust"><code><span class="comment">// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
 //
@@ -2191,13 +2192,14 @@
 		}
 	}
 
-	<span class="doccomment">/// Return the list of addresses contained in this PrecompileSet.
+	<span class="doccomment">/// Return the list of mapped addresses contained in this PrecompileSet.
 	</span><span class="kw">pub fn </span>used_addresses() -&gt; <span class="kw">impl </span>Iterator&lt;Item = R::AccountId&gt; {
-		<span class="self">Self</span>::new()
-			.inner
-			.used_addresses()
-			.into_iter()
-			.map(R::AddressMapping::into_account_id)
+		<span class="self">Self</span>::used_addresses_h160().map(R::AddressMapping::into_account_id)
+	}
+
+	<span class="doccomment">/// Return the list of H160 addresses contained in this PrecompileSet.
+	</span><span class="kw">pub fn </span>used_addresses_h160() -&gt; <span class="kw">impl </span>Iterator&lt;Item = H160&gt; {
+		<span class="self">Self</span>::new().inner.used_addresses().into_iter()
 	}
 
 	<span class="kw">pub fn </span>summarize_checks(<span class="kw-2">&amp;</span><span class="self">self</span>) -&gt; Vec&lt;PrecompileCheckSummary&gt; {
