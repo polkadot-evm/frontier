@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 function install_rustup {
   echo "Installing Rust toolchain..."
