@@ -7,9 +7,14 @@ Frontier is the EVM backbone of Polkadot.
 
 ## Features
 
-Frontier provides a compatibility layer of EVM, so that you can run any Ethereum dapps on Polkadot, unmodified. Using Frontier, you get access to all of the Ethereum RPC APIs you are already familiar with, and therefore you can continue to develop your dapps in your favourite Ethereum developer tools. As a bonus, you can even run many Ethereum L2s inside Frontier! For those looking to become acquainted with Frontier, consult the documentation provided [here](./docs/). Additionally, a [template node](./template/README.md) is available to facilitate a more comprehensive technical exploration.
+Frontier provides a compatibility layer of EVM, so that you can run any Ethereum dapps on Polkadot, unmodified.
+Using Frontier, you get access to all the Ethereum RPC APIs you are already familiar with, and therefore you can continue to develop your dapps in your favourite Ethereum developer tools.
+As a bonus, you can even run many Ethereum L2s inside Frontier!
+For those looking to become acquainted with Frontier, consult the documentation provided [here](./docs).
+Additionally, a [template node](./template/README.md) is available to facilitate a more comprehensive technical exploration.
 
-Frontier is also a migration framework. Besides the common strategy of direct state export/import and transaction-level replays, Frontier's Pre-Log Wrapper Block feature provides a possible method for a zero-downtime live migration.
+Frontier is also a migration framework.
+Besides the common strategy of direct state export/import and transaction-level replays, Frontier's Pre-Log Wrapper Block feature provides a possible method for a zero-downtime live migration.
 
 ## Development workflow
 
@@ -19,9 +24,12 @@ All changes (except new releases) are handled through pull requests.
 
 ### Versioning
 
-Frontier follows [Semantic Versioning](https://semver.org/). An unreleased crate in the repository will have the `-dev` suffix in the end, and we do rolling releases.
+Frontier follows [Semantic Versioning](https://semver.org/).
+An unreleased crate in the repository will have the `-dev` suffix in the end, and we do rolling releases.
 
-When you make a pull request against this repository, please also update the affected crates' versions, using the following rules. Note that the rules should be applied recursively -- if a change modifies any upper crate's dependency (even just the `Cargo.toml` file), then the upper crate will also need to apply those rules.
+When you make a pull request against this repository, please also update the affected crates' versions, using the following rules.
+Note that the rules should be applied recursively -- if a change modifies any upper crate's dependency (even just the `Cargo.toml` file),
+then the upper crate will also need to apply those rules.
 
 Additionally, if your change is notable, then you should also modify the corresponding `CHANGELOG.md` file, in the "Unreleased" section.
 
