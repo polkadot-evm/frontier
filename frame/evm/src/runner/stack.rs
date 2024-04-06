@@ -1156,7 +1156,7 @@ where
 	}
 
 	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
-		if let Some(mut weight_info) = self.weight_info {
+		if let Some(weight_info) = self.weight_info.as_mut() {
 			if let Some(amount) = ref_time {
 				weight_info.refund_ref_time(amount);
 			}
