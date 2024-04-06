@@ -22,7 +22,7 @@ sp-crypto-hashing = { workspace = true }
 syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
 
 [dev-dependencies]
-macrotest = "1.0.9"
+macrotest = "1.0.11"
 trybuild = "1.0"
 
 precompile-utils = { path = "../", features = ["testing"] }
