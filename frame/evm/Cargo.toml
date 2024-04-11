@@ -38,7 +38,7 @@ fp-evm = { workspace = true, features = ["serde"] }
 hex = { workspace = true }
 # Substrate
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
-pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
+# pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
 
 [features]
