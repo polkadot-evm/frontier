@@ -2277,6 +2277,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "evm-precompile"
+version = "0.0.0-dev"
+dependencies = [
+ "evm",
+ "k256",
+ "num",
+ "primitive-types",
+ "ripemd",
+ "sha2 0.10.7",
+ "sha3",
+ "substrate-bn",
+]
+
+[[package]]
 name = "exit-future"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5609,6 +5623,7 @@ version = "6.0.0-dev"
 dependencies = [
  "environmental",
  "evm",
+ "evm-precompile",
  "fp-account",
  "fp-evm",
  "frame-benchmarking",

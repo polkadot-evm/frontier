@@ -65,9 +65,9 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
-pub use evm::{
-	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
-};
+// pub use evm::{
+// 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
+// };
 use hash_db::Hasher;
 use impl_trait_for_tuples::impl_for_tuples;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -96,18 +96,16 @@ use sp_runtime::{
 use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
 use fp_account::AccountId20;
-use fp_evm::GenesisAccount;
-pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
-	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
-};
+use fp_evm::{FeeCalculator, GenesisAccount};
+// pub use fp_evm::{
+// 	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
+// 	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
+// 	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
+// };
 
-pub use self::{
-	pallet::*,
-	runner::{Runner, RunnerError},
-	weights::WeightInfo,
-};
+use evm::standard::PrecompileSet;
+
+pub use self::{pallet::*, runner::Runner, weights::WeightInfo};
 
 #[frame_support::pallet]
 pub mod pallet {
@@ -504,23 +502,23 @@ pub mod pallet {
 		Undefined,
 	}
 
-	impl<T> From<TransactionValidationError> for Error<T> {
-		fn from(validation_error: TransactionValidationError) -> Self {
-			match validation_error {
-				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
-				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
-				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
-				TransactionValidationError::TxNonceTooLow => Error::<T>::InvalidNonce,
-				TransactionValidationError::TxNonceTooHigh => Error::<T>::InvalidNonce,
-				TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
-				TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
-				TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
-				TransactionValidationError::InvalidChainId => Error::<T>::InvalidChainId,
-				TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
-				TransactionValidationError::UnknownError => Error::<T>::Undefined,
-			}
-		}
-	}
+	// impl<T> From<TransactionValidationError> for Error<T> {
+	// 	fn from(validation_error: TransactionValidationError) -> Self {
+	// 		match validation_error {
+	// 			TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
+	// 			TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
+	// 			TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
+	// 			TransactionValidationError::TxNonceTooLow => Error::<T>::InvalidNonce,
+	// 			TransactionValidationError::TxNonceTooHigh => Error::<T>::InvalidNonce,
+	// 			TransactionValidationError::GasPriceTooLow => Error::<T>::GasPriceTooLow,
+	// 			TransactionValidationError::PriorityFeeTooHigh => Error::<T>::GasPriceTooLow,
+	// 			TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
+	// 			TransactionValidationError::InvalidChainId => Error::<T>::InvalidChainId,
+	// 			TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
+	// 			TransactionValidationError::UnknownError => Error::<T>::Undefined,
+	// 		}
+	// 	}
+	// }
 
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]

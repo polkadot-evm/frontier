@@ -18,19 +18,11 @@
 pub mod stack;
 
 use crate::{Config, Weight};
-use fp_evm::{CallInfo, CreateInfo};
+use evm::{standard::TransactValue, ExitError};
 use sp_core::{H160, H256, U256};
 use sp_std::vec::Vec;
 
-#[derive(Debug)]
-pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {
-	pub error: E,
-	pub weight: Weight,
-}
-
 pub trait Runner<T: Config> {
-	type Error: Into<sp_runtime::DispatchError>;
-
 	fn validate(
 		source: H160,
 		target: Option<H160>,
@@ -44,8 +36,8 @@ pub trait Runner<T: Config> {
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		evm_config: &evm::Config,
-	) -> Result<(), RunnerError<Self::Error>>;
+		evm_config: &&evm::standard::Config,
+	) -> Result<(), ExitError>;
 
 	fn call(
 		source: H160,
@@ -61,8 +53,8 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &evm::Config,
-	) -> Result<CallInfo, RunnerError<Self::Error>>;
+		config: &&evm::standard::Config,
+	) -> Result<TransactValue, ExitError>;
 
 	fn create(
 		source: H160,
@@ -77,8 +69,8 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &evm::Config,
-	) -> Result<CreateInfo, RunnerError<Self::Error>>;
+		config: &&evm::standard::Config,
+	) -> Result<TransactValue, ExitError>;
 
 	fn create2(
 		source: H160,
@@ -94,6 +86,6 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &evm::Config,
-	) -> Result<CreateInfo, RunnerError<Self::Error>>;
+		config: &&evm::standard::Config,
+	) -> Result<TransactValue, ExitError>;
 }

@@ -34,6 +34,8 @@ sp-std = { workspace = true }
 fp-account = { workspace = true }
 fp-evm = { workspace = true, features = ["serde"] }
 
+evm-precompile ={ path = "../../../evm/precompile", default-features = false }
+
 [dev-dependencies]
 hex = { workspace = true }
 # Substrate
@@ -63,6 +65,7 @@ std = [
 	# Frontier
 	"fp-account/std",
 	"fp-evm/std",
+	"evm-precompile/std"
 ]
 runtime-benchmarks = [
 	"hex",
