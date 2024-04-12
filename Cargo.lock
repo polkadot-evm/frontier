@@ -2259,7 +2259,10 @@ name = "evm"
 version = "1.0.0-dev"
 dependencies = [
  "evm-interpreter",
+ "parity-scale-codec",
  "primitive-types",
+ "scale-info",
+ "serde",
  "sha3",
 ]
 

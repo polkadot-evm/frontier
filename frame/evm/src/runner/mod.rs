@@ -22,7 +22,11 @@ use evm::{standard::TransactValue, ExitError};
 use sp_core::{H160, H256, U256};
 use sp_std::vec::Vec;
 
+use fp_evm::ExecutionInfo;
+
 pub trait Runner<T: Config> {
+	type ValidateError: Into<sp_runtime::DispatchError>;
+
 	fn validate(
 		source: H160,
 		target: Option<H160>,
@@ -37,7 +41,7 @@ pub trait Runner<T: Config> {
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		evm_config: &evm::standard::Config,
-	) -> Result<(), ExitError>;
+	) -> Result<(), Self::ValidateError>;
 
 	fn call(
 		source: H160,
@@ -54,7 +58,7 @@ pub trait Runner<T: Config> {
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		config: &evm::standard::Config,
-	) -> Result<TransactValue, ExitError>;
+	) -> Result<ExecutionInfo, Self::ValidateError>;
 
 	fn create(
 		source: H160,
@@ -70,7 +74,7 @@ pub trait Runner<T: Config> {
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		config: &evm::standard::Config,
-	) -> Result<TransactValue, ExitError>;
+	) -> Result<ExecutionInfo, Self::ValidateError>;
 
 	fn create2(
 		source: H160,
@@ -87,5 +91,5 @@ pub trait Runner<T: Config> {
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		config: &evm::standard::Config,
-	) -> Result<TransactValue, ExitError>;
+	) -> Result<ExecutionInfo, Self::ValidateError>;
 }

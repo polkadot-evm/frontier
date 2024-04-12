@@ -28,14 +28,14 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
+use sp_std::{collections::btree_map::BTreeMap, vec::Vec, borrow::Cow};
 
 // pub use evm::{
 // 	backend::{Basic as Account, Log},
 // 	Config, ExitReason, Opcode,
 // };
 
-use evm::ExitError;
+use evm::{standard::TransactValue, ExitError, ExitFatal};
 
 // pub use self::{
 // 	precompile::{
@@ -49,12 +49,22 @@ use evm::ExitError;
 // 	},
 // };
 
+pub const REACH_PROOF_SIZE_LIMIT: &'static str = "Reach the proof size limit";
+
 #[derive(Clone, Eq, PartialEq, Debug, Default, Encode, Decode)]
 pub struct Basic {
 	/// Account balance.
 	pub balance: U256,
 	/// Account nonce.
 	pub nonce: U256,
+}
+
+#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct ExecutionInfo {
+	pub transact_result: Result<TransactValue, ExitError>,
+	pub used_gas: u64,
+	pub used_weight: u64,
 }
 
 // /// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
@@ -73,107 +83,107 @@ pub struct Basic {
 // 	AccountStorages((H160, H256)),
 // }
 
-// #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
-// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-// pub struct WeightInfo {
-// 	pub ref_time_limit: Option<u64>,
-// 	pub proof_size_limit: Option<u64>,
-// 	pub ref_time_usage: Option<u64>,
-// 	pub proof_size_usage: Option<u64>,
-// }
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct WeightInfo {
+	pub ref_time_limit: Option<u64>,
+	pub proof_size_limit: Option<u64>,
+	pub ref_time_usage: Option<u64>,
+	pub proof_size_usage: Option<u64>,
+}
 
-// impl WeightInfo {
-// 	pub fn new_from_weight_limit(
-// 		weight_limit: Option<Weight>,
-// 		proof_size_base_cost: Option<u64>,
-// 	) -> Result<Option<Self>, &'static str> {
-// 		Ok(match (weight_limit, proof_size_base_cost) {
-// 			(None, _) => None,
-// 			(Some(weight_limit), Some(proof_size_base_cost))
-// 				if weight_limit.proof_size() >= proof_size_base_cost =>
-// 			{
-// 				Some(WeightInfo {
-// 					ref_time_limit: Some(weight_limit.ref_time()),
-// 					proof_size_limit: Some(weight_limit.proof_size()),
-// 					ref_time_usage: Some(0u64),
-// 					proof_size_usage: Some(proof_size_base_cost),
-// 				})
-// 			}
-// 			(Some(weight_limit), None) => Some(WeightInfo {
-// 				ref_time_limit: Some(weight_limit.ref_time()),
-// 				proof_size_limit: None,
-// 				ref_time_usage: Some(0u64),
-// 				proof_size_usage: None,
-// 			}),
-// 			_ => return Err("must provide Some valid weight limit or None"),
-// 		})
-// 	}
+impl WeightInfo {
+	pub fn new_from_weight_limit(
+		weight_limit: Option<Weight>,
+		proof_size_base_cost: Option<u64>,
+	) -> Result<Option<Self>, &'static str> {
+		Ok(match (weight_limit, proof_size_base_cost) {
+			(None, _) => None,
+			(Some(weight_limit), Some(proof_size_base_cost))
+				if weight_limit.proof_size() >= proof_size_base_cost =>
+			{
+				Some(WeightInfo {
+					ref_time_limit: Some(weight_limit.ref_time()),
+					proof_size_limit: Some(weight_limit.proof_size()),
+					ref_time_usage: Some(0u64),
+					proof_size_usage: Some(proof_size_base_cost),
+				})
+			}
+			(Some(weight_limit), None) => Some(WeightInfo {
+				ref_time_limit: Some(weight_limit.ref_time()),
+				proof_size_limit: None,
+				ref_time_usage: Some(0u64),
+				proof_size_usage: None,
+			}),
+			_ => return Err("must provide Some valid weight limit or None"),
+		})
+	}
 
-// 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
-// 		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
-// 		if usage > limit {
-// 			return Err(ExitError::OutOfGas);
-// 		}
-// 		Ok(usage)
-// 	}
+	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
+		let usage = usage.checked_add(cost).ok_or(ExitError::Fatal(ExitFatal::Other(REACH_PROOF_SIZE_LIMIT.into())))?;
+		if usage > limit {
+			return Err(ExitError::Fatal(ExitFatal::Other(REACH_PROOF_SIZE_LIMIT.into())));
+		}
+		Ok(usage)
+	}
 
-// 	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-// 		if let (Some(ref_time_usage), Some(ref_time_limit)) =
-// 			(self.ref_time_usage, self.ref_time_limit)
-// 		{
-// 			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
-// 			if ref_time_usage > ref_time_limit {
-// 				return Err(ExitError::OutOfGas);
-// 			}
-// 			self.ref_time_usage = Some(ref_time_usage);
-// 		}
-// 		Ok(())
-// 	}
+	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
+		if let (Some(ref_time_usage), Some(ref_time_limit)) =
+			(self.ref_time_usage, self.ref_time_limit)
+		{
+			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
+			if ref_time_usage > ref_time_limit {
+				return Err(ExitError::Fatal(ExitFatal::Other(REACH_PROOF_SIZE_LIMIT.into())));
+			}
+			self.ref_time_usage = Some(ref_time_usage);
+		}
+		Ok(())
+	}
 
-// 	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-// 		if let (Some(proof_size_usage), Some(proof_size_limit)) =
-// 			(self.proof_size_usage, self.proof_size_limit)
-// 		{
-// 			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
-// 			if proof_size_usage > proof_size_limit {
-// 				return Err(ExitError::OutOfGas);
-// 			}
-// 			self.proof_size_usage = Some(proof_size_usage);
-// 		}
-// 		Ok(())
-// 	}
+	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
+		if let (Some(proof_size_usage), Some(proof_size_limit)) =
+			(self.proof_size_usage, self.proof_size_limit)
+		{
+			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
+			if proof_size_usage > proof_size_limit {
+				return Err(ExitError::Fatal(ExitFatal::Other(REACH_PROOF_SIZE_LIMIT.into())));
+			}
+			self.proof_size_usage = Some(proof_size_usage);
+		}
+		Ok(())
+	}
 
-// 	pub fn refund_proof_size(&mut self, amount: u64) {
-// 		if let Some(proof_size_usage) = self.proof_size_usage {
-// 			let proof_size_usage = proof_size_usage.saturating_sub(amount);
-// 			self.proof_size_usage = Some(proof_size_usage);
-// 		}
-// 	}
+	pub fn refund_proof_size(&mut self, amount: u64) {
+		if let Some(proof_size_usage) = self.proof_size_usage {
+			let proof_size_usage = proof_size_usage.saturating_sub(amount);
+			self.proof_size_usage = Some(proof_size_usage);
+		}
+	}
 
-// 	pub fn refund_ref_time(&mut self, amount: u64) {
-// 		if let Some(ref_time_usage) = self.ref_time_usage {
-// 			let ref_time_usage = ref_time_usage.saturating_sub(amount);
-// 			self.ref_time_usage = Some(ref_time_usage);
-// 		}
-// 	}
-// 	pub fn remaining_proof_size(&self) -> Option<u64> {
-// 		if let (Some(proof_size_usage), Some(proof_size_limit)) =
-// 			(self.proof_size_usage, self.proof_size_limit)
-// 		{
-// 			return Some(proof_size_limit.saturating_sub(proof_size_usage));
-// 		}
-// 		None
-// 	}
+	pub fn refund_ref_time(&mut self, amount: u64) {
+		if let Some(ref_time_usage) = self.ref_time_usage {
+			let ref_time_usage = ref_time_usage.saturating_sub(amount);
+			self.ref_time_usage = Some(ref_time_usage);
+		}
+	}
+	pub fn remaining_proof_size(&self) -> Option<u64> {
+		if let (Some(proof_size_usage), Some(proof_size_limit)) =
+			(self.proof_size_usage, self.proof_size_limit)
+		{
+			return Some(proof_size_limit.saturating_sub(proof_size_usage));
+		}
+		None
+	}
 
-// 	pub fn remaining_ref_time(&self) -> Option<u64> {
-// 		if let (Some(ref_time_usage), Some(ref_time_limit)) =
-// 			(self.ref_time_usage, self.ref_time_limit)
-// 		{
-// 			return Some(ref_time_limit.saturating_sub(ref_time_usage));
-// 		}
-// 		None
-// 	}
-// }
+	pub fn remaining_ref_time(&self) -> Option<u64> {
+		if let (Some(ref_time_usage), Some(ref_time_limit)) =
+			(self.ref_time_usage, self.ref_time_limit)
+		{
+			return Some(ref_time_limit.saturating_sub(ref_time_usage));
+		}
+		None
+	}
+}
 
 // #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 // #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -204,15 +214,6 @@ pub struct Basic {
 // 	Call(CallInfo),
 // 	Create(CreateInfo),
 // }
-
-#[derive(Clone, Eq, PartialEq, Debug, Encode, Decode)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ExecutionInfo<T> {
-	transact_value: T,
-	used_gas: u64,
-	// weight_info: Option<WeightInfo>,
-	exit_error: Option<ExitError>,
-}
 
 /// Account definition used for genesis block construction.
 #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode)]

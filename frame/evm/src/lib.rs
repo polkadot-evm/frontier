@@ -226,65 +226,46 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			// let is_transactional = true;
-			// let validate = true;
-			// match T::Runner::call(
-			// 	source,
-			// 	target,
-			// 	input,
-			// 	value,
-			// 	gas_limit,
-			// 	Some(max_fee_per_gas),
-			// 	max_priority_fee_per_gas,
-			// 	nonce,
-			// 	access_list,
-			// 	is_transactional,
-			// 	validate,
-			// 	None,
-			// 	None,
-			// 	T::config(),
-			// ) {
-			// 	Ok(transaction_value) => {
-			// 		if let TransactValue::Call { success, retval } = transaction_value {
-			// 			Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
-			// 		}
+			let is_transactional = true;
+			let validate = true;
+			match T::Runner::call(
+				source,
+				target,
+				input,
+				value,
+				gas_limit,
+				Some(max_fee_per_gas),
+				max_priority_fee_per_gas,
+				nonce,
+				access_list,
+				is_transactional,
+				validate,
+				None,
+				None,
+				T::config(),
+			) {
+				Ok(info) => {
+					Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
 
-			// 		// return Ok(PostDispatchInfo {
-			// 		// 	actual_weight: T::GasWeightMapping::gas_to_weight(
+					return Ok(PostDispatchInfo {
+						actual_weight: {
+							Some(Weight::from_parts(info.used_gas, info.used_weight))
+						},
+						pays_fee: Pays::No,
+					});
+				}
+				Err(e) => {
+					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
 
-			// 		// 	)
-			// 		// })
-			// 	}
-			// 	Err(exit_error) | Ok(TransactValue::Create { info }) => {
-			// 		Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
-			// 	}
-			// }
-
-			// match info.exit_reason {
-			// 	ExitReason::Succeed(_) => {
-			// 		Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
-			// 	}
-			// 	_ => {
-			// 		Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
-			// 	}
-			// };
-
-			// Ok(PostDispatchInfo {
-			// 	actual_weight: {
-			// 		let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-			// 			info.used_gas.standard.unique_saturated_into(),
-			// 			true,
-			// 		);
-			// 		if let Some(weight_info) = info.weight_info {
-			// 			if let Some(proof_size_usage) = weight_info.proof_size_usage {
-			// 				*gas_to_weight.proof_size_mut() = proof_size_usage;
-			// 			}
-			// 		}
-			// 		Some(gas_to_weight)
-			// 	},
-			// 	pays_fee: Pays::No,
-			// })
-			Ok(().into())
+					return Err(DispatchErrorWithPostInfo {
+						post_info: PostDispatchInfo {
+							actual_weight: Some(Weight::zero()),
+							pays_fee: Pays::Yes,
+						},
+						error: e.into(),
+					});
+				}
+			}
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in

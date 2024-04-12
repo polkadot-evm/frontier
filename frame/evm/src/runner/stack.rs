@@ -41,7 +41,7 @@ use sp_std::{
 	vec::Vec,
 };
 // Frontier
-use fp_evm::Basic as Account;
+use fp_evm::{Basic as Account, ExecutionInfo};
 // use fp_evm::{
 // 	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
 // 	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
@@ -67,6 +67,8 @@ where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 	T::Nonce: From<U256>,
 {
+	type ValidateError = Error<T>;
+
 	fn validate(
 		source: H160,
 		target: Option<H160>,
@@ -81,7 +83,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		evm_config: &evm::standard::Config,
-	) -> Result<(), ExitError> {
+	) -> Result<(), Self::ValidateError> {
 		Ok(())
 	}
 
@@ -100,7 +102,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		config: &evm::standard::Config,
-	) -> Result<TransactValue, ExitError> {
+	) -> Result<ExecutionInfo, Self::ValidateError> {
 		let args = TransactArgs::Call {
 			caller: source,
 			address: target,
@@ -137,7 +139,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		config: &evm::standard::Config,
-	) -> Result<TransactValue, ExitError> {
+	) -> Result<ExecutionInfo, Self::ValidateError> {
 		let args = TransactArgs::Create {
 			caller: source,
 			value,
@@ -175,7 +177,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		config: &evm::standard::Config,
-	) -> Result<TransactValue, ExitError> {
+	) -> Result<ExecutionInfo, Self::ValidateError> {
 		let args = TransactArgs::Create {
 			caller: source,
 			value,
@@ -214,7 +216,7 @@ where
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-	) -> Result<TransactValue, ExitError> {
+	) -> Result<ExecutionInfo, Error<T>> {
 		#[cfg(feature = "forbid-evm-reentrancy")]
 		if IN_EVM.with(|in_evm| in_evm.replace(true)) {
 			return Err(RunnerError {
@@ -246,11 +248,12 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		config: &'config evm::standard::Config,
 		is_transactional: bool,
-	) -> Result<TransactValue, ExitError> {
+	) -> Result<ExecutionInfo, Error<T>> {
 		let precompiles = StandardPrecompileSet::new(&config);
-		let gas_etable = Etable::single(evm::standard::eval_gasometer);
-		let exec_etable = Etable::runtime();
-		let etable = (gas_etable, exec_etable);
+		let etable = (
+			Etable::single(evm::standard::eval_gasometer),
+			Etable::runtime(),
+		);
 		let resolver = EtableResolver::new(&config, &precompiles, &etable);
 		let invoker = Invoker::new(&config, &resolver);
 
@@ -258,33 +261,33 @@ where
 		let backend: FrontierRuntimeBaseBackend<T> = FrontierRuntimeBaseBackend {
 			_marker: PhantomData,
 		};
-		let mut run_backend = OverlayedBackend::new(backend.clone(), init_accessed);
+		let mut run_backend = OverlayedBackend::new(backend, init_accessed);
 		let transact_result = evm::transact(args.clone(), Some(1024), &mut run_backend, &invoker);
 
-		match transact_result {
-			Ok(transact_value) => {
-				let run_changeset = run_backend.deconstruct().1;
-				let OverlayedChangeSet {
-					logs,
-					balances,
-					codes,
-					nonces,
-					storage_resets,
-					storages,
-					deletes,
-				} = run_changeset;
+		let (backend, run_changeset) = run_backend.deconstruct();
+		let OverlayedChangeSet {
+			logs,
+			balances,
+			codes,
+			nonces,
+			storage_resets,
+			storages,
+			deletes,
+		} = run_changeset;
 
-				backend.apply_logs(logs);
-				backend.apply_balances(balances);
-				backend.apply_codes(codes);
-				backend.apply_nonces(nonces);
-				backend.apply_storage_resets(storage_resets);
-				backend.apply_storages(storages);
-				backend.apply_deletes(deletes);
-				Ok(transact_value)
-			}
-			Err(exit_error) => Err(exit_error),
-		}
+		backend.apply_logs(logs);
+		backend.apply_balances(balances);
+		backend.apply_codes(codes);
+		backend.apply_nonces(nonces);
+		backend.apply_storage_resets(storage_resets);
+		backend.apply_storages(storages);
+		backend.apply_deletes(deletes);
+
+		Ok(ExecutionInfo {
+			transact_result,
+			used_gas: 100,
+			used_weight: 100,
+		})
 	}
 }
 
