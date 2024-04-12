@@ -36,7 +36,7 @@ pub trait Runner<T: Config> {
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		evm_config: &&evm::standard::Config,
+		evm_config: &evm::standard::Config,
 	) -> Result<(), ExitError>;
 
 	fn call(
@@ -53,7 +53,7 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &&evm::standard::Config,
+		config: &evm::standard::Config,
 	) -> Result<TransactValue, ExitError>;
 
 	fn create(
@@ -69,7 +69,7 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &&evm::standard::Config,
+		config: &evm::standard::Config,
 	) -> Result<TransactValue, ExitError>;
 
 	fn create2(
@@ -86,6 +86,6 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &&evm::standard::Config,
+		config: &evm::standard::Config,
 	) -> Result<TransactValue, ExitError>;
 }

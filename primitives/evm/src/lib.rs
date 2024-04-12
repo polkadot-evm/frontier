@@ -49,16 +49,6 @@ use evm::ExitError;
 // 	},
 // };
 
-// #[derive(Clone, Eq, PartialEq, Default, Debug, Encode, Decode)]
-// #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-// /// External input from the transaction.
-// pub struct Vicinity {
-// 	/// Current transaction gas price.
-// 	pub gas_price: U256,
-// 	/// Origin of the transaction.
-// 	pub origin: H160,
-// }
-
 #[derive(Clone, Eq, PartialEq, Debug, Default, Encode, Decode)]
 pub struct Basic {
 	/// Account balance.
@@ -219,6 +209,8 @@ pub struct Basic {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ExecutionInfo<T> {
 	transact_value: T,
+	used_gas: u64,
+	// weight_info: Option<WeightInfo>,
 	exit_error: Option<ExitError>,
 }
 

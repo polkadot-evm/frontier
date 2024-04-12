@@ -19,7 +19,7 @@
 
 use evm::{
 	backend::{OverlayedBackend, OverlayedChangeSet},
-	standard::{Etable, EtableResolver, Invoker, TransactArgs, TransactValue},
+	standard::{Etable, EtableResolver, Invoker, State, TransactArgs, TransactValue},
 	ExitError, Log, RuntimeEnvironment,
 };
 use evm_precompile::StandardPrecompileSet;
@@ -65,6 +65,7 @@ pub struct Runner<T: Config> {
 impl<T: Config> RunnerT<T> for Runner<T>
 where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+	T::Nonce: From<U256>,
 {
 	fn validate(
 		source: H160,
@@ -98,7 +99,7 @@ where
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &&evm::standard::Config,
+		config: &evm::standard::Config,
 	) -> Result<TransactValue, ExitError> {
 		let args = TransactArgs::Call {
 			caller: source,
@@ -135,7 +136,7 @@ where
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &&evm::standard::Config,
+		config: &evm::standard::Config,
 	) -> Result<TransactValue, ExitError> {
 		let args = TransactArgs::Create {
 			caller: source,
@@ -173,7 +174,7 @@ where
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
-		config: &&evm::standard::Config,
+		config: &evm::standard::Config,
 	) -> Result<TransactValue, ExitError> {
 		let args = TransactArgs::Create {
 			caller: source,
@@ -201,6 +202,7 @@ where
 impl<T: Config> Runner<T>
 where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+	T::Nonce: From<U256>,
 {
 	#[allow(clippy::let_and_return)]
 	/// Execute an already validated EVM operation.
@@ -208,7 +210,7 @@ where
 		args: &TransactArgs,
 		max_fee_per_gas: Option<U256>,
 		max_priority_fee_per_gas: Option<U256>,
-		config: &'config &evm::standard::Config,
+		config: &'config evm::standard::Config,
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
@@ -222,7 +224,7 @@ where
 		}
 
 		let res = Self::execute_inner(
-			&*args,
+			args,
 			max_fee_per_gas,
 			max_priority_fee_per_gas,
 			config,
@@ -238,11 +240,11 @@ where
 	}
 
 	// Execute an already validated EVM operation.
-	fn execute_inner<'config, 'precompiles, F, R>(
-		args: TransactArgs,
+	fn execute_inner<'config>(
+		args: &TransactArgs,
 		max_fee_per_gas: Option<U256>,
 		max_priority_fee_per_gas: Option<U256>,
-		config: &'config &evm::standard::Config,
+		config: &'config evm::standard::Config,
 		is_transactional: bool,
 	) -> Result<TransactValue, ExitError> {
 		let precompiles = StandardPrecompileSet::new(&config);
@@ -253,13 +255,15 @@ where
 		let invoker = Invoker::new(&config, &resolver);
 
 		let init_accessed = BTreeSet::new();
-		let base_backend = FrontierRuntimeBaseBackend {};
-		let mut run_backend = OverlayedBackend::new(base_backend, init_accessed);
-		let transact_result = evm::transact(args, 1024, &mut run_backend, &invoker);
-		let run_changeset = run_backend.deconstruct().1;
+		let backend: FrontierRuntimeBaseBackend<T> = FrontierRuntimeBaseBackend {
+			_marker: PhantomData,
+		};
+		let mut run_backend = OverlayedBackend::new(backend.clone(), init_accessed);
+		let transact_result = evm::transact(args.clone(), Some(1024), &mut run_backend, &invoker);
 
 		match transact_result {
 			Ok(transact_value) => {
+				let run_changeset = run_backend.deconstruct().1;
 				let OverlayedChangeSet {
 					logs,
 					balances,
@@ -269,14 +273,14 @@ where
 					storages,
 					deletes,
 				} = run_changeset;
-				base_backend.apply_logs(logs);
-				base_backend.apply_balances(balances);
-				base_backend.apply_codes(codes);
-				base_backend.apply_nonces(nonces);
-				base_backend.apply_storage_resets(storage_resets);
-				base_backend.apply_storages(storages);
-				base_backend.apply_deletes(deletes);
 
+				backend.apply_logs(logs);
+				backend.apply_balances(balances);
+				backend.apply_codes(codes);
+				backend.apply_nonces(nonces);
+				backend.apply_storage_resets(storage_resets);
+				backend.apply_storages(storages);
+				backend.apply_deletes(deletes);
 				Ok(transact_value)
 			}
 			Err(exit_error) => Err(exit_error),
@@ -284,7 +288,10 @@ where
 	}
 }
 
-struct FrontierRuntimeBaseBackend<T>;
+#[derive(Clone)]
+struct FrontierRuntimeBaseBackend<T> {
+	_marker: PhantomData<T>,
+}
 
 impl<T: Config> RuntimeEnvironment for FrontierRuntimeBaseBackend<T> {
 	fn block_hash(&self, number: U256) -> H256 {
@@ -346,7 +353,7 @@ impl<T: Config> evm::RuntimeBaseBackend for FrontierRuntimeBaseBackend<T> {
 	}
 
 	fn code(&self, address: H160) -> Vec<u8> {
-		vec![]
+		<AccountCodes<T>>::get(address)
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
@@ -363,8 +370,13 @@ impl<T: Config> evm::RuntimeBaseBackend for FrontierRuntimeBaseBackend<T> {
 	}
 }
 
-impl<T: Config> FrontierRuntimeBaseBackend<T> {
-	fn apply_logs(&self, logs: Vec<Log>) {
+type proof_size = u64;
+
+impl<T: Config> FrontierRuntimeBaseBackend<T>
+where
+	T::Nonce: From<U256>,
+{
+	fn apply_logs(&self, logs: Vec<Log>) -> proof_size {
 		for log in logs {
 			Pallet::<T>::deposit_event(Event::<T>::Log {
 				log: Log {
@@ -374,29 +386,42 @@ impl<T: Config> FrontierRuntimeBaseBackend<T> {
 				},
 			});
 		}
+		0
 	}
 
-	fn apply_balances(&self, balances: BTreeMap<H160, U256>) {
-		todo!()
+	fn apply_balances(&self, balances: BTreeMap<H160, U256>) -> proof_size {
+		for (address, balance) in balances {
+			let target = T::AddressMapping::into_account_id(address);
+			//  TODO: FIX it
+			// T::Currency::set_balance(&target, balance, 0, 0);
+		}
+
+		0
 	}
 
-	fn apply_codes(&self, codes: BTreeMap<H160, Vec<u8>>) {
+	fn apply_codes(&self, codes: BTreeMap<H160, Vec<u8>>) -> proof_size {
 		for (address, code) in codes {
 			Pallet::<T>::create_account(address, code);
 		}
+		0
 	}
 
-	fn apply_nonces(&self, nonces: BTreeMap<H160, U256>) {
-		todo!()
+	fn apply_nonces(&self, nonces: BTreeMap<H160, U256>) -> proof_size {
+		for (address, nonce) in nonces {
+			let account_id = T::AddressMapping::into_account_id(address);
+			frame_system::Account::<T>::mutate(account_id, |a| a.nonce = nonce.into());
+		}
+		0
 	}
 
-	fn apply_storage_resets(&self, addresses: BTreeSet<H160>) {
+	fn apply_storage_resets(&self, addresses: BTreeSet<H160>) -> proof_size {
 		for addr in addresses {
 			let _ = <AccountStorages<T>>::remove_prefix(addr, None);
 		}
+		0
 	}
 
-	fn apply_storages(&self, storages: BTreeMap<(H160, H256), H256>) {
+	fn apply_storages(&self, storages: BTreeMap<(H160, H256), H256>) -> proof_size {
 		for ((address, index), value) in storages {
 			// Then we insert or remove the entry based on the value.
 			if value == H256::default() {
@@ -418,7 +443,13 @@ impl<T: Config> FrontierRuntimeBaseBackend<T> {
 				<AccountStorages<T>>::insert(address, index, value);
 			}
 		}
+		0
 	}
 
-	fn apply_deletes(&self, addresses: BTreeSet<H160>) {}
+	fn apply_deletes(&self, addresses: BTreeSet<H160>) -> proof_size {
+		for addr in addresses {
+			Pallet::<T>::remove_account(&addr)
+		}
+		0
+	}
 }

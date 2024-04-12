@@ -68,6 +68,7 @@ pub mod weights;
 // pub use evm::{
 // 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 // };
+use evm::{standard::Config as EvmConfig, Log};
 use hash_db::Hasher;
 use impl_trait_for_tuples::impl_for_tuples;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
@@ -96,7 +97,7 @@ use sp_runtime::{
 use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
 use fp_account::AccountId20;
-use fp_evm::{FeeCalculator, GenesisAccount};
+use fp_evm::{Basic as Account, FeeCalculator, GenesisAccount};
 // pub use fp_evm::{
 // 	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
 // 	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
@@ -144,8 +145,8 @@ pub mod pallet {
 		/// The overarching event type.
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// Precompiles associated with this EVM engine.
-		type PrecompilesType: PrecompileSet;
-		type PrecompilesValue: Get<Self::PrecompilesType>;
+		// type PrecompilesType: PrecompileSet<S, H>;
+		// type PrecompilesValue: Get<Self::PrecompilesType>;
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
@@ -225,60 +226,65 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			let is_transactional = true;
-			let validate = true;
-			let info = match T::Runner::call(
-				source,
-				target,
-				input,
-				value,
-				gas_limit,
-				Some(max_fee_per_gas),
-				max_priority_fee_per_gas,
-				nonce,
-				access_list,
-				is_transactional,
-				validate,
-				None,
-				None,
-				T::config(),
-			) {
-				Ok(info) => info,
-				Err(e) => {
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
+			// let is_transactional = true;
+			// let validate = true;
+			// match T::Runner::call(
+			// 	source,
+			// 	target,
+			// 	input,
+			// 	value,
+			// 	gas_limit,
+			// 	Some(max_fee_per_gas),
+			// 	max_priority_fee_per_gas,
+			// 	nonce,
+			// 	access_list,
+			// 	is_transactional,
+			// 	validate,
+			// 	None,
+			// 	None,
+			// 	T::config(),
+			// ) {
+			// 	Ok(transaction_value) => {
+			// 		if let TransactValue::Call { success, retval } = transaction_value {
+			// 			Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
+			// 		}
 
-			match info.exit_reason {
-				ExitReason::Succeed(_) => {
-					Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
-				}
-				_ => {
-					Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
-				}
-			};
+			// 		// return Ok(PostDispatchInfo {
+			// 		// 	actual_weight: T::GasWeightMapping::gas_to_weight(
 
-			Ok(PostDispatchInfo {
-				actual_weight: {
-					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						info.used_gas.standard.unique_saturated_into(),
-						true,
-					);
-					if let Some(weight_info) = info.weight_info {
-						if let Some(proof_size_usage) = weight_info.proof_size_usage {
-							*gas_to_weight.proof_size_mut() = proof_size_usage;
-						}
-					}
-					Some(gas_to_weight)
-				},
-				pays_fee: Pays::No,
-			})
+			// 		// 	)
+			// 		// })
+			// 	}
+			// 	Err(exit_error) | Ok(TransactValue::Create { info }) => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
+			// 	}
+			// }
+
+			// match info.exit_reason {
+			// 	ExitReason::Succeed(_) => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::Executed { address: target });
+			// 	}
+			// 	_ => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::ExecutedFailed { address: target });
+			// 	}
+			// };
+
+			// Ok(PostDispatchInfo {
+			// 	actual_weight: {
+			// 		let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+			// 			info.used_gas.standard.unique_saturated_into(),
+			// 			true,
+			// 		);
+			// 		if let Some(weight_info) = info.weight_info {
+			// 			if let Some(proof_size_usage) = weight_info.proof_size_usage {
+			// 				*gas_to_weight.proof_size_mut() = proof_size_usage;
+			// 			}
+			// 		}
+			// 		Some(gas_to_weight)
+			// 	},
+			// 	pays_fee: Pays::No,
+			// })
+			Ok(().into())
 		}
 
 		/// Issue an EVM create operation. This is similar to a contract creation transaction in
@@ -303,69 +309,70 @@ pub mod pallet {
 
 			let is_transactional = true;
 			let validate = true;
-			let info = match T::Runner::create(
-				source,
-				init,
-				value,
-				gas_limit,
-				Some(max_fee_per_gas),
-				max_priority_fee_per_gas,
-				nonce,
-				access_list,
-				is_transactional,
-				validate,
-				None,
-				None,
-				T::config(),
-			) {
-				Ok(info) => info,
-				Err(e) => {
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
+			// let info = match T::Runner::create(
+			// 	source,
+			// 	init,
+			// 	value,
+			// 	gas_limit,
+			// 	Some(max_fee_per_gas),
+			// 	max_priority_fee_per_gas,
+			// 	nonce,
+			// 	access_list,
+			// 	is_transactional,
+			// 	validate,
+			// 	None,
+			// 	None,
+			// 	T::config(),
+			// ) {
+			// 	Ok(info) => info,
+			// 	Err(e) => {
+			// 		return Err(DispatchErrorWithPostInfo {
+			// 			post_info: PostDispatchInfo {
+			// 				actual_weight: Some(e.weight),
+			// 				pays_fee: Pays::Yes,
+			// 			},
+			// 			error: e.error.into(),
+			// 		})
+			// 	}
+			// };
 
-			match info {
-				CreateInfo {
-					exit_reason: ExitReason::Succeed(_),
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::Created {
-						address: create_address,
-					});
-				}
-				CreateInfo {
-					exit_reason: _,
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
-						address: create_address,
-					});
-				}
-			}
+			// match info {
+			// 	CreateInfo {
+			// 		exit_reason: ExitReason::Succeed(_),
+			// 		value: create_address,
+			// 		..
+			// 	} => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::Created {
+			// 			address: create_address,
+			// 		});
+			// 	}
+			// 	CreateInfo {
+			// 		exit_reason: _,
+			// 		value: create_address,
+			// 		..
+			// 	} => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
+			// 			address: create_address,
+			// 		});
+			// 	}
+			// }
 
-			Ok(PostDispatchInfo {
-				actual_weight: {
-					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						info.used_gas.standard.unique_saturated_into(),
-						true,
-					);
-					if let Some(weight_info) = info.weight_info {
-						if let Some(proof_size_usage) = weight_info.proof_size_usage {
-							*gas_to_weight.proof_size_mut() = proof_size_usage;
-						}
-					}
-					Some(gas_to_weight)
-				},
-				pays_fee: Pays::No,
-			})
+			// Ok(PostDispatchInfo {
+			// 	actual_weight: {
+			// 		let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+			// 			info.used_gas.standard.unique_saturated_into(),
+			// 			true,
+			// 		);
+			// 		if let Some(weight_info) = info.weight_info {
+			// 			if let Some(proof_size_usage) = weight_info.proof_size_usage {
+			// 				*gas_to_weight.proof_size_mut() = proof_size_usage;
+			// 			}
+			// 		}
+			// 		Some(gas_to_weight)
+			// 	},
+			// 	pays_fee: Pays::No,
+			// })
+			Ok(().into())
 		}
 
 		/// Issue an EVM create2 operation.
@@ -388,72 +395,73 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			let is_transactional = true;
-			let validate = true;
-			let info = match T::Runner::create2(
-				source,
-				init,
-				salt,
-				value,
-				gas_limit,
-				Some(max_fee_per_gas),
-				max_priority_fee_per_gas,
-				nonce,
-				access_list,
-				is_transactional,
-				validate,
-				None,
-				None,
-				T::config(),
-			) {
-				Ok(info) => info,
-				Err(e) => {
-					return Err(DispatchErrorWithPostInfo {
-						post_info: PostDispatchInfo {
-							actual_weight: Some(e.weight),
-							pays_fee: Pays::Yes,
-						},
-						error: e.error.into(),
-					})
-				}
-			};
+			// let is_transactional = true;
+			// let validate = true;
+			// let info = match T::Runner::create2(
+			// 	source,
+			// 	init,
+			// 	salt,
+			// 	value,
+			// 	gas_limit,
+			// 	Some(max_fee_per_gas),
+			// 	max_priority_fee_per_gas,
+			// 	nonce,
+			// 	access_list,
+			// 	is_transactional,
+			// 	validate,
+			// 	None,
+			// 	None,
+			// 	T::config(),
+			// ) {
+			// 	Ok(info) => info,
+			// 	Err(e) => {
+			// 		return Err(DispatchErrorWithPostInfo {
+			// 			post_info: PostDispatchInfo {
+			// 				actual_weight: Some(e.weight),
+			// 				pays_fee: Pays::Yes,
+			// 			},
+			// 			error: e.error.into(),
+			// 		})
+			// 	}
+			// };
 
-			match info {
-				CreateInfo {
-					exit_reason: ExitReason::Succeed(_),
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::Created {
-						address: create_address,
-					});
-				}
-				CreateInfo {
-					exit_reason: _,
-					value: create_address,
-					..
-				} => {
-					Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
-						address: create_address,
-					});
-				}
-			}
+			// match info {
+			// 	CreateInfo {
+			// 		exit_reason: ExitReason::Succeed(_),
+			// 		value: create_address,
+			// 		..
+			// 	} => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::Created {
+			// 			address: create_address,
+			// 		});
+			// 	}
+			// 	CreateInfo {
+			// 		exit_reason: _,
+			// 		value: create_address,
+			// 		..
+			// 	} => {
+			// 		Pallet::<T>::deposit_event(Event::<T>::CreatedFailed {
+			// 			address: create_address,
+			// 		});
+			// 	}
+			// }
 
-			Ok(PostDispatchInfo {
-				actual_weight: {
-					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						info.used_gas.standard.unique_saturated_into(),
-						true,
-					);
-					if let Some(weight_info) = info.weight_info {
-						if let Some(proof_size_usage) = weight_info.proof_size_usage {
-							*gas_to_weight.proof_size_mut() = proof_size_usage;
-						}
-					}
-					Some(gas_to_weight)
-				},
-				pays_fee: Pays::No,
-			})
+			// Ok(PostDispatchInfo {
+			// 	actual_weight: {
+			// 		let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
+			// 			info.used_gas.standard.unique_saturated_into(),
+			// 			true,
+			// 		);
+			// 		if let Some(weight_info) = info.weight_info {
+			// 			if let Some(proof_size_usage) = weight_info.proof_size_usage {
+			// 				*gas_to_weight.proof_size_mut() = proof_size_usage;
+			// 			}
+			// 		}
+			// 		Some(gas_to_weight)
+			// 	},
+			// 	pays_fee: Pays::No,
+			// })
+			Ok(().into())
 		}
 	}
 
