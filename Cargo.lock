@@ -3167,7 +3167,6 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
- "pallet-hotfix-sufficients",
  "pallet-sudo",
  "pallet-timestamp",
  "pallet-transaction-payment",
