@@ -15,7 +15,7 @@ path = "tests/tests.rs"
 [dependencies]
 case = "1.0"
 num_enum = { workspace = true }
-prettyplease = "0.2.17"
+prettyplease = "0.2.19"
 proc-macro2 = "1.0"
 quote = "1.0"
 sp-crypto-hashing = { workspace = true }
