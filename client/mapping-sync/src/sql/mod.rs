@@ -682,7 +682,7 @@ mod test {
 
 		// Spawn worker after creating the blocks will resolve the interval future.
 		// Because the SyncWorker is spawned at service level, in the real world this will only
-		// happen when we are in major syncing (where there is lack of import notificatons).
+		// happen when we are in major syncing (where there is lack of import notifications).
 		tokio::task::spawn(async move {
 			crate::sql::SyncWorker::run(
 				client.clone(),

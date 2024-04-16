@@ -18,7 +18,7 @@
 
 //! Provide utils to assemble precompiles and precompilesets into a
 //! final precompile set with security checks. All security checks are enabled by
-//! default and must be disabled explicely throught type annotations.
+//! default and must be disabled explicely through type annotations.
 
 use crate::{
 	evm::handle::PrecompileHandleExt,
