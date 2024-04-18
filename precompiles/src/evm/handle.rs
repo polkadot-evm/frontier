@@ -28,7 +28,7 @@ use fp_evm::{Log, PrecompileHandle};
 
 pub trait PrecompileHandleExt: PrecompileHandle {
 	/// Record cost of one DB read manually.
-	/// The max encoded lenght of the data that will be read should be provided.
+	/// The max encoded length of the data that will be read should be provided.
 	fn record_db_read<Runtime: pallet_evm::Config>(
 		&mut self,
 		data_max_encoded_len: usize,
@@ -62,7 +62,7 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
 		self.record_external_cost(None, Some(data_max_encoded_len as u64), None)
 	}
 
-	/// Record cost of a log manualy.
+	/// Record cost of a log manually.
 	/// This can be useful to record log costs early when their content have static size.
 	fn record_log_costs_manual(&mut self, topics: usize, data_len: usize) -> EvmResult {
 		self.record_cost(crate::evm::costs::log_costs(topics, data_len)?)?;

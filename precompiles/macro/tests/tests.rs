@@ -48,7 +48,7 @@ fn ui() {
 fn expand() {
 	// Use `expand` to update the expansions
 	// Replace it with `expand_without_refresh` afterward so that
-	// CI checks the expension don't change
+	// CI checks the extension don't change
 
 	// macrotest::expand("tests/expand/**/*.rs");
 	macrotest::expand_without_refresh("tests/expand/**/*.rs");
