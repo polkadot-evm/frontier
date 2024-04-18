@@ -6508,7 +6508,7 @@ dependencies = [
  "quote",
  "sp-crypto-hashing",
  "sp-std 14.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.9.0)",
- "syn 1.0.109",
+ "syn 2.0.59",
  "trybuild",
 ]
 
