@@ -5,10 +5,14 @@ on:
     branches:
       - master
       - 'polkadot-v**'
+    paths-ignore:
+      - "**.md"
   pull_request:
     branches:
       - master
       - 'polkadot-v**'
+    paths-ignore:
+      - "**.md"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
