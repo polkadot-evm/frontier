@@ -162,7 +162,7 @@ pub fn run() -> sc_cli::Result<()> {
 			use frame_benchmarking_cli::{
 				BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE,
 			};
-			use frontier_template_runtime::{ExistentialDeposit, Hashing};
+			use frontier_template_runtime::{Hashing, EXISTENTIAL_DEPOSIT};
 
 			let runner = cli.create_runner(cmd)?;
 			match cmd {
@@ -198,7 +198,7 @@ pub fn run() -> sc_cli::Result<()> {
 						Box::new(TransferKeepAliveBuilder::new(
 							client.clone(),
 							get_account_id_from_seed::<sp_core::ecdsa::Public>("Alice"),
-							ExistentialDeposit::get(),
+							EXISTENTIAL_DEPOSIT,
 						)),
 					]);
 

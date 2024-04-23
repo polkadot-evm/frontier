@@ -167,7 +167,8 @@ impl From<AccountId32> for AccountId20 {
 	}
 }
 
-#[derive(Eq, PartialEq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(Clone, Eq, PartialEq)]
+#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EthereumSignature(ecdsa::Signature);
 
