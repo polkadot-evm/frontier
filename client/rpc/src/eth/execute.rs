@@ -101,7 +101,11 @@ where
 			(
 				details.gas_price,
 				// Old runtimes require max_fee_per_gas to be None for non transactional calls.
-				if details.max_fee_per_gas == Some(U256::zero()) { None } else { details.max_fee_per_gas },
+				if details.max_fee_per_gas == Some(U256::zero()) {
+					None
+				} else {
+					details.max_fee_per_gas
+				},
 				details.max_priority_fee_per_gas,
 			)
 		};
