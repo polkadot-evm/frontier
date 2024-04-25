@@ -47,6 +47,125 @@ use crate::{
 	frontier_backend_client, internal_err,
 };
 
+/// The types contained in this module are required for backwards compatility when decoding
+/// results produced by old versions of substrate.
+/// The changes contained in https://github.com/paritytech/substrate/pull/10776 changed the
+/// scale encoding for variant `DispatchError::Module`.
+mod old_types {
+	use scale_codec::{Decode, Encode};
+
+	/// Description of what went wrong when trying to complete an operation on a token.
+	#[derive(Eq, PartialEq, Clone, Copy, Encode, Decode, Debug)]
+	pub enum TokenError {
+		/// Funds are unavailable.
+		NoFunds,
+		/// Account that must exist would die.
+		WouldDie,
+		/// Account cannot exist with the funds that would be given.
+		BelowMinimum,
+		/// Account cannot be created.
+		CannotCreate,
+		/// The asset in question is unknown.
+		UnknownAsset,
+		/// Funds exist but are frozen.
+		Frozen,
+		/// Operation is not supported by the asset.
+		Unsupported,
+	}
+
+	/// Arithmetic errors.
+	#[derive(Eq, PartialEq, Clone, Copy, Encode, Decode, Debug)]
+	pub enum ArithmeticError {
+		/// Underflow.
+		Underflow,
+		/// Overflow.
+		Overflow,
+		/// Division by zero.
+		DivisionByZero,
+	}
+
+	#[derive(PartialEq, Eq, Clone, Copy, Encode, Decode, Debug)]
+	pub enum DispatchErrorV1 {
+		/// Some error occurred.
+		Other(#[codec(skip)] &'static str),
+		/// Failed to lookup some data.
+		CannotLookup,
+		/// A bad origin.
+		BadOrigin,
+		/// A custom error in a module.
+		Module {
+			/// Module index, matching the metadata module index.
+			index: u8,
+			/// Module specific error value.
+			error: u8,
+			/// Optional error message.
+			#[codec(skip)]
+			message: Option<&'static str>,
+		},
+		/// At least one consumer is remaining so the account cannot be destroyed.
+		ConsumerRemaining,
+		/// There are no providers so the account cannot be created.
+		NoProviders,
+		/// An error to do with tokens.
+		Token(TokenError),
+		/// An arithmetic error.
+		Arithmetic(ArithmeticError),
+	}
+
+	#[derive(PartialEq, Eq, Clone, Copy, Encode, Decode, Debug)]
+	pub enum DispatchErrorV2 {
+		/// Some error occurred.
+		Other(#[codec(skip)] &'static str),
+		/// Failed to lookup some data.
+		CannotLookup,
+		/// A bad origin.
+		BadOrigin,
+		/// A custom error in a module.
+		Module {
+			/// Module index, matching the metadata module index.
+			index: u8,
+			/// Module specific error value.
+			error: u8,
+			/// Optional error message.
+			#[codec(skip)]
+			message: Option<&'static str>,
+		},
+		/// At least one consumer is remaining so the account cannot be destroyed.
+		ConsumerRemaining,
+		/// There are no providers so the account cannot be created.
+		NoProviders,
+		/// There are too many consumers so the account cannot be created.
+		TooManyConsumers,
+		/// An error to do with tokens.
+		Token(TokenError),
+		/// An arithmetic error.
+		Arithmetic(ArithmeticError),
+	}
+
+	/// Reason why a dispatch call failed.
+	#[derive(PartialEq, Eq, Clone, Copy, Debug)]
+	pub enum OldDispatchError {
+		V1(DispatchErrorV1),
+		V2(DispatchErrorV2),
+	}
+
+	impl Decode for OldDispatchError {
+		fn decode<I: scale_codec::Input>(input: &mut I) -> Result<Self, scale_codec::Error> {
+			let remaining = input.remaining_len()?;
+			let mut v = vec![0u8; remaining.unwrap_or(0)];
+			let _ = input.read(&mut v);
+
+			if let Ok(r) = DispatchErrorV1::decode(&mut v.as_slice()) {
+				return Ok(OldDispatchError::V1(r));
+			}
+
+			Ok(OldDispatchError::V2(DispatchErrorV2::decode(
+				&mut v.as_slice(),
+			)?))
+		}
+	}
+}
+
 /// Allow to adapt a request for `estimate_gas`.
 /// Can be used to estimate gas of some contracts using a different function
 /// in the case the normal gas estimation doesn't work.
@@ -101,7 +220,11 @@ where
 			(
 				details.gas_price,
 				// Old runtimes require max_fee_per_gas to be None for non transactional calls.
-				if details.max_fee_per_gas == Some(U256::zero()) { None } else { details.max_fee_per_gas },
+				if details.max_fee_per_gas == Some(U256::zero()) {
+					None
+				} else {
+					details.max_fee_per_gas
+				},
 				details.max_priority_fee_per_gas,
 			)
 		};
@@ -255,7 +378,7 @@ where
 							.call_api_at(params)
 							.and_then(|r| {
 								Result::map_err(
-									<Result<ExecutionInfo::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+									<Result<ExecutionInfo::<Vec<u8>>, old_types::OldDispatchError> as Decode>::decode(&mut &r[..]),
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: "EthereumRuntimeRPCApi_call",
 										error,
@@ -1048,5 +1171,33 @@ fn fee_details(
 			max_priority_fee_per_gas: Some(U256::zero()),
 			fee_cap: U256::zero(),
 		}),
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::old_types::*;
+	use scale_codec::{Decode, Encode};
+
+	#[test]
+	fn test_dispatch_error() {
+		let v1 = DispatchErrorV1::Module {
+			index: 1,
+			error: 1,
+			message: None,
+		};
+		let v2 = DispatchErrorV2::TooManyConsumers;
+
+		let encoded_v1 = v1.encode();
+		let encoded_v2 = v2.encode();
+
+		assert_eq!(
+			OldDispatchError::decode(&mut encoded_v1.as_slice()),
+			Ok(OldDispatchError::V1(v1))
+		);
+		assert_eq!(
+			OldDispatchError::decode(&mut encoded_v2.as_slice()),
+			Ok(OldDispatchError::V2(v2))
+		);
 	}
 }
