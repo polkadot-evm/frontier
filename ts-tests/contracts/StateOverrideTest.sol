@@ -3,7 +3,7 @@ pragma solidity >=0.8.0;
 
 /// @notice Smart contract to help test state override
 contract StateOverrideTest {
-    /// @notice The maxmium allowed value
+    /// @notice The maximum allowed value
     uint256 public MAX_ALLOWED = 3;
     uint256 public availableFunds;
     mapping(address => mapping(address => uint256)) public allowance;

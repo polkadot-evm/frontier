@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -58,7 +58,7 @@ where
 					Err(e) => return Err(e),
 				};
 
-				match accounts.get(0) {
+				match accounts.first() {
 					Some(account) => *account,
 					None => return Err(internal_err("no signer available")),
 				}
@@ -73,10 +73,13 @@ where
 			},
 		};
 
-		let chain_id = match self.chain_id() {
-			Ok(Some(chain_id)) => chain_id.as_u64(),
-			Ok(None) => return Err(internal_err("chain id not available")),
-			Err(e) => return Err(e),
+		let chain_id = match (request.chain_id, self.chain_id()) {
+			(Some(id), Ok(Some(chain_id))) if id != chain_id => {
+				return Err(internal_err("chain id is mismatch"))
+			}
+			(_, Ok(Some(chain_id))) => chain_id.as_u64(),
+			(_, Ok(None)) => return Err(internal_err("chain id not available")),
+			(_, Err(e)) => return Err(e),
 		};
 
 		let block_hash = self.client.info().best_hash;
@@ -85,8 +88,7 @@ where
 		let gas_limit = match request.gas {
 			Some(gas_limit) => gas_limit,
 			None => {
-				let block = self.client.runtime_api().current_block(block_hash);
-				if let Ok(Some(block)) = block {
+				if let Ok(Some(block)) = self.client.runtime_api().current_block(block_hash) {
 					block.header.gas_limit
 				} else {
 					return Err(internal_err("block unavailable, cannot query gas limit"));

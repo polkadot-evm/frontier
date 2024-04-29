@@ -15,19 +15,19 @@ path = "tests/tests.rs"
 [dependencies]
 case = "1.0"
 num_enum = { workspace = true }
-prettyplease = "0.2.15"
+prettyplease = "0.2.19"
 proc-macro2 = "1.0"
 quote = "1.0"
-sp-core-hashing = { workspace = true }
+sp-crypto-hashing = { workspace = true }
 syn = { version = "1.0", features = ["extra-traits", "fold", "full", "visit"] }
 
 [dev-dependencies]
-macrotest = "1.0.9"
+macrotest = "1.0.12"
 trybuild = "1.0"
 
 precompile-utils = { path = "../", features = ["testing"] }
 
 fp-evm = { workspace = true }
 frame-support = { workspace = true }
-sp-core-hashing = { workspace = true }
+sp-crypto-hashing = { workspace = true }
 sp-std = { workspace = true }

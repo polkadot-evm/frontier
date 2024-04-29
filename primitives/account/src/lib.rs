@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2023 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -20,8 +20,9 @@
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
-use sp_core::{ecdsa, RuntimeDebug, H160, H256};
+use sp_core::{crypto::AccountId32, ecdsa, RuntimeDebug, H160, H256};
 use sp_io::hashing::keccak_256;
+use sp_runtime::MultiSignature;
 use sp_runtime_interface::pass_by::PassByInner;
 
 /// A fully Ethereum-compatible `AccountId`.
@@ -159,7 +160,15 @@ impl From<[u8; 32]> for AccountId20 {
 	}
 }
 
-#[derive(Eq, PartialEq, Clone, RuntimeDebug, Encode, Decode, TypeInfo)]
+impl From<AccountId32> for AccountId20 {
+	fn from(account: AccountId32) -> Self {
+		let bytes: &[u8; 32] = account.as_ref();
+		Self::from(*bytes)
+	}
+}
+
+#[derive(Clone, Eq, PartialEq)]
+#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EthereumSignature(ecdsa::Signature);
 
@@ -185,9 +194,23 @@ impl sp_runtime::traits::Verify for EthereumSignature {
 	}
 }
 
+impl From<MultiSignature> for EthereumSignature {
+	fn from(signature: MultiSignature) -> Self {
+		match signature {
+			MultiSignature::Ed25519(_) => {
+				panic!("Ed25519 not supported for EthereumSignature")
+			}
+			MultiSignature::Sr25519(_) => {
+				panic!("Sr25519 not supported for EthereumSignature")
+			}
+			MultiSignature::Ecdsa(sig) => Self(sig),
+		}
+	}
+}
+
 impl EthereumSignature {
 	pub fn new(s: ecdsa::Signature) -> Self {
-		EthereumSignature(s)
+		Self(s)
 	}
 }
 

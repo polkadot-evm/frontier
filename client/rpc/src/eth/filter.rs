@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -97,10 +97,11 @@ where
 					self.max_stored_filters
 				)));
 			}
-			let last_key = match {
+			let next_back = {
 				let mut iter = locked.iter();
 				iter.next_back()
-			} {
+			};
+			let last_key = match next_back {
 				Some((k, _)) => *k,
 				None => U256::zero(),
 			};
@@ -188,7 +189,7 @@ where
 				from_number: NumberFor<B>,
 				current_number: NumberFor<B>,
 			},
-			Error(jsonrpsee::core::Error),
+			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
 
 		let key = U256::from(index.value());
@@ -712,7 +713,7 @@ where
 	} else {
 		None
 	};
-	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
+	let address_bloom_filter = FilteredParams::address_bloom_filter(&filter.address);
 	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
 	while current_number <= to {
@@ -787,17 +788,17 @@ fn filter_block_logs<'a>(
 			let mut add: bool = true;
 			match (filter.address.clone(), filter.topics.clone()) {
 				(Some(_), Some(_)) => {
-					if !params.filter_address(&log) || !params.filter_topics(&log) {
+					if !params.filter_address(&log.address) || !params.filter_topics(&log.topics) {
 						add = false;
 					}
 				}
 				(Some(_), _) => {
-					if !params.filter_address(&log) {
+					if !params.filter_address(&log.address) {
 						add = false;
 					}
 				}
 				(_, Some(_)) => {
-					if !params.filter_topics(&log) {
+					if !params.filter_topics(&log.topics) {
 						add = false;
 					}
 				}

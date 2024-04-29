@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -451,9 +451,9 @@ mod tests {
 					// happened in case of fork or equivocation.
 					let eth_tx_hash = H256::random();
 					let mut metadata = vec![];
-					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
+					for hash in [next_canon_block_hash, orphan_block_hash] {
 						metadata.push(crate::kv::TransactionMetadata::<OpaqueBlock> {
-							substrate_block_hash: *hash,
+							substrate_block_hash: hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: 0u32,
 						});
