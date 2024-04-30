@@ -751,8 +751,6 @@ impl_runtime_apis! {
 	}
 
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
-		use pallet_evm::GasWeightMapping as _;
-
 		fn chain_id() -> u64 {
 			<Runtime as pallet_evm::Config>::ChainId::get()
 		}
@@ -793,6 +791,8 @@ impl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
+			use pallet_evm::GasWeightMapping as _;
+
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
 				config.estimate = true;
@@ -822,7 +822,12 @@ impl_runtime_apis! {
 						estimated_transaction_len += access_list.encoded_size();
 					}
 
-			let gas_limit = gas_limit.min(u64::MAX.into());
+
+					let gas_limit = if gas_limit > U256::from(u64::MAX) {
+						u64::MAX
+					} else {
+						gas_limit.low_u64()
+					};
 			let without_base_extrinsic_weight = true;
 
 			let (weight_limit, proof_size_base_cost) =
@@ -865,6 +870,8 @@ impl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
+			use pallet_evm::GasWeightMapping as _;
+
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
 				config.estimate = true;
@@ -894,7 +901,12 @@ impl_runtime_apis! {
 				estimated_transaction_len += access_list.encoded_size();
 			}
 
-			let gas_limit = gas_limit.min(u64::MAX.into());
+
+			let gas_limit = if gas_limit > U256::from(u64::MAX) {
+				u64::MAX
+			} else {
+				gas_limit.low_u64()
+			};
 			let without_base_extrinsic_weight = true;
 
 			let (weight_limit, proof_size_base_cost) =
