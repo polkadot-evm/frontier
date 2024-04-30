@@ -751,6 +751,8 @@ impl_runtime_apis! {
 	}
 
 	impl fp_rpc::EthereumRuntimeRPCApi<Block> for Runtime {
+		use pallet_evm::GasWeightMapping as _;
+
 		fn chain_id() -> u64 {
 			<Runtime as pallet_evm::Config>::ChainId::get()
 		}
