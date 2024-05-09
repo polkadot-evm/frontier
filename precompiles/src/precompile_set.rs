@@ -25,7 +25,8 @@ use crate::{
 	solidity::{codec::String, revert::revert},
 	EvmResult,
 };
-use core::{marker::PhantomData, ops::RangeInclusive};
+use alloc::{collections::btree_map::BTreeMap, vec, vec::Vec};
+use core::{cell::RefCell, marker::PhantomData, ops::RangeInclusive};
 use fp_evm::{
 	ExitError, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
 	PrecompileResult, PrecompileSet,
@@ -34,8 +35,6 @@ use frame_support::pallet_prelude::Get;
 use impl_trait_for_tuples::impl_for_tuples;
 use pallet_evm::AddressMapping;
 use sp_core::{H160, H256};
-use core::cell::RefCell;
-use alloc::{collections::btree_map::BTreeMap, vec, vec::Vec};
 
 /// Trait representing checks that can be made on a precompile call.
 /// Types implementing this trait are made to be chained in a tuple.

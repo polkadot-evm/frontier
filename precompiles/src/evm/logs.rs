@@ -17,9 +17,9 @@
 // limitations under the License.
 
 use crate::EvmResult;
+use alloc::{vec, vec::Vec};
 use pallet_evm::{Log, PrecompileHandle};
 use sp_core::{H160, H256};
-use alloc::{vec, vec::Vec};
 
 /// Create a 0-topic log.
 #[must_use]
