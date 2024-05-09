@@ -19,7 +19,7 @@
 use crate::EvmResult;
 use pallet_evm::{Log, PrecompileHandle};
 use sp_core::{H160, H256};
-use sp_std::{vec, vec::Vec};
+use alloc::{vec, vec::Vec};
 
 /// Create a 0-topic log.
 #[must_use]
