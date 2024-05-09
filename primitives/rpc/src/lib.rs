@@ -19,6 +19,9 @@
 #![allow(clippy::too_many_arguments)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 use ethereum::Log;
 use ethereum_types::Bloom;
 use scale_codec::{Decode, Encode};
@@ -30,7 +33,6 @@ use sp_runtime::{
 	Permill, RuntimeDebug,
 };
 use sp_state_machine::OverlayedChanges;
-use sp_std::vec::Vec;
 
 #[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
 pub struct TransactionStatus {

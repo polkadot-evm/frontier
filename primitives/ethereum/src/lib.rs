@@ -18,6 +18,10 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
+use core::result::Result;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
@@ -26,7 +30,6 @@ use ethereum_types::{H160, H256, U256};
 use fp_evm::{CallOrCreateInfo, CheckEvmTransactionInput};
 use frame_support::dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo};
 use scale_codec::{Decode, Encode};
-use sp_std::{result::Result, vec::Vec};
 
 pub trait ValidatedTransaction {
 	fn apply(

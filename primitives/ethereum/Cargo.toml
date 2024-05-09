@@ -16,7 +16,6 @@ ethereum-types = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 # Substrate
 frame-support = { workspace = true }
-sp-std = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
 
@@ -28,7 +27,6 @@ std = [
 	"scale-codec/std",
 	# Substrate
 	"frame-support/std",
-	"sp-std/std",
 	# Frontier
 	"fp-evm/std",
 ]

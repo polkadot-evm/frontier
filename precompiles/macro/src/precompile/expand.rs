@@ -219,7 +219,7 @@ impl Precompile {
 					}
 				)*
 
-				pub fn encode(self) -> ::sp_std::vec::Vec<u8> {
+				pub fn encode(self) -> ::alloc::vec::Vec<u8> {
 					use ::precompile_utils::solidity::codec::Writer;
 					match self {
 						#(
@@ -232,10 +232,10 @@ impl Precompile {
 				}
 			}
 
-			impl #impl_generics From<#enum_ident #ty_generics> for ::sp_std::vec::Vec<u8>
+			impl #impl_generics From<#enum_ident #ty_generics> for ::alloc::vec::Vec<u8>
 			#where_clause
 			{
-				fn from(a: #enum_ident #ty_generics) -> ::sp_std::vec::Vec<u8> {
+				fn from(a: #enum_ident #ty_generics) -> ::alloc::vec::Vec<u8> {
 					a.encode()
 				}
 			}

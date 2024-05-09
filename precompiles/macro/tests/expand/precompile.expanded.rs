@@ -240,7 +240,7 @@ where
 	pub fn fallback_selectors() -> &'static [u32] {
 		&[]
 	}
-	pub fn encode(self) -> ::sp_std::vec::Vec<u8> {
+	pub fn encode(self) -> ::alloc::vec::Vec<u8> {
 		use precompile_utils::solidity::codec::Writer;
 		match self {
 			Self::batch_all {
@@ -283,11 +283,11 @@ where
 		}
 	}
 }
-impl<Runtime> From<BatchPrecompileCall<Runtime>> for ::sp_std::vec::Vec<u8>
+impl<Runtime> From<BatchPrecompileCall<Runtime>> for ::alloc::vec::Vec<u8>
 where
 	Runtime: Get<u32>,
 {
-	fn from(a: BatchPrecompileCall<Runtime>) -> ::sp_std::vec::Vec<u8> {
+	fn from(a: BatchPrecompileCall<Runtime>) -> ::alloc::vec::Vec<u8> {
 		a.encode()
 	}
 }

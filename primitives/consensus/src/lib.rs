@@ -19,13 +19,15 @@
 #![allow(clippy::large_enum_variant)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 use scale_codec::{Decode, Encode};
 use sp_core::H256;
 use sp_runtime::{
 	generic::{Digest, OpaqueDigestItemId},
 	ConsensusEngineId,
 };
-use sp_std::vec::Vec;
 
 pub const FRONTIER_ENGINE_ID: ConsensusEngineId = [b'f', b'r', b'o', b'n'];
 

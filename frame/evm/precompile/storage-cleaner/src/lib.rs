@@ -21,13 +21,13 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 extern crate alloc;
 
+use alloc::vec::Vec;
 use core::marker::PhantomData;
 use fp_evm::{PrecompileFailure, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE};
 use pallet_evm::AddressMapping;
 use precompile_utils::{prelude::*, EvmResult};
 use sp_core::H160;
 use sp_runtime::traits::ConstU32;
-use sp_std::vec::Vec;
 
 #[cfg(test)]
 mod mock;

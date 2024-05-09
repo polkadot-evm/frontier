@@ -72,7 +72,7 @@ impl ExamplePrecompileCall {
 	pub fn example_selectors() -> &'static [u32] {
 		&[1412775727u32]
 	}
-	pub fn encode(self) -> ::sp_std::vec::Vec<u8> {
+	pub fn encode(self) -> ::alloc::vec::Vec<u8> {
 		use precompile_utils::solidity::codec::Writer;
 		match self {
 			Self::example {} => Writer::new_with_selector(1412775727u32).build(),
@@ -82,8 +82,8 @@ impl ExamplePrecompileCall {
 		}
 	}
 }
-impl From<ExamplePrecompileCall> for ::sp_std::vec::Vec<u8> {
-	fn from(a: ExamplePrecompileCall) -> ::sp_std::vec::Vec<u8> {
+impl From<ExamplePrecompileCall> for ::alloc::vec::Vec<u8> {
+	fn from(a: ExamplePrecompileCall) -> ::alloc::vec::Vec<u8> {
 		a.encode()
 	}
 }
