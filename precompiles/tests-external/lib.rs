@@ -18,8 +18,6 @@
 
 #![cfg(test)]
 
-extern crate alloc;
-
 use std::{cell::RefCell, rc::Rc};
 
 // Substrate
