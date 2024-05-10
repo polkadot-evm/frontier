@@ -52,6 +52,9 @@ pub trait Backend<Block: BlockT>: Send + Sync {
 	fn is_indexed(&self) -> bool {
 		self.log_indexer().is_indexed()
 	}
+
+	/// Get the latest substrate block hash in the sql database.
+	async fn best_hash(&self) -> Result<Block::Hash, String>;
 }
 
 #[derive(Debug, Eq, PartialEq)]

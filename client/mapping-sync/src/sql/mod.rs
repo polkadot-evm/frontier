@@ -89,7 +89,7 @@ where
 				match cmd {
 					WorkerCommand::ResumeSync => {
 						// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
-						match indexer_backend.get_last_indexed_canon_block().await.ok() {
+						match indexer_backend.last_indexed_canon_block().await.ok() {
 							Some(last_block_hash) => {
 								log::debug!(target: "frontier-sql", "Resume from last block {last_block_hash:?}");
 								if let Some(parent_hash) = client

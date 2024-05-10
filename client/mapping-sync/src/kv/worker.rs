@@ -39,7 +39,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::SyncStrategy;
 
-pub struct MappingSyncWorker<Block: BlockT, C, BE> {
+pub struct MappingSyncWorker<Block: BlockT, C: HeaderBackend<Block>, BE> {
 	import_notifications: ImportNotifications<Block>,
 	timeout: Duration,
 	inner_delay: Option<Delay>,
@@ -47,7 +47,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	client: Arc<C>,
 	substrate_backend: Arc<BE>,
 	overrides: Arc<OverrideHandle<Block>>,
-	frontier_backend: Arc<fc_db::kv::Backend<Block>>,
+	frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 
 	have_next: bool,
 	retry_times: usize,
@@ -59,16 +59,16 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 		Arc<crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>>,
 }
 
-impl<Block: BlockT, C, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
+impl<Block: BlockT, C: HeaderBackend<Block>, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
 
-impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
+impl<Block: BlockT, C: HeaderBackend<Block>, BE> MappingSyncWorker<Block, C, BE> {
 	pub fn new(
 		import_notifications: ImportNotifications<Block>,
 		timeout: Duration,
 		client: Arc<C>,
 		substrate_backend: Arc<BE>,
 		overrides: Arc<OverrideHandle<Block>>,
-		frontier_backend: Arc<fc_db::kv::Backend<Block>>,
+		frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
@@ -259,7 +259,7 @@ mod tests {
 		});
 
 		let frontier_backend = Arc::new(
-			fc_db::kv::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {
@@ -409,7 +409,7 @@ mod tests {
 		});
 
 		let frontier_backend = Arc::new(
-			fc_db::kv::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {

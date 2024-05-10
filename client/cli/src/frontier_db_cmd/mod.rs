@@ -98,15 +98,14 @@ pub enum DbValue<H> {
 }
 
 impl FrontierDbCmd {
-	pub fn run<C, B: BlockT>(
+	pub fn run<B: BlockT, C>(
 		&self,
 		client: Arc<C>,
-		backend: Arc<fc_db::kv::Backend<B>>,
+		backend: Arc<fc_db::kv::Backend<B, C>>,
 	) -> sc_cli::Result<()>
 	where
-		C: ProvideRuntimeApi<B>,
+		C: HeaderBackend<B> + ProvideRuntimeApi<B>,
 		C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
-		C: HeaderBackend<B>,
 	{
 		match self.column {
 			Column::Meta => {

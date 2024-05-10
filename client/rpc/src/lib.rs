@@ -74,7 +74,7 @@ pub mod frontier_backend_client {
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto},
+		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto, Zero},
 	};
 	use sp_state_machine::OverlayedChanges;
 	// Frontier
@@ -199,21 +199,27 @@ pub mod frontier_backend_client {
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
 	{
-		Ok(match number.unwrap_or(BlockNumberOrHash::Latest) {
+		match number.unwrap_or(BlockNumberOrHash::Latest) {
 			BlockNumberOrHash::Hash { hash, .. } => {
 				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash).await {
-					Some(BlockId::Hash(hash))
+					Ok(Some(BlockId::Hash(hash)))
 				} else {
-					None
+					Ok(None)
 				}
 			}
-			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
-			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
-			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
-			BlockNumberOrHash::Pending => None,
-			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
-			BlockNumberOrHash::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
-		})
+			BlockNumberOrHash::Num(number) => {
+				Ok(Some(BlockId::Number(number.unique_saturated_into())))
+			}
+			BlockNumberOrHash::Latest => backend
+				.best_hash()
+				.await
+				.map(|hash| Some(BlockId::Hash(hash)))
+				.map_err(|err| internal_err(format!("fetch to fetch the best hash: {:?}", err))),
+			BlockNumberOrHash::Earliest => Ok(Some(BlockId::Number(Zero::zero()))),
+			BlockNumberOrHash::Pending => Ok(None),
+			BlockNumberOrHash::Safe => Ok(Some(BlockId::Hash(client.info().finalized_hash))),
+			BlockNumberOrHash::Finalized => Ok(Some(BlockId::Hash(client.info().finalized_hash))),
+		}
 	}
 
 	pub async fn load_hash<B: BlockT, C>(
@@ -366,8 +372,8 @@ mod tests {
 	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
-		Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
+	) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
+		Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 			client,
 			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {

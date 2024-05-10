@@ -219,7 +219,7 @@ pub fn run() -> sc_cli::Result<()> {
 				let (client, _, _, _, frontier_backend) =
 					service::new_chain_ops(&mut config, &cli.eth)?;
 				let frontier_backend = match frontier_backend {
-					fc_db::Backend::KeyValue(kv) => std::sync::Arc::new(kv),
+					fc_db::Backend::KeyValue(kv) => kv,
 					_ => panic!("Only fc_db::Backend::KeyValue supported"),
 				};
 				cmd.run(client, frontier_backend)

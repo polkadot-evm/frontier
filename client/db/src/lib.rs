@@ -18,8 +18,11 @@
 
 #![warn(unused_crate_dependencies)]
 
+use std::sync::Arc;
+
 // Substrate
 pub use sc_client_db::DatabaseSource;
+use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 
 pub mod kv;
@@ -27,8 +30,8 @@ pub mod kv;
 pub mod sql;
 
 #[derive(Clone)]
-pub enum Backend<Block: BlockT> {
-	KeyValue(kv::Backend<Block>),
+pub enum Backend<Block: BlockT, C: HeaderBackend<Block>> {
+	KeyValue(Arc<kv::Backend<Block, C>>),
 	#[cfg(feature = "sql")]
-	Sql(sql::Backend<Block>),
+	Sql(Arc<sql::Backend<Block>>),
 }

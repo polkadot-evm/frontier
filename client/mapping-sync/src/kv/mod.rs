@@ -40,7 +40,7 @@ use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrat
 pub fn sync_block<Block: BlockT, C, BE>(
 	client: &C,
 	overrides: Arc<OverrideHandle<Block>>,
-	backend: &fc_db::kv::Backend<Block>,
+	backend: &fc_db::kv::Backend<Block, C>,
 	header: &Block::Header,
 ) -> Result<(), String>
 where
@@ -111,11 +111,11 @@ where
 
 pub fn sync_genesis_block<Block: BlockT, C>(
 	client: &C,
-	backend: &fc_db::kv::Backend<Block>,
+	backend: &fc_db::kv::Backend<Block, C>,
 	header: &Block::Header,
 ) -> Result<(), String>
 where
-	C: ProvideRuntimeApi<Block>,
+	C: HeaderBackend<Block> + ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	let substrate_block_hash = header.hash();
@@ -159,7 +159,7 @@ pub fn sync_one_block<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
 	overrides: Arc<OverrideHandle<Block>>,
-	frontier_backend: &fc_db::kv::Backend<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
@@ -248,7 +248,7 @@ pub fn sync_blocks<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
 	overrides: Arc<OverrideHandle<Block>>,
-	frontier_backend: &fc_db::kv::Backend<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
 	limit: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
@@ -282,13 +282,14 @@ where
 	Ok(synced_any)
 }
 
-pub fn fetch_header<Block: BlockT, BE>(
+pub fn fetch_header<Block: BlockT, C, BE>(
 	substrate_backend: &BE,
-	frontier_backend: &fc_db::kv::Backend<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
 	checking_tip: Block::Hash,
 	sync_from: <Block::Header as HeaderT>::Number,
 ) -> Result<Option<Block::Header>, String>
 where
+	C: HeaderBackend<Block>,
 	BE: HeaderBackend<Block>,
 {
 	if frontier_backend.mapping().is_synced(&checking_tip)? {

@@ -40,22 +40,21 @@ pub enum MappingKey {
 	EthBlockOrTransactionHash(H256),
 }
 
-pub struct MappingDb<'a, C, B: BlockT> {
+pub struct MappingDb<'a, B: BlockT, C: HeaderBackend<B>> {
 	cmd: &'a FrontierDbCmd,
 	client: Arc<C>,
-	backend: Arc<fc_db::kv::Backend<B>>,
+	backend: Arc<fc_db::kv::Backend<B, C>>,
 }
 
-impl<'a, C, B: BlockT> MappingDb<'a, C, B>
+impl<'a, B: BlockT, C> MappingDb<'a, B, C>
 where
-	C: ProvideRuntimeApi<B>,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B>,
 {
 	pub fn new(
 		cmd: &'a FrontierDbCmd,
 		client: Arc<C>,
-		backend: Arc<fc_db::kv::Backend<B>>,
+		backend: Arc<fc_db::kv::Backend<B, C>>,
 	) -> Self {
 		Self {
 			cmd,
@@ -176,4 +175,4 @@ where
 	}
 }
 
-impl<'a, C, B: BlockT> FrontierDbMessage for MappingDb<'a, C, B> {}
+impl<'a, B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MappingDb<'a, B, C> {}
