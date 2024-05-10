@@ -21,7 +21,6 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use core::result::Result;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
