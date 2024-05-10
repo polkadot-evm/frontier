@@ -210,11 +210,13 @@ pub mod frontier_backend_client {
 			BlockNumberOrHash::Num(number) => {
 				Ok(Some(BlockId::Number(number.unique_saturated_into())))
 			}
-			BlockNumberOrHash::Latest => backend
-				.best_hash()
-				.await
-				.map(|hash| Some(BlockId::Hash(hash)))
-				.map_err(|err| internal_err(format!("fetch to fetch the best hash: {:?}", err))),
+			BlockNumberOrHash::Latest => match backend.best_hash().await {
+				Ok(hash) => Ok(Some(BlockId::Hash(hash))),
+				Err(e) => {
+					log::warn!(target: "rpc", "Failed to get best hash from the sql db: {:?}", e);
+					Ok(Some(BlockId::Hash(client.info().best_hash)))
+				}
+			},
 			BlockNumberOrHash::Earliest => Ok(Some(BlockId::Hash(client.info().genesis_hash))),
 			BlockNumberOrHash::Pending => Ok(None),
 			BlockNumberOrHash::Safe => Ok(Some(BlockId::Hash(client.info().finalized_hash))),
