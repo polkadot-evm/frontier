@@ -46,7 +46,7 @@ use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::{types::*, EthApiServer};
-use fc_storage::OverrideHandle;
+use fc_storage::StorageOverride;
 use fp_rpc::{
 	ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi,
 	RuntimeStorageOverride, TransactionStatus,
@@ -79,7 +79,7 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC> {
 	sync: Arc<SyncingService<B>>,
 	is_authority: bool,
 	signers: Vec<Box<dyn EthSigner>>,
-	overrides: Arc<OverrideHandle<B>>,
+	storage_override: Arc<dyn StorageOverride<B>>,
 	backend: Arc<dyn fc_api::Backend<B>>,
 	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	fee_history_cache: FeeHistoryCache,
@@ -110,7 +110,7 @@ where
 		convert_transaction: Option<CT>,
 		sync: Arc<SyncingService<B>>,
 		signers: Vec<Box<dyn EthSigner>>,
-		overrides: Arc<OverrideHandle<B>>,
+		storage_override: Arc<dyn StorageOverride<B>>,
 		backend: Arc<dyn fc_api::Backend<B>>,
 		is_authority: bool,
 		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
@@ -129,7 +129,7 @@ where
 			sync,
 			is_authority,
 			signers,
-			overrides,
+			storage_override,
 			backend,
 			block_data_cache,
 			fee_history_cache,
@@ -223,23 +223,13 @@ where
 		&self,
 		substrate_hash: B::Hash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-		let handler = self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback);
-
-		let block = self
-			.block_data_cache
-			.current_block(schema, substrate_hash)
-			.await;
-		let receipts = handler.current_receipts(substrate_hash);
+		let block = self.block_data_cache.current_block(substrate_hash).await;
 		let statuses = self
 			.block_data_cache
-			.current_transaction_statuses(schema, substrate_hash)
+			.current_transaction_statuses(substrate_hash)
 			.await;
-		let is_eip1559 = handler.is_eip1559(substrate_hash);
+		let receipts = self.storage_override.current_receipts(substrate_hash);
+		let is_eip1559 = self.storage_override.is_eip1559(substrate_hash);
 		let base_fee = self
 			.client
 			.runtime_api()
@@ -272,7 +262,7 @@ where
 			sync,
 			is_authority,
 			signers,
-			overrides,
+			storage_override,
 			backend,
 			block_data_cache,
 			fee_history_cache,
@@ -292,7 +282,7 @@ where
 			sync,
 			is_authority,
 			signers,
-			overrides,
+			storage_override,
 			backend,
 			block_data_cache,
 			fee_history_cache,

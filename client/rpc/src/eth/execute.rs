@@ -40,7 +40,7 @@ use sp_state_machine::OverlayedChanges;
 use fc_rpc_core::types::*;
 use fp_evm::{ExecutionInfo, ExecutionInfoV2};
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
-use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
+use fp_storage::constants::{EVM_ACCOUNT_CODES, EVM_ACCOUNT_STORAGES, PALLET_EVM};
 
 use crate::{
 	eth::{Eth, EthConfig},
@@ -467,8 +467,7 @@ where
 		}
 
 		let block_gas_limit = {
-			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-			let block = block_data_cache.current_block(schema, substrate_hash).await;
+			let block = block_data_cache.current_block(substrate_hash).await;
 			block
 				.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?
 				.header
@@ -919,12 +918,10 @@ where
 					overlayed_changes.set_storage(key.clone(), Some(encoded_code));
 				}
 
-				let mut account_storage_key = [
-					twox_128(PALLET_EVM),
-					twox_128(fp_storage::EVM_ACCOUNT_STORAGES),
-				]
-				.concat()
-				.to_vec();
+				let mut account_storage_key =
+					[twox_128(PALLET_EVM), twox_128(EVM_ACCOUNT_STORAGES)]
+						.concat()
+						.to_vec();
 				account_storage_key.extend(blake2_128(address.as_bytes()));
 				account_storage_key.extend(address.as_bytes());
 

@@ -107,13 +107,9 @@ where
 				.client
 				.expect_block_hash_from_id(&id)
 				.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
-			let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 			Ok(self
-				.overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&self.overrides.fallback)
-				.storage_at(substrate_hash, address, index)
+				.storage_override
+				.account_storage_at(substrate_hash, address, index)
 				.unwrap_or_default())
 		} else {
 			Ok(H256::default())
@@ -199,13 +195,8 @@ where
 				.client
 				.expect_block_hash_from_id(&id)
 				.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
-			let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-
 			Ok(self
-				.overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&self.overrides.fallback)
+				.storage_override
 				.account_code_at(substrate_hash, address)
 				.unwrap_or_default()
 				.into())

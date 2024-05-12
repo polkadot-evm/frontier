@@ -20,11 +20,11 @@
 #![warn(unused_crate_dependencies)]
 
 use ethereum::Log;
-use ethereum_types::Bloom;
+use ethereum_types::{Address, Bloom};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 // Substrate
-use sp_core::{H160, H256, U256};
+use sp_core::{H256, U256};
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor},
 	Permill, RuntimeDebug,
@@ -36,9 +36,9 @@ use sp_std::vec::Vec;
 pub struct TransactionStatus {
 	pub transaction_hash: H256,
 	pub transaction_index: u32,
-	pub from: H160,
-	pub to: Option<H160>,
-	pub contract_address: Option<H160>,
+	pub from: Address,
+	pub to: Option<Address>,
+	pub contract_address: Option<Address>,
 	pub logs: Vec<Log>,
 	pub logs_bloom: Bloom,
 }
@@ -51,12 +51,12 @@ pub trait RuntimeStorageOverride<B: BlockT, C>: Send + Sync {
 		overlayed_changes: &mut OverlayedChanges<HashingFor<B>>,
 		block: B::Hash,
 		version: u32,
-		address: H160,
+		address: Address,
 		balance: Option<U256>,
 		nonce: Option<U256>,
 	);
 
-	fn into_account_id_bytes(address: H160) -> Vec<u8>;
+	fn into_account_id_bytes(address: Address) -> Vec<u8>;
 }
 
 impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
@@ -69,13 +69,13 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 		_overlayed_changes: &mut OverlayedChanges<HashingFor<B>>,
 		_block: B::Hash,
 		_version: u32,
-		_address: H160,
+		_address: Address,
 		_balance: Option<U256>,
 		_nonce: Option<U256>,
 	) {
 	}
 
-	fn into_account_id_bytes(_address: H160) -> Vec<u8> {
+	fn into_account_id_bytes(_address: Address) -> Vec<u8> {
 		Vec::default()
 	}
 }
@@ -86,21 +86,27 @@ sp_api::decl_runtime_apis! {
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
+
 		/// Returns pallet_evm::Accounts by address.
-		fn account_basic(address: H160) -> fp_evm::Account;
+		fn account_basic(address: Address) -> fp_evm::Account;
+
 		/// Returns FixedGasPrice::min_gas_price
 		fn gas_price() -> U256;
+
 		/// For a given account address, returns pallet_evm::AccountCodes.
-		fn account_code_at(address: H160) -> Vec<u8>;
+		fn account_code_at(address: Address) -> Vec<u8>;
+
 		/// Returns the converted FindAuthor::find_author authority id.
-		fn author() -> H160;
+		fn author() -> Address;
+
 		/// For a given account address and index, returns pallet_evm::AccountStorages.
-		fn storage_at(address: H160, index: U256) -> H256;
+		fn storage_at(address: Address, index: U256) -> H256;
+
 		/// Returns a frame_ethereum::call response. If `estimate` is true,
 		#[changed_in(2)]
 		fn call(
-			from: H160,
-			to: H160,
+			from: Address,
+			to: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -110,8 +116,8 @@ sp_api::decl_runtime_apis! {
 		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
 		#[changed_in(4)]
 		fn call(
-			from: H160,
-			to: H160,
+			from: Address,
+			to: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -122,8 +128,8 @@ sp_api::decl_runtime_apis! {
 		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
 		#[changed_in(5)]
 		fn call(
-			from: H160,
-			to: H160,
+			from: Address,
+			to: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -131,11 +137,11 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
 		fn call(
-			from: H160,
-			to: H160,
+			from: Address,
+			to: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -143,22 +149,23 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
+
 		/// Returns a frame_ethereum::create response.
 		#[changed_in(2)]
 		fn create(
-			from: H160,
+			from: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
 			gas_price: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-		) -> Result<fp_evm::ExecutionInfo::<H160>, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<Address>, sp_runtime::DispatchError>;
 		#[changed_in(4)]
 		fn create(
-			from: H160,
+			from: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -166,10 +173,10 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-		) -> Result<fp_evm::ExecutionInfo::<H160>, sp_runtime::DispatchError>;
+		) -> Result<fp_evm::ExecutionInfo::<Address>, sp_runtime::DispatchError>;
 		#[changed_in(5)]
 		fn create(
-			from: H160,
+			from: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -177,10 +184,10 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-			access_list: Option<Vec<(H160, Vec<H256>)>>,
-		) -> Result<fp_evm::ExecutionInfo::<H160>, sp_runtime::DispatchError>;
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfo::<Address>, sp_runtime::DispatchError>;
 		fn create(
-			from: H160,
+			from: Address,
 			data: Vec<u8>,
 			value: U256,
 			gas_limit: U256,
@@ -188,20 +195,24 @@ sp_api::decl_runtime_apis! {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			estimate: bool,
-			access_list: Option<Vec<(H160, Vec<H256>)>>,
-		) -> Result<fp_evm::ExecutionInfoV2::<H160>, sp_runtime::DispatchError>;
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
+
 		/// Return the current block. Legacy.
 		#[changed_in(2)]
 		fn current_block() -> Option<ethereum::BlockV0>;
 		/// Return the current block.
 		fn current_block() -> Option<ethereum::BlockV2>;
+
 		/// Return the current receipt.
 		#[changed_in(4)]
 		fn current_receipts() -> Option<Vec<ethereum::ReceiptV0>>;
 		/// Return the current receipt.
 		fn current_receipts() -> Option<Vec<ethereum::ReceiptV3>>;
+
 		/// Return the current transaction status.
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
+
 		/// Return all the current data for a block in a single runtime call. Legacy.
 		#[changed_in(2)]
 		fn current_all() -> (
@@ -221,6 +232,7 @@ sp_api::decl_runtime_apis! {
 			Option<Vec<ethereum::ReceiptV3>>,
 			Option<Vec<TransactionStatus>>
 		);
+
 		/// Receives a `Vec<OpaqueExtrinsic>` and filters all the ethereum transactions. Legacy.
 		#[changed_in(2)]
 		fn extrinsic_filter(
@@ -230,11 +242,14 @@ sp_api::decl_runtime_apis! {
 		fn extrinsic_filter(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> Vec<ethereum::TransactionV2>;
+
 		/// Return the elasticity multiplier.
 		fn elasticity() -> Option<Permill>;
+
 		/// Used to determine if gas limit multiplier for non-transactional calls (eth_call/estimateGas)
 		/// is supported.
 		fn gas_limit_multiplier_support();
+
 		/// Return the pending block.
 		fn pending_block(
 			xts: Vec<<Block as BlockT>::Extrinsic>,

@@ -153,9 +153,7 @@ where
 							indexer_backend.get_first_pending_canon_block().await
 						{
 							log::debug!(target: "frontier-sql", "Indexing pending canonical block {block_hash:?}");
-							indexer_backend
-								.index_block_logs(client.clone(), block_hash)
-								.await;
+							indexer_backend.index_block_logs(block_hash).await;
 						}
 
 						// Fix any missing blocks
@@ -304,7 +302,7 @@ async fn index_block_and_ancestors<Block, Backend, Client>(
 				log::error!(target: "frontier-sql", "{e}");
 			});
 		log::debug!(target: "frontier-sql", "Inserted block metadata");
-		indexer_backend.index_block_logs(client.clone(), hash).await;
+		indexer_backend.index_block_logs(hash).await;
 
 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
 			let parent_hash = header.parent_hash();
@@ -372,7 +370,7 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 				log::error!(target: "frontier-sql", "{e}");
 			});
 		log::debug!(target: "frontier-sql", "Inserted block metadata  {hash:?}");
-		indexer_backend.index_block_logs(client.clone(), hash).await;
+		indexer_backend.index_block_logs(hash).await;
 
 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
 			let parent_hash = header.parent_hash();
@@ -472,7 +470,6 @@ mod test {
 	use super::*;
 
 	use std::{
-		collections::BTreeMap,
 		path::Path,
 		sync::{Arc, Mutex},
 	};
@@ -495,10 +492,8 @@ mod test {
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
 	// Frontier
-	use fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
-	use fp_storage::{
-		EthereumStorageSchema, ETHEREUM_CURRENT_RECEIPTS, PALLET_ETHEREUM, PALLET_ETHEREUM_SCHEMA,
-	};
+	use fc_storage::SchemaV3StorageOverride;
+	use fp_storage::{constants::*, EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	type OpaqueBlock = sp_runtime::generic::Block<
 		Header<u64, BlakeTwo256>,
@@ -559,15 +554,7 @@ mod test {
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -582,7 +569,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -701,7 +688,7 @@ mod test {
 		});
 
 		// Enough time for interval to run
-		futures_timer::Delay::new(std::time::Duration::from_millis(1500)).await;
+		futures_timer::Delay::new(Duration::from_millis(1500)).await;
 
 		// Query db
 		let db_logs = sqlx::query(
@@ -770,15 +757,7 @@ mod test {
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -793,7 +772,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -912,7 +891,7 @@ mod test {
 				},
 			));
 			// Let's not notify too quickly
-			futures_timer::Delay::new(std::time::Duration::from_millis(100)).await;
+			futures_timer::Delay::new(Duration::from_millis(100)).await;
 		}
 
 		// Query db
@@ -982,15 +961,7 @@ mod test {
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1005,7 +976,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1070,7 +1041,7 @@ mod test {
 			}
 			parent_hash = block_hash;
 			// Let's not notify too quickly
-			futures_timer::Delay::new(std::time::Duration::from_millis(100)).await;
+			futures_timer::Delay::new(Duration::from_millis(100)).await;
 		}
 
 		// Test all blocks are initially canon.
@@ -1104,7 +1075,7 @@ mod test {
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 			parent_hash = block_hash;
 			// Let's not notify too quickly
-			futures_timer::Delay::new(std::time::Duration::from_millis(100)).await;
+			futures_timer::Delay::new(Duration::from_millis(100)).await;
 		}
 
 		// Test the reorged chain is correctly indexed.
@@ -1156,15 +1127,7 @@ mod test {
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1179,7 +1142,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1252,7 +1215,7 @@ mod test {
 			.await
 		});
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(1500)).await;
+		futures_timer::Delay::new(Duration::from_millis(1500)).await;
 
 		// Test the reorged chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1309,15 +1272,7 @@ mod test {
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
@@ -1331,7 +1286,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1364,7 +1319,7 @@ mod test {
 			.await
 		});
 		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+		futures_timer::Delay::new(Duration::from_millis(200)).await;
 
 		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
@@ -1392,7 +1347,7 @@ mod test {
 		}
 
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+		futures_timer::Delay::new(Duration::from_millis(3000)).await;
 
 		// Test the chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1418,15 +1373,7 @@ mod test {
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
@@ -1440,7 +1387,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1473,7 +1420,7 @@ mod test {
 			.await
 		});
 		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+		futures_timer::Delay::new(Duration::from_millis(200)).await;
 
 		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
@@ -1515,7 +1462,7 @@ mod test {
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+		futures_timer::Delay::new(Duration::from_millis(3000)).await;
 
 		// Test the chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1541,15 +1488,7 @@ mod test {
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
@@ -1563,7 +1502,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1596,7 +1535,7 @@ mod test {
 			.await
 		});
 		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+		futures_timer::Delay::new(Duration::from_millis(200)).await;
 
 		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
@@ -1624,7 +1563,7 @@ mod test {
 		}
 
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+		futures_timer::Delay::new(Duration::from_millis(3000)).await;
 
 		// Test the chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1650,15 +1589,7 @@ mod test {
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
@@ -1672,7 +1603,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1705,7 +1636,7 @@ mod test {
 			.await
 		});
 		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+		futures_timer::Delay::new(Duration::from_millis(200)).await;
 
 		// Import 3 blocks as part of normal operation, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(false);
@@ -1747,7 +1678,7 @@ mod test {
 		executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+		futures_timer::Delay::new(Duration::from_millis(3000)).await;
 
 		// Test the chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1773,15 +1704,7 @@ mod test {
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
@@ -1795,7 +1718,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1828,7 +1751,7 @@ mod test {
 			.await
 		});
 		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+		futures_timer::Delay::new(Duration::from_millis(200)).await;
 
 		// Import 3 blocks as part of initial network sync, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(true);
@@ -1856,7 +1779,7 @@ mod test {
 		}
 
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+		futures_timer::Delay::new(Duration::from_millis(3000)).await;
 
 		// Test the chain is correctly indexed.
 		let actual_imported_blocks =
@@ -1882,15 +1805,7 @@ mod test {
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 				path: Path::new("sqlite:///")
@@ -1904,7 +1819,7 @@ mod test {
 			}),
 			100,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");
@@ -1937,7 +1852,7 @@ mod test {
 			.await
 		});
 		// Enough time for startup
-		futures_timer::Delay::new(std::time::Duration::from_millis(200)).await;
+		futures_timer::Delay::new(Duration::from_millis(200)).await;
 
 		// Import 3 blocks as part of initial network sync, storing them oldest first.
 		sync_oracle_wrapper.set_sync_status(true);
@@ -1965,7 +1880,7 @@ mod test {
 		}
 
 		// Enough time for indexing
-		futures_timer::Delay::new(std::time::Duration::from_millis(3000)).await;
+		futures_timer::Delay::new(Duration::from_millis(3000)).await;
 
 		// Test the chain is correctly indexed.
 		let actual_imported_blocks =

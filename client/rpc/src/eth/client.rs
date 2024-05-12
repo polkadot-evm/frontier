@@ -71,12 +71,8 @@ where
 
 	pub fn author(&self) -> RpcResult<H160> {
 		let hash = self.client.info().best_hash;
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
 		let current_block = self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback)
+			.storage_override
 			.current_block(hash)
 			.ok_or_else(|| internal_err("fetching author through override failed"))?;
 		Ok(current_block.header.beneficiary)

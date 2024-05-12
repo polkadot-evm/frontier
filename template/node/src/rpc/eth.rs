@@ -20,9 +20,9 @@ use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
-pub use fc_rpc::{EthBlockDataCacheTask, EthConfig, OverrideHandle};
+pub use fc_rpc::{EthBlockDataCacheTask, EthConfig};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
-pub use fc_storage::overrides_handle;
+use fc_storage::StorageOverride;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 /// Extra dependencies for Ethereum compatibility.
@@ -46,7 +46,7 @@ pub struct EthDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
 	/// Frontier Backend.
 	pub frontier_backend: Arc<dyn fc_api::Backend<B>>,
 	/// Ethereum data access overrides.
-	pub overrides: Arc<OverrideHandle<B>>,
+	pub storage_override: Arc<dyn StorageOverride<B>>,
 	/// Cache for Ethereum block data.
 	pub block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	/// EthFilterApi pool.
@@ -111,7 +111,7 @@ where
 		network,
 		sync,
 		frontier_backend,
-		overrides,
+		storage_override,
 		block_data_cache,
 		filter_pool,
 		max_past_logs,
@@ -135,7 +135,7 @@ where
 			converter,
 			sync.clone(),
 			signers,
-			overrides.clone(),
+			storage_override.clone(),
 			frontier_backend.clone(),
 			is_authority,
 			block_data_cache.clone(),
@@ -171,7 +171,7 @@ where
 			client.clone(),
 			sync,
 			subscription_task_executor,
-			overrides.clone(),
+			storage_override.clone(),
 			pubsub_notification_sinks,
 		)
 		.into_rpc(),
@@ -193,7 +193,7 @@ where
 		Debug::new(
 			client.clone(),
 			frontier_backend,
-			overrides,
+			storage_override,
 			block_data_cache,
 		)
 		.into_rpc(),
