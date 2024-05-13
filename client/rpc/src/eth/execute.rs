@@ -100,12 +100,7 @@ where
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
 			(
 				details.gas_price,
-				// Old runtimes require max_fee_per_gas to be None for non transactional calls.
-				if details.max_fee_per_gas == Some(U256::zero()) {
-					None
-				} else {
-					details.max_fee_per_gas
-				},
+				details.max_fee_per_gas,
 				details.max_priority_fee_per_gas,
 			)
 		};
@@ -1051,7 +1046,8 @@ fn fee_details(
 		// Default to EIP-1559 transaction
 		_ => Ok(FeeDetails {
 			gas_price: None,
-			max_fee_per_gas: Some(U256::zero()),
+			// Old runtimes require max_fee_per_gas to be None for non transactional calls.
+			max_fee_per_gas: None,
 			max_priority_fee_per_gas: Some(U256::zero()),
 			fee_cap: U256::zero(),
 		}),
