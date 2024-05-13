@@ -33,12 +33,8 @@ pub mod solidity;
 #[cfg(feature = "testing")]
 pub mod testing;
 
-use fp_evm::PrecompileFailure;
-
-// pub mod data;
-
-// pub use data::{solidity::Codec, Reader, Writer};
 pub use fp_evm::Precompile;
+use fp_evm::PrecompileFailure;
 pub use precompile_utils_macro::{keccak256, precompile, precompile_name_from_address};
 
 /// Alias for Result returning an EVM precompile error.

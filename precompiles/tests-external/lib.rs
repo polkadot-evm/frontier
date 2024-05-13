@@ -18,6 +18,9 @@
 
 #![cfg(test)]
 
+// #[precompile_utils::precompile] need this
+extern crate alloc;
+
 use std::{cell::RefCell, rc::Rc};
 
 // Substrate
