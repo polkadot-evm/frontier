@@ -24,6 +24,11 @@ extern crate alloc;
 // `precompile_utils` being in the list of imported crates.
 extern crate self as precompile_utils;
 
+#[doc(hidden)]
+pub mod __alloc {
+	pub use ::alloc::*;
+}
+
 pub mod evm;
 pub mod precompile_set;
 pub mod substrate;
@@ -33,12 +38,8 @@ pub mod solidity;
 #[cfg(feature = "testing")]
 pub mod testing;
 
-use fp_evm::PrecompileFailure;
-
-// pub mod data;
-
-// pub use data::{solidity::Codec, Reader, Writer};
 pub use fp_evm::Precompile;
+use fp_evm::PrecompileFailure;
 pub use precompile_utils_macro::{keccak256, precompile, precompile_name_from_address};
 
 /// Alias for Result returning an EVM precompile error.

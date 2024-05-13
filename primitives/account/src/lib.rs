@@ -36,7 +36,7 @@ pub struct AccountId20(pub [u8; 20]);
 impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 
 #[cfg(feature = "std")]
-impl std::str::FromStr for AccountId20 {
+impl core::str::FromStr for AccountId20 {
 	type Err = &'static str;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -47,8 +47,8 @@ impl std::str::FromStr for AccountId20 {
 }
 
 #[cfg(feature = "std")]
-impl std::fmt::Display for AccountId20 {
-	fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl core::fmt::Display for AccountId20 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		let address = hex::encode(self.0).trim_start_matches("0x").to_lowercase();
 		let address_hash = hex::encode(keccak_256(address.as_bytes()));
 
@@ -73,8 +73,8 @@ impl std::fmt::Display for AccountId20 {
 	}
 }
 
-impl sp_std::fmt::Debug for AccountId20 {
-	fn fmt(&self, f: &mut sp_std::fmt::Formatter<'_>) -> sp_std::fmt::Result {
+impl core::fmt::Debug for AccountId20 {
+	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		write!(f, "{:?}", H160(self.0))
 	}
 }
@@ -231,9 +231,8 @@ impl sp_runtime::traits::IdentifyAccount for EthereumSigner {
 	}
 }
 
-#[cfg(feature = "std")]
-impl std::fmt::Display for EthereumSigner {
-	fn fmt(&self, fmt: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl core::fmt::Display for EthereumSigner {
+	fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
 		write!(fmt, "{:?}", H160::from(self.0))
 	}
 }

@@ -20,9 +20,11 @@
 //! consistent formatting.
 
 use crate::solidity::{self, codec::bytes::UnboundedBytes};
-use alloc::string::{String, ToString};
+use alloc::{
+	string::{String, ToString},
+	vec::Vec,
+};
 use fp_evm::{ExitRevert, PrecompileFailure};
-use sp_std::vec::Vec;
 
 /// Represent the result of a computation that can revert.
 pub type MayRevert<T = ()> = Result<T, Revert>;

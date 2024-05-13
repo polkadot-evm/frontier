@@ -22,10 +22,10 @@
 #[cfg(test)]
 mod tests;
 
+use core::cmp::{max, min};
 use frame_support::{inherent::IsFatalError, traits::Get, weights::Weight};
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
-use sp_std::cmp::{max, min};
 
 pub use self::pallet::*;
 #[cfg(feature = "std")]

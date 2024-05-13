@@ -1,4 +1,4 @@
-# `#[precompile]` procedural macro.
+# `#[precompile]` procedural macro
 
 This procedural macro allows to simplify the implementation of an EVM precompile or precompile set
 using an `impl` block with annotations to automatically generate:

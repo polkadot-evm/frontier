@@ -14,7 +14,6 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
@@ -31,7 +30,6 @@ rlp = { workspace = true }
 sp-core = { workspace = true, features = ["default"] }
 sp-io = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
-sp-std = { workspace = true, features = ["default"] }
 
 # Frontier
 precompile-utils = { workspace = true, features = ["std", "testing"] }
@@ -45,7 +43,6 @@ std = [
 	"frame-system/std",
 	"sp-runtime/std",
 	"sp-core/std",
-	"sp-std/std",
 	# Frontier
 	"fp-evm/std",
 	"pallet-evm/std",

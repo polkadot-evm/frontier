@@ -17,6 +17,8 @@
 
 //! Test mock for unit tests and benchmarking
 
+use alloc::boxed::Box;
+use core::str::FromStr;
 use frame_support::{
 	derive_impl, parameter_types,
 	traits::{ConstU32, FindAuthor},
@@ -25,7 +27,6 @@ use frame_support::{
 };
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use fp_evm::{ExitError, ExitReason, Transfer};
 use pallet_evm::{
