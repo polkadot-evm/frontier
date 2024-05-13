@@ -17,10 +17,10 @@
 // limitations under the License.
 
 use crate::testing::PrettyLog;
+use alloc::boxed::Box;
 use evm::{ExitRevert, ExitSucceed};
 use fp_evm::{Context, ExitError, ExitReason, Log, PrecompileHandle, Transfer};
 use sp_core::{H160, H256};
-use sp_std::boxed::Box;
 
 #[derive(Debug, Clone)]
 pub struct Subcall {

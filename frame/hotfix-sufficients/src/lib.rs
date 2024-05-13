@@ -18,6 +18,8 @@
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 #[cfg(test)]
@@ -26,11 +28,11 @@ mod mock;
 mod tests;
 pub mod weights;
 
+use alloc::vec::Vec;
 // Substrate
 use frame_support::dispatch::PostDispatchInfo;
 use sp_core::H160;
 use sp_runtime::traits::Zero;
-use sp_std::vec::Vec;
 // Frontier
 pub use pallet_evm::AddressMapping;
 

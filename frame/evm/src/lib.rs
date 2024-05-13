@@ -55,6 +55,8 @@
 #![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
+extern crate alloc;
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
@@ -65,6 +67,8 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use core::cmp::min;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -94,7 +98,6 @@ use sp_runtime::{
 	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
@@ -651,7 +654,7 @@ where
 }
 
 /// Ensure that the origin is root.
-pub struct EnsureAddressRoot<AccountId>(sp_std::marker::PhantomData<AccountId>);
+pub struct EnsureAddressRoot<AccountId>(core::marker::PhantomData<AccountId>);
 
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId>
 where
@@ -668,7 +671,7 @@ where
 }
 
 /// Ensure that the origin never happens.
-pub struct EnsureAddressNever<AccountId>(sp_std::marker::PhantomData<AccountId>);
+pub struct EnsureAddressNever<AccountId>(core::marker::PhantomData<AccountId>);
 
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressNever<AccountId> {
 	type Success = AccountId;
@@ -731,7 +734,7 @@ impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
 }
 
 /// Hashed address mapping.
-pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
+pub struct HashedAddressMapping<H>(core::marker::PhantomData<H>);
 
 impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
 	fn into_account_id(address: H160) -> AccountId32 {
@@ -750,7 +753,7 @@ pub trait BlockHashMapping {
 }
 
 /// Returns the Substrate block hash by number.
-pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
+pub struct SubstrateBlockHashMapping<T>(core::marker::PhantomData<T>);
 impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 	fn block_hash(number: u32) -> H256 {
 		let number = <NumberFor<T::Block>>::from(number);
@@ -764,7 +767,7 @@ pub trait GasWeightMapping {
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
-pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
+pub struct FixedGasWeightMapping<T>(core::marker::PhantomData<T>);
 impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
 		let mut weight = T::WeightPerGas::get().saturating_mul(gas);
@@ -953,7 +956,7 @@ pub trait OnChargeEVMTransaction<T: Config> {
 /// trait (eg. the pallet_balances) using an unbalance handler (implementing
 /// `OnUnbalanced`).
 /// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
-pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+pub struct EVMCurrencyAdapter<C, OU>(core::marker::PhantomData<(C, OU)>);
 
 impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
 where
@@ -1053,7 +1056,7 @@ where
 ///
 /// Equivalent of `EVMCurrencyAdapter` but for fungible traits. Similar to `FungibleAdapter` of
 /// `pallet_transaction_payment`
-pub struct EVMFungibleAdapter<F, OU>(sp_std::marker::PhantomData<(F, OU)>);
+pub struct EVMFungibleAdapter<F, OU>(core::marker::PhantomData<(F, OU)>);
 
 impl<T, F, OU> OnChargeEVMTransaction<T> for EVMFungibleAdapter<F, OU>
 where

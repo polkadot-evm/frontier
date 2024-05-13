@@ -15,13 +15,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+use alloc::vec::Vec;
 pub use evm::{
 	executor::stack::{
 		IsPrecompileResult, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileSet,
 	},
 	Context, ExitError, ExitRevert, ExitSucceed, Transfer,
 };
-use sp_std::vec::Vec;
 
 pub type PrecompileResult = Result<PrecompileOutput, PrecompileFailure>;
 

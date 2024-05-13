@@ -21,7 +21,6 @@ sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-runtime-interface = { workspace = true }
-sp-std = { workspace = true }
 
 [dev-dependencies]
 
@@ -40,7 +39,6 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-runtime-interface/std",
-	"sp-std/std",
 ]
 serde = [
 	"dep:serde",
