@@ -24,6 +24,11 @@ extern crate alloc;
 // `precompile_utils` being in the list of imported crates.
 extern crate self as precompile_utils;
 
+#[doc(hidden)]
+pub mod __alloc {
+	pub use ::alloc::*;
+}
+
 pub mod evm;
 pub mod precompile_set;
 pub mod substrate;

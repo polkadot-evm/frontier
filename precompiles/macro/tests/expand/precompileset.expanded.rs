@@ -922,7 +922,7 @@ where
 	pub fn transfer_ownership_selectors() -> &'static [u32] {
 		&[4076725131u32, 4030008324u32]
 	}
-	pub fn encode(self) -> ::alloc::vec::Vec<u8> {
+	pub fn encode(self) -> ::precompile_utils::__alloc::vec::Vec<u8> {
 		use precompile_utils::solidity::codec::Writer;
 		match self {
 			Self::allowance { owner, spender } => Writer::new_with_selector(3714247998u32)
@@ -1012,11 +1012,11 @@ where
 		}
 	}
 }
-impl<Runtime> From<PrecompileSetCall<Runtime>> for ::alloc::vec::Vec<u8>
+impl<Runtime> From<PrecompileSetCall<Runtime>> for ::precompile_utils::__alloc::vec::Vec<u8>
 where
 	Runtime: Get<u32>,
 {
-	fn from(a: PrecompileSetCall<Runtime>) -> ::alloc::vec::Vec<u8> {
+	fn from(a: PrecompileSetCall<Runtime>) -> ::precompile_utils::__alloc::vec::Vec<u8> {
 		a.encode()
 	}
 }
