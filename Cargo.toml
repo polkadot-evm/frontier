@@ -22,6 +22,9 @@ members = [
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
+	"client/rpc-v2",
+	"client/rpc-v2/api",
+	"client/rpc-v2/types",
 	"client/db",
 	"client/storage",
 	"client/mapping-sync",
@@ -48,6 +51,7 @@ repository = "https://github.com/paritytech/frontier/"
 async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.5", features = ["derive", "deprecated"] }
+const-hex = { version = "1.11", default-features = false, features = ["alloc"] }
 derive_more = "0.99"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.15.0", default-features = false }
@@ -169,6 +173,9 @@ fc-db = { path = "client/db", default-features = false }
 fc-mapping-sync = { path = "client/mapping-sync", default-features = false }
 fc-rpc = { path = "client/rpc", default-features = false }
 fc-rpc-core = { path = "client/rpc-core" }
+fc-rpc-v2 = { path = "client/rpc-v2" }
+fc-rpc-v2-api = { path = "client/rpc-v2/api" }
+fc-rpc-v2-types = { path = "client/rpc-v2/types" }
 fc-storage = { path = "client/storage" }
 # Frontier Primitive
 fp-account = { path = "primitives/account", default-features = false }

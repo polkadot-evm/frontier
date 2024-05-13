@@ -1,0 +1,17 @@
+[package]
+name = "fc-rpc-v2-types"
+version = "0.1.0"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Ethereum RPC (web3) types."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+const-hex = { workspace = true, features = ["serde"] }
+ethereum-types = { workspace = true, features = ["ethbloom", "serialize"] }
+serde = { workspace = true }
+serde_json = { workspace = true }
