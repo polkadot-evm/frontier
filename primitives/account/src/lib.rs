@@ -17,6 +17,10 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 
+extern crate alloc;
+
+use alloc::string::{String, ToString};
+
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
@@ -35,7 +39,6 @@ pub struct AccountId20(pub [u8; 20]);
 #[cfg(feature = "serde")]
 impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 
-#[cfg(feature = "std")]
 impl core::str::FromStr for AccountId20 {
 	type Err = &'static str;
 
@@ -46,7 +49,6 @@ impl core::str::FromStr for AccountId20 {
 	}
 }
 
-#[cfg(feature = "std")]
 impl core::fmt::Display for AccountId20 {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
 		let address = hex::encode(self.0).trim_start_matches("0x").to_lowercase();
