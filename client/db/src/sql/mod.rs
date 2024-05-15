@@ -96,7 +96,6 @@ pub enum BackendConfig<'a> {
 pub struct Backend<Block: BlockT> {
 	/// The Sqlite connection.
 	pool: SqlitePool,
-
 	/// The additional overrides for the logs handler.
 	storage_override: Arc<dyn StorageOverride<Block>>,
 
@@ -656,7 +655,7 @@ where
 	}
 
 	/// Retrieve the block hash for the last indexed canon block.
-	pub async fn get_last_indexed_canon_block(&self) -> Result<H256, Error> {
+	pub async fn last_indexed_canon_block(&self) -> Result<H256, Error> {
 		let row = sqlx::query(
 			"SELECT b.substrate_block_hash FROM blocks AS b
 			INNER JOIN sync_status AS s
@@ -822,6 +821,15 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 
 	fn log_indexer(&self) -> &dyn fc_api::LogIndexerBackend<Block> {
 		self
+	}
+
+	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
+		// Retrieves the block hash for the latest indexed block, maybe it's not canon.
+		sqlx::query("SELECT substrate_block_hash FROM blocks ORDER BY block_number DESC LIMIT 1")
+			.fetch_one(self.pool())
+			.await
+			.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+			.map_err(|e| format!("Failed to fetch best hash: {}", e))
 	}
 }
 

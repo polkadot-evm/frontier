@@ -62,14 +62,15 @@ pub mod static_keys {
 }
 
 #[derive(Clone)]
-pub struct Backend<Block: BlockT> {
+pub struct Backend<Block: BlockT, C> {
+	client: Arc<C>,
 	meta: Arc<MetaDb<Block>>,
 	mapping: Arc<MappingDb<Block>>,
 	log_indexer: LogIndexerBackend<Block>,
 }
 
 #[async_trait::async_trait]
-impl<Block: BlockT> fc_api::Backend<Block> for Backend<Block> {
+impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<Block, C> {
 	async fn block_hash(
 		&self,
 		ethereum_block_hash: &H256,
@@ -87,6 +88,10 @@ impl<Block: BlockT> fc_api::Backend<Block> for Backend<Block> {
 
 	fn log_indexer(&self) -> &dyn fc_api::LogIndexerBackend<Block> {
 		&self.log_indexer
+	}
+
+	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
+		Ok(self.client.info().best_hash)
 	}
 }
 
@@ -115,8 +120,8 @@ pub fn frontier_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
 	db_config_dir.join("frontier").join(db_path)
 }
 
-impl<Block: BlockT> Backend<Block> {
-	pub fn open<C: HeaderBackend<Block>>(
+impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
+	pub fn open(
 		client: Arc<C>,
 		database: &DatabaseSource,
 		db_config_dir: &Path,
@@ -148,13 +153,11 @@ impl<Block: BlockT> Backend<Block> {
 		)
 	}
 
-	pub fn new<C: HeaderBackend<Block>>(
-		client: Arc<C>,
-		config: &DatabaseSettings,
-	) -> Result<Self, String> {
-		let db = utils::open_database::<Block, C>(client, config)?;
+	pub fn new(client: Arc<C>, config: &DatabaseSettings) -> Result<Self, String> {
+		let db = utils::open_database::<Block, C>(client.clone(), config)?;
 
 		Ok(Self {
+			client,
 			mapping: Arc::new(MappingDb {
 				db: db.clone(),
 				write_lock: Arc::new(Mutex::new(())),

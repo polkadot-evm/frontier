@@ -23,7 +23,7 @@ use frontier_template_runtime::opaque::Block;
 use crate::client::{FullBackend, FullClient};
 
 /// Frontier DB backend type.
-pub type FrontierBackend = fc_db::Backend<Block>;
+pub type FrontierBackend<C> = fc_db::Backend<Block, C>;
 
 pub fn db_config_dir(config: &Configuration) -> PathBuf {
 	config.base_path.config_dir(config.chain_spec.id())
@@ -127,7 +127,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 	task_manager: &TaskManager,
 	client: Arc<FullClient<RuntimeApi, Executor>>,
 	backend: Arc<FullBackend>,
-	frontier_backend: FrontierBackend,
+	frontier_backend: Arc<FrontierBackend<FullClient<RuntimeApi, Executor>>>,
 	filter_pool: Option<FilterPool>,
 	storage_override: Arc<dyn StorageOverride<Block>>,
 	fee_history_cache: FeeHistoryCache,
@@ -145,7 +145,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 	Executor: NativeExecutionDispatch + 'static,
 {
 	// Spawn main mapping sync worker background task.
-	match frontier_backend {
+	match &*frontier_backend {
 		fc_db::Backend::KeyValue(b) => {
 			task_manager.spawn_essential_handle().spawn(
 				"frontier-mapping-sync-worker",
@@ -156,7 +156,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 					client.clone(),
 					backend,
 					storage_override.clone(),
-					Arc::new(b),
+					b.clone(),
 					3,
 					0,
 					fc_mapping_sync::SyncStrategy::Normal,
@@ -173,10 +173,10 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 				fc_mapping_sync::sql::SyncWorker::run(
 					client.clone(),
 					backend,
-					Arc::new(b),
+					b.clone(),
 					client.import_notification_stream(),
 					fc_mapping_sync::sql::SyncWorkerConfig {
-						read_notification_timeout: Duration::from_secs(10),
+						read_notification_timeout: Duration::from_secs(30),
 						check_indexed_blocks_interval: Duration::from_secs(60),
 					},
 					fc_mapping_sync::SyncStrategy::Parachain,

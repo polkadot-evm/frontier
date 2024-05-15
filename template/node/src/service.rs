@@ -60,7 +60,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 			Option<Telemetry>,
 			BoxBlockImport,
 			GrandpaLinkHalf<FullClient<RuntimeApi, Executor>>,
-			FrontierBackend,
+			FrontierBackend<FullClient<RuntimeApi, Executor>>,
 			Arc<dyn StorageOverride<Block>>,
 		),
 	>,
@@ -119,11 +119,11 @@ where
 
 	let storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 	let frontier_backend = match eth_config.frontier_backend_type {
-		BackendType::KeyValue => FrontierBackend::KeyValue(fc_db::kv::Backend::open(
+		BackendType::KeyValue => FrontierBackend::KeyValue(Arc::new(fc_db::kv::Backend::open(
 			Arc::clone(&client),
 			&config.database,
 			&db_config_dir(config),
-		)?),
+		)?)),
 		BackendType::Sql => {
 			let db_path = db_config_dir(config).join("sql");
 			std::fs::create_dir_all(&db_path).expect("failed creating sql db directory");
@@ -143,7 +143,7 @@ where
 				storage_override.clone(),
 			))
 			.unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
-			FrontierBackend::Sql(backend)
+			FrontierBackend::Sql(Arc::new(backend))
 		}
 	};
 
@@ -350,6 +350,7 @@ where
 	let role = config.role.clone();
 	let force_authoring = config.force_authoring;
 	let name = config.network.node_name.clone();
+	let frontier_backend = Arc::new(frontier_backend);
 	let enable_grandpa = !config.disable_grandpa && sealing.is_none();
 	let prometheus_registry = config.prometheus_registry().cloned();
 
@@ -415,9 +416,9 @@ where
 				enable_dev_signer,
 				network: network.clone(),
 				sync: sync_service.clone(),
-				frontier_backend: match frontier_backend.clone() {
-					fc_db::Backend::KeyValue(b) => Arc::new(b),
-					fc_db::Backend::Sql(b) => Arc::new(b),
+				frontier_backend: match &*frontier_backend {
+					fc_db::Backend::KeyValue(b) => b.clone(),
+					fc_db::Backend::Sql(b) => b.clone(),
 				},
 				storage_override: storage_override.clone(),
 				block_data_cache: block_data_cache.clone(),
@@ -711,7 +712,7 @@ pub fn new_chain_ops(
 		Arc<FullBackend>,
 		BasicQueue<Block>,
 		TaskManager,
-		FrontierBackend,
+		FrontierBackend<Client>,
 	),
 	ServiceError,
 > {

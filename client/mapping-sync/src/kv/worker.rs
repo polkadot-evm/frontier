@@ -47,7 +47,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	client: Arc<C>,
 	substrate_backend: Arc<BE>,
 	storage_override: Arc<dyn StorageOverride<Block>>,
-	frontier_backend: Arc<fc_db::kv::Backend<Block>>,
+	frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 
 	have_next: bool,
 	retry_times: usize,
@@ -68,7 +68,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		client: Arc<C>,
 		substrate_backend: Arc<BE>,
 		storage_override: Arc<dyn StorageOverride<Block>>,
-		frontier_backend: Arc<fc_db::kv::Backend<Block>>,
+		frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
@@ -250,7 +250,7 @@ mod tests {
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
 		let frontier_backend = Arc::new(
-			fc_db::kv::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {
@@ -392,7 +392,7 @@ mod tests {
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
 		let frontier_backend = Arc::new(
-			fc_db::kv::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {

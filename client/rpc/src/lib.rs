@@ -205,7 +205,13 @@ pub mod frontier_backend_client {
 				}
 			}
 			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
-			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
+			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
+				Ok(hash) => Some(BlockId::Hash(hash)),
+				Err(e) => {
+					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
+					Some(BlockId::Hash(client.info().best_hash))
+				}
+			},
 			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
 			BlockNumberOrHash::Pending => None,
 			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
@@ -363,8 +369,8 @@ mod tests {
 	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
-		Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
+	) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
+		Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 			client,
 			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
