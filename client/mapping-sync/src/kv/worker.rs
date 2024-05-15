@@ -59,9 +59,9 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 		Arc<crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>>,
 }
 
-impl<Block: BlockT, C: HeaderBackend<Block>, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
+impl<Block: BlockT, C, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
 
-impl<Block: BlockT, C: HeaderBackend<Block>, BE> MappingSyncWorker<Block, C, BE> {
+impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 	pub fn new(
 		import_notifications: ImportNotifications<Block>,
 		timeout: Duration,

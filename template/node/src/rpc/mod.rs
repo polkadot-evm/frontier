@@ -27,7 +27,7 @@ mod eth;
 pub use self::eth::{create_eth, EthDeps};
 
 /// Full client dependencies.
-pub struct FullDeps<C: HeaderBackend<Block>, P, A: ChainApi, CT, CIDP> {
+pub struct FullDeps<C, P, A: ChainApi, CT, CIDP> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
