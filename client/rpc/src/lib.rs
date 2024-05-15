@@ -210,10 +210,10 @@ pub mod frontier_backend_client {
 			BlockNumberOrHash::Num(number) => {
 				Ok(Some(BlockId::Number(number.unique_saturated_into())))
 			}
-			BlockNumberOrHash::Latest => match backend.best_hash().await {
+			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
 				Ok(hash) => Ok(Some(BlockId::Hash(hash))),
 				Err(e) => {
-					log::warn!(target: "rpc", "Failed to get best hash from the sql db: {:?}", e);
+					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
 					Ok(Some(BlockId::Hash(client.info().best_hash)))
 				}
 			},

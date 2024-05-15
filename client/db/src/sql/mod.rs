@@ -866,8 +866,8 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 		self
 	}
 
-	async fn best_hash(&self) -> Result<Block::Hash, String> {
-		// Retrieves the block hash for the latest indexed block, maybe it's not canon.
+	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
+		// Retrieves the block hash for the latestindexed block, maybe it's not canon.
 		sqlx::query("SELECT substrate_block_hash FROM blocks ORDER BY block_number DESC LIMIT 1")
 			.fetch_one(self.pool())
 			.await

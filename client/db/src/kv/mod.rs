@@ -90,7 +90,7 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		&self.log_indexer
 	}
 
-	async fn best_hash(&self) -> Result<Block::Hash, String> {
+	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
 		Ok(self.client.info().best_hash)
 	}
 }
