@@ -22,14 +22,13 @@ use std::sync::Arc;
 
 // Substrate
 pub use sc_client_db::DatabaseSource;
-use sp_runtime::traits::Block as BlockT;
 
 pub mod kv;
 #[cfg(feature = "sql")]
 pub mod sql;
 
 #[derive(Clone)]
-pub enum Backend<Block: BlockT, C> {
+pub enum Backend<Block, C> {
 	KeyValue(Arc<kv::Backend<Block, C>>),
 	#[cfg(feature = "sql")]
 	Sql(Arc<sql::Backend<Block>>),

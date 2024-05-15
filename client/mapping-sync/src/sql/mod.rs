@@ -63,7 +63,7 @@ pub struct SyncWorker<Block, Backend, Client> {
 	_phantom: std::marker::PhantomData<(Block, Backend, Client)>,
 }
 
-impl<Block: BlockT, Backend, Client> SyncWorker<Block, Backend, Client>
+impl<Block, Backend, Client> SyncWorker<Block, Backend, Client>
 where
 	Block: BlockT<Hash = H256>,
 	Client: ProvideRuntimeApi<Block>,
