@@ -23,7 +23,8 @@ use crate::{
 	client::{BaseRuntimeApiCollection, FullBackend, FullClient, RuntimeApiCollection},
 	eth::{
 		new_frontier_partial, spawn_frontier_tasks, BackendType, EthCompatRuntimeApiCollection,
-		FrontierBackend, FrontierBlockImport, FrontierPartialComponents,
+		FrontierBackend, FrontierBlockImport, FrontierPartialComponents, StorageOverride,
+		StorageOverrideHandler,
 	},
 };
 pub use crate::{
@@ -60,7 +61,7 @@ pub fn new_partial<RuntimeApi, Executor, BIQ>(
 			BoxBlockImport,
 			GrandpaLinkHalf<FullClient<RuntimeApi, Executor>>,
 			FrontierBackend<FullClient<RuntimeApi, Executor>>,
-			Arc<fc_rpc::OverrideHandle<Block>>,
+			Arc<dyn StorageOverride<Block>>,
 		),
 	>,
 	ServiceError,
@@ -116,7 +117,7 @@ where
 		telemetry.as_ref().map(|x| x.handle()),
 	)?;
 
-	let overrides = crate::rpc::overrides_handle(client.clone());
+	let storage_override = Arc::new(StorageOverrideHandler::new(client.clone()));
 	let frontier_backend = match eth_config.frontier_backend_type {
 		BackendType::KeyValue => FrontierBackend::KeyValue(Arc::new(fc_db::kv::Backend::open(
 			Arc::clone(&client),
@@ -139,7 +140,7 @@ where
 				}),
 				eth_config.frontier_sql_backend_pool_size,
 				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
-				overrides.clone(),
+				storage_override.clone(),
 			))
 			.unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
 			FrontierBackend::Sql(Arc::new(backend))
@@ -176,7 +177,7 @@ where
 			block_import,
 			grandpa_link,
 			frontier_backend,
-			overrides,
+			storage_override,
 		),
 	})
 }
@@ -282,7 +283,7 @@ where
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (mut telemetry, block_import, grandpa_link, frontier_backend, overrides),
+		other: (mut telemetry, block_import, grandpa_link, frontier_backend, storage_override),
 	} = new_partial(&config, &eth_config, build_import_queue)?;
 
 	let FrontierPartialComponents {
@@ -381,11 +382,11 @@ where
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
 		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
-		let overrides = overrides.clone();
+		let storage_override = storage_override.clone();
 		let fee_history_cache = fee_history_cache.clone();
 		let block_data_cache = Arc::new(fc_rpc::EthBlockDataCacheTask::new(
 			task_manager.spawn_handle(),
-			overrides.clone(),
+			storage_override.clone(),
 			eth_config.eth_log_block_cache,
 			eth_config.eth_statuses_cache,
 			prometheus_registry.clone(),
@@ -419,7 +420,7 @@ where
 					fc_db::Backend::KeyValue(b) => b.clone(),
 					fc_db::Backend::Sql(b) => b.clone(),
 				},
-				overrides: overrides.clone(),
+				storage_override: storage_override.clone(),
 				block_data_cache: block_data_cache.clone(),
 				filter_pool: filter_pool.clone(),
 				max_past_logs,
@@ -470,7 +471,7 @@ where
 		backend,
 		frontier_backend,
 		filter_pool,
-		overrides,
+		storage_override,
 		fee_history_cache,
 		fee_history_cache_limit,
 		sync_service.clone(),

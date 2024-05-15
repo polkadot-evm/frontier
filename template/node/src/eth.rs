@@ -14,8 +14,9 @@ use sc_service::{error::Error as ServiceError, Configuration, TaskManager};
 use sp_api::ConstructRuntimeApi;
 // Frontier
 pub use fc_consensus::FrontierBlockImport;
-use fc_rpc::{EthTask, OverrideHandle};
+use fc_rpc::EthTask;
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
+pub use fc_storage::{StorageOverride, StorageOverrideHandler};
 // Local
 use frontier_template_runtime::opaque::Block;
 
@@ -128,7 +129,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 	backend: Arc<FullBackend>,
 	frontier_backend: Arc<FrontierBackend<FullClient<RuntimeApi, Executor>>>,
 	filter_pool: Option<FilterPool>,
-	overrides: Arc<OverrideHandle<Block>>,
+	storage_override: Arc<dyn StorageOverride<Block>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
 	sync: Arc<SyncingService<Block>>,
@@ -154,7 +155,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 					Duration::new(6, 0),
 					client.clone(),
 					backend,
-					overrides.clone(),
+					storage_override.clone(),
 					b.clone(),
 					3,
 					0,
@@ -203,7 +204,7 @@ pub async fn spawn_frontier_tasks<RuntimeApi, Executor>(
 		Some("frontier"),
 		EthTask::fee_history_task(
 			client,
-			overrides,
+			storage_override,
 			fee_history_cache,
 			fee_history_cache_limit,
 		),

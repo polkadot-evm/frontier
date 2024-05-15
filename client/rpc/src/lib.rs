@@ -54,10 +54,7 @@ pub use fc_rpc_core::{
 	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
 	Web3ApiServer,
 };
-pub use fc_storage::{
-	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-	SchemaV3Override, StorageOverride,
-};
+pub use fc_storage::{overrides::*, StorageOverrideHandler};
 
 pub mod frontier_backend_client {
 	use super::internal_err;

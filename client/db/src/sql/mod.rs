@@ -38,10 +38,10 @@ use sp_runtime::{
 };
 // Frontier
 use fc_api::{FilteredLog, TransactionMetadata};
-use fc_storage::OverrideHandle;
+use fc_storage::{StorageOverride, StorageQuerier};
 use fp_consensus::{FindLogError, Hashes, Log as ConsensusLog, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
-use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+use fp_storage::EthereumStorageSchema;
 
 /// Maximum number to topics allowed to be filtered upon
 const MAX_TOPIC_COUNT: u16 = 4;
@@ -97,7 +97,8 @@ pub struct Backend<Block: BlockT> {
 	/// The Sqlite connection.
 	pool: SqlitePool,
 	/// The additional overrides for the logs handler.
-	overrides: Arc<OverrideHandle<Block>>,
+	storage_override: Arc<dyn StorageOverride<Block>>,
+
 	/// The number of allowed operations for the Sqlite filter call.
 	/// A value of `0` disables the timeout.
 	num_ops_timeout: i32,
@@ -112,7 +113,7 @@ where
 		config: BackendConfig<'_>,
 		pool_size: u32,
 		num_ops_timeout: Option<NonZeroU32>,
-		overrides: Arc<OverrideHandle<Block>>,
+		storage_override: Arc<dyn StorageOverride<Block>>,
 	) -> Result<Self, Error> {
 		let any_pool = SqlitePoolOptions::new()
 			.max_connections(pool_size)
@@ -121,7 +122,7 @@ where
 		let _ = Self::create_indexes_if_not_exist(&any_pool).await?;
 		Ok(Self {
 			pool: any_pool,
-			overrides,
+			storage_override,
 			num_ops_timeout: num_ops_timeout
 				.map(|n| n.get())
 				.unwrap_or(0)
@@ -230,8 +231,10 @@ where
 					.expect("runtime api reachable")
 					.expect("ethereum genesis block");
 
-				let schema =
-					Self::onchain_storage_schema(client.as_ref(), substrate_genesis_hash).encode();
+				let schema = StorageQuerier::new(client)
+					.storage_schema(substrate_genesis_hash)
+					.unwrap_or(EthereumStorageSchema::V3)
+					.encode();
 				let ethereum_block_hash = ethereum_block.header.hash().as_bytes().to_owned();
 				let substrate_block_hash = substrate_genesis_hash.as_bytes();
 				let block_number = 0i32;
@@ -277,7 +280,7 @@ where
 	fn insert_block_metadata_inner<Client, BE>(
 		client: Arc<Client>,
 		hash: H256,
-		overrides: Arc<OverrideHandle<Block>>,
+		storage_override: &dyn StorageOverride<Block>,
 	) -> Result<BlockMetadata, Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
@@ -288,16 +291,14 @@ where
 		if let Ok(Some(header)) = client.header(hash) {
 			match fp_consensus::find_log(header.digest()) {
 				Ok(log) => {
-					let schema = Self::onchain_storage_schema(client.as_ref(), hash);
+					let schema = StorageQuerier::new(client.clone())
+						.storage_schema(hash)
+						.unwrap_or(EthereumStorageSchema::V3);
 					let log_hashes = match log {
 						ConsensusLog::Post(PostLog::Hashes(post_hashes)) => post_hashes,
 						ConsensusLog::Post(PostLog::Block(block)) => Hashes::from_block(block),
 						ConsensusLog::Post(PostLog::BlockHash(expect_eth_block_hash)) => {
-							let ethereum_block = overrides
-								.schemas
-								.get(&schema)
-								.unwrap_or(&overrides.fallback)
-								.current_block(hash);
+							let ethereum_block = storage_override.current_block(hash);
 							match ethereum_block {
 								Some(block) => {
 									let got_eth_block_hash = block.header.hash();
@@ -377,9 +378,9 @@ where
 		BE::State: StateBackend<BlakeTwo256>,
 	{
 		// Spawn a blocking task to get block metadata from substrate backend.
-		let overrides = self.overrides.clone();
+		let storage_override = self.storage_override.clone();
 		let metadata = tokio::task::spawn_blocking(move || {
-			Self::insert_block_metadata_inner(client.clone(), hash, overrides)
+			Self::insert_block_metadata_inner(client.clone(), hash, &*storage_override)
 		})
 		.await
 		.map_err(|_| Error::Protocol("tokio blocking metadata task failed".to_string()))??;
@@ -446,14 +447,9 @@ where
 	}
 
 	/// Index the logs for the newly indexed blocks upto a `max_pending_blocks` value.
-	pub async fn index_block_logs<Client, BE>(&self, client: Arc<Client>, block_hash: Block::Hash)
-	where
-		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
-		BE: BackendT<Block> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
-	{
+	pub async fn index_block_logs(&self, block_hash: Block::Hash) {
 		let pool = self.pool().clone();
-		let overrides = self.overrides.clone();
+		let storage_override = self.storage_override.clone();
 		let _ = async {
 			// The overarching db transaction for the task.
 			// Due to the async nature of this task, the same work is likely to happen
@@ -480,7 +476,7 @@ where
 				Ok(_) => {
 					// Spawn a blocking task to get log data from substrate backend.
 					let logs = tokio::task::spawn_blocking(move || {
-						Self::get_logs(client.clone(), overrides, block_hash)
+						Self::get_logs(storage_override, block_hash)
 					})
 					.await
 					.map_err(|_| Error::Protocol("tokio blocking task failed".to_string()))?;
@@ -523,26 +519,14 @@ where
 		log::debug!(target: "frontier-sql", "Batch committed");
 	}
 
-	fn get_logs<Client, BE>(
-		client: Arc<Client>,
-		overrides: Arc<OverrideHandle<Block>>,
+	fn get_logs(
+		storage_override: Arc<dyn StorageOverride<Block>>,
 		substrate_block_hash: H256,
-	) -> Vec<Log>
-	where
-		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
-		BE: BackendT<Block> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
-	{
+	) -> Vec<Log> {
 		let mut logs: Vec<Log> = vec![];
 		let mut transaction_count: usize = 0;
 		let mut log_count: usize = 0;
-		let schema = Self::onchain_storage_schema(client.as_ref(), substrate_block_hash);
-		let handler = overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&overrides.fallback);
-
-		let receipts = handler
+		let receipts = storage_override
 			.current_receipts(substrate_block_hash)
 			.unwrap_or_default();
 
@@ -574,20 +558,6 @@ where
 			"Ready to commit {log_count} logs from {transaction_count} transactions"
 		);
 		logs
-	}
-
-	fn onchain_storage_schema<Client, BE>(client: &Client, at: Block::Hash) -> EthereumStorageSchema
-	where
-		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
-		BE: BackendT<Block> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
-	{
-		match client.storage(at, &sp_storage::StorageKey(PALLET_ETHEREUM_SCHEMA.to_vec())) {
-			Ok(Some(bytes)) => Decode::decode(&mut &bytes.0[..])
-				.ok()
-				.unwrap_or(EthereumStorageSchema::Undefined),
-			_ => EthereumStorageSchema::Undefined,
-		}
 	}
 
 	/// Retrieves the status if a block has been already indexed.
@@ -1054,7 +1024,7 @@ LIMIT 10001",
 mod test {
 	use super::*;
 
-	use std::{collections::BTreeMap, path::Path};
+	use std::path::Path;
 
 	use maplit::hashset;
 	use scale_codec::Encode;
@@ -1071,7 +1041,7 @@ mod test {
 	};
 	// Frontier
 	use fc_api::Backend as BackendT;
-	use fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fc_storage::SchemaV3StorageOverride;
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
 	type OpaqueBlock =
@@ -1149,16 +1119,7 @@ mod test {
 			);
 		let client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
-
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
 		let indexer_backend = Backend::new(
 			BackendConfig::Sqlite(SqliteBackendConfig {
@@ -1173,7 +1134,7 @@ mod test {
 			}),
 			1,
 			None,
-			overrides.clone(),
+			storage_override.clone(),
 		)
 		.await
 		.expect("indexer pool to be created");

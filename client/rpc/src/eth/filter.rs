@@ -326,10 +326,7 @@ where
 						internal_err(format!("Expect block number from id: {}", id))
 					})?;
 
-					let schema =
-						fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-					let block = block_data_cache.current_block(schema, substrate_hash).await;
+					let block = block_data_cache.current_block(substrate_hash).await;
 					if let Some(block) = block {
 						ethereum_hashes.push(block.header.hash())
 					}
@@ -484,11 +481,10 @@ where
 				Some(hash) => hash,
 				_ => return Err(crate::err(-32000, "unknown block", None)),
 			};
-			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
-			let block = block_data_cache.current_block(schema, substrate_hash).await;
+			let block = block_data_cache.current_block(substrate_hash).await;
 			let statuses = block_data_cache
-				.current_transaction_statuses(schema, substrate_hash)
+				.current_transaction_statuses(substrate_hash)
 				.await;
 			if let (Some(block), Some(statuses)) = (block, statuses) {
 				filter_block_logs(&mut ret, &filter, block, statuses);
@@ -606,7 +602,6 @@ where
 		for log in logs.iter() {
 			let substrate_hash = log.substrate_block_hash;
 
-			let schema = log.ethereum_storage_schema;
 			let ethereum_block_hash = log.ethereum_block_hash;
 			let block_number = log.block_number;
 			let db_transaction_index = log.transaction_index;
@@ -616,7 +611,7 @@ where
 				statuses.clone()
 			} else {
 				let statuses = block_data_cache
-					.current_transaction_statuses(schema, substrate_hash)
+					.current_transaction_statuses(substrate_hash)
 					.await;
 				statuses_cache.insert(log.substrate_block_hash, statuses.clone());
 				statuses
@@ -722,16 +717,14 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = fc_storage::onchain_storage_schema(client, substrate_hash);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
+		let block = block_data_cache.current_block(substrate_hash).await;
 
 		if let Some(block) = block {
 			if FilteredParams::address_in_bloom(block.header.logs_bloom, &address_bloom_filter)
 				&& FilteredParams::topics_in_bloom(block.header.logs_bloom, &topics_bloom_filter)
 			{
 				let statuses = block_data_cache
-					.current_transaction_statuses(schema, substrate_hash)
+					.current_transaction_statuses(substrate_hash)
 					.await;
 				if let Some(statuses) = statuses {
 					filter_block_logs(ret, filter, block, statuses);

@@ -39,9 +39,8 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 // Frontier
 use fc_rpc_core::types::*;
-use fc_storage::{OverrideHandle, StorageOverride};
+use fc_storage::StorageOverride;
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use fp_storage::EthereumStorageSchema;
 
 use self::lru_cache::LRUCacheByteLimited;
 
@@ -50,7 +49,6 @@ type WaitList<Hash, T> = HashMap<Hash, Vec<oneshot::Sender<Option<T>>>>;
 enum EthBlockDataCacheMessage<B: BlockT> {
 	RequestCurrentBlock {
 		block_hash: B::Hash,
-		schema: EthereumStorageSchema,
 		response_tx: oneshot::Sender<Option<EthereumBlock>>,
 	},
 	FetchedCurrentBlock {
@@ -60,7 +58,6 @@ enum EthBlockDataCacheMessage<B: BlockT> {
 
 	RequestCurrentTransactionStatuses {
 		block_hash: B::Hash,
-		schema: EthereumStorageSchema,
 		response_tx: oneshot::Sender<Option<Vec<TransactionStatus>>>,
 	},
 	FetchedCurrentTransactionStatuses {
@@ -78,7 +75,7 @@ pub struct EthBlockDataCacheTask<B: BlockT>(mpsc::Sender<EthBlockDataCacheMessag
 impl<B: BlockT> EthBlockDataCacheTask<B> {
 	pub fn new(
 		spawn_handle: SpawnTaskHandle,
-		overrides: Arc<OverrideHandle<B>>,
+		storage_override: Arc<dyn StorageOverride<B>>,
 		blocks_cache_max_size: usize,
 		statuses_cache_max_size: usize,
 		prometheus_registry: Option<prometheus_endpoint::Registry>,
@@ -113,15 +110,13 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 				match message {
 					RequestCurrentBlock {
 						block_hash,
-						schema,
 						response_tx,
 					} => Self::request_current(
 						&spawn_handle,
 						&mut blocks_cache,
 						&mut awaiting_blocks,
-						Arc::clone(&overrides),
+						storage_override.clone(),
 						block_hash,
-						schema,
 						response_tx,
 						task_tx.clone(),
 						move |handler| FetchedCurrentBlock {
@@ -143,15 +138,13 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 
 					RequestCurrentTransactionStatuses {
 						block_hash,
-						schema,
 						response_tx,
 					} => Self::request_current(
 						&spawn_handle,
 						&mut statuses_cache,
 						&mut awaiting_statuses,
-						Arc::clone(&overrides),
+						storage_override.clone(),
 						block_hash,
-						schema,
 						response_tx,
 						task_tx.clone(),
 						move |handler| FetchedCurrentTransactionStatuses {
@@ -184,15 +177,14 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		spawn_handle: &SpawnTaskHandle,
 		cache: &mut LRUCacheByteLimited<B::Hash, T>,
 		wait_list: &mut WaitList<B::Hash, T>,
-		overrides: Arc<OverrideHandle<B>>,
+		storage_override: Arc<dyn StorageOverride<B>>,
 		block_hash: B::Hash,
-		schema: EthereumStorageSchema,
 		response_tx: oneshot::Sender<Option<T>>,
 		task_tx: mpsc::Sender<EthBlockDataCacheMessage<B>>,
 		handler_call: F,
 	) where
 		T: Clone + scale_codec::Encode,
-		F: FnOnce(&Box<dyn StorageOverride<B>>) -> EthBlockDataCacheMessage<B>,
+		F: FnOnce(&dyn StorageOverride<B>) -> EthBlockDataCacheMessage<B>,
 		F: Send + 'static,
 	{
 		// Data is cached, we respond immediately.
@@ -214,28 +206,18 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 		wait_list.insert(block_hash, vec![response_tx]);
 
 		spawn_handle.spawn("EthBlockDataCacheTask Worker", None, async move {
-			let handler = overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&overrides.fallback);
-
-			let message = handler_call(handler);
+			let message = handler_call(&*storage_override);
 			let _ = task_tx.send(message).await;
 		});
 	}
 
 	/// Cache for `handler.current_block`.
-	pub async fn current_block(
-		&self,
-		schema: EthereumStorageSchema,
-		block_hash: B::Hash,
-	) -> Option<EthereumBlock> {
+	pub async fn current_block(&self, block_hash: B::Hash) -> Option<EthereumBlock> {
 		let (response_tx, response_rx) = oneshot::channel();
 
 		self.0
 			.send(EthBlockDataCacheMessage::RequestCurrentBlock {
 				block_hash,
-				schema,
 				response_tx,
 			})
 			.await
@@ -247,7 +229,6 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 	/// Cache for `handler.current_transaction_statuses`.
 	pub async fn current_transaction_statuses(
 		&self,
-		schema: EthereumStorageSchema,
 		block_hash: B::Hash,
 	) -> Option<Vec<TransactionStatus>> {
 		let (response_tx, response_rx) = oneshot::channel();
@@ -256,7 +237,6 @@ impl<B: BlockT> EthBlockDataCacheTask<B> {
 			.send(
 				EthBlockDataCacheMessage::RequestCurrentTransactionStatuses {
 					block_hash,
-					schema,
 					response_tx,
 				},
 			)
@@ -298,7 +278,7 @@ where
 
 	pub async fn fee_history_task(
 		client: Arc<C>,
-		overrides: Arc<OverrideHandle<B>>,
+		storage_override: Arc<dyn StorageOverride<B>>,
 		fee_history_cache: FeeHistoryCache,
 		block_limit: u64,
 	) {
@@ -312,12 +292,6 @@ where
 			FeeHistoryCacheItem,
 			Option<u64>
 		) {
-			let schema = fc_storage::onchain_storage_schema(client.as_ref(), hash);
-			let handler = overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&overrides.fallback);
-
 			// Evenly spaced percentile list from 0.0 to 100.0 with a 0.5 resolution.
 			// This means we cache 200 percentile points.
 			// Later in request handling we will approximate by rounding percentiles that
@@ -333,10 +307,10 @@ where
 					.collect()
 			};
 
-			let block = handler.current_block(hash);
+			let block = storage_override.current_block(hash);
 			let mut block_number: Option<u64> = None;
 			let base_fee = client.runtime_api().gas_price(hash).unwrap_or_default();
-			let receipts = handler.current_receipts(hash);
+			let receipts = storage_override.current_receipts(hash);
 			let mut result = FeeHistoryCacheItem {
 				base_fee: UniqueSaturatedInto::<u64>::unique_saturated_into(base_fee),
 				gas_used_ratio: 0f64,
