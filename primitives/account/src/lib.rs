@@ -16,6 +16,12 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
+#![warn(unused_crate_dependencies)]
+
+extern crate alloc;
+
+use alloc::string::{String, ToString};
+use core::fmt;
 
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
@@ -28,14 +34,13 @@ use sp_runtime_interface::pass_by::PassByInner;
 /// A fully Ethereum-compatible `AccountId`.
 /// Conforms to H160 address and ECDSA key standards.
 /// Alternative to H256->H160 mapping.
-#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default)]
+#[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default, Hash)]
 #[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
 pub struct AccountId20(pub [u8; 20]);
 
 #[cfg(feature = "serde")]
 impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 
-#[cfg(feature = "std")]
 impl core::str::FromStr for AccountId20 {
 	type Err = &'static str;
 
@@ -46,9 +51,8 @@ impl core::str::FromStr for AccountId20 {
 	}
 }
 
-#[cfg(feature = "std")]
-impl core::fmt::Display for AccountId20 {
-	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Display for AccountId20 {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		let address = hex::encode(self.0).trim_start_matches("0x").to_lowercase();
 		let address_hash = hex::encode(keccak_256(address.as_bytes()));
 
@@ -73,8 +77,8 @@ impl core::fmt::Display for AccountId20 {
 	}
 }
 
-impl core::fmt::Debug for AccountId20 {
-	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+impl fmt::Debug for AccountId20 {
+	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "{:?}", H160(self.0))
 	}
 }
@@ -231,8 +235,8 @@ impl sp_runtime::traits::IdentifyAccount for EthereumSigner {
 	}
 }
 
-impl core::fmt::Display for EthereumSigner {
-	fn fmt(&self, fmt: &mut core::fmt::Formatter) -> core::fmt::Result {
+impl fmt::Display for EthereumSigner {
+	fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
 		write!(fmt, "{:?}", H160::from(self.0))
 	}
 }
