@@ -240,7 +240,6 @@ where
 				let block_number = 0i32;
 				let is_canon = 1i32;
 
-				let mut tx = self.pool().begin().await?;
 				let _ = sqlx::query(
 					"INSERT OR IGNORE INTO blocks(
 						ethereum_block_hash,
@@ -255,20 +254,8 @@ where
 				.bind(block_number)
 				.bind(schema)
 				.bind(is_canon)
-				.execute(&mut *tx)
+				.execute(self.pool())
 				.await?;
-
-				sqlx::query("INSERT INTO sync_status(substrate_block_hash) VALUES (?)")
-					.bind(substrate_block_hash)
-					.execute(&mut *tx)
-					.await?;
-				sqlx::query("UPDATE sync_status SET status = 1 WHERE substrate_block_hash = ?")
-					.bind(substrate_block_hash)
-					.execute(&mut *tx)
-					.await?;
-
-				tx.commit().await?;
-				log::debug!(target: "frontier-sql", "The genesis block information has been submitted.");
 			}
 			Some(substrate_genesis_hash)
 		} else {
