@@ -62,7 +62,7 @@ pub mod static_keys {
 }
 
 #[derive(Clone)]
-pub struct Backend<Block: BlockT, C> {
+pub struct Backend<Block, C> {
 	client: Arc<C>,
 	meta: Arc<MetaDb<Block>>,
 	mapping: Arc<MappingDb<Block>>,
@@ -180,7 +180,7 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 	}
 }
 
-pub struct MetaDb<Block: BlockT> {
+pub struct MetaDb<Block> {
 	db: Arc<dyn Database<DbHash>>,
 	_marker: PhantomData<Block>,
 }
@@ -247,7 +247,7 @@ pub struct MappingCommitment<Block: BlockT> {
 	pub ethereum_transaction_hashes: Vec<H256>,
 }
 
-pub struct MappingDb<Block: BlockT> {
+pub struct MappingDb<Block> {
 	db: Arc<dyn Database<DbHash>>,
 	write_lock: Arc<Mutex<()>>,
 	_marker: PhantomData<Block>,

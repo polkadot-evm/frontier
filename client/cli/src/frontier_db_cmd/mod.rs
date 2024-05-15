@@ -98,12 +98,13 @@ pub enum DbValue<H> {
 }
 
 impl FrontierDbCmd {
-	pub fn run<B: BlockT, C>(
+	pub fn run<B, C>(
 		&self,
 		client: Arc<C>,
 		backend: Arc<fc_db::kv::Backend<B, C>>,
 	) -> sc_cli::Result<()>
 	where
+		B: BlockT,
 		C: HeaderBackend<B> + ProvideRuntimeApi<B>,
 		C::Api: fp_rpc::EthereumRuntimeRPCApi<B>,
 	{

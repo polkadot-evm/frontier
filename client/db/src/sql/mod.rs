@@ -93,7 +93,7 @@ pub enum BackendConfig<'a> {
 }
 
 #[derive(Clone)]
-pub struct Backend<Block: BlockT> {
+pub struct Backend<Block> {
 	/// The Sqlite connection.
 	pool: SqlitePool,
 	/// The additional overrides for the logs handler.
@@ -104,7 +104,7 @@ pub struct Backend<Block: BlockT> {
 	num_ops_timeout: i32,
 }
 
-impl<Block: BlockT> Backend<Block>
+impl<Block> Backend<Block>
 where
 	Block: BlockT<Hash = H256>,
 {
