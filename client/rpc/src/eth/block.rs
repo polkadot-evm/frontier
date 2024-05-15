@@ -103,11 +103,9 @@ where
 					.expect_block_hash_from_id(&id)
 					.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-				let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-				let block = block_data_cache.current_block(schema, substrate_hash).await;
+				let block = block_data_cache.current_block(substrate_hash).await;
 				let statuses = block_data_cache
-					.current_transaction_statuses(schema, substrate_hash)
+					.current_transaction_statuses(substrate_hash)
 					.await;
 
 				let base_fee = client.runtime_api().gas_price(substrate_hash).ok();

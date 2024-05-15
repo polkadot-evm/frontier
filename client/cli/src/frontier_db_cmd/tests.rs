@@ -38,7 +38,7 @@ use substrate_test_runtime_client::{
 	TestClientBuilder,
 };
 // Frontier
-use fp_storage::{EthereumStorageSchema, ETHEREUM_CURRENT_TRANSACTION_STATUS, PALLET_ETHEREUM};
+use fp_storage::{constants::*, EthereumStorageSchema};
 use frontier_template_runtime::RuntimeApi;
 
 use crate::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
@@ -545,7 +545,7 @@ fn commitment_create() {
 	let statuses = vec![t1];
 
 	// Build a block and fill the pallet-ethereum status.
-	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
+	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
 	let chain = client.chain_info();
 	let mut builder = BlockBuilderBuilder::new(&*client)
 		.on_parent_block(chain.best_hash)
@@ -628,7 +628,7 @@ fn commitment_update() {
 	let statuses_a1 = vec![t1.clone()];
 	let statuses_a2 = vec![t1, t2];
 
-	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
+	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
 
 	// First we create block and insert data in the offchain db.
 
@@ -756,7 +756,7 @@ fn mapping_read_works() {
 	let statuses = vec![t1];
 
 	// Build a block and fill the pallet-ethereum status.
-	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
+	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
 	let chain = client.chain_info();
 	let mut builder = BlockBuilderBuilder::new(&*client)
 		.on_parent_block(chain.best_hash)

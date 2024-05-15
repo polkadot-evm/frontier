@@ -23,7 +23,10 @@ use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
+use sp_runtime::{
+	traits::{Block as BlockT, UniqueSaturatedInto},
+	Permill,
+};
 // Frontier
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -135,17 +138,10 @@ where
 						self.client.expect_block_hash_from_id(&id).map_err(|_| {
 							internal_err(format!("Expect block number from id: {}", id))
 						})?;
-					let schema =
-						fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-					let handler = self
-						.overrides
-						.schemas
-						.get(&schema)
-						.unwrap_or(&self.overrides.fallback);
-					let default_elasticity = sp_runtime::Permill::from_parts(125_000);
-					let elasticity = handler
+					let elasticity = self
+						.storage_override
 						.elasticity(substrate_hash)
-						.unwrap_or(default_elasticity)
+						.unwrap_or(Permill::from_parts(125_000))
 						.deconstruct();
 					let elasticity = elasticity as f64 / 1_000_000f64;
 					let last_fee_per_gas =
