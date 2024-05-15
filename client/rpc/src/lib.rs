@@ -196,29 +196,27 @@ pub mod frontier_backend_client {
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
 	{
-		match number.unwrap_or(BlockNumberOrHash::Latest) {
+		Ok(match number.unwrap_or(BlockNumberOrHash::Latest) {
 			BlockNumberOrHash::Hash { hash, .. } => {
 				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash).await {
-					Ok(Some(BlockId::Hash(hash)))
+					Some(BlockId::Hash(hash))
 				} else {
-					Ok(None)
+					None
 				}
 			}
-			BlockNumberOrHash::Num(number) => {
-				Ok(Some(BlockId::Number(number.unique_saturated_into())))
-			}
+			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
 			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
-				Ok(hash) => Ok(Some(BlockId::Hash(hash))),
+				Ok(hash) => Some(BlockId::Hash(hash)),
 				Err(e) => {
 					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
-					Ok(Some(BlockId::Hash(client.info().best_hash)))
+					Some(BlockId::Hash(client.info().best_hash))
 				}
 			},
-			BlockNumberOrHash::Earliest => Ok(Some(BlockId::Hash(client.info().genesis_hash))),
-			BlockNumberOrHash::Pending => Ok(None),
-			BlockNumberOrHash::Safe => Ok(Some(BlockId::Hash(client.info().finalized_hash))),
-			BlockNumberOrHash::Finalized => Ok(Some(BlockId::Hash(client.info().finalized_hash))),
-		}
+			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
+			BlockNumberOrHash::Pending => None,
+			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
+			BlockNumberOrHash::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
+		})
 	}
 
 	pub async fn load_hash<B: BlockT, C>(

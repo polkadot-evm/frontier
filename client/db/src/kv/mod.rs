@@ -62,7 +62,7 @@ pub mod static_keys {
 }
 
 #[derive(Clone)]
-pub struct Backend<Block: BlockT, C: HeaderBackend<Block>> {
+pub struct Backend<Block: BlockT, C> {
 	client: Arc<C>,
 	meta: Arc<MetaDb<Block>>,
 	mapping: Arc<MappingDb<Block>>,

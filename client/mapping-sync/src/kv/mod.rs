@@ -37,9 +37,9 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
 
-pub fn sync_block<Block: BlockT>(
+pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	storage_override: Arc<dyn StorageOverride<Block>>,
-	backend: &fc_db::kv::Backend<Block>,
+	backend: &fc_db::kv::Backend<Block, C>,
 	header: &Block::Header,
 ) -> Result<(), String> {
 	let substrate_block_hash = header.hash();
