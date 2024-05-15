@@ -40,7 +40,7 @@ pub enum MappingKey {
 	EthBlockOrTransactionHash(H256),
 }
 
-pub struct MappingDb<'a, B: BlockT, C: HeaderBackend<B>> {
+pub struct MappingDb<'a, B: BlockT, C> {
 	cmd: &'a FrontierDbCmd,
 	client: Arc<C>,
 	backend: Arc<fc_db::kv::Backend<B, C>>,

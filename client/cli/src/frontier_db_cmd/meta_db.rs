@@ -58,7 +58,7 @@ impl FromStr for MetaKey {
 	}
 }
 
-pub struct MetaDb<'a, B: BlockT, C: HeaderBackend<B>> {
+pub struct MetaDb<'a, B: BlockT, C> {
 	cmd: &'a FrontierDbCmd,
 	backend: Arc<fc_db::kv::Backend<B, C>>,
 }

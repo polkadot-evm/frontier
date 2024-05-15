@@ -39,7 +39,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::SyncStrategy;
 
-pub struct MappingSyncWorker<Block: BlockT, C: HeaderBackend<Block>, BE> {
+pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	import_notifications: ImportNotifications<Block>,
 	timeout: Duration,
 	inner_delay: Option<Delay>,
