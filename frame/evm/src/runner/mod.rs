@@ -18,9 +18,9 @@
 pub mod stack;
 
 use crate::{Config, Weight};
+use alloc::vec::Vec;
 use fp_evm::{CallInfo, CreateInfo};
 use sp_core::{H160, H256, U256};
-use sp_std::vec::Vec;
 
 #[derive(Debug)]
 pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {

@@ -17,10 +17,10 @@
 
 #![allow(clippy::comparison_chain)]
 
+use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
 use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
 use sp_core::{H160, H256, U256};
-use sp_std::vec::Vec;
 
 #[derive(Debug)]
 pub struct CheckEvmTransactionInput {
@@ -51,7 +51,7 @@ pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub transaction: CheckEvmTransactionInput,
 	pub weight_limit: Option<Weight>,
 	pub proof_size_base_cost: Option<u64>,
-	_marker: sp_std::marker::PhantomData<E>,
+	_marker: core::marker::PhantomData<E>,
 }
 
 /// Transaction validation errors

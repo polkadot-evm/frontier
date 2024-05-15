@@ -18,11 +18,10 @@
 
 //! Encoding of XCM types for solidity
 
-use alloc::string::String;
+use alloc::{string::String, vec::Vec};
 
 use frame_support::{ensure, traits::ConstU32};
 use sp_core::H256;
-use sp_std::vec::Vec;
 use sp_weights::Weight;
 use xcm::latest::{Junction, Junctions, Location, NetworkId};
 

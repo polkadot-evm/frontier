@@ -20,12 +20,12 @@ use crate::{
 	solidity::codec::Codec,
 	testing::{decode_revert_message, MockHandle, PrettyLog, SubcallHandle, SubcallTrait},
 };
+use alloc::boxed::Box;
 use fp_evm::{
 	Context, ExitError, ExitSucceed, Log, PrecompileFailure, PrecompileOutput, PrecompileResult,
 	PrecompileSet,
 };
 use sp_core::{H160, U256};
-use sp_std::boxed::Box;
 
 #[must_use]
 pub struct PrecompilesTester<'p, P> {

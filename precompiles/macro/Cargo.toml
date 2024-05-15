@@ -30,4 +30,3 @@ precompile-utils = { path = "../", features = ["testing"] }
 fp-evm = { workspace = true }
 frame-support = { workspace = true }
 sp-crypto-hashing = { workspace = true }
-sp-std = { workspace = true }

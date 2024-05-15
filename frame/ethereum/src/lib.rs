@@ -25,11 +25,15 @@
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
 #[cfg(all(feature = "std", test))]
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
+use alloc::{vec, vec::Vec};
+use core::marker::PhantomData;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
@@ -55,7 +59,6 @@ use sp_runtime::{
 	},
 	RuntimeDebug, SaturatedConversion,
 };
-use sp_std::{marker::PhantomData, prelude::*};
 // Frontier
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
@@ -689,7 +692,7 @@ impl<T: Config> Pallet<T> {
 			PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						sp_std::cmp::max(
+						core::cmp::max(
 							used_gas.standard.unique_saturated_into(),
 							used_gas.effective.unique_saturated_into(),
 						),

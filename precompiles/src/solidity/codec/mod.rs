@@ -26,9 +26,9 @@ pub mod native;
 pub mod xcm;
 
 use crate::solidity::revert::{MayRevert, RevertReason};
-use core::{marker::PhantomData, ops::Range};
+use alloc::{vec, vec::Vec};
+use core::{convert::TryInto, marker::PhantomData, ops::Range};
 use sp_core::{H256, U256};
-use sp_std::{convert::TryInto, vec, vec::Vec};
 
 pub use alloc::string::String;
 pub use bytes::{BoundedBytes, BoundedString, UnboundedBytes, UnboundedString};

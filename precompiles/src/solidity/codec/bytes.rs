@@ -73,8 +73,8 @@ impl<K, S: Get<u32>> BoundedBytesString<K, S> {
 		&self.data
 	}
 
-	pub fn as_str(&self) -> Result<&str, sp_std::str::Utf8Error> {
-		sp_std::str::from_utf8(&self.data)
+	pub fn as_str(&self) -> Result<&str, core::str::Utf8Error> {
+		core::str::from_utf8(&self.data)
 	}
 }
 
