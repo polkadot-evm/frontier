@@ -26,8 +26,8 @@ sp-inherents = { workspace = true }
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-session = { workspace = true }
-sp-transaction-pool = { workspace = true }
 sp-std = { workspace = true }
+sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 # Substrate FRAME
 frame-benchmarking = { workspace = true, optional = true }
