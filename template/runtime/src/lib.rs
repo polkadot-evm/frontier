@@ -45,7 +45,7 @@ use frame_support::{
 	traits::{ConstBool, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
 };
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter};
+use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter};
 use sp_genesis_builder::PresetId;
 // Frontier
 use fp_account::EthereumSignature;
@@ -307,7 +307,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
