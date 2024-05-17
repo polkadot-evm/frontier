@@ -2571,7 +2571,6 @@ dependencies = [
  "sc-client-db",
  "sc-consensus-aura",
  "sc-network",
- "sc-network-common",
  "sc-network-sync",
  "sc-rpc",
  "sc-service",
