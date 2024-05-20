@@ -33,7 +33,6 @@ prometheus-endpoint = { workspace = true }
 sc-client-api = { workspace = true }
 sc-consensus-aura = { workspace = true }
 sc-network = { workspace = true }
-sc-network-common = { workspace = true }
 sc-network-sync = { workspace = true }
 sc-rpc = { workspace = true }
 sc-service = { workspace = true }

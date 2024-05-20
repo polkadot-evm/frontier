@@ -83,6 +83,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 		`--rpc-port=${RPC_PORT}`,
 		`--frontier-backend-type=${FRONTIER_BACKEND_TYPE}`,
 		`--tmp`,
+		`--unsafe-force-node-key-generation`,
 	];
 	const binary = spawn(cmd, args);
 

@@ -12,7 +12,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
-use alloc::{boxed::Box, vec::Vec};
+use alloc::{boxed::Box, vec, vec::Vec};
 use core::marker::PhantomData;
 use scale_codec::{Decode, Encode};
 use sp_api::impl_runtime_apis;
@@ -39,12 +39,13 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	derive_impl,
-	genesis_builder_helper::{build_config, create_default_config},
+	genesis_builder_helper::{build_state, get_preset},
 	parameter_types,
 	traits::{ConstBool, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
 };
-use pallet_transaction_payment::{ConstFeeMultiplier, CurrencyAdapter};
+use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter};
+use sp_genesis_builder::PresetId;
 // Frontier
 use fp_account::EthereumSignature;
 use fp_evm::weight_per_gas;
@@ -305,7 +306,7 @@ parameter_types! {
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
-	type OnChargeTransaction = CurrencyAdapter<Balances, ()>;
+	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
 	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
@@ -656,12 +657,16 @@ impl_runtime_apis! {
 	}
 
 	impl sp_genesis_builder::GenesisBuilder<Block> for Runtime {
-		fn create_default_config() -> Vec<u8> {
-			create_default_config::<RuntimeGenesisConfig>()
+		fn build_state(config: Vec<u8>) -> sp_genesis_builder::Result {
+			build_state::<RuntimeGenesisConfig>(config)
 		}
 
-		fn build_config(config: Vec<u8>) -> sp_genesis_builder::Result {
-			build_config::<RuntimeGenesisConfig>(config)
+		fn get_preset(id: &Option<PresetId>) -> Option<Vec<u8>> {
+			get_preset::<RuntimeGenesisConfig>(id, |_| None)
+		}
+
+		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
+			vec![]
 		}
 	}
 

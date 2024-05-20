@@ -20,8 +20,7 @@ use std::sync::Arc;
 
 use jsonrpsee::core::RpcResult;
 // Substrate
-use sc_network::{NetworkPeers, NetworkService};
-use sc_network_common::ExHashT;
+use sc_network::{service::traits::NetworkService, NetworkPeers};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
@@ -32,27 +31,24 @@ use fp_rpc::EthereumRuntimeRPCApi;
 use crate::internal_err;
 
 /// Net API implementation.
-pub struct Net<B: BlockT, C, H: ExHashT> {
+pub struct Net<B: BlockT, C> {
 	client: Arc<C>,
-	network: Arc<NetworkService<B, H>>,
+	network: Arc<dyn NetworkService>,
 	peer_count_as_hex: bool,
+	_phantom_data: std::marker::PhantomData<B>,
 }
-
-impl<B: BlockT, C, H: ExHashT> Net<B, C, H> {
-	pub fn new(
-		client: Arc<C>,
-		network: Arc<NetworkService<B, H>>,
-		peer_count_as_hex: bool,
-	) -> Self {
+impl<B: BlockT, C> Net<B, C> {
+	pub fn new(client: Arc<C>, network: Arc<dyn NetworkService>, peer_count_as_hex: bool) -> Self {
 		Self {
 			client,
 			network,
 			peer_count_as_hex,
+			_phantom_data: Default::default(),
 		}
 	}
 }
 
-impl<B, C, H: ExHashT> NetApiServer for Net<B, C, H>
+impl<B, C> NetApiServer for Net<B, C>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
