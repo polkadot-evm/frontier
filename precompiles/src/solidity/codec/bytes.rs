@@ -68,6 +68,12 @@ impl<K: Kind, S: Get<u32>> Clone for BoundedBytesString<K, S> {
 	}
 }
 
+impl<K, S> Default for BoundedBytesString<K, S> {
+	fn default() -> Self {
+		Vec::default().into()
+	}
+}
+
 impl<K, S: Get<u32>> BoundedBytesString<K, S> {
 	pub fn as_bytes(&self) -> &[u8] {
 		&self.data
