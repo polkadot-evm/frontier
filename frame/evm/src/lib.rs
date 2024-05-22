@@ -79,7 +79,7 @@ use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
-	storage::{child::KillStorageResult, KeyPrefixIterator},
+	storage::KeyPrefixIterator,
 	traits::{
 		fungible::{Balanced, Credit, Debt},
 		tokens::{
@@ -188,7 +188,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&SHANGHAI_CONFIG
+			&CANCUN_CONFIG
 		}
 	}
 
@@ -796,7 +796,7 @@ impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	}
 }
 
-static SHANGHAI_CONFIG: EvmConfig = EvmConfig::shanghai();
+static CANCUN_CONFIG: EvmConfig = EvmConfig::cancun();
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
@@ -825,32 +825,13 @@ impl<T: Config> Pallet<T> {
 	/// Remove an account.
 	pub fn remove_account(address: &H160) {
 		if <AccountCodes<T>>::contains_key(address) {
-			// Remember to call `dec_sufficients` when clearing Suicided.
-			<Suicided<T>>::insert(address, ());
-
-			// In theory, we can always have pre-EIP161 contracts, so we
-			// make sure the account nonce is at least one.
 			let account_id = T::AddressMapping::into_account_id(*address);
-			frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+			let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
 		<AccountCodesMetadata<T>>::remove(address);
-
-		if T::SuicideQuickClearLimit::get() > 0 {
-			#[allow(deprecated)]
-			let res = <AccountStorages<T>>::remove_prefix(address, Some(T::SuicideQuickClearLimit::get()));
-
-			match res {
-				KillStorageResult::AllRemoved(_) => {
-					<Suicided<T>>::remove(address);
-
-					let account_id = T::AddressMapping::into_account_id(*address);
-					let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
-				}
-				KillStorageResult::SomeRemaining(_) => (),
-			}
-		}
+		let _ = <AccountStorages<T>>::clear_prefix(address, u32::max_value(), None);
 	}
 
 	/// Create an account.

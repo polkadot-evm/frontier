@@ -1269,7 +1269,7 @@ fn handle_sufficient_reference() {
 		assert_eq!(account_2.sufficients, 1);
 		EVM::remove_account(&addr_2);
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
-		assert_eq!(account_2.sufficients, 1);
+		assert_eq!(account_2.sufficients, 0);
 	});
 }
 

@@ -271,7 +271,7 @@ mod tests {
 		UnknownError,
 	}
 
-	static SHANGHAI_CONFIG: evm::Config = evm::Config::shanghai();
+	static CANCUN_CONFIG: evm::Config = evm::Config::cancun();
 
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
@@ -345,7 +345,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &SHANGHAI_CONFIG,
+				evm_config: &CANCUN_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
