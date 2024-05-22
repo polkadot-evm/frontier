@@ -20,12 +20,12 @@ use std::{ops::DerefMut, sync::Arc, time::Duration};
 
 use futures::prelude::*;
 // Substrate
-use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend as BackendT, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::{Backend, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_core::H256;
-use sp_runtime::traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -70,7 +70,6 @@ where
 	Client::Api: EthereumRuntimeRPCApi<Block>,
 	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
-	Backend::State: StateBackend<BlakeTwo256>,
 {
 	/// Spawn the indexing worker. The worker can be given commands via the sender channel.
 	/// Once the buffer is full, attempts to send new messages will wait until a message is read from the channel.
@@ -278,7 +277,6 @@ async fn index_block_and_ancestors<Block, Backend, Client>(
 	Client::Api: EthereumRuntimeRPCApi<Block>,
 	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
-	Backend::State: StateBackend<BlakeTwo256>,
 {
 	let blockchain_backend = substrate_backend.blockchain();
 	let mut hashes = vec![hash];
@@ -326,7 +324,6 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 	Client::Api: EthereumRuntimeRPCApi<Block>,
 	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
-	Backend::State: StateBackend<BlakeTwo256>,
 {
 	let blockchain_backend = substrate_backend.blockchain();
 	let mut hashes = vec![hash];
@@ -411,7 +408,6 @@ async fn index_missing_blocks<Block, Client, Backend>(
 	Client::Api: EthereumRuntimeRPCApi<Block>,
 	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
-	Backend::State: StateBackend<BlakeTwo256>,
 {
 	if let Some(block_number) = indexer_backend.get_first_missing_canon_block().await {
 		log::debug!(target: "frontier-sql", "Missing {block_number:?}");
@@ -449,7 +445,6 @@ async fn index_genesis_block<Block, Client, Backend>(
 	Client::Api: EthereumRuntimeRPCApi<Block>,
 	Client: HeaderBackend<Block> + StorageProvider<Block, Backend> + 'static,
 	Backend: BackendT<Block> + 'static,
-	Backend::State: StateBackend<BlakeTwo256>,
 {
 	log::info!(
 		target: "frontier-sql",
