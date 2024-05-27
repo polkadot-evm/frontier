@@ -28,13 +28,13 @@ use sqlx::{
 	ConnectOptions, Error, Execute, QueryBuilder, Row, Sqlite,
 };
 // Substrate
-use sc_client_api::backend::{Backend as BackendT, StateBackend, StorageProvider};
+use sc_client_api::backend::{Backend as BackendT, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::{H160, H256};
 use sp_runtime::{
 	generic::BlockId,
-	traits::{BlakeTwo256, Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
+	traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
 };
 // Frontier
 use fc_api::{FilteredLog, TransactionMetadata};
@@ -203,7 +203,6 @@ where
 		Client: ProvideRuntimeApi<Block>,
 		Client::Api: EthereumRuntimeRPCApi<Block>,
 		BE: BackendT<Block> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
 	{
 		let id = BlockId::Number(Zero::zero());
 		let substrate_genesis_hash = client
@@ -272,7 +271,6 @@ where
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
 		BE: BackendT<Block> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
 	{
 		log::trace!(target: "frontier-sql", "🛠️  [Metadata] Retrieving digest data for block {hash:?}");
 		if let Ok(Some(header)) = client.header(hash) {
@@ -362,7 +360,6 @@ where
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
 		BE: BackendT<Block> + 'static,
-		BE::State: StateBackend<BlakeTwo256>,
 	{
 		// Spawn a blocking task to get block metadata from substrate backend.
 		let storage_override = self.storage_override.clone();

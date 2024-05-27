@@ -14,7 +14,7 @@ use sp_runtime::{generic::Era, OpaqueExtrinsic, SaturatedConversion};
 use fp_account::AccountId20;
 use frontier_template_runtime::{self as runtime, AccountId, Balance, BalancesCall, SystemCall};
 
-use crate::client::Client;
+use crate::service::Client;
 
 /// Generates extrinsics for the `benchmark overhead` command.
 ///
