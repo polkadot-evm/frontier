@@ -78,6 +78,7 @@ pub enum AccessedStorage {
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
+	pub proof_size_base_cost: Option<u64>,
 	pub ref_time_limit: Option<u64>,
 	pub proof_size_limit: Option<u64>,
 	pub ref_time_usage: Option<u64>,
@@ -95,6 +96,7 @@ impl WeightInfo {
 				if weight_limit.proof_size() >= proof_size_base_cost =>
 			{
 				Some(WeightInfo {
+					proof_size_base_cost: Some(proof_size_base_cost),
 					ref_time_limit: Some(weight_limit.ref_time()),
 					proof_size_limit: Some(weight_limit.proof_size()),
 					ref_time_usage: Some(0u64),
@@ -102,6 +104,7 @@ impl WeightInfo {
 				})
 			}
 			(Some(weight_limit), None) => Some(WeightInfo {
+				proof_size_base_cost: None,
 				ref_time_limit: Some(weight_limit.ref_time()),
 				proof_size_limit: None,
 				ref_time_usage: Some(0u64),

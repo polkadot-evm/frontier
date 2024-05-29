@@ -75,8 +75,7 @@ where
 		config: &'config evm::Config,
 		precompiles: &'precompiles T::PrecompilesType,
 		is_transactional: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<WeightInfo>,
 		f: F,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
@@ -112,8 +111,7 @@ where
 			f,
 			base_fee,
 			weight,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		);
 
 		// Set IN_EVM to false
@@ -137,8 +135,7 @@ where
 		f: F,
 		base_fee: U256,
 		weight: Weight,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<WeightInfo>,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -152,13 +149,15 @@ where
 		R: Default,
 	{
 		// Used to record the external costs in the evm through the StackState implementation
-		let maybe_weight_info =
-			WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
-				|_| RunnerError {
-					error: Error::<T>::GasLimitTooLow,
-					weight,
-				},
-			)?;
+		// let maybe_weight_info =
+		// 	WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
+		// 		|_| RunnerError {
+		// 			error: Error::<T>::GasLimitTooLow,
+		// 			weight,
+		// 		},
+		// 	)?;
+		let maybe_weight_info = weight_info;
+
 		// The precompile check is only used for transactional invocations. However, here we always
 		// execute the check, because the check has side effects.
 		match precompiles.is_precompile(source, gas_limit) {
@@ -366,8 +365,7 @@ where
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<WeightInfo>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
 		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
@@ -394,8 +392,7 @@ where
 				value,
 				access_list,
 			},
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		)
 		.validate_in_block_for(&source_account)
 		.and_then(|v| v.with_base_fee())
@@ -416,8 +413,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<WeightInfo>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -432,8 +428,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config,
 			)?;
 		}
@@ -447,8 +442,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
@@ -464,8 +458,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<WeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -480,8 +473,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config,
 			)?;
 		}
@@ -495,8 +487,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
@@ -519,8 +510,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<WeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -535,8 +525,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config,
 			)?;
 		}
@@ -551,8 +540,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,

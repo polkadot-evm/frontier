@@ -19,7 +19,7 @@
 
 use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
-use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
+use frame_support::sp_runtime::traits::UniqueSaturatedInto;
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug)]
@@ -49,8 +49,7 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
-	pub weight_limit: Option<Weight>,
-	pub proof_size_base_cost: Option<u64>,
+	pub weight_info: Option<crate::WeightInfo>,
 	_marker: core::marker::PhantomData<E>,
 }
 
@@ -87,14 +86,12 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	pub fn new(
 		config: CheckEvmTransactionConfig<'config>,
 		transaction: CheckEvmTransactionInput,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<crate::WeightInfo>,
 	) -> Self {
 		CheckEvmTransaction {
 			config,
 			transaction,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			_marker: Default::default(),
 		}
 	}
@@ -203,14 +200,14 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		if self.config.is_transactional {
 			// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
 			// Validate the weight limit can afford recording the proof size cost.
-			if let (Some(weight_limit), Some(proof_size_base_cost)) =
-				(self.weight_limit, self.proof_size_base_cost)
-			{
-				let _ = weight_limit
-					.proof_size()
-					.checked_sub(proof_size_base_cost)
-					.ok_or(TransactionValidationError::GasLimitTooLow)?;
-			}
+			// if let (Some(weight_limit), Some(proof_size_base_cost)) =
+			// 	(self.weight_limit, self.proof_size_base_cost)
+			// {
+			// 	let _ = weight_limit
+			// 		.proof_size()
+			// 		.checked_sub(proof_size_base_cost)
+			// 		.ok_or(TransactionValidationError::GasLimitTooLow)?;
+			// }
 
 			// We must ensure a transaction can pay the cost of its data bytes.
 			// If it can't it should not be included in a block.

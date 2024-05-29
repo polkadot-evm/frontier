@@ -796,6 +796,7 @@ impl_runtime_apis! {
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
+			use fp_evm::WeightInfo;
 
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -805,45 +806,40 @@ impl_runtime_apis! {
 				None
 			};
 
-					// Estimated encoded transaction size must be based on the heaviest transaction
-					// type (EIP1559Transaction) to be compatible with all transaction types.
-					let mut estimated_transaction_len = data.len() +
-						// pallet ethereum index: 1
-						// transact call index: 1
-						// Transaction enum variant: 1
-						// chain_id 8 bytes
-						// nonce: 32
-						// max_priority_fee_per_gas: 32
-						// max_fee_per_gas: 32
-						// gas_limit: 32
-						// action: 21 (enum varianrt + call address)
-						// value: 32
-						// access_list: 1 (empty vec size)
-						// 65 bytes signature
-						258;
+			// Estimated encoded transaction size must be based on the heaviest transaction
+			// type (EIP1559Transaction) to be compatible with all transaction types.
+			let mut estimated_transaction_len = data.len() +
+				// pallet ethereum index: 1
+				// transact call index: 1
+				// Transaction enum variant: 1
+				// chain_id 8 bytes
+				// nonce: 32
+				// max_priority_fee_per_gas: 32
+				// max_fee_per_gas: 32
+				// gas_limit: 32
+				// action: 21 (enum varianrt + call address)
+				// value: 32
+				// access_list: 1 (empty vec size)
+				// 65 bytes signature
+				258;
 
-					if access_list.is_some() {
-						estimated_transaction_len += access_list.encoded_size();
-					}
+			if access_list.is_some() {
+				estimated_transaction_len += access_list.encoded_size();
+			}
 
-
-					let gas_limit = if gas_limit > U256::from(u64::MAX) {
-						u64::MAX
-					} else {
-						gas_limit.low_u64()
-					};
-			let without_base_extrinsic_weight = true;
-
+			let gas_limit = if gas_limit > U256::from(u64::MAX) {
+				u64::MAX
+			} else {
+				gas_limit.low_u64()
+			};
 			let (weight_limit, proof_size_base_cost) =
-				match <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-					gas_limit,
-					without_base_extrinsic_weight
-				) {
+				match <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true) {
 					weight_limit if weight_limit.proof_size() > 0 => {
 						(Some(weight_limit), Some(estimated_transaction_len as u64))
 					}
 					_ => (None, None),
 				};
+			let weight_info = WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).unwrap();
 
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
@@ -857,8 +853,7 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				false,
 				true,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.error.into())
 		}
@@ -875,6 +870,7 @@ impl_runtime_apis! {
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
+			use fp_evm::WeightInfo;
 
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -924,6 +920,7 @@ impl_runtime_apis! {
 					_ => (None, None),
 				};
 
+			let weight_info = WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).unwrap();
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
@@ -935,8 +932,7 @@ impl_runtime_apis! {
 				access_list.unwrap_or_default(),
 				false,
 				true,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config.as_ref().unwrap_or(<Runtime as pallet_evm::Config>::config()),
 			).map_err(|err| err.error.into())
 		}
