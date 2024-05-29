@@ -579,10 +579,8 @@ fn proof_size_weight_limit_validation_works() {
 		tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
 		let tx = tx.sign(&alice.private_key, None);
 
-		// Execute
-		assert!(
-			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_ok()
-		);
+		// Validate in Pool
+		assert!(Ethereum::validate_transaction_in_pool(alice.address, &tx).is_err());
 	});
 }
 
