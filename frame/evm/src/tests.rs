@@ -416,10 +416,11 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let mut weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
-
 			// Artifically set a lower proof size limit so we OOG this instead gas.
 			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
+			
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+
 
 			// Create proof size test contract
 			let result =

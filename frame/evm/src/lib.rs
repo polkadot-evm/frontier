@@ -233,6 +233,8 @@ pub mod pallet {
 
 			let is_transactional = true;
 			let validate = true;
+			let weight_limit = T::GasWeightMapping::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 			let info = match T::Runner::call(
 				source,
 				target,
@@ -245,7 +247,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
-				None,
+				weight_info,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -308,6 +310,8 @@ pub mod pallet {
 
 			let is_transactional = true;
 			let validate = true;
+			let weight_limit = T::GasWeightMapping::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 			let info = match T::Runner::create(
 				source,
 				init,
@@ -319,7 +323,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
-				None,
+				weight_info,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -394,6 +398,8 @@ pub mod pallet {
 
 			let is_transactional = true;
 			let validate = true;
+			let weight_limit = T::GasWeightMapping::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 			let info = match T::Runner::create2(
 				source,
 				init,
@@ -406,7 +412,7 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
-				None,
+				weight_info,
 				T::config(),
 			) {
 				Ok(info) => info,
