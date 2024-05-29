@@ -41,8 +41,8 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 // Frontier
 use fp_evm::{
-	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+	AccessedStorage, CallInfo, CreateInfo, EvmWeightInfo, ExecutionInfoV2, IsPrecompileResult, Log,
+	PrecompileSet, Vicinity, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
 	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
 
@@ -75,7 +75,7 @@ where
 		config: &'config evm::Config,
 		precompiles: &'precompiles T::PrecompilesType,
 		is_transactional: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		f: F,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
@@ -135,7 +135,7 @@ where
 		f: F,
 		base_fee: U256,
 		weight: Weight,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -355,7 +355,7 @@ where
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
 		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
@@ -403,7 +403,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -448,7 +448,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -500,7 +500,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -655,7 +655,7 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
 	recorded: Recorded,
-	weight_info: Option<WeightInfo>,
+	weight_info: Option<EvmWeightInfo>,
 	_marker: PhantomData<T>,
 }
 
@@ -664,7 +664,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	pub fn new(
 		vicinity: &'vicinity Vicinity,
 		metadata: StackSubstateMetadata<'config>,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Self {
 		Self {
 			vicinity,
@@ -681,7 +681,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		}
 	}
 
-	pub fn weight_info(&self) -> Option<WeightInfo> {
+	pub fn weight_info(&self) -> Option<EvmWeightInfo> {
 		self.weight_info
 	}
 
@@ -689,7 +689,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		&self.recorded
 	}
 
-	pub fn info_mut(&mut self) -> (&mut Option<WeightInfo>, &mut Recorded) {
+	pub fn info_mut(&mut self) -> (&mut Option<EvmWeightInfo>, &mut Recorded) {
 		(&mut self.weight_info, &mut self.recorded)
 	}
 }

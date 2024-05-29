@@ -796,7 +796,7 @@ impl_runtime_apis! {
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
-			use fp_evm::WeightInfo;
+			use fp_evm::EvmWeightInfo;
 
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -834,7 +834,7 @@ impl_runtime_apis! {
 			};
 
 			let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
-			let weight_info = WeightInfo::new(weight_limit, estimated_transaction_len as u64);
+			let weight_info = EvmWeightInfo::new(weight_limit, estimated_transaction_len as u64);
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
@@ -864,7 +864,7 @@ impl_runtime_apis! {
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
-			use fp_evm::WeightInfo;
+			use fp_evm::EvmWeightInfo;
 
 			let config = if estimate {
 				let mut config = <Runtime as pallet_evm::Config>::config().clone();
@@ -901,7 +901,7 @@ impl_runtime_apis! {
 			};
 
 			let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
-			let weight_info = WeightInfo::new(weight_limit, estimated_transaction_len as u64);
+			let weight_info = EvmWeightInfo::new(weight_limit, estimated_transaction_len as u64);
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,

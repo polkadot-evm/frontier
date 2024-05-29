@@ -17,6 +17,7 @@
 
 #![allow(clippy::comparison_chain)]
 
+use crate::EvmWeightInfo;
 use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
 use frame_support::sp_runtime::traits::UniqueSaturatedInto;
@@ -49,7 +50,7 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
-	pub weight_info: Option<crate::WeightInfo>,
+	pub weight_info: Option<EvmWeightInfo>,
 	_marker: core::marker::PhantomData<E>,
 }
 
@@ -86,7 +87,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	pub fn new(
 		config: CheckEvmTransactionConfig<'config>,
 		transaction: CheckEvmTransactionInput,
-		weight_info: Option<crate::WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Self {
 		CheckEvmTransaction {
 			config,

@@ -90,7 +90,7 @@ mod proof_size_test {
 
 	fn create_proof_size_test_callee_contract(
 		gas_limit: u64,
-		weight_info: Option<fp_evm::WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
@@ -110,7 +110,7 @@ mod proof_size_test {
 
 	fn create_proof_size_test_contract(
 		gas_limit: u64,
-		weight_info: Option<fp_evm::WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
@@ -169,7 +169,7 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 			let result = create_proof_size_test_callee_contract(gas_limit, weight_info)
 				.expect("create succeeds");
 
@@ -196,7 +196,7 @@ mod proof_size_test {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 			let result = create_proof_size_test_callee_contract(gas_limit, weight_info)
 				.expect("create succeeds");
 
@@ -257,7 +257,7 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
 			let result =
@@ -315,7 +315,7 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
 			let result =
@@ -365,7 +365,7 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
 			let result =
@@ -419,7 +419,7 @@ mod proof_size_test {
 			// Artifically set a lower proof size limit so we OOG this instead gas.
 			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
 
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
 			let result =
@@ -474,7 +474,7 @@ mod proof_size_test {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 			let result = create_proof_size_test_callee_contract(gas_limit, weight_info)
 				.expect("create succeeds");
 
@@ -554,7 +554,7 @@ mod proof_size_test {
 
 			let gas_limit: u64 = 21_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
@@ -595,7 +595,7 @@ mod proof_size_test {
 
 			let gas_limit: u64 = 700_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 
 			let result = <Test as Config>::Runner::call(
 				H160::default(),

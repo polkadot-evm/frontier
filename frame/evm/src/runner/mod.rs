@@ -19,7 +19,7 @@ pub mod stack;
 
 use crate::{Config, Weight};
 use alloc::vec::Vec;
-use fp_evm::{CallInfo, CreateInfo, WeightInfo};
+use fp_evm::{CallInfo, CreateInfo, EvmWeightInfo};
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug)]
@@ -42,7 +42,7 @@ pub trait Runner<T: Config> {
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>>;
 
@@ -58,7 +58,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>>;
 
@@ -73,7 +73,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 
@@ -89,7 +89,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }

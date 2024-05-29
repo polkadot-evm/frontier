@@ -64,7 +64,8 @@ use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
 use fp_ethereum::ValidatedTransaction as ValidatedTransactionT;
 use fp_evm::{
-	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, TransactionValidationError,
+	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, EvmWeightInfo,
+	TransactionValidationError,
 };
 pub use fp_rpc::TransactionStatus;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
@@ -361,14 +362,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn transaction_weight(transaction_data: &TransactionData) -> Option<fp_evm::WeightInfo> {
+	pub fn transaction_weight(transaction_data: &TransactionData) -> Option<EvmWeightInfo> {
 		let weight_limit = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
 		);
 		let proof_size_base_cost = transaction_data.proof_size_base_cost();
 
-		fp_evm::WeightInfo::new(weight_limit, proof_size_base_cost)
+		EvmWeightInfo::new(weight_limit, proof_size_base_cost)
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {

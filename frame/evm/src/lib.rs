@@ -100,12 +100,12 @@ use sp_runtime::{
 };
 // Frontier
 use fp_account::AccountId20;
-use fp_evm::GenesisAccount;
 pub use fp_evm::{
 	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
 	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
 	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
 };
+use fp_evm::{EvmWeightInfo, GenesisAccount};
 
 pub use self::{
 	pallet::*,
@@ -234,7 +234,7 @@ pub mod pallet {
 			let is_transactional = true;
 			let validate = true;
 			let weight_limit = T::GasWeightMapping::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 			let info = match T::Runner::call(
 				source,
 				target,
@@ -311,7 +311,7 @@ pub mod pallet {
 			let is_transactional = true;
 			let validate = true;
 			let weight_limit = T::GasWeightMapping::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 			let info = match T::Runner::create(
 				source,
 				init,
@@ -399,7 +399,7 @@ pub mod pallet {
 			let is_transactional = true;
 			let validate = true;
 			let weight_limit = T::GasWeightMapping::gas_to_weight(gas_limit, true);
-			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let weight_info = EvmWeightInfo::new(weight_limit, 0);
 			let info = match T::Runner::create2(
 				source,
 				init,
