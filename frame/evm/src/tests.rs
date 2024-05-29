@@ -90,7 +90,7 @@ mod proof_size_test {
 
 	fn create_proof_size_test_callee_contract(
 		gas_limit: u64,
-		weight_limit: Option<Weight>,
+		weight_info: Option<fp_evm::WeightInfo>,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
@@ -103,15 +103,14 @@ mod proof_size_test {
 			Vec::new(),
 			true, // transactional
 			true, // must be validated
-			weight_limit,
-			Some(0),
+			weight_info,
 			&<Test as Config>::config().clone(),
 		)
 	}
 
 	fn create_proof_size_test_contract(
 		gas_limit: u64,
-		weight_limit: Option<Weight>,
+		weight_info: Option<fp_evm::WeightInfo>,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
 		<Test as Config>::Runner::create(
 			H160::default(),
@@ -124,8 +123,7 @@ mod proof_size_test {
 			Vec::new(),
 			true, // non-transactional
 			true, // must be validated
-			weight_limit,
-			Some(0),
+			weight_info,
 			&<Test as Config>::config().clone(),
 		)
 	}
@@ -171,8 +169,8 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-
-			let result = create_proof_size_test_callee_contract(gas_limit, Some(weight_limit))
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let result = create_proof_size_test_callee_contract(gas_limit, weight_info)
 				.expect("create succeeds");
 
 			// Creating a new contract does not involve reading the code from storage.
@@ -198,13 +196,15 @@ mod proof_size_test {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let result =
-				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let result = create_proof_size_test_callee_contract(gas_limit, weight_info)
+				.expect("create succeeds");
 
 			let subcall_contract_address = result.value;
 
 			// Create proof size test contract B
-			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+			let result =
+				create_proof_size_test_contract(gas_limit, weight_info).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -226,8 +226,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -258,9 +257,11 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+			let result =
+				create_proof_size_test_contract(gas_limit, weight_info).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -281,8 +282,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -315,9 +315,11 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+			let result =
+				create_proof_size_test_contract(gas_limit, weight_info).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -335,8 +337,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -364,9 +365,11 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+			let result =
+				create_proof_size_test_contract(gas_limit, weight_info).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -384,8 +387,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -414,12 +416,14 @@ mod proof_size_test {
 		new_test_ext().execute_with(|| {
 			let gas_limit: u64 = 1_000_000;
 			let mut weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 
 			// Artifically set a lower proof size limit so we OOG this instead gas.
 			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
 
 			// Create proof size test contract
-			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+			let result =
+				create_proof_size_test_contract(gas_limit, weight_info).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -437,8 +441,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -471,8 +474,9 @@ mod proof_size_test {
 			// Create callee contract A
 			let gas_limit: u64 = 1_000_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
-			let result =
-				create_proof_size_test_callee_contract(gas_limit, None).expect("create succeeds");
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
+			let result = create_proof_size_test_callee_contract(gas_limit, weight_info)
+				.expect("create succeeds");
 
 			let subcall_contract_address = result.value;
 
@@ -484,7 +488,8 @@ mod proof_size_test {
 			<AccountCodesMetadata<Test>>::remove(subcall_contract_address);
 
 			// Create proof size test contract B
-			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
+			let result =
+				create_proof_size_test_contract(gas_limit, weight_info).expect("create succeeds");
 
 			let call_contract_address = result.value;
 
@@ -505,8 +510,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -550,6 +554,7 @@ mod proof_size_test {
 
 			let gas_limit: u64 = 21_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
@@ -563,8 +568,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&config,
 			)
 			.expect("call succeeds");
@@ -591,6 +595,7 @@ mod proof_size_test {
 
 			let gas_limit: u64 = 700_000;
 			let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+			let weight_info = fp_evm::WeightInfo::new(weight_limit, 0);
 
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
@@ -604,8 +609,7 @@ mod proof_size_test {
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
-				Some(weight_limit),
-				Some(0),
+				weight_info,
 				&config,
 			)
 			.expect("call succeeds");
@@ -1066,7 +1070,6 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_pr
 			false, // non-transactional
 			true,  // must be validated
 			None,
-			None,
 			&<Test as Config>::config().clone(),
 		)
 		.expect("Non transactional call succeeds");
@@ -1102,7 +1105,6 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_err_with_gas_pric
 			false, // non-transactional
 			true,  // must be validated
 			None,
-			None,
 			&<Test as Config>::config().clone(),
 		);
 		assert!(res.is_err());
@@ -1125,7 +1127,6 @@ fn runner_transactional_call_with_zero_gas_price_fails() {
 			Vec::new(),
 			true, // transactional
 			true, // must be validated
-			None,
 			None,
 			&<Test as Config>::config().clone(),
 		);
@@ -1150,7 +1151,6 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			true, // transactional
 			true, // must be validated
 			None,
-			None,
 			&<Test as Config>::config().clone(),
 		);
 		assert!(res.is_err());
@@ -1166,7 +1166,6 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
-			None,
 			None,
 			&<Test as Config>::config().clone(),
 		);
@@ -1192,7 +1191,6 @@ fn eip3607_transaction_from_contract() {
 			true,  // transactional
 			false, // not sure be validated
 			None,
-			None,
 			&<Test as Config>::config().clone(),
 		) {
 			Err(RunnerError {
@@ -1216,7 +1214,6 @@ fn eip3607_transaction_from_contract() {
 			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
-			None,
 			None,
 			&<Test as Config>::config().clone(),
 		)

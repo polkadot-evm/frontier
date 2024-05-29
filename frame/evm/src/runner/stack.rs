@@ -148,16 +148,6 @@ where
 		) -> (ExitReason, R),
 		R: Default,
 	{
-		// Used to record the external costs in the evm through the StackState implementation
-		// let maybe_weight_info =
-		// 	WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
-		// 		|_| RunnerError {
-		// 			error: Error::<T>::GasLimitTooLow,
-		// 			weight,
-		// 		},
-		// 	)?;
-		let maybe_weight_info = weight_info;
-
 		// The precompile check is only used for transactional invocations. However, here we always
 		// execute the check, because the check has side effects.
 		match precompiles.is_precompile(source, gas_limit) {
@@ -172,7 +162,7 @@ where
 						standard: gas_limit.into(),
 						effective: gas_limit.into(),
 					},
-					weight_info: maybe_weight_info,
+					weight_info,
 					logs: Default::default(),
 				})
 			}
@@ -239,7 +229,7 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
+		let state = SubstrateStackState::new(&vicinity, metadata, weight_info);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);

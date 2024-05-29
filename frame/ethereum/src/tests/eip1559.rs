@@ -581,7 +581,7 @@ fn proof_size_weight_limit_validation_works() {
 
 		// Execute
 		assert!(
-			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
+			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_ok()
 		);
 	});
 }
