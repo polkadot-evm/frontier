@@ -86,32 +86,18 @@ pub struct WeightInfo {
 }
 
 impl WeightInfo {
-	pub fn new_from_weight_limit(
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
-	) -> Result<Option<Self>, &'static str> {
-		Ok(match (weight_limit, proof_size_base_cost) {
-			(None, _) => None,
-			(Some(weight_limit), Some(proof_size_base_cost))
-				if weight_limit.proof_size() >= proof_size_base_cost =>
-			{
-				Some(WeightInfo {
-					proof_size_base_cost: Some(proof_size_base_cost),
-					ref_time_limit: Some(weight_limit.ref_time()),
-					proof_size_limit: Some(weight_limit.proof_size()),
-					ref_time_usage: Some(0u64),
-					proof_size_usage: Some(proof_size_base_cost),
-				})
-			}
-			(Some(weight_limit), None) => Some(WeightInfo {
-				proof_size_base_cost: None,
+	pub fn new(weight_limit: Weight, proof_size_base_cost: u64) -> Option<Self> {
+		if weight_limit.proof_size() >= proof_size_base_cost {
+			return Some(WeightInfo {
+				proof_size_base_cost: Some(proof_size_base_cost),
 				ref_time_limit: Some(weight_limit.ref_time()),
-				proof_size_limit: None,
+				proof_size_limit: Some(weight_limit.proof_size()),
 				ref_time_usage: Some(0u64),
-				proof_size_usage: None,
-			}),
-			_ => return Err("must provide Some valid weight limit or None"),
-		})
+				proof_size_usage: Some(proof_size_base_cost),
+			});
+		}
+
+		None
 	}
 
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {

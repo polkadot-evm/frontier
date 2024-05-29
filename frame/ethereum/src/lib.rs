@@ -362,21 +362,13 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	pub fn transaction_weight(transaction_data: &TransactionData) -> Option<fp_evm::WeightInfo> {
-		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+		let weight_limit = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
-		) {
-			weight_limit if weight_limit.proof_size() > 0 => {
-				// todo: fix the unwrap()
-				let weight_info = fp_evm::WeightInfo::new_from_weight_limit(
-					Some(weight_limit),
-					Some(transaction_data.proof_size_base_cost()),
-				)
-				.unwrap();
-				weight_info
-			}
-			_ => None,
-		}
+		);
+		let proof_size_base_cost = transaction_data.proof_size_base_cost();
+
+		fp_evm::WeightInfo::new(weight_limit, proof_size_base_cost)
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {

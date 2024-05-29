@@ -832,15 +832,9 @@ impl_runtime_apis! {
 			} else {
 				gas_limit.low_u64()
 			};
-			let (weight_limit, proof_size_base_cost) =
-				match <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true) {
-					weight_limit if weight_limit.proof_size() > 0 => {
-						(Some(weight_limit), Some(estimated_transaction_len as u64))
-					}
-					_ => (None, None),
-				};
-			let weight_info = WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).unwrap();
 
+			let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+			let weight_info = WeightInfo::new(weight_limit, estimated_transaction_len as u64);
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
 				to,
@@ -900,27 +894,14 @@ impl_runtime_apis! {
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
-
-
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
 			} else {
 				gas_limit.low_u64()
 			};
-			let without_base_extrinsic_weight = true;
 
-			let (weight_limit, proof_size_base_cost) =
-				match <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
-					gas_limit,
-					without_base_extrinsic_weight
-				) {
-					weight_limit if weight_limit.proof_size() > 0 => {
-						(Some(weight_limit), Some(estimated_transaction_len as u64))
-					}
-					_ => (None, None),
-				};
-
-			let weight_info = WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).unwrap();
+			let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
+			let weight_info = WeightInfo::new(weight_limit, estimated_transaction_len as u64);
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
