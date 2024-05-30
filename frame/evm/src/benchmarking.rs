@@ -23,7 +23,6 @@ use frame_benchmarking::benchmarks;
 type CurrencyOf<T> = <T as Config>::Currency;
 
 benchmarks! {
-
 	withdraw {
 		let caller = frame_benchmarking::whitelisted_caller::<T::AccountId>();
 		let from = H160::from_low_u64_le(0);
