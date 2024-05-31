@@ -17,11 +17,14 @@
 
 #![allow(clippy::comparison_chain)]
 
-use crate::EvmWeightInfo;
-use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
-use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
+
+use alloc::vec::Vec;
+// Substrate
+use frame_support::sp_runtime::traits::UniqueSaturatedInto;
 use sp_core::{H160, H256, U256};
+// Frontier
+use crate::EvmWeightInfo;
 
 #[derive(Debug)]
 pub struct CheckEvmTransactionInput {
@@ -239,6 +242,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use frame_support::weights::Weight;
 
 	#[derive(Debug, PartialEq)]
 	pub enum TestError {

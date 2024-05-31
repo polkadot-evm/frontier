@@ -1183,7 +1183,6 @@ mod tests {
 			&MockPrecompileSet,
 			false,
 			None,
-			None,
 			|_| {
 				let res = Runner::<Test>::execute(
 					H160::default(),
@@ -1194,7 +1193,6 @@ mod tests {
 					&config,
 					&MockPrecompileSet,
 					false,
-					None,
 					None,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
@@ -1226,7 +1224,6 @@ mod tests {
 			&config,
 			&MockPrecompileSet,
 			false,
-			None,
 			None,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);
