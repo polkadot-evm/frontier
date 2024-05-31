@@ -210,6 +210,8 @@ pub mod pallet {
 	#[pallet::hooks]
 	impl<T: Config> Hooks<BlockNumberFor<T>> for Pallet<T> {
 		fn on_finalize(n: BlockNumberFor<T>) {
+			Self::flush_injected_transaction();
+
 			<Pallet<T>>::store_block(
 				match fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 					Ok(_) => None,
@@ -736,7 +738,7 @@ impl<T: Config> Pallet<T> {
 			EIP658ReceiptData, EnvelopedEncodable, TransactionSignature, TransactionV0,
 		};
 
-		assert!(
+		debug_assert!(
 			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 			"this method is supposed to be called only from other pallets",
 		);
