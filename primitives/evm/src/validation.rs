@@ -20,7 +20,7 @@
 use crate::EvmWeightInfo;
 use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
-use frame_support::sp_runtime::traits::UniqueSaturatedInto;
+use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug)]
@@ -287,8 +287,7 @@ mod tests {
 		pub max_fee_per_gas: Option<U256>,
 		pub max_priority_fee_per_gas: Option<U256>,
 		pub value: U256,
-		pub weight_limit: Option<Weight>,
-		pub proof_size_base_cost: Option<u64>,
+		pub weight_info: Option<EvmWeightInfo>,
 	}
 
 	impl Default for TestCase {
@@ -305,8 +304,7 @@ mod tests {
 				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				value: U256::from(1u8),
-				weight_limit: None,
-				proof_size_base_cost: None,
+				weight_info: EvmWeightInfo::new(Weight::from_parts(1, 1), 1),
 			}
 		}
 	}
@@ -324,8 +322,7 @@ mod tests {
 			max_fee_per_gas,
 			max_priority_fee_per_gas,
 			value,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
@@ -347,8 +344,7 @@ mod tests {
 				value,
 				access_list: vec![],
 			},
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		)
 	}
 
@@ -375,9 +371,9 @@ mod tests {
 	fn transaction_gas_limit_low_proof_size<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
+		let weight_info = EvmWeightInfo::new(Weight::from_parts(1, 1), 2);
 		test_env(TestCase {
-			weight_limit: Some(Weight::from_parts(1, 1)),
-			proof_size_base_cost: Some(2),
+			weight_info,
 			is_transactional,
 			..Default::default()
 		})
