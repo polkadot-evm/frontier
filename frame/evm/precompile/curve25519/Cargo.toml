@@ -8,7 +8,7 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
-curve25519-dalek = { version = "4.1.0", default-features = false, features = ["alloc"] }
+curve25519-dalek = { version = "4.1.3", default-features = false, features = ["alloc"] }
 # Frontier
 fp-evm = { workspace = true }
 
