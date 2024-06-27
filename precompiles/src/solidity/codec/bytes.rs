@@ -53,7 +53,7 @@ impl Kind for StringKind {
 /// The `bytes/string` type of Solidity.
 /// It is different from `Vec<u8>` which will be serialized with padding for each `u8` element
 /// of the array, while `Bytes` is tightly packed.
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Debug)]
 pub struct BoundedBytesString<K, S> {
 	data: Vec<u8>,
 	_phantom: PhantomData<(K, S)>,
@@ -67,6 +67,14 @@ impl<K: Kind, S: Get<u32>> Clone for BoundedBytesString<K, S> {
 		}
 	}
 }
+
+impl<K1, S1, K2, S2> PartialEq<BoundedBytesString<K2, S2>> for BoundedBytesString<K1, S1> {
+	fn eq(&self, other: &BoundedBytesString<K2, S2>) -> bool {
+		self.data.eq(&other.data)
+	}
+}
+
+impl<K, S> Eq for BoundedBytesString<K, S> {}
 
 impl<K, S> Default for BoundedBytesString<K, S> {
 	fn default() -> Self {
