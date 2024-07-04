@@ -63,7 +63,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			await context.web3.eth.estimateGas({
 				from: GENESIS_ACCOUNT,
 				data: Test.bytecode,
-			})
+			}),
 		).to.equal(binarySearchEstimation);
 	});
 
@@ -140,7 +140,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				gas: ETH_BLOCK_GAS_LIMIT - 1,
 				gasPrice: "0x3B9ACA00",
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
@@ -155,7 +155,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				gas: ETH_BLOCK_GAS_LIMIT,
 				gasPrice: "0x3B9ACA00",
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
@@ -170,7 +170,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 				gas: ETH_BLOCK_GAS_LIMIT + 1,
 				gasPrice: "0x3B9ACA00",
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		const createReceipt = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
@@ -204,7 +204,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
@@ -221,7 +221,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
 
 		for (var i = 0; i < CALLS_PER_BLOCK; i++) {
-			let data = contract.methods.storageLoop(1000, TEST_ACCOUNT, i);
+			let data = contract.methods.storageLoop(100, TEST_ACCOUNT, i);
 			let tx = await context.web3.eth.accounts.signTransaction(
 				{
 					from: GENESIS_ACCOUNT,
@@ -231,7 +231,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 					gas: "0x100000",
 					nonce,
 				},
-				GENESIS_ACCOUNT_PRIVATE_KEY
+				GENESIS_ACCOUNT_PRIVATE_KEY,
 			);
 			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 			nonce++;
@@ -248,7 +248,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 					gas: "0x5208",
 					nonce,
 				},
-				GENESIS_ACCOUNT_PRIVATE_KEY
+				GENESIS_ACCOUNT_PRIVATE_KEY,
 			);
 			let r = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 			nonce++;
@@ -292,7 +292,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx1.rawTransaction]);
 		const tx2 = await context.web3.eth.accounts.signTransaction(
@@ -303,7 +303,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 				gasPrice: "0x3B9ACA00",
 				nonce: 1,
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		const { result } = await customRequest(context.web3, "eth_sendRawTransaction", [tx2.rawTransaction]);
 		await createAndFinalizeBlock(context.web3);
@@ -331,7 +331,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 				gas: "0xF4240",
 				nonce,
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		let contract_transfer_hash = await (
 			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])
@@ -339,7 +339,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 		nonce++;
 
 		for (var i = 0; i < CALLS_PER_BLOCK; i++) {
-			let data = contract.methods.storageLoop(1000, TEST_ACCOUNT, i);
+			let data = contract.methods.storageLoop(100, TEST_ACCOUNT, i);
 			let tx = await context.web3.eth.accounts.signTransaction(
 				{
 					from: GENESIS_ACCOUNT,
@@ -349,7 +349,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 					gas: "0x100000",
 					nonce,
 				},
-				GENESIS_ACCOUNT_PRIVATE_KEY
+				GENESIS_ACCOUNT_PRIVATE_KEY,
 			);
 			await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 			nonce++;
@@ -366,7 +366,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 					gas: "0x5208",
 					nonce,
 				},
-				GENESIS_ACCOUNT_PRIVATE_KEY
+				GENESIS_ACCOUNT_PRIVATE_KEY,
 			);
 			let r = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 			nonce++;
@@ -396,7 +396,7 @@ describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => 
 				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
 			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
+			GENESIS_ACCOUNT_PRIVATE_KEY,
 		);
 		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 		await createAndFinalizeBlock(context.web3);
