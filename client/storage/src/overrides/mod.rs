@@ -29,6 +29,10 @@ use sp_storage::StorageKey;
 use fp_rpc::TransactionStatus;
 use fp_storage::{constants::*, EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
+// Unique
+use fp_rpc::EthereumRuntimeRPCApi;
+use sp_api::ProvideRuntimeApi;
+
 mod runtime_api;
 mod schema;
 
@@ -101,6 +105,9 @@ where
 	B: BlockT,
 	C: StorageProvider<B, BE>,
 	BE: Backend<B>,
+	// Unique
+	C: ProvideRuntimeApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	pub fn query<T: Decode>(&self, at: B::Hash, key: &StorageKey) -> Option<T> {
 		if let Ok(Some(data)) = self.client.storage(at, key) {
@@ -117,9 +124,9 @@ where
 	}
 
 	pub fn account_code(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
-		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_CODES);
-		key.extend(blake2_128_extend(address.as_bytes()));
-		self.query::<Vec<u8>>(at, &StorageKey(key))
+		// Unique: always use runtime api, as precompiles can have associated code
+		let api = self.client.runtime_api();
+		api.account_code_at(at, address).ok()
 	}
 
 	pub fn account_storage(&self, at: B::Hash, address: Address, index: U256) -> Option<H256> {

@@ -25,6 +25,10 @@ use sp_runtime::{traits::Block as BlockT, Permill};
 // Frontier
 use fp_rpc::TransactionStatus;
 
+// Unique
+use fp_rpc::EthereumRuntimeRPCApi;
+use sp_api::ProvideRuntimeApi;
+
 use crate::overrides::{StorageOverride, StorageQuerier};
 
 pub mod v1 {
@@ -48,6 +52,9 @@ pub mod v1 {
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
 		BE: Backend<B>,
+		// Unique
+		C: ProvideRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 	{
 		fn account_code_at(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
 			SchemaStorageOverrideRef::new(&self.querier).account_code_at(at, address)
@@ -94,6 +101,9 @@ pub mod v1 {
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
 		BE: Backend<B>,
+		// Unique
+		C: ProvideRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 	{
 		fn account_code_at(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
 			self.querier.account_code(at, address)
@@ -162,6 +172,9 @@ pub mod v2 {
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
 		BE: Backend<B>,
+		// Unique
+		C: ProvideRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 	{
 		fn account_code_at(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
 			SchemaStorageOverrideRef::new(&self.querier).account_code_at(at, address)
@@ -208,6 +221,9 @@ pub mod v2 {
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
 		BE: Backend<B>,
+		// Unique
+		C: ProvideRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 	{
 		fn account_code_at(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
 			self.querier.account_code(at, address)
@@ -274,6 +290,9 @@ pub mod v3 {
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
 		BE: Backend<B>,
+		// Unique
+		C: ProvideRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 	{
 		fn account_code_at(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
 			SchemaStorageOverrideRef::new(&self.querier).account_code_at(at, address)
@@ -320,6 +339,9 @@ pub mod v3 {
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
 		BE: Backend<B>,
+		// Unique
+		C: ProvideRuntimeApi<B>,
+		C::Api: EthereumRuntimeRPCApi<B>,
 	{
 		fn account_code_at(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
 			self.querier.account_code(at, address)

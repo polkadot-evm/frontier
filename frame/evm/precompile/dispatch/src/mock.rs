@@ -173,6 +173,7 @@ impl pallet_evm::Config for Test {
 	// Unique:
 	type CrossAccountId = pallet_evm::account::BasicCrossAccountId<Self>;
 	type BackwardsAddressMapping = IdentityAddressMapping;
+	type OnMethodCall = ();
 }
 
 pub(crate) struct MockHandle {

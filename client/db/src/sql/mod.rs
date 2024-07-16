@@ -271,6 +271,8 @@ where
 	) -> Result<BlockMetadata, Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
+		Client: ProvideRuntimeApi<Block>,
+		Client::Api: EthereumRuntimeRPCApi<Block>,
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
@@ -361,6 +363,8 @@ where
 	) -> Result<(), Error>
 	where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
+		Client: ProvideRuntimeApi<Block>,
+		Client::Api: EthereumRuntimeRPCApi<Block>,
 		BE: BackendT<Block> + 'static,
 		BE::State: StateBackend<BlakeTwo256>,
 	{
@@ -1100,10 +1104,8 @@ mod test {
 			Encode::encode(&EthereumStorageSchema::V3),
 		);
 		// Client
-		let (client, _) = builder
-			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
-				None,
-			);
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
