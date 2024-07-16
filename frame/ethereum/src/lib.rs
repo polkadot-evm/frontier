@@ -497,7 +497,7 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let mut v = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+		let mut v = CheckEvmTransaction::new(
 			who.clone(),
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -511,16 +511,14 @@ impl<T: Config> Pallet<T> {
 			proof_size_base_cost,
 		);
 
-		T::OnCheckEvmTransaction::<InvalidTransactionWrapper>::on_check_evm_transaction(
-			&mut v, &origin,
-		)
-		.map_err(|e| e.0)?;
+		T::OnCheckEvmTransaction::on_check_evm_transaction(&mut v, &origin)
+			.map_err(|e| InvalidTransactionWrapper::from(e).0)?;
 
-		v.validate_in_pool_for()
+		v.validate_in_pool()
 			.and_then(|v| v.with_chain_id())
 			.and_then(|v| v.with_base_fee())
 			.and_then(|v| v.with_balance())
-			.map_err(|e| e.0)?;
+			.map_err(|e| InvalidTransactionWrapper::from(e).0)?;
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
@@ -872,7 +870,7 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
-		let mut v = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
+		let mut v = CheckEvmTransaction::new(
 			who,
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -886,16 +884,14 @@ impl<T: Config> Pallet<T> {
 			proof_size_base_cost,
 		);
 
-		T::OnCheckEvmTransaction::<InvalidTransactionWrapper>::on_check_evm_transaction(
-			&mut v, &origin,
-		)
-		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+		T::OnCheckEvmTransaction::on_check_evm_transaction(&mut v, &origin)
+			.map_err(|e| TransactionValidityError::Invalid(InvalidTransactionWrapper::from(e).0))?;
 
 		v.validate_in_block()
 			.and_then(|v| v.with_chain_id())
 			.and_then(|v| v.with_base_fee())
 			.and_then(|v| v.with_balance())
-			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
+			.map_err(|e| TransactionValidityError::Invalid(InvalidTransactionWrapper::from(e).0))?;
 
 		Ok(())
 	}

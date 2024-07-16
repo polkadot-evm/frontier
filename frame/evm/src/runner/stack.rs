@@ -374,7 +374,7 @@ where
 		weight = weight.saturating_add(inner_weight);
 		let nonce = nonce.unwrap_or(source_account.nonce);
 
-		let mut v = fp_evm::CheckEvmTransaction::<Self::Error>::new(
+		let mut v = fp_evm::CheckEvmTransaction::new(
 			source_account,
 			fp_evm::CheckEvmTransactionConfig {
 				evm_config,
@@ -399,13 +399,20 @@ where
 			proof_size_base_cost,
 		);
 
-		T::OnCheckEvmTransaction::<Error<T>>::on_check_evm_transaction(&mut v, &source)
-			.map_err(|error| RunnerError { error, weight })?;
+		T::OnCheckEvmTransaction::on_check_evm_transaction(&mut v, &source).map_err(|error| {
+			RunnerError {
+				error: error.into(),
+				weight,
+			}
+		})?;
 
 		v.validate_in_block()
 			.and_then(|v| v.with_base_fee())
 			.and_then(|v| v.with_balance())
-			.map_err(|error| RunnerError { error, weight })?;
+			.map_err(|error| RunnerError {
+				error: error.into(),
+				weight,
+			})?;
 		Ok(())
 	}
 

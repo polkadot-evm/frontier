@@ -251,6 +251,7 @@ impl pallet_evm::Config for Runtime {
 	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
+	type OnCheckEvmTransaction = ();
 }
 
 parameter_types! {
