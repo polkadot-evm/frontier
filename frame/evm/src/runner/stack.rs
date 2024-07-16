@@ -74,7 +74,7 @@ where
 		/* Unique:
 		source: H160,
 		*/
-		source: &T::CrossAccountId,
+		source: &'config T::CrossAccountId,
 		value: U256,
 		gas_limit: u64,
 		max_fee_per_gas: Option<U256>,
