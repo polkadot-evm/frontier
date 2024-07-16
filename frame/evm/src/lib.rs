@@ -614,6 +614,12 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
+
+	// Unique:
+	/// Written on log, reset after transaction
+	/// Should be empty between transactions
+	#[pallet::storage]
+	pub type CurrentLogs<T: Config> = StorageValue<_, Vec<Log>, ValueQuery>;
 }
 
 /// Type alias for currency balance.
@@ -944,6 +950,22 @@ impl<T: Config> Pallet<T> {
 		<AccountCodesMetadata<T>>::insert(address, meta);
 
 		<AccountCodes<T>>::insert(address, code);
+	}
+
+	// Unique:
+	/// Add log to be injected in either real or fake ethereum transaction
+	pub fn deposit_log(log: Log) {
+		log::trace!(
+			target: "evm",
+			"Inserting mirrored log for {:?}, topics ({}) {:?}, data ({}): {:?}]",
+			log.address,
+			log.topics.len(),
+			log.topics,
+			log.data.len(),
+			log.data
+		);
+		<CurrentLogs<T>>::append(log);
+		// Log event is not emitted here, as these logs belong to pallets, which will emit pallet-specific logs on substrate side by themselves
 	}
 
 	/// Get the account metadata (hash and size) from storage if it exists,
