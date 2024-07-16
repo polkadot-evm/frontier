@@ -345,6 +345,10 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type BlockHash<T: Config> = StorageMap<_, Twox64Concat, U256, H256, ValueQuery>;
 
+	/// Injected transactions should have unique nonce, here we store current
+	#[pallet::storage]
+	pub(super) type InjectedNonce<T: Config> = StorageValue<_, U256, ValueQuery>;
+
 	#[pallet::genesis_config]
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T> {
@@ -726,6 +730,70 @@ impl<T: Config> Pallet<T> {
 		))
 	}
 
+	// Unique:
+	pub fn flush_injected_transaction() {
+		use ethereum::{
+			EIP658ReceiptData, EnvelopedEncodable, TransactionSignature, TransactionV0,
+		};
+
+		assert!(
+			fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
+			"this method is supposed to be called only from other pallets",
+		);
+
+		let logs = <CurrentLogs<T>>::take();
+		if logs.is_empty() {
+			return;
+		}
+
+		let nonce = <InjectedNonce<T>>::get()
+			.checked_add(1u32.into())
+			.expect("u256 should be enough");
+		<InjectedNonce<T>>::set(nonce);
+
+		let transaction = Transaction::Legacy(TransactionV0 {
+			nonce,
+			gas_price: 0.into(),
+			gas_limit: 0.into(),
+			action: TransactionAction::Call(H160([0; 20])),
+			value: 0.into(),
+			// zero selector, this transaction always has same sender, so all data should be acquired from logs
+			input: Vec::from([0, 0, 0, 0]),
+			// if v is not 27 - then we need to pass some other validity checks
+			signature: TransactionSignature::new(27, H256([0x88; 32]), H256([0x88; 32])).unwrap(),
+		});
+
+		let transaction_hash = H256::from_slice(
+			sp_io::hashing::keccak_256(&EnvelopedEncodable::encode(&transaction)).as_slice(),
+		);
+		let transaction_index = <Pending<T>>::get().len() as u32;
+
+		let logs_bloom = {
+			let mut bloom: Bloom = Bloom::default();
+			Self::logs_bloom(&logs, &mut bloom);
+			bloom
+		};
+
+		let status = TransactionStatus {
+			transaction_hash,
+			transaction_index,
+			from: H160::default(),
+			to: None,
+			contract_address: None,
+			logs_bloom,
+			logs: logs.clone(),
+		};
+
+		let receipt = Receipt::Legacy(EIP658ReceiptData {
+			status_code: 1,
+			used_gas: 0u32.into(),
+			logs_bloom,
+			logs,
+		});
+
+		<Pending<T>>::append((transaction, status, receipt));
+	}
+
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
 		<CurrentBlock<T>>::get().map(|block| block.header.hash())
@@ -1046,5 +1114,47 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 				InvalidTransaction::Custom(TransactionValidationError::UnknownError as u8),
 			),
 		}
+	}
+}
+
+#[derive(TypeInfo, PartialEq, Eq, Clone, Debug, Encode, Decode)]
+pub struct FakeTransactionFinalizer<T>(PhantomData<T>);
+
+impl<T: Config + TypeInfo + core::fmt::Debug + Send + Sync> sp_runtime::traits::SignedExtension
+	for FakeTransactionFinalizer<T>
+{
+	const IDENTIFIER: &'static str = "FakeTransactionFinalizer";
+
+	type AccountId = T::AccountId;
+
+	type Call = T::RuntimeCall;
+
+	type AdditionalSigned = ();
+
+	type Pre = ();
+
+	fn additional_signed(&self) -> Result<Self::AdditionalSigned, TransactionValidityError> {
+		Ok(())
+	}
+
+	fn pre_dispatch(
+		self,
+		_who: &Self::AccountId,
+		_call: &Self::Call,
+		_info: &DispatchInfoOf<Self::Call>,
+		_len: usize,
+	) -> Result<Self::Pre, TransactionValidityError> {
+		Ok(())
+	}
+
+	fn post_dispatch(
+		_pre: Option<Self::Pre>,
+		_info: &DispatchInfoOf<Self::Call>,
+		_post_info: &sp_runtime::traits::PostDispatchInfoOf<Self::Call>,
+		_len: usize,
+		_result: &sp_runtime::DispatchResult,
+	) -> Result<(), TransactionValidityError> {
+		<Pallet<T>>::flush_injected_transaction();
+		Ok(())
 	}
 }
