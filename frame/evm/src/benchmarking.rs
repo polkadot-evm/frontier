@@ -79,7 +79,7 @@ benchmarks! {
 		let is_transactional = true;
 		let validate = true;
 		let create_runner_results = T::Runner::create(
-			caller,
+			T::CrossAccountId::from_eth(caller),
 			contract_bytecode,
 			value,
 			gas_limit_create,
@@ -115,7 +115,7 @@ benchmarks! {
 		let is_transactional = true;
 		let validate = true;
 		let call_runner_results = T::Runner::call(
-			caller,
+			T::CrossAccountId::from_eth(caller),
 			contract_address,
 			encoded_call,
 			value,

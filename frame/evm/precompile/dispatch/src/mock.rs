@@ -136,15 +136,22 @@ parameter_types! {
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 	pub SuicideQuickClearLimit: u32 = 0;
 }
+
 impl pallet_evm::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = pallet_evm::SubstrateBlockHashMapping<Self>;
+	/* Unique
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	*/
+	type CallOrigin = EnsureAddressRoot<Self>;
 
+	/* Unique
 	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	*/
+	type WithdrawOrigin = EnsureAddressNever<Self>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
@@ -162,6 +169,10 @@ impl pallet_evm::Config for Test {
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 	type OnCheckEvmTransaction = ();
+
+	// Unique:
+	type CrossAccountId = pallet_evm::account::BasicCrossAccountId<Self>;
+	type BackwardsAddressMapping = IdentityAddressMapping;
 }
 
 pub(crate) struct MockHandle {

@@ -35,6 +35,9 @@ use crate::{
 	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
+// Unique
+use crate::account;
+
 frame_support::construct_runtime! {
 	pub enum Test {
 		System: frame_system::{Pallet, Call, Config<T>, Storage, Event<T>},
@@ -140,9 +143,13 @@ impl crate::Config for Test {
 	type WeightPerGas = WeightPerGas;
 
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	// Unique:
+	// type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CallOrigin = EnsureAddressRoot<Self>;
 
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	// Unique:
+	// type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+	type WithdrawOrigin = EnsureAddressNever<Self>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
@@ -160,6 +167,10 @@ impl crate::Config for Test {
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
 	type OnCheckEvmTransaction = ();
+
+	// Unique:
+	type CrossAccountId = account::BasicCrossAccountId<Self>;
+	type BackwardsAddressMapping = IdentityAddressMapping;
 }
 
 /// Example PrecompileSet with only Identity precompile.

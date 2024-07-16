@@ -32,6 +32,8 @@ sp-runtime = { workspace = true }
 # Frontier
 fp-account = { workspace = true }
 fp-evm = { workspace = true, features = ["serde"] }
+# Unique
+serde = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
@@ -61,6 +63,8 @@ std = [
 	# Frontier
 	"fp-account/std",
 	"fp-evm/std",
+	# Unique
+	"serde/std",
 ]
 runtime-benchmarks = [
 	"hex",
