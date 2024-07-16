@@ -141,14 +141,14 @@ where
 		source: &T::CrossAccountId,
 		value: U256,
 		mut gas_limit: u64,
-		max_fee_per_gas: Option<U256>,
-		max_priority_fee_per_gas: Option<U256>,
+		mut max_fee_per_gas: Option<U256>,
+		mut max_priority_fee_per_gas: Option<U256>,
 		reason: WithdrawReason,
 		config: &'config evm::Config,
 		precompiles: &'precompiles PrecompileSetWithMethods<T>,
 		is_transactional: bool,
 		f: F,
-		base_fee: U256,
+		mut base_fee: U256,
 		weight: Weight,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
@@ -208,6 +208,13 @@ where
 			});
 		}
 
+		// Unique:
+		if !is_transactional {
+			max_fee_per_gas = Some(0.into());
+			max_priority_fee_per_gas = Some(0.into());
+			base_fee = 0.into();
+		}
+
 		let total_fee_per_gas = if is_transactional {
 			match (max_fee_per_gas, max_priority_fee_per_gas) {
 				// Zero max_fee_per_gas for validated transactional calls exist in XCM -> EVM
@@ -245,9 +252,14 @@ where
 					weight,
 				})?;
 
-		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
-		let fee = T::OnChargeTransaction::withdraw_fee(&source, reason, total_fee)
-			.map_err(|e| RunnerError { error: e, weight })?;
+		// Deduct fee from the sponsor account. Returns `None` if `max_fee` is Zero.
+		// Unique: Do not charge on estimate
+		let fee = if !config.estimate {
+			Some(T::OnChargeTransaction::withdraw_fee(source, reason, total_fee)
+			.map_err(|e| RunnerError { error: e, weight })?)
+		} else {
+			None
+		};
 
 		// Execute the EVM call.
 		let vicinity = Vicinity {
@@ -311,16 +323,20 @@ where
 		// Refunded 200 - 40 = 160.
 		// Tip 5 * 6 = 30.
 		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
-		let actual_priority_fee = T::OnChargeTransaction::correct_and_deposit_fee(
-			&source,
-			// Actual fee after evm execution, including tip.
-			actual_fee,
-			// Base fee.
-			actual_base_fee,
-			// Fee initially withdrawn.
-			fee,
-		);
-		T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
+
+		// Unique: Do not charge on estimate
+		if let Some(fee) = fee {
+			let actual_priority_fee = T::OnChargeTransaction::correct_and_deposit_fee(
+				source,
+				// Actual fee after evm execution, including tip.
+				actual_fee,
+				// Base fee.
+				actual_base_fee,
+				// Fee initially withdrawn.
+				fee,
+			);
+			T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
+		};
 
 		let state = executor.into_state();
 
