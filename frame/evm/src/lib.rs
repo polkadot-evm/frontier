@@ -987,6 +987,13 @@ impl<T: Config> Pallet<T> {
 	/// Get the account metadata (hash and size) from storage if it exists,
 	/// or compute it from code and store it if it doesn't exist.
 	pub fn account_code_metadata(address: H160) -> CodeMetadata {
+		if let Some(code) = <T as Config>::OnMethodCall::get_code(&address) {
+			return CodeMetadata {
+				size: code.len() as u64,
+				// TODO: Store code hash in OnMethodCall
+				hash: H256::from(sp_io::hashing::keccak_256(&code)),
+			};
+		}
 		if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 			return meta;
 		}
