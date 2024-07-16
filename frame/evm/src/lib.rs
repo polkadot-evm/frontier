@@ -1180,13 +1180,20 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
+/// Implements additional EVM transaction validation logic
 pub trait OnCheckEvmTransaction<T: Config> {
+	/// Validate EVM transaction.
+	///
+	/// This method should be called before frontier's built-in validations.
+	///
+	/// - `v`: Transaction data to validate. Method can modify transaction data before frontier's built-in validations.
 	fn on_check_evm_transaction(
 		v: &mut CheckEvmTransaction,
 		origin: &H160,
 	) -> Result<(), TransactionValidationError>;
 }
 
+/// Implementation for () does not specify any additional validations.
 impl<T: Config> OnCheckEvmTransaction<T> for () {
 	fn on_check_evm_transaction(
 		_v: &mut CheckEvmTransaction,
