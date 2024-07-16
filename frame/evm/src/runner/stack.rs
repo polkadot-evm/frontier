@@ -138,7 +138,7 @@ where
 		/* Unique:
 		source: H160,
 		*/
-		source: &T::CrossAccountId,
+		source: &'config T::CrossAccountId,
 		value: U256,
 		mut gas_limit: u64,
 		mut max_fee_per_gas: Option<U256>,
@@ -256,7 +256,7 @@ where
 		// Unique: Do not charge on estimate
 		let fee = if !config.estimate {
 			Some(T::OnChargeTransaction::withdraw_fee(source, reason, total_fee)
-			.map_err(|e| RunnerError { error: e, weight })?)
+				.map_err(|e| RunnerError { error: e, weight })?)
 		} else {
 			None
 		};
@@ -268,7 +268,7 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
+		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info, source);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);
@@ -789,12 +789,13 @@ pub struct Recorded {
 }
 
 /// Substrate backend for EVM.
-pub struct SubstrateStackState<'vicinity, 'config, T> {
+pub struct SubstrateStackState<'vicinity, 'config, T: Config> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config, T>,
 	original_storage: BTreeMap<(H160, H256), H256>,
 	recorded: Recorded,
 	weight_info: Option<WeightInfo>,
+	source: &'config T::CrossAccountId,
 	_marker: PhantomData<T>,
 }
 
@@ -804,6 +805,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		vicinity: &'vicinity Vicinity,
 		metadata: StackSubstateMetadata<'config>,
 		weight_info: Option<WeightInfo>,
+		source: &'config T::CrossAccountId,
 	) -> Self {
 		Self {
 			vicinity,
@@ -820,11 +822,16 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			original_storage: BTreeMap::new(),
 			recorded: Default::default(),
 			weight_info,
+			source,
 		}
 	}
 
 	pub fn weight_info(&self) -> Option<WeightInfo> {
 		self.weight_info
+	}
+
+	fn source(&self) -> &'config T::CrossAccountId {
+		&self.source
 	}
 
 	pub fn recorded(&self) -> &Recorded {
@@ -1023,10 +1030,15 @@ where
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
-		let source = T::AddressMapping::into_account_id(transfer.source);
+		let transfer_cross = T::CrossAccountId::from_eth(transfer.source);
+		let source = if self.source().conv_eq(&transfer_cross) {
+			self.source().as_sub()
+		} else {
+			transfer_cross.as_sub()
+		};
 		let target = T::AddressMapping::into_account_id(transfer.target);
 		T::Currency::transfer(
-			&source,
+			source,
 			&target,
 			transfer
 				.value
