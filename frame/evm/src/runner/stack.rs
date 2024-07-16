@@ -476,8 +476,12 @@ where
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		let reason = WithdrawReason::Call {
+			max_fee_per_gas,
+			gas_limit,
 			target,
 			input: input.clone(),
+			is_transactional,
+			is_check: false,
 		};
 		if validate {
 			Self::validate(

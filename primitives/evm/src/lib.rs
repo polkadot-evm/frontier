@@ -223,7 +223,14 @@ pub struct ExecutionInfo<T> {
 // Unique:
 #[derive(Debug, Clone)]
 pub enum WithdrawReason {
-	Call { target: H160, input: Vec<u8> },
+	Call {
+		max_fee_per_gas: Option<U256>,
+		gas_limit: u64,
+		target: H160,
+		input: Vec<u8>,
+		is_transactional: bool,
+		is_check: bool,
+	},
 	Create,
 	Create2,
 }
