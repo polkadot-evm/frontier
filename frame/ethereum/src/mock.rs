@@ -180,6 +180,7 @@ impl pallet_evm::Config for Test {
 	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
 	type WeightInfo = ();
+	type OnCheckEvmTransaction<E: From<pallet_evm::TransactionValidationError>> = ();
 }
 
 parameter_types! {
