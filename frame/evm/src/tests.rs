@@ -21,6 +21,7 @@ use super::*;
 use crate::mock::*;
 // Unique:
 use crate::account::BasicCrossAccountId;
+use fp_evm::WithdrawReason;
 
 use frame_support::{
 	assert_ok,
@@ -732,7 +733,7 @@ fn fee_deduction() {
 		assert_eq!(Balances::free_balance(substrate_addr), 100);
 
 		// Deduct fees as 10 units
-		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&cross_addr, U256::from(10)).unwrap();
+		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&cross_addr, WithdrawReason::Create, U256::from(10)).unwrap();
 		assert_eq!(Balances::free_balance(&substrate_addr), 90);
 
 		// Refund fees as 5 units
@@ -785,6 +786,7 @@ fn ed_0_refund_patch_is_required() {
 		let _ =
 			<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(
 				&cross_addr,
+				WithdrawReason::Create,
 				U256::from(100),
 			)
 			.unwrap();

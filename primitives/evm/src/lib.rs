@@ -220,6 +220,14 @@ pub struct ExecutionInfo<T> {
 	*/
 }
 
+// Unique:
+#[derive(Debug, Clone)]
+pub enum WithdrawReason {
+	Call { target: H160, input: Vec<u8> },
+	Create,
+	Create2,
+}
+
 /// Account definition used for genesis block construction.
 #[derive(Clone, Eq, PartialEq, Debug, Encode, Decode)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
