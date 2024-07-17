@@ -503,25 +503,24 @@ mod runtime {
 }
 
 #[derive(Clone)]
-pub struct TransactionConverter;
-impl fp_rpc::ConvertTransaction<UncheckedExtrinsic> for TransactionConverter {
-	fn convert_transaction(&self, transaction: pallet_ethereum::Transaction) -> UncheckedExtrinsic {
-		UncheckedExtrinsic::new_unsigned(
-			pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
-		)
+pub struct TransactionConverter<B>(PhantomData<B>);
+
+impl<B> Default for TransactionConverter<B> {
+	fn default() -> Self {
+		Self(PhantomData)
 	}
 }
 
-impl fp_rpc::ConvertTransaction<opaque::UncheckedExtrinsic> for TransactionConverter {
+impl<B: BlockT> fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> for TransactionConverter<B> {
 	fn convert_transaction(
 		&self,
 		transaction: pallet_ethereum::Transaction,
-	) -> opaque::UncheckedExtrinsic {
+	) -> <B as BlockT>::Extrinsic {
 		let extrinsic = UncheckedExtrinsic::new_unsigned(
 			pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 		);
 		let encoded = extrinsic.encode();
-		opaque::UncheckedExtrinsic::decode(&mut &encoded[..])
+		<B as BlockT>::Extrinsic::decode(&mut &encoded[..])
 			.expect("Encoded extrinsic is always valid")
 	}
 }

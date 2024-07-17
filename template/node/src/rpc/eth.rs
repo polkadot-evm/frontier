@@ -78,7 +78,7 @@ pub fn create_eth<B, C, BE, P, A, CT, CIDP, EC>(
 	>,
 ) -> Result<RpcModule<()>, Box<dyn std::error::Error + Send + Sync>>
 where
-	B: BlockT<Hash = H256>,
+	B: BlockT,
 	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: AuraApi<B, AuraId>
 		+ BlockBuilderApi<B>

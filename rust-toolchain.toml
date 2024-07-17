@@ -2,7 +2,7 @@
 # Stable
 #channel = "1.75.0" # rustc 1.75.0 (82e1608df 2023-12-21)
 # Nightly
-channel = "nightly-2024-01-22" # rustc 1.77.0-nightly (ef71f1047 2024-01-21)
+channel = "nightly-2024-04-14" # rustc 1.77.0-nightly (ef71f1047 2024-01-21)
 components = ["cargo", "clippy", "rustc", "rustfmt", "rust-src", "rust-docs"]
 profile = "minimal"
 targets = ["wasm32-unknown-unknown"]

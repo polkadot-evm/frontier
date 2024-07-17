@@ -59,7 +59,7 @@ hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
 impl-serde = { version = "0.4.0", default-features = false }
 impl-trait-for-tuples = "0.2.1"
-jsonrpsee = "0.22.5"
+jsonrpsee = "0.23.2"
 kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.1", default-features = false }
 log = { version = "0.4.21", default-features = false }
@@ -68,7 +68,7 @@ parity-db = "0.4.13"
 parking_lot = "0.12.2"
 rlp = { version = "0.5.2", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.6.4", default-features = false, features = ["derive"] }
-scale-info = { version = "2.11.2", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11.3", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
 similar-asserts = "1.5.0"
@@ -77,81 +77,81 @@ thiserror = "1.0"
 tokio = "1.37.0"
 
 # Substrate Client
-sc-basic-authorship = "0.39.0"
-sc-block-builder = "0.38.0"
-sc-chain-spec = "32.0.0"
-sc-cli = { default-features = false , version = "0.41.0" }
-sc-client-api = "33.0.0"
-sc-client-db = { default-features = false , version = "0.40.0" }
-sc-consensus = "0.38.0"
-sc-consensus-aura = "0.39.0"
-sc-consensus-grandpa = "0.24.0"
-sc-consensus-manual-seal = "0.40.0"
-sc-executor = "0.37.0"
-sc-keystore = "30.0.0"
-sc-network = "0.39.0"
-sc-network-common = "0.38.0"
-sc-network-sync = "0.38.0"
-sc-offchain = "34.0.0"
-sc-rpc = "34.0.0"
-sc-rpc-api = "0.38.0"
-sc-service = { default-features = false , version = "0.40.0" }
-sc-telemetry = "19.0.0"
-sc-transaction-pool = "33.0.0"
-sc-transaction-pool-api = "33.0.0"
+sc-basic-authorship = "0.42.0"
+sc-block-builder = "0.40.0"
+sc-chain-spec = "35.0.0"
+sc-cli = { default-features = false , version = "0.44.0" }
+sc-client-api = "35.1.0"
+sc-client-db = { default-features = false , version = "0.42.0" }
+sc-consensus = "0.41.0"
+sc-consensus-aura = "0.42.0"
+sc-consensus-grandpa = "0.27.0"
+sc-consensus-manual-seal = "0.43.0"
+sc-executor = "0.39.0"
+sc-keystore = "32.0.0"
+sc-network = "0.42.0"
+sc-network-common = "0.41.0"
+sc-network-sync = "0.41.0"
+sc-offchain = "37.0.0"
+sc-rpc = "37.0.0"
+sc-rpc-api = "0.41.0"
+sc-service = { default-features = false , version = "0.43.0" }
+sc-telemetry = "22.0.0"
+sc-transaction-pool = "35.0.0"
+sc-transaction-pool-api = "35.0.0"
 sc-utils = "17.0.0"
 # Substrate Primitive
-sp-api = { default-features = false , version = "31.0.0" }
-sp-block-builder = { default-features = false , version = "31.0.0" }
-sp-blockchain = "33.0.0"
-sp-consensus = "0.37.0"
-sp-consensus-aura = { default-features = false , version = "0.37.0" }
-sp-consensus-grandpa = { default-features = false , version = "18.0.0" }
-sp-core = { default-features = false , version = "32.0.0" }
+sp-api = { default-features = false , version = "33.0.0" }
+sp-block-builder = { default-features = false , version = "33.0.0" }
+sp-blockchain = "35.1.0"
+sp-consensus = "0.39.1"
+sp-consensus-aura = { default-features = false , version = "0.39.0" }
+sp-consensus-grandpa = { default-features = false , version = "20.0.0" }
+sp-core = { default-features = false , version = "34.0.0" }
 sp-crypto-hashing = { default-features = false , version = "0.1.0" }
 sp-database = "10.0.0"
-sp-externalities = { default-features = false , version = "0.28.0" }
-sp-genesis-builder = { default-features = false , version = "0.12.0" }
-sp-inherents = { default-features = false , version = "31.0.0" }
-sp-io = { default-features = false , version = "35.0.0" }
-sp-keyring = "36.0.0"
-sp-offchain = { default-features = false , version = "31.0.0" }
-sp-runtime = { default-features = false , version = "36.0.0" }
-sp-runtime-interface = { default-features = false , version = "27.0.0" }
-sp-session = { default-features = false , version = "32.0.0" }
-sp-state-machine = { default-features = false , version = "0.40.0" }
+sp-externalities = { default-features = false , version = "0.29.0" }
+sp-genesis-builder = { default-features = false , version = "0.14.0" }
+sp-inherents = { default-features = false , version = "33.0.0" }
+sp-io = { default-features = false , version = "37.0.0" }
+sp-keyring = "38.0.0"
+sp-offchain = { default-features = false , version = "33.0.0" }
+sp-runtime = { default-features = false , version = "38.0.0" }
+sp-runtime-interface = { default-features = false , version = "28.0.0" }
+sp-session = { default-features = false , version = "34.0.0" }
+sp-state-machine = { default-features = false , version = "0.42.0" }
 sp-std = { default-features = false , version = "14.0.0" }
 sp-storage = { default-features = false , version = "21.0.0" }
-sp-timestamp = { default-features = false , version = "31.0.0" }
-sp-transaction-pool = { default-features = false , version = "31.0.0" }
-sp-version = { default-features = false , version = "34.0.0" }
+sp-timestamp = { default-features = false , version = "33.0.0" }
+sp-transaction-pool = { default-features = false , version = "33.0.0" }
+sp-version = { default-features = false , version = "36.0.0" }
 sp-weights = { default-features = false , version = "31.0.0" }
 # Substrate FRAME
-frame-benchmarking = { default-features = false , version = "33.0.0" }
-frame-executive = { default-features = false , version = "33.0.0" }
-frame-support = { default-features = false , version = "33.0.0" }
-frame-system = { default-features = false , version = "33.0.0" }
-frame-system-benchmarking = { default-features = false , version = "33.0.0" }
-frame-system-rpc-runtime-api = { default-features = false , version = "31.0.0" }
-pallet-aura = { default-features = false , version = "32.0.0" }
-pallet-balances = { default-features = false , version = "34.0.0" }
-pallet-grandpa = { default-features = false , version = "33.0.0" }
-pallet-sudo = { default-features = false , version = "33.0.0" }
-pallet-timestamp = { default-features = false , version = "32.0.0" }
-pallet-transaction-payment = { default-features = false , version = "33.0.0" }
-pallet-transaction-payment-rpc = "35.0.0"
-pallet-transaction-payment-rpc-runtime-api = { default-features = false , version = "33.0.0" }
-pallet-utility = { default-features = false , version = "33.0.0" }
+frame-benchmarking = { default-features = false , version = "36.0.0" }
+frame-executive = { default-features = false , version = "36.0.0" }
+frame-support = { default-features = false , version = "36.0.0" }
+frame-system = { default-features = false , version = "36.0.0" }
+frame-system-benchmarking = { default-features = false , version = "36.0.0" }
+frame-system-rpc-runtime-api = { default-features = false , version = "33.0.0" }
+pallet-aura = { default-features = false , version = "35.0.0" }
+pallet-balances = { default-features = false , version = "37.0.0" }
+pallet-grandpa = { default-features = false , version = "36.0.0" }
+pallet-sudo = { default-features = false , version = "36.0.0" }
+pallet-timestamp = { default-features = false , version = "35.0.0" }
+pallet-transaction-payment = { default-features = false , version = "36.0.0" }
+pallet-transaction-payment-rpc = "38.0.0"
+pallet-transaction-payment-rpc-runtime-api = { default-features = false , version = "36.0.0" }
+pallet-utility = { default-features = false , version = "36.0.0" }
 # Substrate Utility
-frame-benchmarking-cli = "37.0.0"
+frame-benchmarking-cli = "40.0.0"
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", version = "0.17.0" }
 substrate-build-script-utils = "11.0.0"
-substrate-frame-rpc-system = "33.0.0"
-substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-substrate-wasm-builder = "22.0.1"
+substrate-frame-rpc-system = "36.0.0"
+substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.14.0" }
+substrate-wasm-builder = "23.0.0"
 
 # XCM
-xcm = { package = "staging-xcm", default-features = false , version = "12.0.0" }
+xcm = { package = "staging-xcm", default-features = false , version = "14.0.1" }
 
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
@@ -196,76 +196,76 @@ precompile-utils = { path = "precompiles", default-features = false }
 frontier-template-runtime = { path = "template/runtime", default-features = false }
 
 [workspace.metadata.deppatcher.originals.workspace.dependencies]
-sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-chain-spec = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-client-db = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-consensus-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-consensus-manual-seal = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-executor = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-keystore = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-network = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-network-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-network-sync = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-offchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-rpc-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-telemetry = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-transaction-pool-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sc-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-blockchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-consensus = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-consensus-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-consensus-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-core = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-crypto-hashing = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-database = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-externalities = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-genesis-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-inherents = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-io = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-keyring = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-offchain = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-runtime = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-runtime-interface = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-session = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-state-machine = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-version = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-executive = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-system-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-system-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-aura = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-balances = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-grandpa = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-sudo = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-pallet-utility = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
-staging-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.11.0" }
+sc-cli = { version = "0.41.0" }
+sc-client-db = { version = "0.40.0" }
+sc-service = { version = "0.40.0" }
+sp-api = { version = "31.0.0" }
+sp-block-builder = { version = "31.0.0" }
+sp-consensus-aura = { version = "0.37.0" }
+sp-consensus-grandpa = { version = "18.0.0" }
+sp-core = { version = "32.0.0" }
+sp-externalities = { version = "0.28.0" }
+sp-genesis-builder = { version = "0.12.0" }
+sp-inherents = { version = "31.0.0" }
+sp-io = { version = "35.0.0" }
+sp-offchain = { version = "31.0.0" }
+sp-runtime = { version = "36.0.0" }
+sp-runtime-interface = { version = "27.0.0" }
+sp-session = { version = "32.0.0" }
+sp-state-machine = { version = "0.40.0" }
+sp-timestamp = { version = "31.0.0" }
+sp-transaction-pool = { version = "31.0.0" }
+sp-version = { version = "34.0.0" }
+frame-benchmarking = { version = "33.0.0" }
+frame-executive = { version = "33.0.0" }
+frame-support = { version = "33.0.0" }
+frame-system = { version = "33.0.0" }
+frame-system-benchmarking = { version = "33.0.0" }
+frame-system-rpc-runtime-api = { version = "31.0.0" }
+pallet-aura = { version = "32.0.0" }
+pallet-balances = { version = "34.0.0" }
+pallet-grandpa = { version = "33.0.0" }
+pallet-sudo = { version = "33.0.0" }
+pallet-timestamp = { version = "32.0.0" }
+pallet-transaction-payment = { version = "33.0.0" }
+pallet-transaction-payment-rpc-runtime-api = { version = "33.0.0" }
+pallet-utility = { version = "33.0.0" }
+staging-xcm = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+sc-basic-authorship = { version = "0.39.0" }
+sc-block-builder = { version = "0.38.0" }
+sc-chain-spec = { version = "32.0.0" }
+sc-client-api = { version = "33.0.0" }
+sc-consensus = { version = "0.38.0" }
+sc-consensus-aura = { version = "0.39.0" }
+sc-consensus-grandpa = { version = "0.24.0" }
+sc-consensus-manual-seal = { version = "0.40.0" }
+sc-executor = { version = "0.37.0" }
+sc-keystore = { version = "30.0.0" }
+sc-network = { version = "0.39.0" }
+sc-network-common = { version = "0.38.0" }
+sc-network-sync = { version = "0.38.0" }
+sc-offchain = { version = "34.0.0" }
+sc-rpc = { version = "34.0.0" }
+sc-rpc-api = { version = "0.38.0" }
+sc-telemetry = { version = "19.0.0" }
+sc-transaction-pool = { version = "33.0.0" }
+sc-transaction-pool-api = { version = "33.0.0" }
+sp-blockchain = { version = "33.0.0" }
+sp-consensus = { version = "0.37.0" }
+sp-keyring = { version = "36.0.0" }
+pallet-transaction-payment-rpc = { version = "35.0.0" }
+frame-benchmarking-cli = { version = "37.0.0" }
+substrate-frame-rpc-system = { version = "33.0.0" }
+substrate-wasm-builder = { version = "22.0.1" }
+sc-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+sp-crypto-hashing = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+sp-database = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+substrate-prometheus-endpoint = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+substrate-build-script-utils = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
+substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.10.1" }
 
 [profile.release]
 # Substrate runtime requires unwinding.
