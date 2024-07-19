@@ -626,6 +626,66 @@ where
 			},
 		)
 	}
+
+	fn create_force_address(
+		source: H160,
+		init: Vec<u8>,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		is_transactional: bool,
+		validate: bool,
+		weight_limit: Option<Weight>,
+		proof_size_base_cost: Option<u64>,
+		config: &evm::Config,
+		contract_address: H160,
+	) -> Result<CreateInfo, RunnerError<Self::Error>> {
+		if validate {
+			Self::validate(
+				source,
+				None,
+				init.clone(),
+				value,
+				gas_limit,
+				max_fee_per_gas,
+				max_priority_fee_per_gas,
+				nonce,
+				access_list.clone(),
+				is_transactional,
+				weight_limit,
+				proof_size_base_cost,
+				config,
+			)?;
+		}
+		let precompiles = T::PrecompilesValue::get();
+		Self::execute(
+			source,
+			value,
+			gas_limit,
+			max_fee_per_gas,
+			max_priority_fee_per_gas,
+			config,
+			&precompiles,
+			is_transactional,
+			weight_limit,
+			proof_size_base_cost,
+			|executor| {
+				T::OnCreate::on_create(source, contract_address);
+				let (reason, _) = executor.transact_create_force_address(
+					source,
+					value,
+					init,
+					gas_limit,
+					access_list,
+					contract_address,
+				);
+				(reason, contract_address)
+			},
+		)
+	}
 }
 
 struct SubstrateStackSubstate<'config> {

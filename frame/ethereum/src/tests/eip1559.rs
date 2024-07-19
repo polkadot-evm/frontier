@@ -124,7 +124,7 @@ fn transaction_should_increment_nonce() {
 
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		assert_eq!(EVM::account_basic(&alice.address).0.nonce, U256::from(1));
 	});
 }
@@ -188,7 +188,7 @@ fn transaction_with_to_low_nonce_should_not_work() {
 		let t = eip1559_erc20_creation_transaction(alice);
 
 		// nonce is 1
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		transaction.nonce = U256::from(0);
 
 		let signed2 = transaction.sign(&alice.private_key, None);
@@ -271,7 +271,7 @@ fn contract_constructor_should_get_executed() {
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
 
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		assert_eq!(
 			pallet_evm::AccountStorages::<Test>::get(erc20_address, alice_storage_address),
 			H256::from_str("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")
@@ -313,7 +313,7 @@ fn contract_should_be_created_at_given_address() {
 
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 		assert_ne!(
 			pallet_evm::AccountCodes::<Test>::get(erc20_address).len(),
 			0
@@ -330,7 +330,7 @@ fn transaction_should_generate_correct_gas_used() {
 
 	ext.execute_with(|| {
 		let t = eip1559_erc20_creation_transaction(alice);
-		let (_, _, info) = Ethereum::execute(alice.address, &t, None).unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t, None, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Create(info) => {
@@ -357,7 +357,7 @@ fn call_should_handle_errors() {
 			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key, None);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None,));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let foo = hex::decode("c2985578").unwrap();
@@ -375,7 +375,7 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key, None);
 
 		// calling foo will succeed
-		let (_, _, info) = Ethereum::execute(alice.address, &t2, None).unwrap();
+		let (_, _, info) = Ethereum::execute(alice.address, &t2, None, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {
@@ -399,7 +399,9 @@ fn call_should_handle_errors() {
 		.sign(&alice.private_key, None);
 
 		// calling should always succeed even if the inner EVM execution fails.
-		Ethereum::execute(alice.address, &t3, None).ok().unwrap();
+		Ethereum::execute(alice.address, &t3, None, None)
+			.ok()
+			.unwrap();
 	});
 }
 
@@ -421,7 +423,11 @@ fn event_extra_data_should_be_handle_properly() {
 			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key, None);
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t,
+			None,
+		));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let foo = hex::decode("c2985578").unwrap();
@@ -439,7 +445,11 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key, None);
 
 		// calling foo
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t2,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t2,
+			None,
+		));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
@@ -463,7 +473,11 @@ fn event_extra_data_should_be_handle_properly() {
 		.sign(&alice.private_key, None);
 
 		// calling bar revert
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, t3,));
+		assert_ok!(Ethereum::apply_validated_transaction(
+			alice.address,
+			t3,
+			None,
+		));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: H160::from_slice(&contract_address),
@@ -544,7 +558,8 @@ fn validated_transaction_apply_zero_gas_price_works() {
 
 		assert_ok!(crate::ValidatedTransaction::<Test>::apply(
 			alice.address,
-			transaction
+			transaction,
+			None,
 		));
 		// Alice didn't pay fees, transfer 100 to Bob.
 		assert_eq!(Balances::free_balance(&substrate_alice), 900);
