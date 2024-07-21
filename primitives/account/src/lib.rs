@@ -31,6 +31,8 @@ use sp_io::hashing::keccak_256;
 use sp_runtime::MultiSignature;
 use sp_runtime_interface::pass_by::PassByInner;
 
+use xcm::latest::{Junction, Location};
+
 /// A fully Ethereum-compatible `AccountId`.
 /// Conforms to H160 address and ECDSA key standards.
 /// Alternative to H256->H160 mapping.
@@ -168,6 +170,16 @@ impl From<AccountId32> for AccountId20 {
 	fn from(account: AccountId32) -> Self {
 		let bytes: &[u8; 32] = account.as_ref();
 		Self::from(*bytes)
+	}
+}
+
+impl From<AccountId20> for Location {
+	fn from(id: AccountId20) -> Self {
+		Junction::AccountKey20 {
+			network: None,
+			key: id.into(),
+		}
+		.into()
 	}
 }
 

@@ -22,6 +22,9 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-runtime-interface = { workspace = true }
 
+# Polkadot / XCM
+xcm = { workspace = true }
+
 [dev-dependencies]
 
 [features]
@@ -39,6 +42,7 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-runtime-interface/std",
+	"xcm/std",
 ]
 serde = [
 	"dep:serde",
