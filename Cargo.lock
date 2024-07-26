@@ -2824,6 +2824,7 @@ dependencies = [
  "sp-io",
  "sp-runtime",
  "sp-runtime-interface 24.0.0 (git+https://github.com/paritytech/polkadot-sdk?branch=release-polkadot-v1.12.0)",
+ "staging-xcm",
 ]
 
 [[package]]
