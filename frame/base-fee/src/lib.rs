@@ -15,6 +15,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//! # BaseFee pallet
+//!
+//! The BaseFee pallet is responsible for managing the `BaseFeePerGas` value.
+//! This pallet can dynamically adjust the `BaseFeePerGas` by utilizing `Elasticity`.
+
 #![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::comparison_chain)]
 #![warn(unused_crate_dependencies)]
