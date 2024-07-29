@@ -4981,9 +4981,9 @@ dependencies = [
 
 [[package]]
 name = "macrotest"
-version = "1.0.12"
+version = "1.0.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c373046e96714b07b66d572e8b43e48d67cad110fd3f5bf2e000e58751864d2d"
+checksum = "4e2035deb453578ff1cd2da2761ac78abbffffd1d06a0f59261c082ea713fdad"
 dependencies = [
  "basic-toml",
  "diff",
