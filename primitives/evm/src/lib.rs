@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,11 +16,14 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
+
+extern crate alloc;
 
 mod precompile;
 mod validation;
 
+use alloc::{collections::BTreeMap, vec::Vec};
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
@@ -28,7 +31,6 @@ use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
 use sp_core::{H160, H256, U256};
 use sp_runtime::Perbill;
-use sp_std::{collections::btree_map::BTreeMap, vec::Vec};
 
 pub use evm::{
 	backend::{Basic as Account, Log},

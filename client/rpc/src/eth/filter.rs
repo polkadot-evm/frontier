@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -41,7 +41,7 @@ use sp_runtime::{
 use fc_rpc_core::{types::*, EthFilterApiServer};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-use crate::{eth::cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
 pub struct EthFilter<B: BlockT, C, BE, A: ChainApi> {
 	client: Arc<C>,
@@ -97,10 +97,11 @@ where
 					self.max_stored_filters
 				)));
 			}
-			let last_key = match {
+			let next_back = {
 				let mut iter = locked.iter();
 				iter.next_back()
-			} {
+			};
+			let last_key = match next_back {
 				Some((k, _)) => *k,
 				None => U256::zero(),
 			};
@@ -188,7 +189,7 @@ where
 				from_number: NumberFor<B>,
 				current_number: NumberFor<B>,
 			},
-			Error(jsonrpsee::core::Error),
+			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
 
 		let key = U256::from(index.value());
@@ -325,10 +326,7 @@ where
 						internal_err(format!("Expect block number from id: {}", id))
 					})?;
 
-					let schema =
-						fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-					let block = block_data_cache.current_block(schema, substrate_hash).await;
+					let block = block_data_cache.current_block(substrate_hash).await;
 					if let Some(block) = block {
 						ethereum_hashes.push(block.header.hash())
 					}
@@ -483,11 +481,10 @@ where
 				Some(hash) => hash,
 				_ => return Err(crate::err(-32000, "unknown block", None)),
 			};
-			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
 
-			let block = block_data_cache.current_block(schema, substrate_hash).await;
+			let block = block_data_cache.current_block(substrate_hash).await;
 			let statuses = block_data_cache
-				.current_transaction_statuses(schema, substrate_hash)
+				.current_transaction_statuses(substrate_hash)
 				.await;
 			if let (Some(block), Some(statuses)) = (block, statuses) {
 				filter_block_logs(&mut ret, &filter, block, statuses);
@@ -605,7 +602,6 @@ where
 		for log in logs.iter() {
 			let substrate_hash = log.substrate_block_hash;
 
-			let schema = log.ethereum_storage_schema;
 			let ethereum_block_hash = log.ethereum_block_hash;
 			let block_number = log.block_number;
 			let db_transaction_index = log.transaction_index;
@@ -615,7 +611,7 @@ where
 				statuses.clone()
 			} else {
 				let statuses = block_data_cache
-					.current_transaction_statuses(schema, substrate_hash)
+					.current_transaction_statuses(substrate_hash)
 					.await;
 				statuses_cache.insert(log.substrate_block_hash, statuses.clone());
 				statuses
@@ -712,7 +708,7 @@ where
 	} else {
 		None
 	};
-	let address_bloom_filter = FilteredParams::adresses_bloom_filter(&filter.address);
+	let address_bloom_filter = FilteredParams::address_bloom_filter(&filter.address);
 	let topics_bloom_filter = FilteredParams::topics_bloom_filter(&topics_input);
 
 	while current_number <= to {
@@ -721,16 +717,14 @@ where
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = fc_storage::onchain_storage_schema(client, substrate_hash);
-
-		let block = block_data_cache.current_block(schema, substrate_hash).await;
+		let block = block_data_cache.current_block(substrate_hash).await;
 
 		if let Some(block) = block {
 			if FilteredParams::address_in_bloom(block.header.logs_bloom, &address_bloom_filter)
 				&& FilteredParams::topics_in_bloom(block.header.logs_bloom, &topics_bloom_filter)
 			{
 				let statuses = block_data_cache
-					.current_transaction_statuses(schema, substrate_hash)
+					.current_transaction_statuses(substrate_hash)
 					.await;
 				if let Some(statuses) = statuses {
 					filter_block_logs(ret, filter, block, statuses);
@@ -787,17 +781,17 @@ fn filter_block_logs<'a>(
 			let mut add: bool = true;
 			match (filter.address.clone(), filter.topics.clone()) {
 				(Some(_), Some(_)) => {
-					if !params.filter_address(&log) || !params.filter_topics(&log) {
+					if !params.filter_address(&log.address) || !params.filter_topics(&log.topics) {
 						add = false;
 					}
 				}
 				(Some(_), _) => {
-					if !params.filter_address(&log) {
+					if !params.filter_address(&log.address) {
 						add = false;
 					}
 				}
 				(_, Some(_)) => {
-					if !params.filter_topics(&log) {
+					if !params.filter_topics(&log.topics) {
 						add = false;
 					}
 				}

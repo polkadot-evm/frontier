@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -18,9 +18,9 @@
 pub mod stack;
 
 use crate::{Config, Weight};
+use alloc::vec::Vec;
 use fp_evm::{CallInfo, CreateInfo};
 use sp_core::{H160, H256, U256};
-use sp_std::vec::Vec;
 
 #[derive(Debug)]
 pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {

@@ -6,7 +6,7 @@ import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./u
 
 describeWithFrontier("Frontier RPC (Block)", (context) => {
 	let previousBlock;
-	// Those tests are dependant of each other in the given order.
+	// Those tests are dependent of each other in the given order.
 	// The reason is to avoid having to restart the node each time
 	// Running them individually will result in failure
 

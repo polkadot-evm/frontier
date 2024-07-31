@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -32,10 +32,7 @@ use sp_runtime::traits::Block as BlockT;
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{
-	eth::{Eth, EthConfig},
-	frontier_backend_client, internal_err,
-};
+use crate::{eth::Eth, frontier_backend_client, internal_err};
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
 where
@@ -47,7 +44,6 @@ where
 	P: TransactionPool<Block = B> + 'static,
 	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	pub async fn balance(
 		&self,
@@ -111,13 +107,9 @@ where
 				.client
 				.expect_block_hash_from_id(&id)
 				.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
-			let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
 			Ok(self
-				.overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&self.overrides.fallback)
-				.storage_at(substrate_hash, address, index)
+				.storage_override
+				.account_storage_at(substrate_hash, address, index)
 				.unwrap_or_default())
 		} else {
 			Ok(H256::default())
@@ -144,7 +136,7 @@ where
 			for tx in self.pool.ready() {
 				// since transactions in `ready()` need to be ordered by nonce
 				// it's fine to continue with current iterator.
-				if tx.provides().get(0) == Some(&current_tag) {
+				if tx.provides().first() == Some(&current_tag) {
 					current_nonce = current_nonce.saturating_add(1.into());
 					current_tag = (address, current_nonce).encode();
 				}
@@ -203,13 +195,8 @@ where
 				.client
 				.expect_block_hash_from_id(&id)
 				.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
-			let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-
 			Ok(self
-				.overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&self.overrides.fallback)
+				.storage_override
 				.account_code_at(substrate_hash, address)
 				.unwrap_or_default()
 				.into())

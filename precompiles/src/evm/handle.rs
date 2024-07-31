@@ -1,21 +1,20 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
+
+// Copyright (c) Moonsong Labs.
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// Copyright (c) 2019-2022 Moonsong Labs.
-// Copyright (c) 2023 Parity Technologies (UK) Ltd.
+// 	http://www.apache.org/licenses/LICENSE-2.0
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use crate::{
 	solidity::{
@@ -29,7 +28,7 @@ use fp_evm::{Log, PrecompileHandle};
 
 pub trait PrecompileHandleExt: PrecompileHandle {
 	/// Record cost of one DB read manually.
-	/// The max encoded lenght of the data that will be read should be provided.
+	/// The max encoded length of the data that will be read should be provided.
 	fn record_db_read<Runtime: pallet_evm::Config>(
 		&mut self,
 		data_max_encoded_len: usize,
@@ -60,10 +59,10 @@ impl<T: PrecompileHandle> PrecompileHandleExt for T {
 	) -> Result<(), evm::ExitError> {
 		self.record_cost(crate::prelude::RuntimeHelper::<Runtime>::db_read_gas_cost())?;
 		// TODO: record ref time when precompile will be benchmarked
-		self.record_external_cost(None, Some(data_max_encoded_len as u64))
+		self.record_external_cost(None, Some(data_max_encoded_len as u64), None)
 	}
 
-	/// Record cost of a log manualy.
+	/// Record cost of a log manually.
 	/// This can be useful to record log costs early when their content have static size.
 	fn record_log_costs_manual(&mut self, topics: usize, data_len: usize) -> EvmResult {
 		self.record_cost(crate::evm::costs::log_costs(topics, data_len)?)?;
@@ -190,6 +189,7 @@ mod tests {
 			&mut self,
 			_ref_time: Option<u64>,
 			_proof_size: Option<u64>,
+			_storage_growth: Option<u64>,
 		) -> Result<(), fp_evm::ExitError> {
 			Ok(())
 		}

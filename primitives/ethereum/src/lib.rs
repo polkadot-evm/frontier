@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,8 +16,11 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
+use alloc::vec::Vec;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
@@ -26,7 +29,6 @@ use ethereum_types::{H160, H256, U256};
 use fp_evm::{CallOrCreateInfo, CheckEvmTransactionInput};
 use frame_support::dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo};
 use scale_codec::{Decode, Encode};
-use sp_std::{result::Result, vec::Vec};
 
 pub trait ValidatedTransaction {
 	fn apply(
@@ -47,7 +49,6 @@ pub struct TransactionData {
 	pub value: U256,
 	pub chain_id: Option<u64>,
 	pub access_list: Vec<(H160, Vec<H256>)>,
-	pub proof_size_base_cost: Option<u64>,
 }
 
 impl TransactionData {
@@ -64,7 +65,7 @@ impl TransactionData {
 		chain_id: Option<u64>,
 		access_list: Vec<(H160, Vec<H256>)>,
 	) -> Self {
-		let mut transaction_data = Self {
+		Self {
 			action,
 			input,
 			nonce,
@@ -75,20 +76,19 @@ impl TransactionData {
 			value,
 			chain_id,
 			access_list,
-			proof_size_base_cost: None,
-		};
-		let proof_size_base_cost = transaction_data
-			.encode()
+		}
+	}
+
+	// The transact call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+	pub fn proof_size_base_cost(&self) -> u64 {
+		self.encode()
 			.len()
 			// signature
 			.saturating_add(65)
 			// pallet index
 			.saturating_add(1)
 			// call index
-			.saturating_add(1) as u64;
-		transaction_data.proof_size_base_cost = Some(proof_size_base_cost);
-
-		transaction_data
+			.saturating_add(1) as u64
 	}
 }
 
@@ -115,15 +115,6 @@ impl From<TransactionData> for CheckEvmTransactionInput {
 
 impl From<&Transaction> for TransactionData {
 	fn from(t: &Transaction) -> Self {
-		// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-		let proof_size_base_cost = t
-			.encode()
-			.len()
-			// pallet index
-			.saturating_add(1)
-			// call index
-			.saturating_add(1) as u64;
-
 		match t {
 			Transaction::Legacy(t) => TransactionData {
 				action: t.action,
@@ -136,7 +127,6 @@ impl From<&Transaction> for TransactionData {
 				value: t.value,
 				chain_id: t.signature.chain_id(),
 				access_list: Vec::new(),
-				proof_size_base_cost: Some(proof_size_base_cost),
 			},
 			Transaction::EIP2930(t) => TransactionData {
 				action: t.action,
@@ -153,7 +143,6 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
-				proof_size_base_cost: Some(proof_size_base_cost),
 			},
 			Transaction::EIP1559(t) => TransactionData {
 				action: t.action,
@@ -170,7 +159,6 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
-				proof_size_base_cost: Some(proof_size_base_cost),
 			},
 		}
 	}

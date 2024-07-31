@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -330,13 +330,13 @@ mod tests {
 	use scale_codec::Encode;
 	use tempfile::tempdir;
 	// Substrate
-	use sc_block_builder::BlockBuilderProvider;
+	use sc_block_builder::BlockBuilderBuilder;
 	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_core::H256;
 	use sp_runtime::{
 		generic::{Block, Header},
-		traits::{BlakeTwo256, Block as BlockT},
+		traits::{BlakeTwo256, Block as BlockT, Header as HeaderT},
 	};
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
@@ -348,8 +348,10 @@ mod tests {
 	pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		setting: &crate::kv::DatabaseSettings,
-	) -> Result<Arc<crate::kv::Backend<Block>>, String> {
-		Ok(Arc::new(crate::kv::Backend::<Block>::new(client, setting)?))
+	) -> Result<Arc<crate::kv::Backend<Block, C>>, String> {
+		Ok(Arc::new(crate::kv::Backend::<Block, C>::new(
+			client, setting,
+		)?))
 	}
 
 	#[cfg_attr(not(feature = "rocksdb"), ignore)]
@@ -386,10 +388,16 @@ mod tests {
 			let mut client = Arc::new(client);
 
 			// Genesis block
-			let mut builder = client.new_block(Default::default()).unwrap();
+			let chain_info = client.chain_info();
+			let mut builder = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.build()
+				.unwrap();
 			builder.push_storage_change(vec![1], None).unwrap();
 			let block = builder.build().unwrap().block;
 			let mut previous_canon_block_hash = block.header.hash();
+			let mut previous_canon_block_number = *block.header.number();
 			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 
 			let path = setting.source.path().unwrap();
@@ -410,16 +418,21 @@ mod tests {
 					// Create two branches, and map the orphan one.
 					// Keep track of the canon hash to later verify the migration replaced it.
 					// A1
-					let mut builder = client
-						.new_block_at(previous_canon_block_hash, Default::default(), false)
+					let mut builder = BlockBuilderBuilder::new(&*client)
+						.on_parent_block(previous_canon_block_hash)
+						.with_parent_block_number(previous_canon_block_number)
+						.build()
 						.unwrap();
 					builder.push_storage_change(vec![1], None).unwrap();
 					let block = builder.build().unwrap().block;
 					let next_canon_block_hash = block.header.hash();
+					let next_canon_block_number = *block.header.number();
 					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
 					// A2
-					let mut builder = client
-						.new_block_at(previous_canon_block_hash, Default::default(), false)
+					let mut builder = BlockBuilderBuilder::new(&*client)
+						.on_parent_block(previous_canon_block_hash)
+						.with_parent_block_number(previous_canon_block_number)
+						.build()
 						.unwrap();
 					builder.push_storage_change(vec![2], None).unwrap();
 					let block = builder.build().unwrap().block;
@@ -440,9 +453,9 @@ mod tests {
 					// happened in case of fork or equivocation.
 					let eth_tx_hash = H256::random();
 					let mut metadata = vec![];
-					for hash in vec![next_canon_block_hash, orphan_block_hash].iter() {
+					for hash in [next_canon_block_hash, orphan_block_hash] {
 						metadata.push(crate::kv::TransactionMetadata::<OpaqueBlock> {
-							substrate_block_hash: *hash,
+							substrate_block_hash: hash,
 							ethereum_block_hash: ethhash,
 							ethereum_index: 0u32,
 						});
@@ -454,6 +467,7 @@ mod tests {
 					);
 					transaction_hashes.push(eth_tx_hash);
 					previous_canon_block_hash = next_canon_block_hash;
+					previous_canon_block_number = next_canon_block_number;
 				}
 				let _ = backend.mapping().db.commit(transaction);
 			}

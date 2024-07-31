@@ -1,31 +1,32 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
+
+// Copyright (c) Moonsong Labs.
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// Copyright (c) 2019-2022 Moonsong Labs.
-// Copyright (c) 2023 Parity Technologies (UK) Ltd.
+// 	http://www.apache.org/licenses/LICENSE-2.0
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 //! Provide utils to assemble precompiles and precompilesets into a
 //! final precompile set with security checks. All security checks are enabled by
-//! default and must be disabled explicely throught type annotations.
+//! default and must be disabled explicely through type annotations.
 
 use crate::{
 	evm::handle::PrecompileHandleExt,
 	solidity::{codec::String, revert::revert},
 	EvmResult,
 };
+use alloc::{collections::btree_map::BTreeMap, vec, vec::Vec};
+use core::{cell::RefCell, marker::PhantomData, ops::RangeInclusive};
 use fp_evm::{
 	ExitError, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
 	PrecompileResult, PrecompileSet,
@@ -34,10 +35,6 @@ use frame_support::pallet_prelude::Get;
 use impl_trait_for_tuples::impl_for_tuples;
 use pallet_evm::AddressMapping;
 use sp_core::{H160, H256};
-use sp_std::{
-	cell::RefCell, collections::btree_map::BTreeMap, marker::PhantomData, ops::RangeInclusive, vec,
-	vec::Vec,
-};
 
 /// Trait representing checks that can be made on a precompile call.
 /// Types implementing this trait are made to be chained in a tuple.
@@ -477,8 +474,10 @@ impl<'a, H: PrecompileHandle> PrecompileHandle for RestrictiveHandle<'a, H> {
 		&mut self,
 		ref_time: Option<u64>,
 		proof_size: Option<u64>,
+		storage_growth: Option<u64>,
 	) -> Result<(), ExitError> {
-		self.handle.record_external_cost(ref_time, proof_size)
+		self.handle
+			.record_external_cost(ref_time, proof_size, storage_growth)
 	}
 
 	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
@@ -1085,13 +1084,14 @@ impl<R: pallet_evm::Config, P: PrecompileSetFragment> PrecompileSetBuilder<R, P>
 		}
 	}
 
-	/// Return the list of addresses contained in this PrecompileSet.
+	/// Return the list of mapped addresses contained in this PrecompileSet.
 	pub fn used_addresses() -> impl Iterator<Item = R::AccountId> {
-		Self::new()
-			.inner
-			.used_addresses()
-			.into_iter()
-			.map(R::AddressMapping::into_account_id)
+		Self::used_addresses_h160().map(R::AddressMapping::into_account_id)
+	}
+
+	/// Return the list of H160 addresses contained in this PrecompileSet.
+	pub fn used_addresses_h160() -> impl Iterator<Item = H160> {
+		Self::new().inner.used_addresses().into_iter()
 	}
 
 	pub fn summarize_checks(&self) -> Vec<PrecompileCheckSummary> {

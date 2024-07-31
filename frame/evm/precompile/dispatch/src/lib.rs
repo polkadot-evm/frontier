@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -16,7 +16,7 @@
 // limitations under the License.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
 extern crate alloc;
 
@@ -85,8 +85,11 @@ where
 			return Err(err);
 		}
 
-		handle
-			.record_external_cost(Some(info.weight.ref_time()), Some(info.weight.proof_size()))?;
+		handle.record_external_cost(
+			Some(info.weight.ref_time()),
+			Some(info.weight.proof_size()),
+			None,
+		)?;
 
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {

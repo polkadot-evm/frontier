@@ -1,0 +1,15 @@
+[package]
+name = "fc-rpc-v2-api"
+version = "0.1.0"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Ethereum RPC (web3) interfaces."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[dependencies]
+ethereum-types = { workspace = true }
+jsonrpsee = { workspace = true, features = ["client-core", "server-core", "macros"] }
+
+# Frontier
+fc-rpc-v2-types = { workspace = true }

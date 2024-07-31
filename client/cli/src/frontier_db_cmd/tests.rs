@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -24,7 +24,7 @@ use scale_codec::Encode;
 use serde::Serialize;
 use tempfile::tempdir;
 // Substrate
-use sc_block_builder::BlockBuilderProvider;
+use sc_block_builder::BlockBuilderBuilder;
 use sc_cli::DatabasePruningMode;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::BlockOrigin;
@@ -38,7 +38,7 @@ use substrate_test_runtime_client::{
 	TestClientBuilder,
 };
 // Frontier
-use fp_storage::{EthereumStorageSchema, ETHEREUM_CURRENT_TRANSACTION_STATUS, PALLET_ETHEREUM};
+use fp_storage::{constants::*, EthereumStorageSchema};
 use frontier_template_runtime::RuntimeApi;
 
 use crate::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
@@ -49,8 +49,8 @@ type OpaqueBlock =
 pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: PathBuf,
-) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
-	Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
+) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
+	Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 		client,
 		&fc_db::kv::DatabaseSettings {
 			source: sc_client_db::DatabaseSource::RocksDb {
@@ -545,8 +545,13 @@ fn commitment_create() {
 	let statuses = vec![t1];
 
 	// Build a block and fill the pallet-ethereum status.
-	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
-	let mut builder = client.new_block(Default::default()).unwrap();
+	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
+	let chain = client.chain_info();
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(chain.best_hash)
+		.with_parent_block_number(chain.best_number)
+		.build()
+		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses.encode()))
 		.unwrap();
@@ -623,13 +628,15 @@ fn commitment_update() {
 	let statuses_a1 = vec![t1.clone()];
 	let statuses_a2 = vec![t1, t2];
 
-	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
+	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
 
 	// First we create block and insert data in the offchain db.
 
 	// Build a block A1 and fill the pallet-ethereum status.
-	let mut builder = client
-		.new_block_at(client.genesis_hash(), Default::default(), false)
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(client.genesis_hash())
+		.with_parent_block_number(0)
+		.build()
 		.unwrap();
 	builder
 		.push_storage_change(key.clone(), Some(statuses_a1.encode()))
@@ -678,8 +685,10 @@ fn commitment_update() {
 	// Build a block A2 and fill the pallet-ethereum status.
 	let tmp = tempdir().expect("create a temporary directory");
 
-	let mut builder = client
-		.new_block_at(client.genesis_hash(), Default::default(), false)
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(client.genesis_hash())
+		.with_parent_block_number(0)
+		.build()
 		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses_a2.encode()))
@@ -747,8 +756,13 @@ fn mapping_read_works() {
 	let statuses = vec![t1];
 
 	// Build a block and fill the pallet-ethereum status.
-	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUS);
-	let mut builder = client.new_block(Default::default()).unwrap();
+	let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
+	let chain = client.chain_info();
+	let mut builder = BlockBuilderBuilder::new(&*client)
+		.on_parent_block(chain.best_hash)
+		.with_parent_block_number(chain.best_number)
+		.build()
+		.unwrap();
 	builder
 		.push_storage_change(key, Some(statuses.encode()))
 		.unwrap();

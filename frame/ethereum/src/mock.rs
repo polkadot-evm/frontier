@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -21,7 +21,7 @@ use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
 use frame_support::{
-	parameter_types,
+	derive_impl, parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
 	ConsensusEngineId, PalletId,
@@ -53,6 +53,7 @@ parameter_types! {
 	pub const BlockHashCount: u64 = 250;
 }
 
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;
@@ -60,6 +61,7 @@ impl frame_system::Config for Test {
 	type BlockLength = ();
 	type RuntimeOrigin = RuntimeOrigin;
 	type RuntimeCall = RuntimeCall;
+	type RuntimeTask = RuntimeTask;
 	type Nonce = u64;
 	type Hash = H256;
 	type Hashing = BlakeTwo256;
@@ -80,26 +82,27 @@ impl frame_system::Config for Test {
 }
 
 parameter_types! {
+	pub const ExistentialDeposit: u64 = 0;
 	// For weight estimation, we assume that the most locks on an individual account will be 50.
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
-	pub const ExistentialDeposit: u64 = 500;
+	pub const MaxReserves: u32 = 50;
 }
 
 impl pallet_balances::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
+	type RuntimeHoldReason = RuntimeHoldReason;
+	type RuntimeFreezeReason = RuntimeFreezeReason;
 	type WeightInfo = ();
 	type Balance = u64;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = ();
-	type RuntimeHoldReason = ();
-	type FreezeIdentifier = ();
+	type ReserveIdentifier = [u8; 8];
+	type FreezeIdentifier = RuntimeFreezeReason;
 	type MaxLocks = MaxLocks;
-	type MaxReserves = ();
-	type MaxHolds = ();
-	type MaxFreezes = ();
+	type MaxReserves = MaxReserves;
+	type MaxFreezes = ConstU32<1>;
 }
 
 parameter_types! {

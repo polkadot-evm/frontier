@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -36,7 +36,7 @@ use sp_runtime::{
 };
 use sp_timestamp::TimestampInherentData;
 
-use crate::eth::{Eth, EthConfig};
+use crate::eth::Eth;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 const LOG_TARGET: &str = "eth-pending";
@@ -66,7 +66,6 @@ where
 	BE: Backend<B>,
 	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
-	EC: EthConfig<B, C>,
 {
 	/// Creates a pending runtime API.
 	pub(crate) async fn pending_runtime_api(&self) -> Result<(B::Hash, ApiRef<C::Api>), Error> {
@@ -91,7 +90,7 @@ where
 			Default::default()
 		};
 
-		log::info!(target: LOG_TARGET, "Pending runtime API: header digest = {digest:?}");
+		log::debug!(target: LOG_TARGET, "Pending runtime API: header digest = {digest:?}");
 
 		let pending_header = <<B as BlockT>::Header as HeaderT>::new(
 			best_number + One::one(),
@@ -106,7 +105,7 @@ where
 			.initialize_pending_block(best_hash, &pending_header)
 			.is_err()
 		{
-			api.initialize_block(best_hash, &pending_header)?
+			api.initialize_block(best_hash, &pending_header)?;
 		}
 
 		// Apply inherents to the pending block.

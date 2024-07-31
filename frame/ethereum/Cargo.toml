@@ -21,7 +21,6 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-sp-std = { workspace = true }
 # Frontier
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
@@ -35,7 +34,7 @@ hex = { workspace = true }
 libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 rlp = { workspace = true }
 # Substrate
-pallet-balances = { workspace = true, features = ["default"] }
+pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 # Frontier
@@ -55,13 +54,11 @@ std = [
 	"frame-system/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	"sp-std/std",
 	# Frontier
 	"fp-consensus/std",
 	"fp-ethereum/std",
 	"fp-evm/std",
 	"fp-rpc/std",
-	"fp-self-contained/std",
 	"fp-storage/std",
 	"pallet-evm/std",
 ]

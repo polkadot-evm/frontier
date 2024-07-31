@@ -74,6 +74,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		let number = (await context.web3.eth.getBlock("latest")).number;
 		let last = number + BLOCK_HASH_COUNT;
 		for (let i = number; i <= last; i++) {
+			await new Promise((resolve) => setTimeout(resolve, 60));
 			let hash = (await context.web3.eth.getBlock("latest")).hash;
 			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
 			await createAndFinalizeBlockNowait(context.web3);
