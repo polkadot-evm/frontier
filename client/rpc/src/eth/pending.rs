@@ -37,6 +37,7 @@ use sp_runtime::{
 use sp_timestamp::TimestampInherentData;
 
 use crate::eth::Eth;
+use fp_rpc::EthereumRuntimeRPCApi;
 
 const LOG_TARGET: &str = "eth-pending";
 
@@ -60,6 +61,7 @@ where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
 	A: ChainApi<Block = B>,
@@ -99,7 +101,12 @@ where
 		);
 
 		// Initialize the pending block header
-		api.initialize_block(best_hash, &pending_header)?;
+		if api
+			.initialize_pending_block(best_hash, &pending_header)
+			.is_err()
+		{
+			api.initialize_block(best_hash, &pending_header)?;
+		}
 
 		// Apply inherents to the pending block.
 		let inherents = api.execute_in_transaction(move |api| {
