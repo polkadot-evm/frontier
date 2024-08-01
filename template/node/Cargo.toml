@@ -22,6 +22,8 @@ log = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 serde_json = { workspace = true, features = ["arbitrary_precision"] }
 
+# cumulus-client-service = { workspace = true }
+
 # Substrate
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", workspace = true }
 sc-basic-authorship = { workspace = true }

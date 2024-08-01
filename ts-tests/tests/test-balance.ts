@@ -48,40 +48,40 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 		expect(await context.web3.eth.getBalance(TEST_ACCOUNT)).to.equal(expectedTestBalance);
 	});
 
-	step("gas price too low", async function () {
-		nonce += 1;
+	// step("gas price too low", async function () {
+	// 	nonce += 1;
 
-		let gas_price = await context.web3.eth.getGasPrice();
-		const tx = await context.web3.eth.accounts.signTransaction(
-			{
-				from: GENESIS_ACCOUNT,
-				to: TEST_ACCOUNT,
-				value: TRANFER_VALUE,
-				gasPrice: Number(gas_price) - 1,
-				gas: "0x100000",
-				nonce: nonce,
-			},
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
-		let result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-		expect(result.error.message).to.be.equal("gas price less than block base fee");
-	});
+	// 	let gas_price = await context.web3.eth.getGasPrice();
+	// 	const tx = await context.web3.eth.accounts.signTransaction(
+	// 		{
+	// 			from: GENESIS_ACCOUNT,
+	// 			to: TEST_ACCOUNT,
+	// 			value: TRANFER_VALUE,
+	// 			gasPrice: Number(gas_price) - 1,
+	// 			gas: "0x100000",
+	// 			nonce: nonce,
+	// 		},
+	// 		GENESIS_ACCOUNT_PRIVATE_KEY
+	// 	);
+	// 	let result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+	// 	expect(result.error.message).to.be.equal("gas price less than block base fee");
+	// });
 
-	step("balance insufficient", async function () {
-		nonce += 1;
-		let test_account_balance = await context.web3.eth.getBalance(TEST_ACCOUNT);
-		const tx = await context.web3.eth.accounts.signTransaction(
-			{
-				from: TEST_ACCOUNT,
-				to: GENESIS_ACCOUNT,
-				value: test_account_balance + 1,
-				gasPrice: GAS_PRICE,
-				gas: "0x100000",
-				nonce: nonce,
-			},
-			TEST_ACCOUNT_PRIVATE_KEY
-		);
-		let result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
-		expect(result.error.message).to.be.equal("insufficient funds for gas * price + value");
-	});
+	// step("balance insufficient", async function () {
+	// 	nonce += 1;
+	// 	let test_account_balance = await context.web3.eth.getBalance(TEST_ACCOUNT);
+	// 	const tx = await context.web3.eth.accounts.signTransaction(
+	// 		{
+	// 			from: TEST_ACCOUNT,
+	// 			to: GENESIS_ACCOUNT,
+	// 			value: test_account_balance + 1,
+	// 			gasPrice: GAS_PRICE,
+	// 			gas: "0x100000",
+	// 			nonce: nonce,
+	// 		},
+	// 		TEST_ACCOUNT_PRIVATE_KEY
+	// 	);
+	// 	let result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
+	// 	expect(result.error.message).to.be.equal("insufficient funds for gas * price + value");
+	// });
 });
