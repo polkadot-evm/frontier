@@ -44,7 +44,7 @@ pub type HostFunctions = (
 #[cfg(not(feature = "runtime-benchmarks"))]
 pub type HostFunctions = (
 	sp_io::SubstrateHostFunctions,
-	// cumulus_client_service::storage_proof_size::HostFunctions,
+	cumulus_client_service::storage_proof_size::HostFunctions,
 );
 
 pub type Backend = FullBackend<Block>;

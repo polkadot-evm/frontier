@@ -30,6 +30,7 @@ sp-runtime = { workspace = true }
 # Frontier
 fp-account = { workspace = true }
 fp-evm = { workspace = true, features = ["serde"] }
+cumulus-primitives-storage-weight-reclaim = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
@@ -37,6 +38,7 @@ hex = { workspace = true }
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
+
 
 [features]
 default = ["std"]
@@ -55,6 +57,7 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"cumulus-primitives-storage-weight-reclaim/std",
 	# Frontier
 	"fp-account/std",
 	"fp-evm/std",

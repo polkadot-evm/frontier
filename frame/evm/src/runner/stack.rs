@@ -90,6 +90,10 @@ where
 		) -> (ExitReason, R),
 		R: Default,
 	{
+		let proof_size_before_execution = cumulus_primitives_storage_weight_reclaim::get_proof_size();
+		log::debug!(target: "evm", "bear: --- proof_size_before_execution: {:?}", proof_size_before_execution);
+
+
 		let (base_fee, weight) = T::FeeCalculator::min_gas_price();
 
 		#[cfg(feature = "forbid-evm-reentrancy")]
@@ -259,6 +263,8 @@ where
 		};
 		let actual_fee = effective_gas.saturating_mul(total_fee_per_gas);
 		let actual_base_fee = effective_gas.saturating_mul(base_fee);
+		let proof_size_after_execution = cumulus_primitives_storage_weight_reclaim::get_proof_size();
+		log::debug!(target: "evm", "bear: --- proof_size_after_execution: {:?}", proof_size_after_execution);
 
 		log::debug!(
 			target: "evm",

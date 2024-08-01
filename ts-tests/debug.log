@@ -2,57 +2,64 @@
 > ts-tests@1.0.0 test-single
 > mocha -r ts-node/register 'tests/test-balance.ts'
 
-(node:3017683) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+(node:3309921) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
 (Use `node --trace-deprecation ...` to show where the warning was created)
 
 
   Frontier RPC (Balance)
 CLI parameter `--execution` has no effect anymore and will be removed in the future!
 
-2024-08-01 13:42:47.672  WARN main sc_cli::config: Low open file descriptor limit configured for the process. Current value: 8192, recommended value: 10000.    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: Frontier Node    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: ✌️  version 0.0.0-04880061a02    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: ❤️  by Parity Technologies <admin@parity.io>, 2021-2024    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: 📋 Chain specification: Development    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: 🏷  Node name: high-pitched-smell-0544    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: 👤 Role: AUTHORITY    
-2024-08-01 13:42:47.672  INFO main sc_cli::runner: 💾 Database: RocksDb at /tmp/substrategS16Hc/chains/dev/db/full    
+2024-08-01 15:51:16.463  WARN main sc_cli::config: Low open file descriptor limit configured for the process. Current value: 8192, recommended value: 10000.    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: Frontier Node    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: ✌️  version 0.0.0-cb6deefd546    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: ❤️  by Parity Technologies <admin@parity.io>, 2021-2024    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: 📋 Chain specification: Development    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: 🏷  Node name: knowledgeable-mountain-8024    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: 👤 Role: AUTHORITY    
+2024-08-01 15:51:16.463  INFO main sc_cli::runner: 💾 Database: RocksDb at /tmp/substratesQ1gUm/chains/dev/db/full    
 
-2024-08-01 13:42:48.431  INFO main sc_service::client::client: 🔨 Initializing Genesis block/state (state: 0xe383…00d3, header-hash: 0x2f8b…578e)    
-2024-08-01 13:42:48.433  INFO main grandpa: 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2024-08-01 15:51:17.221  INFO main sc_service::client::client: 🔨 Initializing Genesis block/state (state: 0x3793…85e1, header-hash: 0x1025…fe5b)    
+2024-08-01 15:51:17.223  INFO main grandpa: 👴 Loading GRANDPA authority set from genesis on what appears to be first startup.    
+2024-08-01 15:51:17.270  WARN main sc_service::config: Using default protocol ID "sup" because none is configured in the chain specs    
+2024-08-01 15:51:17.270  INFO main sub-libp2p: 🏷  Local node identity is: 12D3KooWBfSJxhnfFaoYyEefNT8NGwDb8YGGeyRZvuUGo7T2kWAm    
+2024-08-01 15:51:17.270  INFO main sub-libp2p: Running libp2p network backend    
 
-2024-08-01 13:42:48.509  WARN main sc_service::config: Using default protocol ID "sup" because none is configured in the chain specs    
-2024-08-01 13:42:48.509  INFO main sub-libp2p: 🏷  Local node identity is: 12D3KooWDURvfqzfJc1FeX87qRSrkCxunLho4S1DEuHAP4LmTkyp    
-2024-08-01 13:42:48.509  INFO main sub-libp2p: Running libp2p network backend    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 Operating system: linux    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 CPU architecture: x86_64    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 Target environment: gnu    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 CPU: AMD Ryzen 7 5700G with Radeon Graphics    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 CPU cores: 8    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 Memory: 63578MB    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 Kernel: 6.5.0-44-generic    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 Linux distribution: Ubuntu 22.04.4 LTS    
-2024-08-01 13:42:48.516  INFO main sc_sysinfo: 💻 Virtual machine: no    
-2024-08-01 13:42:48.516  INFO main sc_service::builder: 📦 Highest known block at #0    
-2024-08-01 13:42:48.516  INFO main sc_rpc_server: Running JSON-RPC server: addr=127.0.0.1:19932, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
-2024-08-01 13:42:48.517  INFO main frontier_template_node::service: Manual Seal Ready    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 Operating system: linux    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 CPU architecture: x86_64    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 Target environment: gnu    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 CPU: AMD Ryzen 7 5700G with Radeon Graphics    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 CPU cores: 8    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 Memory: 63578MB    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 Kernel: 6.5.0-44-generic    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 Linux distribution: Ubuntu 22.04.4 LTS    
+2024-08-01 15:51:17.276  INFO main sc_sysinfo: 💻 Virtual machine: no    
+2024-08-01 15:51:17.276  INFO main sc_service::builder: 📦 Highest known block at #0    
+2024-08-01 15:51:17.276  INFO main sc_rpc_server: Running JSON-RPC server: addr=127.0.0.1:19932, allowed origins=["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*", "https://127.0.0.1:*", "https://polkadot.js.org"]    
+2024-08-01 15:51:17.276  INFO main frontier_template_node::service: Manual Seal Ready    
 
     ✔ genesis balance is setup correctly
-2024-08-01 13:42:48.558  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🙌 Starting consensus session on top of parent 0x2f8b2869cb2f54eea9207b35ffa8ad693230de286b8f7f594e5d77ec3f84578e    
-2024-08-01 13:42:48.559  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🎁 Prepared block for proposing at 1 (1 ms) [hash: 0xaa5923549cc89226cbb376123eaa719e68382fcd5015f897a52cf55b33731984; parent_hash: 0x2f8b…578e; extrinsics (1): [0x1d67…4604]    
-2024-08-01 13:42:48.559  INFO tokio-runtime-worker substrate: 🏆 Imported #1 (0x2f8b…578e → 0xaa59…1984)    
+2024-08-01 15:51:17.354  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🙌 Starting consensus session on top of parent 0x1025df4344a8dfbc8d219b1fc664b802cbafb15b85f5bd6e587fc926b351fe5b    
+2024-08-01 15:51:17.356  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🎁 Prepared block for proposing at 1 (1 ms) [hash: 0x007c5f35640e12232fbdd4105615d09bb38dbf33d22e6c791749cfab3b19d13a; parent_hash: 0x1025…fe5b; extrinsics (1): [0x1d67…4604]    
+2024-08-01 15:51:17.356  INFO tokio-runtime-worker substrate: 🏆 Imported #1 (0x1025…fe5b → 0x007c…d13a)    
 
-2024-08-01 13:42:49.077 DEBUG tokio-runtime-worker evm: Call execution using address 0xdd33…2901: Succeed(Stopped)    
-2024-08-01 13:42:49.078 DEBUG tokio-runtime-worker evm: Execution Succeed(Stopped) [source: 0x6be02d1d3665660d22ff9624b7be0551ee1ac91b, value: 512, gas_limit: 1048576, actual_fee: 21000000000000, used_gas: 21000, effective_gas: 21000, base_fee: 875157000, total_fee_per_gas: 1000000000, is_transactional: true]    
-2024-08-01 13:42:49.080 DEBUG tokio-runtime-worker evm: Call execution using address 0xdd33…2901: Succeed(Stopped)    
-2024-08-01 13:42:49.080 DEBUG tokio-runtime-worker evm: Execution Succeed(Stopped) [source: 0x6be02d1d3665660d22ff9624b7be0551ee1ac91b, value: 512, gas_limit: 1048576, actual_fee: 21000000000000, used_gas: 21000, effective_gas: 21000, base_fee: 875157000, total_fee_per_gas: 1000000000, is_transactional: true]    
-2024-08-01 13:42:49.081  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🙌 Starting consensus session on top of parent 0xaa5923549cc89226cbb376123eaa719e68382fcd5015f897a52cf55b33731984    
-2024-08-01 13:42:49.082 DEBUG tokio-runtime-worker evm: Call execution using address 0xdd33…2901: Succeed(Stopped)    
-2024-08-01 13:42:49.082 DEBUG tokio-runtime-worker evm: Execution Succeed(Stopped) [source: 0x6be02d1d3665660d22ff9624b7be0551ee1ac91b, value: 512, gas_limit: 1048576, actual_fee: 21000000000000, used_gas: 21000, effective_gas: 21000, base_fee: 875157000, total_fee_per_gas: 1000000000, is_transactional: true]    
-2024-08-01 13:42:49.082  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🎁 Prepared block for proposing at 2 (1 ms) [hash: 0x02d74598674464a0d454f165090d0873f1eafe16b76a2329bdb46e999f5dab01; parent_hash: 0xaa59…1984; extrinsics (2): [0xf79b…7548, 0x7d8a…4c81]    
-2024-08-01 13:42:49.083  INFO tokio-runtime-worker substrate: 🏆 Imported #2 (0xaa59…1984 → 0x02d7…ab01)    
+2024-08-01 15:51:17.870 DEBUG tokio-runtime-worker evm: bear: --- proof_size_before_execution: None    
+2024-08-01 15:51:17.870 DEBUG tokio-runtime-worker evm: Call execution using address 0xdd33…2901: Succeed(Stopped)    
+2024-08-01 15:51:17.870 DEBUG tokio-runtime-worker evm: bear: --- proof_size_after_execution: None    
+2024-08-01 15:51:17.870 DEBUG tokio-runtime-worker evm: Execution Succeed(Stopped) [source: 0x6be02d1d3665660d22ff9624b7be0551ee1ac91b, value: 512, gas_limit: 1048576, actual_fee: 21000000000000, used_gas: 21000, effective_gas: 21000, base_fee: 875157000, total_fee_per_gas: 1000000000, is_transactional: true]    
 
-    ✔ balance to be updated after transfer (1031ms)
+2024-08-01 15:51:17.872 DEBUG tokio-runtime-worker evm: bear: --- proof_size_before_execution: None    
+2024-08-01 15:51:17.872 DEBUG tokio-runtime-worker evm: Call execution using address 0xdd33…2901: Succeed(Stopped)    
+2024-08-01 15:51:17.872 DEBUG tokio-runtime-worker evm: bear: --- proof_size_after_execution: None    
+2024-08-01 15:51:17.872 DEBUG tokio-runtime-worker evm: Execution Succeed(Stopped) [source: 0x6be02d1d3665660d22ff9624b7be0551ee1ac91b, value: 512, gas_limit: 1048576, actual_fee: 21000000000000, used_gas: 21000, effective_gas: 21000, base_fee: 875157000, total_fee_per_gas: 1000000000, is_transactional: true]    
+2024-08-01 15:51:17.874  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🙌 Starting consensus session on top of parent 0x007c5f35640e12232fbdd4105615d09bb38dbf33d22e6c791749cfab3b19d13a    
+2024-08-01 15:51:17.874 DEBUG tokio-runtime-worker evm: bear: --- proof_size_before_execution: None    
+2024-08-01 15:51:17.874 DEBUG tokio-runtime-worker evm: Call execution using address 0xdd33…2901: Succeed(Stopped)    
+2024-08-01 15:51:17.874 DEBUG tokio-runtime-worker evm: bear: --- proof_size_after_execution: None    
+2024-08-01 15:51:17.874 DEBUG tokio-runtime-worker evm: Execution Succeed(Stopped) [source: 0x6be02d1d3665660d22ff9624b7be0551ee1ac91b, value: 512, gas_limit: 1048576, actual_fee: 21000000000000, used_gas: 21000, effective_gas: 21000, base_fee: 875157000, total_fee_per_gas: 1000000000, is_transactional: true]    
+2024-08-01 15:51:17.875  INFO tokio-runtime-worker sc_basic_authorship::basic_authorship: 🎁 Prepared block for proposing at 2 (1 ms) [hash: 0x61785c8c6409bfc995189ec8d47e98971289102efc10f8bd2e86d3add60646b5; parent_hash: 0x007c…d13a; extrinsics (2): [0xf79b…7548, 0x7d8a…4c81]    
+2024-08-01 15:51:17.876  INFO tokio-runtime-worker substrate: 🏆 Imported #2 (0x007c…d13a → 0x6178…46b5)    
+
+    ✔ balance to be updated after transfer (1028ms)
 
 
   2 passing (2s)
