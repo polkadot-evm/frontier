@@ -17,9 +17,10 @@
 
 #![allow(clippy::comparison_chain)]
 
+use crate::TransactionPov;
 use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
-use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
+use frame_support::sp_runtime::traits::UniqueSaturatedInto;
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug)]
@@ -49,8 +50,7 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
-	pub weight_limit: Option<Weight>,
-	pub proof_size_base_cost: Option<u64>,
+	pub transaction_pov: Option<TransactionPov>,
 	_marker: core::marker::PhantomData<E>,
 }
 
@@ -58,6 +58,8 @@ pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 #[repr(u8)]
 #[derive(num_enum::FromPrimitive, num_enum::IntoPrimitive, Debug)]
 pub enum TransactionValidationError {
+	/// The proof limit is too low
+	ProofLimitTooLow,
 	/// The transaction gas limit is too low
 	GasLimitTooLow,
 	/// The transaction gas limit is too hign
@@ -87,14 +89,12 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	pub fn new(
 		config: CheckEvmTransactionConfig<'config>,
 		transaction: CheckEvmTransactionInput,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		transaction_pov: Option<TransactionPov>,
 	) -> Self {
 		CheckEvmTransaction {
 			config,
 			transaction,
-			weight_limit,
-			proof_size_base_cost,
+			transaction_pov,
 			_marker: Default::default(),
 		}
 	}
@@ -201,15 +201,11 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 
 	pub fn validate_common(&self) -> Result<&Self, E> {
 		if self.config.is_transactional {
-			// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
-			// Validate the weight limit can afford recording the proof size cost.
-			if let (Some(weight_limit), Some(proof_size_base_cost)) =
-				(self.weight_limit, self.proof_size_base_cost)
-			{
-				let _ = weight_limit
-					.proof_size()
-					.checked_sub(proof_size_base_cost)
-					.ok_or(TransactionValidationError::GasLimitTooLow)?;
+			// Ensure the proof size is bigger than the basic proof_size(extrinsics_len)
+			if let Some(pov) = self.transaction_pov {
+				if pov.weight_limit.proof_size() <= pov.extrinsics_len {
+					return Err(TransactionValidationError::ProofLimitTooLow.into());
+				}
 			}
 
 			// We must ensure a transaction can pay the cost of its data bytes.

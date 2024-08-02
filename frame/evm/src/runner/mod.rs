@@ -19,7 +19,7 @@ pub mod stack;
 
 use crate::{Config, Weight};
 use alloc::vec::Vec;
-use fp_evm::{CallInfo, CreateInfo};
+use fp_evm::{CallInfo, CreateInfo, TransactionPov};
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug)]
@@ -42,8 +42,7 @@ pub trait Runner<T: Config> {
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		transaction_pov: Option<TransactionPov>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>>;
 
@@ -59,8 +58,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		transaction_pov: Option<TransactionPov>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>>;
 
@@ -75,8 +73,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		transaction_pov: Option<TransactionPov>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 
@@ -92,8 +89,7 @@ pub trait Runner<T: Config> {
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		transaction_pov: Option<TransactionPov>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }

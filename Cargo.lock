@@ -6814,6 +6814,7 @@ dependencies = [
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
+ "cumulus-primitives-storage-weight-reclaim",
  "ethereum",
  "ethereum-types",
  "evm",
@@ -6827,6 +6828,7 @@ dependencies = [
  "frame-system",
  "hex",
  "libsecp256k1",
+ "log",
  "pallet-balances",
  "pallet-evm",
  "pallet-timestamp",
@@ -9929,6 +9931,7 @@ dependencies = [
 name = "sc-block-builder"
 version = "0.33.0"
 dependencies = [
+ "log",
  "parity-scale-codec",
  "sp-api",
  "sp-block-builder",

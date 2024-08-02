@@ -246,7 +246,6 @@ pub mod pallet {
 				is_transactional,
 				validate,
 				None,
-				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -320,7 +319,6 @@ pub mod pallet {
 				access_list,
 				is_transactional,
 				validate,
-				None,
 				None,
 				T::config(),
 			) {
@@ -409,7 +407,6 @@ pub mod pallet {
 				is_transactional,
 				validate,
 				None,
-				None,
 				T::config(),
 			) {
 				Ok(info) => info,
@@ -480,6 +477,8 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
+		/// Proof size limit is too low
+		ProofLimitTooLow,
 		/// Not enough balance to perform action
 		BalanceLow,
 		/// Calculating total fee overflowed
@@ -511,6 +510,7 @@ pub mod pallet {
 	impl<T> From<TransactionValidationError> for Error<T> {
 		fn from(validation_error: TransactionValidationError) -> Self {
 			match validation_error {
+				TransactionValidationError::ProofLimitTooLow => Error::<T>::ProofLimitTooLow,
 				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
 				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
 				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,

@@ -64,7 +64,8 @@ use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
 use fp_ethereum::ValidatedTransaction as ValidatedTransactionT;
 use fp_evm::{
-	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, TransactionValidationError,
+	CallOrCreateInfo, CheckEvmTransaction, CheckEvmTransactionConfig, TransactionPov,
+	TransactionValidationError,
 };
 pub use fp_rpc::TransactionStatus;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
@@ -295,7 +296,16 @@ pub mod pallet {
 				"pre log already exists; block is invalid",
 			);
 
-			Self::apply_validated_transaction(source, transaction).map(|(post_info, _)| post_info)
+			let proof_size_before_execution =
+				cumulus_primitives_storage_weight_reclaim::get_proof_size();
+
+			let res = Self::apply_validated_transaction(source, transaction)
+				.map(|(post_info, _)| post_info);
+			let proof_size_after_execution =
+				cumulus_primitives_storage_weight_reclaim::get_proof_size();
+			log::debug!(target: "evm", "bear: --- ethereum: proof_size: before: {:?}, after: {:?}", proof_size_before_execution, proof_size_after_execution);
+
+			res
 		}
 	}
 
@@ -361,17 +371,14 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-	pub fn transaction_weight(transaction_data: &TransactionData) -> (Option<Weight>, Option<u64>) {
-		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
+	pub fn transaction_pov(transaction_data: &TransactionData) -> Option<TransactionPov> {
+		let extrinsics_len = transaction_data.proof_size_base_cost();
+		let weight_limit = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
-		) {
-			weight_limit if weight_limit.proof_size() > 0 => (
-				Some(weight_limit),
-				Some(transaction_data.proof_size_base_cost()),
-			),
-			_ => (None, None),
-		}
+		);
+		let storage_proof_size = cumulus_primitives_storage_weight_reclaim::get_proof_size();
+		TransactionPov::new(weight_limit, extrinsics_len, storage_proof_size)
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
@@ -493,7 +500,7 @@ impl<T: Config> Pallet<T> {
 	) -> TransactionValidity {
 		let transaction_data: TransactionData = transaction.into();
 		let transaction_nonce = transaction_data.nonce;
-		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
+		let transaction_pov = Self::transaction_pov(&transaction_data);
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
@@ -723,7 +730,7 @@ impl<T: Config> Pallet<T> {
 		config: Option<evm::Config>,
 	) -> Result<(Option<H160>, Option<H160>, CallOrCreateInfo), DispatchErrorWithPostInfo> {
 		let transaction_data: TransactionData = transaction.into();
-		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
+		let transaction_pov = Self::transaction_pov(&transaction_data);
 		let is_transactional = true;
 		let validate = false;
 
@@ -861,7 +868,7 @@ impl<T: Config> Pallet<T> {
 		transaction: &Transaction,
 	) -> Result<(), TransactionValidityError> {
 		let transaction_data: TransactionData = transaction.into();
-		let (weight_limit, proof_size_base_cost) = Self::transaction_weight(&transaction_data);
+		let transaction_pov = Self::transaction_pov(&transaction_data);
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 

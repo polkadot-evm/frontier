@@ -77,6 +77,24 @@ pub enum AccessedStorage {
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct TransactionPov {
+	pub weight_limit: Weight,
+	pub extrinsics_len: u64,
+	pub storage_proof_size: Option<u64>,
+}
+
+impl TransactionPov {
+	pub fn new(weight_limit: Weight, extrinsics_len: u64, storage_proof_size: Option<u64>) -> Self {
+		Self {
+			weight_limit,
+			extrinsics_len,
+			storage_proof_size,
+		}
+	}
+}
+
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
 	pub ref_time_limit: Option<u64>,
 	pub proof_size_limit: Option<u64>,
