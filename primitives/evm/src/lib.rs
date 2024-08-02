@@ -80,15 +80,21 @@ pub enum AccessedStorage {
 pub struct TransactionPov {
 	pub weight_limit: Weight,
 	pub extrinsics_len: u64,
-	pub storage_proof_size: Option<u64>,
+	pub proof_size_pre_execution: Option<u64>,
+	pub proof_size_used: u64,
 }
 
 impl TransactionPov {
-	pub fn new(weight_limit: Weight, extrinsics_len: u64, storage_proof_size: Option<u64>) -> Self {
+	pub fn new(
+		weight_limit: Weight,
+		extrinsics_len: u64,
+		proof_size_pre_execution: Option<u64>,
+	) -> Self {
 		Self {
 			weight_limit,
 			extrinsics_len,
-			storage_proof_size,
+			proof_size_pre_execution,
+			proof_size_used: extrinsics_len,
 		}
 	}
 }
@@ -127,6 +133,15 @@ impl WeightInfo {
 			}),
 			_ => return Err("must provide Some valid weight limit or None"),
 		})
+	}
+
+	pub fn from_transaction_pov(transaction_pov: TransactionPov) -> Self {
+		Self {
+			ref_time_limit: Some(transaction_pov.weight_limit.ref_time()),
+			proof_size_limit: Some(transaction_pov.weight_limit.proof_size()),
+			ref_time_usage: Some(0),
+			proof_size_usage: Some(transaction_pov.proof_size_used),
+		}
 	}
 
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
