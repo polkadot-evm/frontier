@@ -41,8 +41,8 @@ use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
 // Frontier
 use fp_evm::{
-	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
+	AccessedStorage, CallInfo, CreateInfo, EvmWeightInfo, ExecutionInfoV2, IsPrecompileResult, Log,
+	PrecompileSet, Vicinity, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE,
 	ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE, WRITE_PROOF_SIZE,
 };
 
@@ -75,8 +75,7 @@ where
 		config: &'config evm::Config,
 		precompiles: &'precompiles T::PrecompilesType,
 		is_transactional: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 		f: F,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
@@ -112,8 +111,7 @@ where
 			f,
 			base_fee,
 			weight,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		);
 
 		// Set IN_EVM to false
@@ -137,8 +135,7 @@ where
 		f: F,
 		base_fee: U256,
 		weight: Weight,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -151,14 +148,6 @@ where
 		) -> (ExitReason, R),
 		R: Default,
 	{
-		// Used to record the external costs in the evm through the StackState implementation
-		let maybe_weight_info =
-			WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
-				|_| RunnerError {
-					error: Error::<T>::GasLimitTooLow,
-					weight,
-				},
-			)?;
 		// The precompile check is only used for transactional invocations. However, here we always
 		// execute the check, because the check has side effects.
 		match precompiles.is_precompile(source, gas_limit) {
@@ -173,7 +162,7 @@ where
 						standard: gas_limit.into(),
 						effective: gas_limit.into(),
 					},
-					weight_info: maybe_weight_info,
+					weight_info,
 					logs: Default::default(),
 				})
 			}
@@ -240,7 +229,7 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info);
+		let state = SubstrateStackState::new(&vicinity, metadata, weight_info);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		let (reason, retv) = f(&mut executor);
@@ -366,8 +355,7 @@ where
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 		evm_config: &evm::Config,
 	) -> Result<(), RunnerError<Self::Error>> {
 		let (base_fee, mut weight) = T::FeeCalculator::min_gas_price();
@@ -394,8 +382,7 @@ where
 				value,
 				access_list,
 			},
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		)
 		.validate_in_block_for(&source_account)
 		.and_then(|v| v.with_base_fee())
@@ -416,8 +403,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -432,8 +418,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config,
 			)?;
 		}
@@ -447,8 +432,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
@@ -464,8 +448,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -480,8 +463,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config,
 			)?;
 		}
@@ -495,8 +477,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
@@ -519,8 +500,7 @@ where
 		access_list: Vec<(H160, Vec<H256>)>,
 		is_transactional: bool,
 		validate: bool,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
@@ -535,8 +515,7 @@ where
 				nonce,
 				access_list.clone(),
 				is_transactional,
-				weight_limit,
-				proof_size_base_cost,
+				weight_info,
 				config,
 			)?;
 		}
@@ -551,8 +530,7 @@ where
 			config,
 			&precompiles,
 			is_transactional,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
@@ -677,7 +655,7 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
 	recorded: Recorded,
-	weight_info: Option<WeightInfo>,
+	weight_info: Option<EvmWeightInfo>,
 	_marker: PhantomData<T>,
 }
 
@@ -686,7 +664,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	pub fn new(
 		vicinity: &'vicinity Vicinity,
 		metadata: StackSubstateMetadata<'config>,
-		weight_info: Option<WeightInfo>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Self {
 		Self {
 			vicinity,
@@ -703,7 +681,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		}
 	}
 
-	pub fn weight_info(&self) -> Option<WeightInfo> {
+	pub fn weight_info(&self) -> Option<EvmWeightInfo> {
 		self.weight_info
 	}
 
@@ -711,7 +689,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		&self.recorded
 	}
 
-	pub fn info_mut(&mut self) -> (&mut Option<WeightInfo>, &mut Recorded) {
+	pub fn info_mut(&mut self) -> (&mut Option<EvmWeightInfo>, &mut Recorded) {
 		(&mut self.weight_info, &mut self.recorded)
 	}
 }
@@ -1205,7 +1183,6 @@ mod tests {
 			&MockPrecompileSet,
 			false,
 			None,
-			None,
 			|_| {
 				let res = Runner::<Test>::execute(
 					H160::default(),
@@ -1216,7 +1193,6 @@ mod tests {
 					&config,
 					&MockPrecompileSet,
 					false,
-					None,
 					None,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
@@ -1248,7 +1224,6 @@ mod tests {
 			&config,
 			&MockPrecompileSet,
 			false,
-			None,
 			None,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);

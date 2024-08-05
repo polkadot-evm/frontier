@@ -17,10 +17,14 @@
 
 #![allow(clippy::comparison_chain)]
 
-use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
-use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
+
+use alloc::vec::Vec;
+// Substrate
+use frame_support::sp_runtime::traits::UniqueSaturatedInto;
 use sp_core::{H160, H256, U256};
+// Frontier
+use crate::EvmWeightInfo;
 
 #[derive(Debug)]
 pub struct CheckEvmTransactionInput {
@@ -49,8 +53,7 @@ pub struct CheckEvmTransactionConfig<'config> {
 pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub config: CheckEvmTransactionConfig<'config>,
 	pub transaction: CheckEvmTransactionInput,
-	pub weight_limit: Option<Weight>,
-	pub proof_size_base_cost: Option<u64>,
+	pub weight_info: Option<EvmWeightInfo>,
 	_marker: core::marker::PhantomData<E>,
 }
 
@@ -87,14 +90,12 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	pub fn new(
 		config: CheckEvmTransactionConfig<'config>,
 		transaction: CheckEvmTransactionInput,
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
+		weight_info: Option<EvmWeightInfo>,
 	) -> Self {
 		CheckEvmTransaction {
 			config,
 			transaction,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 			_marker: Default::default(),
 		}
 	}
@@ -201,15 +202,9 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 
 	pub fn validate_common(&self) -> Result<&Self, E> {
 		if self.config.is_transactional {
-			// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
-			// Validate the weight limit can afford recording the proof size cost.
-			if let (Some(weight_limit), Some(proof_size_base_cost)) =
-				(self.weight_limit, self.proof_size_base_cost)
-			{
-				let _ = weight_limit
-					.proof_size()
-					.checked_sub(proof_size_base_cost)
-					.ok_or(TransactionValidationError::GasLimitTooLow)?;
+			// The weight_info is None if and only if the weight_limit's proof size is less than the proof_size_base_cost
+			if self.weight_info.is_none() {
+				return Err(TransactionValidationError::GasLimitTooLow.into());
 			}
 
 			// We must ensure a transaction can pay the cost of its data bytes.
@@ -247,6 +242,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use frame_support::weights::Weight;
 
 	#[derive(Debug, PartialEq)]
 	pub enum TestError {
@@ -295,8 +291,7 @@ mod tests {
 		pub max_fee_per_gas: Option<U256>,
 		pub max_priority_fee_per_gas: Option<U256>,
 		pub value: U256,
-		pub weight_limit: Option<Weight>,
-		pub proof_size_base_cost: Option<u64>,
+		pub weight_info: Option<EvmWeightInfo>,
 	}
 
 	impl Default for TestCase {
@@ -313,8 +308,7 @@ mod tests {
 				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				value: U256::from(1u8),
-				weight_limit: None,
-				proof_size_base_cost: None,
+				weight_info: EvmWeightInfo::new(Weight::from_parts(1, 1), 1),
 			}
 		}
 	}
@@ -332,8 +326,7 @@ mod tests {
 			max_fee_per_gas,
 			max_priority_fee_per_gas,
 			value,
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
@@ -355,8 +348,7 @@ mod tests {
 				value,
 				access_list: vec![],
 			},
-			weight_limit,
-			proof_size_base_cost,
+			weight_info,
 		)
 	}
 
@@ -383,9 +375,9 @@ mod tests {
 	fn transaction_gas_limit_low_proof_size<'config>(
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
+		let weight_info = EvmWeightInfo::new(Weight::from_parts(1, 1), 2);
 		test_env(TestCase {
-			weight_limit: Some(Weight::from_parts(1, 1)),
-			proof_size_base_cost: Some(2),
+			weight_info,
 			is_transactional,
 			..Default::default()
 		})
