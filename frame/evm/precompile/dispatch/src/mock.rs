@@ -17,7 +17,6 @@
 
 //! Test mock for unit tests and benchmarking
 
-use alloc::boxed::Box;
 use core::str::FromStr;
 use frame_support::{
 	derive_impl, parameter_types,
