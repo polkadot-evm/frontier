@@ -378,7 +378,11 @@ impl<T: Config> Pallet<T> {
 			true,
 		);
 		let proof_size_pre_execution = cumulus_primitives_storage_weight_reclaim::get_proof_size();
-		TransactionPov::new(weight_limit, extrinsics_len, proof_size_pre_execution)
+		Some(TransactionPov::new(
+			weight_limit,
+			extrinsics_len,
+			proof_size_pre_execution,
+		))
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {
@@ -513,8 +517,7 @@ impl<T: Config> Pallet<T> {
 				is_transactional: true,
 			},
 			transaction_data.clone().into(),
-			weight_limit,
-			proof_size_base_cost,
+			transaction_pov,
 		)
 		.validate_in_pool_for(&who)
 		.and_then(|v| v.with_chain_id())
@@ -808,8 +811,7 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
-					weight_limit,
-					proof_size_base_cost,
+					transaction_pov,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -838,8 +840,7 @@ impl<T: Config> Pallet<T> {
 					access_list,
 					is_transactional,
 					validate,
-					weight_limit,
-					proof_size_base_cost,
+					transaction_pov,
 					config.as_ref().unwrap_or_else(|| T::config()),
 				) {
 					Ok(res) => res,
@@ -881,8 +882,7 @@ impl<T: Config> Pallet<T> {
 				is_transactional: true,
 			},
 			transaction_data.into(),
-			weight_limit,
-			proof_size_base_cost,
+			transaction_pov,
 		)
 		.validate_in_block_for(&who)
 		.and_then(|v| v.with_chain_id())
@@ -996,6 +996,9 @@ pub struct InvalidTransactionWrapper(InvalidTransaction);
 impl From<TransactionValidationError> for InvalidTransactionWrapper {
 	fn from(validation_error: TransactionValidationError) -> Self {
 		match validation_error {
+			TransactionValidationError::ProofLimitTooLow => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::ProofLimitTooLow as u8),
+			),
 			TransactionValidationError::GasLimitTooLow => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
 			),

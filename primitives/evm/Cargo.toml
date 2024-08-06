@@ -16,6 +16,7 @@ num_enum = { workspace = true, default-features = false }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
+cumulus-primitives-storage-weight-reclaim = { workspace = true }
 # Substrate
 frame-support = { workspace = true }
 sp-core = { workspace = true }
@@ -32,6 +33,7 @@ std = [
 	# Substrate
 	"frame-support/std",
 	"sp-core/std",
+	"cumulus-primitives-storage-weight-reclaim/std",
 	"sp-runtime/std",
 ]
 serde = [

@@ -97,6 +97,27 @@ impl TransactionPov {
 			proof_size_used: extrinsics_len,
 		}
 	}
+
+	pub fn proof_size_used(&self) -> u64 {
+		// if we don't have proof_size_pre_execution, that means that we don't care about the tx proof size
+		let Some(proof_size_pre_execution) = self.proof_size_pre_execution else {
+			return 0;
+		};
+
+		// If proof_size_pre_execution is enable, but the proof_size_post_execution is disable, maybe the proof_size host function
+		// doesn't work.
+		let Some(proof_size_post_execution) =
+			cumulus_primitives_storage_weight_reclaim::get_proof_size()
+		else {
+			return self.proof_size_used;
+		};
+
+		let proof_size_used = proof_size_post_execution
+			.saturating_sub(proof_size_pre_execution)
+			.saturating_add(self.extrinsics_len);
+
+		proof_size_used
+	}
 }
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]

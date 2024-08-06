@@ -226,33 +226,17 @@ where
 			origin: source,
 		};
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata);
+		let state = SubstrateStackState::new(&vicinity, metadata, transaction_pov);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 		let (reason, retv) = f(&mut executor);
 
 		// Post execution.
 		let opcode_used_gas = executor.used_gas();
-
-		let proof_size_used_gas = if let Some(mut pov) = transaction_pov {
-			let proof_size_post_execution =
-				cumulus_primitives_storage_weight_reclaim::get_proof_size().unwrap_or_default();
-			let proof_size_used = proof_size_post_execution
-				.saturating_sub(pov.proof_size_pre_execution.unwrap_or_default())
-				.saturating_add(pov.extrinsics_len);
-
-			// If the proof size used is greater than the weight limit, we skip the storage apply and return early.
-			if proof_size_used > pov.weight_limit.proof_size() {
-				return Err(RunnerError {
-					error: Error::<T>::ProofLimitTooLow,
-					weight,
-				});
-			}
-
-			pov.proof_size_used = proof_size_used;
-			proof_size_used.saturating_mul(T::GasLimitPovSizeRatio::get())
-		} else {
-			0
-		};
+		let proof_size_used_gas = transaction_pov.map_or(0, |mut pov| {
+			pov.proof_size_used = pov.proof_size_used();
+			pov.proof_size_used
+				.saturating_mul(T::GasLimitPovSizeRatio::get())
+		});
 		let used_gas = U256::from(core::cmp::max(opcode_used_gas, proof_size_used_gas));
 
 		let fee = used_gas.saturating_mul(total_fee_per_gas);
@@ -642,12 +626,17 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	vicinity: &'vicinity Vicinity,
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
+	transaction_pov: Option<TransactionPov>,
 	_marker: PhantomData<T>,
 }
 
 impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	/// Create a new backend with given vicinity.
-	pub fn new(vicinity: &'vicinity Vicinity, metadata: StackSubstateMetadata<'config>) -> Self {
+	pub fn new(
+		vicinity: &'vicinity Vicinity,
+		metadata: StackSubstateMetadata<'config>,
+		transaction_pov: Option<TransactionPov>,
+	) -> Self {
 		Self {
 			vicinity,
 			substate: SubstrateStackSubstate {
@@ -656,8 +645,9 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 				logs: Vec::new(),
 				parent: None,
 			},
-			_marker: PhantomData,
 			original_storage: BTreeMap::new(),
+			transaction_pov,
+			_marker: PhantomData,
 		}
 	}
 }
@@ -765,7 +755,19 @@ where
 	}
 
 	fn exit_commit(&mut self) -> Result<(), ExitError> {
-		self.substate.exit_commit()
+		match self.transaction_pov {
+			Some(pov) if pov.proof_size_used > pov.weight_limit.proof_size() => {
+				log::debug!(
+					target: "evm",
+					"Exceeded proof size limit. Proof size used: {}, proof size limit: {}",
+					pov.proof_size_used,
+					pov.weight_limit.proof_size()
+				);
+				self.substate.exit_discard()?;
+				Err(ExitError::OutOfGas)
+			}
+			_ => self.substate.exit_commit(),
+		}
 	}
 
 	fn exit_revert(&mut self) -> Result<(), ExitError> {
