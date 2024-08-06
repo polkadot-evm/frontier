@@ -232,9 +232,8 @@ where
 
 		// Post execution.
 		let opcode_used_gas = executor.used_gas();
-		let proof_size_used_gas = transaction_pov.map_or(0, |mut pov| {
-			pov.proof_size_used = pov.proof_size_used();
-			pov.proof_size_used
+		let proof_size_used_gas = transaction_pov.map_or(0, |pov| {
+			pov.proof_size_used()
 				.saturating_mul(T::GasLimitPovSizeRatio::get())
 		});
 		let used_gas = U256::from(core::cmp::max(opcode_used_gas, proof_size_used_gas));

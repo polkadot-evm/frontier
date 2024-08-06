@@ -242,10 +242,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 
 #[cfg(test)]
 mod tests {
+	use frame_support::weights::Weight;
+
 	use super::*;
 
 	#[derive(Debug, PartialEq)]
 	pub enum TestError {
+		ProofLimitTooLow,
 		GasLimitTooLow,
 		GasLimitTooHigh,
 		GasPriceTooLow,
@@ -264,6 +267,7 @@ mod tests {
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
 			match e {
+				TransactionValidationError::ProofLimitTooLow => TestError::ProofLimitTooLow,
 				TransactionValidationError::GasLimitTooLow => TestError::GasLimitTooLow,
 				TransactionValidationError::GasLimitTooHigh => TestError::GasLimitTooHigh,
 				TransactionValidationError::GasPriceTooLow => TestError::GasPriceTooLow,
@@ -291,8 +295,7 @@ mod tests {
 		pub max_fee_per_gas: Option<U256>,
 		pub max_priority_fee_per_gas: Option<U256>,
 		pub value: U256,
-		pub weight_limit: Option<Weight>,
-		pub proof_size_base_cost: Option<u64>,
+		pub transaction_pov: Option<TransactionPov>,
 	}
 
 	impl Default for TestCase {
@@ -309,8 +312,7 @@ mod tests {
 				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				value: U256::from(1u8),
-				weight_limit: None,
-				proof_size_base_cost: None,
+				transaction_pov: None,
 			}
 		}
 	}
@@ -328,8 +330,7 @@ mod tests {
 			max_fee_per_gas,
 			max_priority_fee_per_gas,
 			value,
-			weight_limit,
-			proof_size_base_cost,
+			transaction_pov,
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
@@ -351,8 +352,7 @@ mod tests {
 				value,
 				access_list: vec![],
 			},
-			weight_limit,
-			proof_size_base_cost,
+			transaction_pov,
 		)
 	}
 
@@ -380,8 +380,11 @@ mod tests {
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
 		test_env(TestCase {
-			weight_limit: Some(Weight::from_parts(1, 1)),
-			proof_size_base_cost: Some(2),
+			transaction_pov: Some(TransactionPov::new(
+				Weight::from_parts(100, 100),
+				100,
+				Some(20),
+			)),
 			is_transactional,
 			..Default::default()
 		})
@@ -576,11 +579,11 @@ mod tests {
 		// Pool
 		let res = test.validate_in_pool_for(&who);
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		assert_eq!(res.unwrap_err(), TestError::ProofLimitTooLow);
 		// Block
 		let res = test.validate_in_block_for(&who);
 		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::GasLimitTooLow);
+		assert_eq!(res.unwrap_err(), TestError::ProofLimitTooLow);
 	}
 
 	// Gas limit too low non-transactional succeeds in pool and in block.

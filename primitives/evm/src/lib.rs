@@ -70,18 +70,12 @@ pub const WRITE_PROOF_SIZE: u64 = 32;
 /// Account basic proof size + 5 bytes max of `decode_len` call.
 pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
 
-pub enum AccessedStorage {
-	AccountCodes(H160),
-	AccountStorages((H160, H256)),
-}
-
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TransactionPov {
 	pub weight_limit: Weight,
 	pub extrinsics_len: u64,
 	pub proof_size_pre_execution: Option<u64>,
-	pub proof_size_used: u64,
 }
 
 impl TransactionPov {
@@ -94,7 +88,6 @@ impl TransactionPov {
 			weight_limit,
 			extrinsics_len,
 			proof_size_pre_execution,
-			proof_size_used: extrinsics_len,
 		}
 	}
 
@@ -104,22 +97,20 @@ impl TransactionPov {
 			return 0;
 		};
 
-		// If proof_size_pre_execution is enable, but the proof_size_post_execution is disable, maybe the proof_size host function
-		// doesn't work.
+		// If proof_size_pre_execution is enabled, then proof_size_post_execution should also be enabled; otherwise, something is break.
 		let Some(proof_size_post_execution) =
 			cumulus_primitives_storage_weight_reclaim::get_proof_size()
 		else {
-			return self.proof_size_used;
+			return 0;
 		};
 
-		let proof_size_used = proof_size_post_execution
+		proof_size_post_execution
 			.saturating_sub(proof_size_pre_execution)
-			.saturating_add(self.extrinsics_len);
-
-		proof_size_used
+			.saturating_add(self.extrinsics_len)
 	}
 }
 
+// Retain this structure to maintain API compatibility
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
@@ -130,104 +121,13 @@ pub struct WeightInfo {
 }
 
 impl WeightInfo {
-	pub fn new_from_weight_limit(
-		weight_limit: Option<Weight>,
-		proof_size_base_cost: Option<u64>,
-	) -> Result<Option<Self>, &'static str> {
-		Ok(match (weight_limit, proof_size_base_cost) {
-			(None, _) => None,
-			(Some(weight_limit), Some(proof_size_base_cost))
-				if weight_limit.proof_size() >= proof_size_base_cost =>
-			{
-				Some(WeightInfo {
-					ref_time_limit: Some(weight_limit.ref_time()),
-					proof_size_limit: Some(weight_limit.proof_size()),
-					ref_time_usage: Some(0u64),
-					proof_size_usage: Some(proof_size_base_cost),
-				})
-			}
-			(Some(weight_limit), None) => Some(WeightInfo {
-				ref_time_limit: Some(weight_limit.ref_time()),
-				proof_size_limit: None,
-				ref_time_usage: Some(0u64),
-				proof_size_usage: None,
-			}),
-			_ => return Err("must provide Some valid weight limit or None"),
-		})
-	}
-
 	pub fn from_transaction_pov(transaction_pov: TransactionPov) -> Self {
 		Self {
 			ref_time_limit: Some(transaction_pov.weight_limit.ref_time()),
 			proof_size_limit: Some(transaction_pov.weight_limit.proof_size()),
 			ref_time_usage: Some(0),
-			proof_size_usage: Some(transaction_pov.proof_size_used),
+			proof_size_usage: Some(transaction_pov.proof_size_used()),
 		}
-	}
-
-	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
-		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
-		if usage > limit {
-			return Err(ExitError::OutOfGas);
-		}
-		Ok(usage)
-	}
-
-	pub fn try_record_ref_time_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let (Some(ref_time_usage), Some(ref_time_limit)) =
-			(self.ref_time_usage, self.ref_time_limit)
-		{
-			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
-			if ref_time_usage > ref_time_limit {
-				return Err(ExitError::OutOfGas);
-			}
-			self.ref_time_usage = Some(ref_time_usage);
-		}
-		Ok(())
-	}
-
-	pub fn try_record_proof_size_or_fail(&mut self, cost: u64) -> Result<(), ExitError> {
-		if let (Some(proof_size_usage), Some(proof_size_limit)) =
-			(self.proof_size_usage, self.proof_size_limit)
-		{
-			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
-			if proof_size_usage > proof_size_limit {
-				return Err(ExitError::OutOfGas);
-			}
-			self.proof_size_usage = Some(proof_size_usage);
-		}
-		Ok(())
-	}
-
-	pub fn refund_proof_size(&mut self, amount: u64) {
-		if let Some(proof_size_usage) = self.proof_size_usage {
-			let proof_size_usage = proof_size_usage.saturating_sub(amount);
-			self.proof_size_usage = Some(proof_size_usage);
-		}
-	}
-
-	pub fn refund_ref_time(&mut self, amount: u64) {
-		if let Some(ref_time_usage) = self.ref_time_usage {
-			let ref_time_usage = ref_time_usage.saturating_sub(amount);
-			self.ref_time_usage = Some(ref_time_usage);
-		}
-	}
-	pub fn remaining_proof_size(&self) -> Option<u64> {
-		if let (Some(proof_size_usage), Some(proof_size_limit)) =
-			(self.proof_size_usage, self.proof_size_limit)
-		{
-			return Some(proof_size_limit.saturating_sub(proof_size_usage));
-		}
-		None
-	}
-
-	pub fn remaining_ref_time(&self) -> Option<u64> {
-		if let (Some(ref_time_usage), Some(ref_time_limit)) =
-			(self.ref_time_usage, self.ref_time_limit)
-		{
-			return Some(ref_time_limit.saturating_sub(ref_time_usage));
-		}
-		None
 	}
 }
 
