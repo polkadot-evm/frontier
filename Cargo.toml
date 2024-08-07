@@ -157,6 +157,7 @@ sc-utils = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate/cli
 # sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 # sp-version = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 # sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
+# sp-trie = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }
 
 # local path for debug
 sp-api = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate/primitives/api", default-features = false }
@@ -184,6 +185,7 @@ sp-timestamp = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate
 sp-transaction-pool = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate/primitives/transaction-pool", default-features = false }
 sp-version = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate/primitives/version", default-features = false }
 sp-weights = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate/primitives/weights", default-features = false }
+sp-trie = { path = "/home/bear/coding/darwinia-space/polkadot-sdk/substrate/primitives/trie", default-features = false }
 
 # Substrate FRAME
 # frame-benchmarking = { git = "https://github.com/paritytech/polkadot-sdk", branch = "release-polkadot-v1.13.0", default-features = false }

@@ -17,19 +17,17 @@
 
 pub mod stack;
 
-use crate::{Config, Weight};
 use alloc::vec::Vec;
-use fp_evm::{CallInfo, CreateInfo, TransactionPov};
+// Substrate
 use sp_core::{H160, H256, U256};
+use sp_runtime::DispatchError;
+// Frontier
+use fp_evm::{CallInfo, CreateInfo, TransactionPov};
 
-#[derive(Debug)]
-pub struct RunnerError<E: Into<sp_runtime::DispatchError>> {
-	pub error: E,
-	pub weight: Weight,
-}
+use crate::{Config, Weight};
 
 pub trait Runner<T: Config> {
-	type Error: Into<sp_runtime::DispatchError>;
+	type Error: Into<DispatchError>;
 
 	fn validate(
 		source: H160,
@@ -92,4 +90,10 @@ pub trait Runner<T: Config> {
 		transaction_pov: Option<TransactionPov>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
+}
+
+#[derive(Debug)]
+pub struct RunnerError<E> {
+	pub error: E,
+	pub weight: Weight,
 }

@@ -755,13 +755,7 @@ where
 
 	fn exit_commit(&mut self) -> Result<(), ExitError> {
 		match self.transaction_pov {
-			Some(pov) if pov.proof_size_used > pov.weight_limit.proof_size() => {
-				log::debug!(
-					target: "evm",
-					"Exceeded proof size limit. Proof size used: {}, proof size limit: {}",
-					pov.proof_size_used,
-					pov.weight_limit.proof_size()
-				);
+			Some(pov) if pov.proof_size_used() > pov.weight_limit.proof_size() => {
 				self.substate.exit_discard()?;
 				Err(ExitError::OutOfGas)
 			}
@@ -960,7 +954,6 @@ mod tests {
 			&MockPrecompileSet,
 			false,
 			None,
-			None,
 			|_| {
 				let res = Runner::<Test>::execute(
 					H160::default(),
@@ -971,7 +964,6 @@ mod tests {
 					&config,
 					&MockPrecompileSet,
 					false,
-					None,
 					None,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
@@ -1003,7 +995,6 @@ mod tests {
 			&config,
 			&MockPrecompileSet,
 			false,
-			None,
 			None,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);

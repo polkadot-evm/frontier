@@ -59,12 +59,12 @@ extern crate alloc;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
-
 #[cfg(test)]
 mod mock;
-pub mod runner;
 #[cfg(test)]
 mod tests;
+
+pub mod runner;
 pub mod weights;
 
 use alloc::{collections::btree_map::BTreeMap, vec::Vec};
