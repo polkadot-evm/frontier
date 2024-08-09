@@ -42,6 +42,7 @@ impl Geth {
 					VError::InvalidChainId => "invalid chain id".into(),
 					VError::InvalidSignature => "invalid sender".into(),
 					VError::GasLimitTooLow => "intrinsic gas too low".into(),
+					VError::ProofLimitTooLow => "intrinsic proof size too low".into(),
 					VError::GasLimitTooHigh => "exceeds block gas limit".into(),
 					VError::GasPriceTooLow => "gas price less than block base fee".into(),
 					VError::PriorityFeeTooHigh => {

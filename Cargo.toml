@@ -56,7 +56,8 @@ derive_more = "0.99"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.15.0", default-features = false }
 ethereum-types = { version = "0.14.1", default-features = false }
-evm = { version = "0.41.1", default-features = false }
+# evm = { version = "0.41.1", default-features = false }
+evm = { path = "/home/bear/coding/darwinia-space/evm", default-features = false }
 futures = "0.3.30"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }

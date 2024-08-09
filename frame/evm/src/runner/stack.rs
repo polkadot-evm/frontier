@@ -750,24 +750,31 @@ where
 	}
 
 	fn enter(&mut self, gas_limit: u64, is_static: bool) {
+		println!("enter the new substrate...");
 		self.substate.enter(gas_limit, is_static)
 	}
 
 	fn exit_commit(&mut self) -> Result<(), ExitError> {
 		match self.transaction_pov {
 			Some(pov) if pov.proof_size_used() > pov.weight_limit.proof_size() => {
+				println!("exit_commit: discard changes.");
 				self.substate.exit_discard()?;
 				Err(ExitError::OutOfGas)
 			}
-			_ => self.substate.exit_commit(),
+			_ => {
+				println!("exit_commit: apply changes.");
+				self.substate.exit_commit()
+			},
 		}
 	}
 
 	fn exit_revert(&mut self) -> Result<(), ExitError> {
+		println!("exit revert...");
 		self.substate.exit_revert()
 	}
 
 	fn exit_discard(&mut self) -> Result<(), ExitError> {
+		println!("exit discard...");
 		self.substate.exit_discard()
 	}
 
@@ -834,6 +841,11 @@ where
 	fn set_code(&mut self, address: H160, code: Vec<u8>) {
 		log::debug!(
 			target: "evm",
+			"Inserting code ({} bytes) at {:?}",
+			code.len(),
+			address
+		);
+		println!(
 			"Inserting code ({} bytes) at {:?}",
 			code.len(),
 			address

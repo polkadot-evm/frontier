@@ -92,7 +92,7 @@ pub trait Runner<T: Config> {
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct RunnerError<E> {
 	pub error: E,
 	pub weight: Weight,
