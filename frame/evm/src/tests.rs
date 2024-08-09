@@ -22,7 +22,7 @@ use std::{collections::BTreeMap, str::FromStr};
 use fp_evm::TransactionPov;
 // Substrate
 use frame_support::{
-	assert_err, assert_noop, assert_ok,
+	assert_ok,
 	traits::{LockIdentifier, LockableCurrency, WithdrawReasons},
 };
 use sp_core::Blake2Hasher;
@@ -684,12 +684,7 @@ fn metadata_empty_dont_code_gets_cached() {
 // SPDX-License-Identifier: GPL-3.0
 // pragma solidity >=0.8.2 <0.9.0;
 // contract ProofTest {
-//     uint256 foo;
 //     uint256 number;
-//
-//     constructor() {
-//         foo = 6;
-//     }
 //
 //     function set_number(uint num) public {
 //         number = num;
@@ -700,7 +695,7 @@ fn metadata_empty_dont_code_gets_cached() {
 //     }
 // }
 
-const PROOF_TEST_BYTECODE: &'static str = "6080604052348015600e575f80fd5b5060065f81905550610145806100235f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063d6d1ee1414610038578063eeb4e36714610054575b5f80fd5b610052600480360381019061004d91906100bc565b610072565b005b61005c61007c565b60405161006991906100f6565b60405180910390f35b8060018190555050565b5f600154905090565b5f80fd5b5f819050919050565b61009b81610089565b81146100a5575f80fd5b50565b5f813590506100b681610092565b92915050565b5f602082840312156100d1576100d0610085565b5b5f6100de848285016100a8565b91505092915050565b6100f081610089565b82525050565b5f6020820190506101095f8301846100e7565b9291505056fea26469706673582212208f2f123cac78030bd69fadc5f2249e17847fe12ab13c257a6e46231716132da764736f6c634300081a0033";
+const PROOF_TEST_BYTECODE: &'static str = "6080604052348015600e575f80fd5b506101438061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063d6d1ee1414610038578063eeb4e36714610054575b5f80fd5b610052600480360381019061004d91906100ba565b610072565b005b61005c61007b565b60405161006991906100f4565b60405180910390f35b805f8190555050565b5f8054905090565b5f80fd5b5f819050919050565b61009981610087565b81146100a3575f80fd5b50565b5f813590506100b481610090565b92915050565b5f602082840312156100cf576100ce610083565b5b5f6100dc848285016100a6565b91505092915050565b6100ee81610087565b82525050565b5f6020820190506101075f8301846100e5565b9291505056fea26469706673582212201114104d5a56d94d03255e0f9fa699d53db26e355fb37f735caa200d7ce5158e64736f6c634300081a0033";
 
 #[test]
 fn proof_size_create_contract() {
@@ -778,6 +773,7 @@ fn proof_size_run_out_of_proof_size() {
 		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
+	// create contract run out of proof size
 	test_ext_with_recorder.execute_with(|| {
 		let transaction_pov =
 			TransactionPov::new(Weight::from_parts(10000000000000, 500), 100, proof_size());
@@ -800,5 +796,71 @@ fn proof_size_run_out_of_proof_size() {
 		let contract_addr = res.value;
 		// https://github.com/rust-ethereum/evm/pull/292
 		// assert!(AccountCodes::<Test>::get(contract_addr).len() == 0);
+	});
+
+	// call contract run out of proof size
+	test_ext_with_recorder.execute_with(|| {
+		let mut transaction_pov =
+			TransactionPov::new(Weight::from_parts(10000000000000, 5000), 100, proof_size());
+		let res = <Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
+			U256::zero(),
+			10000000,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional|
+			true, // must be validated
+			Some(transaction_pov),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("create contract failed");
+		let contract_addr = res.value;
+		assert!(AccountCodes::<Test>::get(contract_addr).len() != 0);
+
+		// set_number(6)
+		let calldata = "d6d1ee140000000000000000000000000000000000000000000000000000000000000006";
+		transaction_pov.weight_limit = Weight::from_parts(10000000000000, 99);
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			contract_addr,
+			hex::decode(calldata).unwrap(),
+			U256::zero(),
+			10000000,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional|
+			false, // must be validated
+			Some(transaction_pov),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call contract failed");
+		// https://github.com/rust-ethereum/evm/pull/292
+		// assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
+
+		// get_number()
+		let calldata = "eeb4e367";
+		transaction_pov.weight_limit = Weight::from_parts(10000000000000, 50000);
+		let res = <Test as Config>::Runner::call(
+			H160::default(),
+			contract_addr,
+			hex::decode(calldata).unwrap(),
+			U256::zero(),
+			10000000,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional|
+			false, // must be validated
+			Some(transaction_pov),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call contract failed");
+		assert_eq!(U256::from_big_endian(&res.value), U256::from(0));
 	});
 }
