@@ -478,7 +478,6 @@ fn validated_transaction_apply_zero_gas_price_works() {
 	});
 }
 
-
 #[test]
 fn proof_size_base_cost_should_keep_the_same_in_execution_and_estimate() {
 	let (pairs, mut ext) = new_test_ext(1);

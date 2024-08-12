@@ -367,12 +367,11 @@ impl<T: Config> Pallet<T> {
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
 		);
-		let proof_size_pre_execution = cumulus_primitives_storage_weight_reclaim::get_proof_size();
-		Some(TransactionPov::new(
-			weight_limit,
-			extrinsics_len,
-			proof_size_pre_execution,
-		))
+		cumulus_primitives_storage_weight_reclaim::get_proof_size().map(
+			|proof_size_pre_execution| {
+				TransactionPov::new(weight_limit, extrinsics_len, proof_size_pre_execution)
+			},
+		)
 	}
 
 	fn recover_signer(transaction: &Transaction) -> Option<H160> {

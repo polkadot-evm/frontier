@@ -37,9 +37,10 @@ hex = { workspace = true }
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-evm-precompile-simple = { workspace = true, features = ["default"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
-sp-trie = { workspace = true, features = ["default"] }
-cumulus-primitives-storage-weight-reclaim = { workspace = true }
 sp-state-machine = { workspace = true }
+sp-trie = { workspace = true, features = ["default"] }
+# Cumulus
+cumulus-primitives-storage-weight-reclaim = { workspace = true }
 
 [features]
 default = ["std"]

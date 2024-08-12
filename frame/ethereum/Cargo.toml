@@ -21,6 +21,8 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
+# Cumulus
+cumulus-primitives-storage-weight-reclaim = { workspace = true }
 # Frontier
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
@@ -28,8 +30,6 @@ fp-evm = { workspace = true }
 fp-rpc = { workspace = true }
 fp-storage = { workspace = true }
 pallet-evm = { workspace = true }
-cumulus-primitives-storage-weight-reclaim = { workspace = true }
-log = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
@@ -51,9 +51,9 @@ std = [
 	"evm/std",
 	"ethereum-types/std",
 	"rlp/std",
-	"log/std",
 	"scale-codec/std",
 	"scale-info/std",
+	# Cumulus
 	"cumulus-primitives-storage-weight-reclaim/std",
 	# Substrate
 	"frame-support/std",

@@ -248,7 +248,6 @@ mod tests {
 
 	#[derive(Debug, PartialEq)]
 	pub enum TestError {
-		ProofLimitTooLow,
 		GasLimitTooLow,
 		GasLimitTooHigh,
 		GasPriceTooLow,
@@ -259,6 +258,7 @@ mod tests {
 		InvalidFeeInput,
 		InvalidChainId,
 		InvalidSignature,
+		ProofLimitTooLow,
 		UnknownError,
 	}
 
@@ -267,7 +267,6 @@ mod tests {
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
 			match e {
-				TransactionValidationError::ProofLimitTooLow => TestError::ProofLimitTooLow,
 				TransactionValidationError::GasLimitTooLow => TestError::GasLimitTooLow,
 				TransactionValidationError::GasLimitTooHigh => TestError::GasLimitTooHigh,
 				TransactionValidationError::GasPriceTooLow => TestError::GasPriceTooLow,
@@ -278,6 +277,7 @@ mod tests {
 				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
+				TransactionValidationError::ProofLimitTooLow => TestError::ProofLimitTooLow,
 				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
 		}

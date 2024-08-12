@@ -832,7 +832,7 @@ fn proof_size_reach_limit() {
 			None,
 			None,
 			Vec::new(),
-			true, // transactional
+			true,  // transactional
 			false, // must be validated
 			Some(transaction_pov),
 			&<Test as Config>::config().clone(),
@@ -853,7 +853,7 @@ fn proof_size_reach_limit() {
 			None,
 			None,
 			Vec::new(),
-			true, // transactional
+			true,  // transactional
 			false, // must be validated
 			Some(transaction_pov),
 			&<Test as Config>::config().clone(),
@@ -889,6 +889,9 @@ fn proof_size_reach_limit_nonce_increase() {
 		)
 		.expect("create contract failed");
 		assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
-		assert_eq!(EVM::account_basic(&H160::default()).0.nonce, original_nonce + 1);
+		assert_eq!(
+			EVM::account_basic(&H160::default()).0.nonce,
+			original_nonce + 1
+		);
 	});
 }

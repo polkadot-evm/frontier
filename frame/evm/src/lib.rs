@@ -477,8 +477,6 @@ pub mod pallet {
 
 	#[pallet::error]
 	pub enum Error<T> {
-		/// Proof size limit is too low
-		ProofLimitTooLow,
 		/// Not enough balance to perform action
 		BalanceLow,
 		/// Calculating total fee overflowed
@@ -503,6 +501,8 @@ pub mod pallet {
 		Reentrancy,
 		/// EIP-3607,
 		TransactionMustComeFromEOA,
+		/// Proof size limit is too low
+		ProofLimitTooLow,
 		/// Undefined error.
 		Undefined,
 	}
@@ -510,7 +510,6 @@ pub mod pallet {
 	impl<T> From<TransactionValidationError> for Error<T> {
 		fn from(validation_error: TransactionValidationError) -> Self {
 			match validation_error {
-				TransactionValidationError::ProofLimitTooLow => Error::<T>::ProofLimitTooLow,
 				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
 				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
 				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
@@ -521,6 +520,7 @@ pub mod pallet {
 				TransactionValidationError::InvalidFeeInput => Error::<T>::GasPriceTooLow,
 				TransactionValidationError::InvalidChainId => Error::<T>::InvalidChainId,
 				TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
+				TransactionValidationError::ProofLimitTooLow => Error::<T>::ProofLimitTooLow,
 				TransactionValidationError::UnknownError => Error::<T>::Undefined,
 			}
 		}

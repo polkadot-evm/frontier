@@ -61,29 +61,20 @@ pub struct Vicinity {
 
 /// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
 pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
-/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
-pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
 /// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
 pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
-/// Fixed trie 32 byte hash.
-pub const WRITE_PROOF_SIZE: u64 = 32;
-/// Account basic proof size + 5 bytes max of `decode_len` call.
-pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+
 
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TransactionPov {
 	pub weight_limit: Weight,
 	pub extrinsics_len: u64,
-	pub proof_size_pre_execution: Option<u64>,
+	pub proof_size_pre_execution: u64,
 }
 
 impl TransactionPov {
-	pub fn new(
-		weight_limit: Weight,
-		extrinsics_len: u64,
-		proof_size_pre_execution: Option<u64>,
-	) -> Self {
+	pub fn new(weight_limit: Weight, extrinsics_len: u64, proof_size_pre_execution: u64) -> Self {
 		Self {
 			weight_limit,
 			extrinsics_len,
@@ -92,12 +83,6 @@ impl TransactionPov {
 	}
 
 	pub fn proof_size_used(&self) -> u64 {
-		// if we don't have proof_size_pre_execution, that means that we don't care about the tx proof size
-		let Some(proof_size_pre_execution) = self.proof_size_pre_execution else {
-			return 0;
-		};
-
-		// If proof_size_pre_execution is enabled, then proof_size_post_execution should also be enabled; otherwise, something is break.
 		let Some(proof_size_post_execution) =
 			cumulus_primitives_storage_weight_reclaim::get_proof_size()
 		else {
@@ -105,7 +90,7 @@ impl TransactionPov {
 		};
 
 		proof_size_post_execution
-			.saturating_sub(proof_size_pre_execution)
+			.saturating_sub(self.proof_size_pre_execution)
 			.saturating_add(self.extrinsics_len)
 	}
 }

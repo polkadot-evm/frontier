@@ -309,7 +309,7 @@ where
 				standard: opcode_used_gas.into(),
 				effective: used_gas,
 			},
-			weight_info: transaction_pov.map(|pov| WeightInfo::from_transaction_pov(pov)),
+			weight_info: transaction_pov.map(WeightInfo::from_transaction_pov),
 			logs: state.substate.logs,
 		})
 	}
