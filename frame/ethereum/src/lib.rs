@@ -367,8 +367,6 @@ impl<T: Config> Pallet<T> {
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
 		);
-		println!("weight_limit: {:?}", weight_limit);
-		println!("extrinsics_len: {:?}", extrinsics_len);
 		let proof_size_pre_execution = cumulus_primitives_storage_weight_reclaim::get_proof_size();
 		Some(TransactionPov::new(
 			weight_limit,
