@@ -768,7 +768,7 @@ fn proof_size_create_contract_with_low_proof_limit() {
 }
 
 #[test]
-fn proof_size_run_out_of_proof_size() {
+fn proof_size_reach_limit() {
 	let proof_size =
 		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
 
@@ -776,7 +776,7 @@ fn proof_size_run_out_of_proof_size() {
 	// create contract run out of proof size
 	test_ext_with_recorder.execute_with(|| {
 		let transaction_pov =
-			TransactionPov::new(Weight::from_parts(10000000000000, 500), 100, proof_size());
+			TransactionPov::new(Weight::from_parts(10000000000000, 101), 100, proof_size());
 		let res = <Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
@@ -786,7 +786,7 @@ fn proof_size_run_out_of_proof_size() {
 			None,
 			None,
 			Vec::new(),
-			true, // transactional|
+			true, // transactional
 			true, // must be validated
 			Some(transaction_pov),
 			&<Test as Config>::config().clone(),
@@ -794,8 +794,7 @@ fn proof_size_run_out_of_proof_size() {
 		.expect("create contract failed");
 		assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
 		let contract_addr = res.value;
-		// https://github.com/rust-ethereum/evm/pull/292
-		// assert!(AccountCodes::<Test>::get(contract_addr).len() == 0);
+		assert!(AccountCodes::<Test>::get(contract_addr).len() == 0);
 	});
 
 	// call contract run out of proof size
@@ -811,7 +810,7 @@ fn proof_size_run_out_of_proof_size() {
 			None,
 			None,
 			Vec::new(),
-			true, // transactional|
+			true, // transactional
 			true, // must be validated
 			Some(transaction_pov),
 			&<Test as Config>::config().clone(),
@@ -833,14 +832,13 @@ fn proof_size_run_out_of_proof_size() {
 			None,
 			None,
 			Vec::new(),
-			true, // transactional|
+			true, // transactional
 			false, // must be validated
 			Some(transaction_pov),
 			&<Test as Config>::config().clone(),
 		)
 		.expect("call contract failed");
-		// https://github.com/rust-ethereum/evm/pull/292
-		// assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
+		assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
 
 		// get_number()
 		let calldata = "eeb4e367";
@@ -855,12 +853,42 @@ fn proof_size_run_out_of_proof_size() {
 			None,
 			None,
 			Vec::new(),
-			true, // transactional|
+			true, // transactional
 			false, // must be validated
 			Some(transaction_pov),
 			&<Test as Config>::config().clone(),
 		)
 		.expect("call contract failed");
 		assert_eq!(U256::from_big_endian(&res.value), U256::from(0));
+	});
+}
+
+#[test]
+fn proof_size_reach_limit_nonce_increase() {
+	let proof_size =
+		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
+
+	let mut test_ext_with_recorder = new_text_ext_with_recorder();
+	test_ext_with_recorder.execute_with(|| {
+		let original_nonce = EVM::account_basic(&H160::default()).0.nonce;
+		let transaction_pov =
+			TransactionPov::new(Weight::from_parts(10000000000000, 101), 100, proof_size());
+		let res = <Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
+			U256::zero(),
+			10000000,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(transaction_pov),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("create contract failed");
+		assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
+		assert_eq!(EVM::account_basic(&H160::default()).0.nonce, original_nonce + 1);
 	});
 }
