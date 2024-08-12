@@ -157,7 +157,7 @@ substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 
 # Cumulus
-cumulus-client-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407"}
+cumulus-client-service = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 cumulus-primitives-storage-weight-reclaim = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 
 # XCM
