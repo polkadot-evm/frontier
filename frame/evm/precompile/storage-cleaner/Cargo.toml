@@ -8,6 +8,7 @@ edition = { workspace = true }
 repository = { workspace = true }
 
 [dependencies]
+log = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 # Substrate
 frame-support = { workspace = true }
@@ -37,6 +38,7 @@ precompile-utils = { workspace = true, features = ["std", "testing"] }
 [features]
 default = ["std"]
 std = [
+	"log/std",
 	"scale-codec/std",
 	# Substrate
 	"frame-support/std",

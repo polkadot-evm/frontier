@@ -754,6 +754,8 @@ where
 	}
 
 	fn exit_commit(&mut self) -> Result<(), ExitError> {
+		// For the parachains, it's essential to consider storage proof as the weight does.
+		// The consumed storage proof size utilizes the underlying host function. Return out of gas if the transaction requires too much storage proof.
 		match self.transaction_pov {
 			Some(pov) if pov.proof_size_used() > pov.weight_limit.proof_size() => {
 				self.substate.exit_discard()?;

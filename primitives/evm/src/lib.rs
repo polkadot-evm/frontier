@@ -58,13 +58,6 @@ pub struct Vicinity {
 	/// Origin of the transaction.
 	pub origin: H160,
 }
-
-/// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
-pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
-/// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
-pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
-
-
 #[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TransactionPov {

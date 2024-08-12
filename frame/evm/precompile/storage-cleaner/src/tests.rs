@@ -295,7 +295,7 @@ fn test_clear_suicided_contract_limit_works() {
 
 			assert_eq!(
 				pallet_evm::AccountStorages::<Runtime>::iter_prefix(addresses[1].0).count(),
-				3
+				2
 			);
 
 			assert!(pallet_evm::Suicided::<Runtime>::contains_key(
@@ -310,7 +310,7 @@ fn test_clear_suicided_contract_limit_respected() {
 		.with_balances(vec![(Alice.into(), 10000000000000000000)])
 		.build()
 		.execute_with(|| {
-			let suicided_address = mock_contracts([5])[0].0;
+			let suicided_address = mock_contracts([6])[0].0;
 			// Add contract to the suicided contracts
 			pallet_evm::Suicided::<Runtime>::insert(suicided_address, ());
 
