@@ -21,6 +21,7 @@ use super::*;
 use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use frame_support::{dispatch::DispatchClass, traits::Get, weights::Weight};
+use frame_system::limits::BlockWeights;
 use pallet_evm::{AddressMapping, GasWeightMapping};
 
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
@@ -45,8 +46,7 @@ fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
 	let alice = &pairs[0];
 	let bob = &pairs[1];
 
-	let limits: frame_system::limits::BlockWeights =
-		<Test as frame_system::Config>::BlockWeights::get();
+	let limits: BlockWeights = <Test as frame_system::Config>::BlockWeights::get();
 	let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
 	let max_extrinsic_gas =
 		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
@@ -82,8 +82,7 @@ fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatc
 	let alice = &pairs[0];
 	let bob = &pairs[1];
 
-	let limits: frame_system::limits::BlockWeights =
-		<Test as frame_system::Config>::BlockWeights::get();
+	let limits: BlockWeights = <Test as frame_system::Config>::BlockWeights::get();
 	let max_extrinsic = limits.get(DispatchClass::Normal).max_extrinsic.unwrap();
 	let base_extrinsic = limits.get(DispatchClass::Normal).base_extrinsic;
 	let max_extrinsic_gas = <Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
@@ -554,39 +553,6 @@ fn validated_transaction_apply_zero_gas_price_works() {
 }
 
 #[test]
-fn proof_size_weight_limit_validation_works() {
-	let (pairs, mut ext) = new_test_ext(1);
-	let alice = &pairs[0];
-
-	ext.execute_with(|| {
-		let mut tx = EIP1559UnsignedTransaction {
-			nonce: U256::from(2),
-			max_priority_fee_per_gas: U256::zero(),
-			max_fee_per_gas: U256::from(1),
-			gas_limit: U256::from(0x100000),
-			action: ethereum::TransactionAction::Call(alice.address),
-			value: U256::from(1),
-			input: Vec::new(),
-		};
-
-		let gas_limit: u64 = 1_000_000;
-		tx.gas_limit = U256::from(gas_limit);
-
-		let weight_limit =
-			<Test as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
-
-		// Gas limit cannot afford the extra byte and thus is expected to exhaust.
-		tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
-		let tx = tx.sign(&alice.private_key, None);
-
-		// Execute
-		assert!(
-			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
-		);
-	});
-}
-
-#[test]
 fn proof_size_base_cost_should_keep_the_same_in_execution_and_estimate() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];
@@ -618,6 +584,31 @@ fn proof_size_base_cost_should_keep_the_same_in_execution_and_estimate() {
 		assert_eq!(
 			estimate_tx_data.proof_size_base_cost(),
 			tx_data.proof_size_base_cost()
+		);
+	});
+}
+
+#[test]
+fn proof_size_limit_less_than_extrinsic_length_should_not_work() {
+	let (pairs, mut ext) = new_text_ext_with_recorder(1);
+	let alice = &pairs[0];
+	ext.execute_with(|| {
+		let mut transaction = eip1559_erc20_creation_transaction(alice);
+		if let Transaction::EIP1559(t) = &mut transaction {
+			t.gas_limit = U256::from(50);
+		}
+
+		let call = crate::Call::<Test>::transact { transaction };
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<u64, _, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: RuntimeCall::Ethereum(call.clone()),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
+		assert_err!(
+			call.validate_self_contained(&source, &dispatch_info, 0)
+				.unwrap(),
+			InvalidTransaction::Custom(0)
 		);
 	});
 }

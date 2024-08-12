@@ -147,6 +147,15 @@ where
 		) -> (ExitReason, R),
 		R: Default,
 	{
+		if let Some(pov) = transaction_pov {
+			if pov.weight_limit.proof_size() <= pov.extrinsics_len {
+				return Err(RunnerError {
+					error: Error::<T>::ProofLimitTooLow,
+					weight,
+				});
+			}
+		}
+
 		// The precompile check is only used for transactional invocations. However, here we always
 		// execute the check, because the check has side effects.
 		match precompiles.is_precompile(source, gas_limit) {
@@ -428,6 +437,10 @@ where
 		transaction_pov: Option<TransactionPov>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
+		println!(
+			"create, is_transactional: {:?}, validate: {:?}, transaction_pov: {:?}",
+			is_transactional, validate, transaction_pov
+		);
 		if validate {
 			Self::validate(
 				source,
@@ -759,9 +772,7 @@ where
 				self.substate.exit_discard()?;
 				Err(ExitError::OutOfGas)
 			}
-			_ => {
-				self.substate.exit_commit()
-			},
+			_ => self.substate.exit_commit(),
 		}
 	}
 

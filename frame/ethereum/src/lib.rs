@@ -295,17 +295,7 @@ pub mod pallet {
 				fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()).is_err(),
 				"pre log already exists; block is invalid",
 			);
-
-			let proof_size_before_execution =
-				cumulus_primitives_storage_weight_reclaim::get_proof_size();
-
-			let res = Self::apply_validated_transaction(source, transaction)
-				.map(|(post_info, _)| post_info);
-			let proof_size_after_execution =
-				cumulus_primitives_storage_weight_reclaim::get_proof_size();
-			log::debug!(target: "evm", "bear: --- ethereum: proof_size: before: {:?}, after: {:?}", proof_size_before_execution, proof_size_after_execution);
-
-			res
+			Self::apply_validated_transaction(source, transaction).map(|(post_info, _)| post_info)
 		}
 	}
 
@@ -377,6 +367,8 @@ impl<T: Config> Pallet<T> {
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
 		);
+		println!("weight_limit: {:?}", weight_limit);
+		println!("extrinsics_len: {:?}", extrinsics_len);
 		let proof_size_pre_execution = cumulus_primitives_storage_weight_reclaim::get_proof_size();
 		Some(TransactionPov::new(
 			weight_limit,
