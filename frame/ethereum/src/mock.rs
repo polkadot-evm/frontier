@@ -307,7 +307,7 @@ pub fn new_text_ext_with_recorder(
 ) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
 	let (accounts, ext) = new_test_ext_with_initial_balance(accounts_len, 10_000_000);
 
-	let root = ext.backend.root().clone();
+	let root = *ext.backend.root();
 	let db = ext.backend.into_storage();
 	let recorder: Recorder<Blake2Hasher> = Default::default();
 	let backend_with_reorder = TrieBackendBuilder::new(db, root)

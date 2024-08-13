@@ -383,7 +383,7 @@ mod tests {
 			transaction_pov: Some(TransactionPov::new(
 				Weight::from_parts(100, 100),
 				100,
-				Some(20),
+				20,
 			)),
 			is_transactional,
 			..Default::default()

@@ -99,7 +99,7 @@ pub fn new_test_ext() -> TestExternalities {
 pub fn new_text_ext_with_recorder() -> TestExternalities {
 	let text_ext = new_test_ext();
 
-	let root = text_ext.backend.root().clone();
+	let root = *text_ext.backend.root();
 	let db = text_ext.backend.into_storage();
 	let recorder: Recorder<Blake2Hasher> = Default::default();
 	let backend_with_reorder = TrieBackendBuilder::new(db, root)
@@ -695,24 +695,24 @@ fn metadata_empty_dont_code_gets_cached() {
 //     }
 // }
 
-const PROOF_TEST_BYTECODE: &'static str = "6080604052348015600e575f80fd5b506101438061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063d6d1ee1414610038578063eeb4e36714610054575b5f80fd5b610052600480360381019061004d91906100ba565b610072565b005b61005c61007b565b60405161006991906100f4565b60405180910390f35b805f8190555050565b5f8054905090565b5f80fd5b5f819050919050565b61009981610087565b81146100a3575f80fd5b50565b5f813590506100b481610090565b92915050565b5f602082840312156100cf576100ce610083565b5b5f6100dc848285016100a6565b91505092915050565b6100ee81610087565b82525050565b5f6020820190506101075f8301846100e5565b9291505056fea26469706673582212201114104d5a56d94d03255e0f9fa699d53db26e355fb37f735caa200d7ce5158e64736f6c634300081a0033";
+const PROOF_TEST_BYTECODE: &str = "6080604052348015600e575f80fd5b506101438061001c5f395ff3fe608060405234801561000f575f80fd5b5060043610610034575f3560e01c8063d6d1ee1414610038578063eeb4e36714610054575b5f80fd5b610052600480360381019061004d91906100ba565b610072565b005b61005c61007b565b60405161006991906100f4565b60405180910390f35b805f8190555050565b5f8054905090565b5f80fd5b5f819050919050565b61009981610087565b81146100a3575f80fd5b50565b5f813590506100b481610090565b92915050565b5f602082840312156100cf576100ce610083565b5b5f6100dc848285016100a6565b91505092915050565b6100ee81610087565b82525050565b5f6020820190506101075f8301846100e5565b9291505056fea26469706673582212201114104d5a56d94d03255e0f9fa699d53db26e355fb37f735caa200d7ce5158e64736f6c634300081a0033";
 
 #[test]
 fn proof_size_create_contract() {
 	let proof_size =
-		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
+		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	test_ext_with_recorder.execute_with(|| {
 		// The initial proof size should be 0
-		assert_eq!(proof_size(), Some(0));
+		assert_eq!(proof_size(), 0);
 		// Read the storage increases the proof size
 		EVM::account_basic(&H160::from_str("1000000000000000000000000000000000000002").unwrap());
-		assert_eq!(proof_size(), Some(583));
+		assert_eq!(proof_size(), 583);
 		AccountCodes::<Test>::get(
-			&H160::from_str("1000000000000000000000000000000000000001").unwrap(),
+			H160::from_str("1000000000000000000000000000000000000001").unwrap(),
 		);
-		assert_eq!(proof_size(), Some(799));
+		assert_eq!(proof_size(), 799);
 	});
 
 	test_ext_with_recorder.execute_with(|| {
@@ -734,15 +734,15 @@ fn proof_size_create_contract() {
 		)
 		.expect("create contract failed");
 		let contract_addr = res.value;
-		assert!(AccountCodes::<Test>::get(contract_addr).len() != 0);
-		assert_eq!(proof_size(), Some(1196));
+		assert!(!AccountCodes::<Test>::get(contract_addr).is_empty());
+		assert_eq!(proof_size(), 1196);
 	});
 }
 
 #[test]
 fn proof_size_create_contract_with_low_proof_limit() {
 	let proof_size =
-		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
+		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	test_ext_with_recorder.execute_with(|| {
@@ -770,7 +770,7 @@ fn proof_size_create_contract_with_low_proof_limit() {
 #[test]
 fn proof_size_reach_limit() {
 	let proof_size =
-		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
+		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	// create contract run out of proof size
@@ -794,7 +794,7 @@ fn proof_size_reach_limit() {
 		.expect("create contract failed");
 		assert_eq!(res.exit_reason, ExitReason::Error(ExitError::OutOfGas));
 		let contract_addr = res.value;
-		assert!(AccountCodes::<Test>::get(contract_addr).len() == 0);
+		assert!(AccountCodes::<Test>::get(contract_addr).is_empty());
 	});
 
 	// call contract run out of proof size
@@ -817,7 +817,7 @@ fn proof_size_reach_limit() {
 		)
 		.expect("create contract failed");
 		let contract_addr = res.value;
-		assert!(AccountCodes::<Test>::get(contract_addr).len() != 0);
+		assert!(!AccountCodes::<Test>::get(contract_addr).is_empty());
 
 		// set_number(6)
 		let calldata = "d6d1ee140000000000000000000000000000000000000000000000000000000000000006";
@@ -866,7 +866,7 @@ fn proof_size_reach_limit() {
 #[test]
 fn proof_size_reach_limit_nonce_increase() {
 	let proof_size =
-		|| -> Option<u64> { cumulus_primitives_storage_weight_reclaim::get_proof_size() };
+		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	test_ext_with_recorder.execute_with(|| {
