@@ -57,7 +57,7 @@ sp-transaction-pool = { workspace = true, features = ["default"] }
 # Cumulus
 cumulus-client-service = { workspace = true }
 cumulus-primitives-storage-weight-reclaim = { workspace = true, optional = true }
-polkadot-service = { workspace = true }
+polkadot-service = { workspace = true, optional = true }
 # These dependencies are used for RPC
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }

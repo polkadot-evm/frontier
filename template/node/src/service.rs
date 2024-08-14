@@ -38,6 +38,7 @@ use crate::{
 #[cfg(feature = "runtime-benchmarks")]
 pub type HostFunctions = (
 	sp_io::SubstrateHostFunctions,
+	cumulus_client_service::storage_proof_size::HostFunctions,
 	frame_benchmarking::benchmarking::HostFunctions,
 );
 /// Otherwise we use empty host functions for ext host functions.

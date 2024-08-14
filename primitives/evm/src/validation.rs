@@ -235,8 +235,6 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 
 #[cfg(test)]
 mod tests {
-	use frame_support::weights::Weight;
-
 	use super::*;
 
 	#[derive(Debug, PartialEq)]

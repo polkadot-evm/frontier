@@ -15,6 +15,7 @@ use fp_account::AccountId20;
 use frontier_template_runtime::{self as runtime, AccountId, Balance, BalancesCall, SystemCall};
 
 use crate::service::Client;
+use polkadot_service as _;
 
 /// Generates extrinsics for the `benchmark overhead` command.
 ///
