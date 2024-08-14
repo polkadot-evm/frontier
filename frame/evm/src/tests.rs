@@ -699,8 +699,10 @@ const PROOF_TEST_BYTECODE: &str = "6080604052348015600e575f80fd5b506101438061001
 
 #[test]
 fn proof_size_create_contract() {
-	let proof_size =
-		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
+	let proof_size = || -> u64 {
+		cumulus_primitives_storage_weight_reclaim::get_proof_size()
+			.expect("ensure the proof size host function is enabled.")
+	};
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	test_ext_with_recorder.execute_with(|| {
@@ -741,8 +743,10 @@ fn proof_size_create_contract() {
 
 #[test]
 fn proof_size_create_contract_with_low_proof_limit() {
-	let proof_size =
-		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
+	let proof_size = || -> u64 {
+		cumulus_primitives_storage_weight_reclaim::get_proof_size()
+			.expect("ensure the proof size host function is enabled.")
+	};
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	test_ext_with_recorder.execute_with(|| {
@@ -769,8 +773,10 @@ fn proof_size_create_contract_with_low_proof_limit() {
 
 #[test]
 fn proof_size_reach_limit() {
-	let proof_size =
-		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
+	let proof_size = || -> u64 {
+		cumulus_primitives_storage_weight_reclaim::get_proof_size()
+			.expect("ensure the proof size host function is enabled.")
+	};
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	// create contract run out of proof size
@@ -865,8 +871,10 @@ fn proof_size_reach_limit() {
 
 #[test]
 fn proof_size_reach_limit_nonce_increase() {
-	let proof_size =
-		|| -> u64 { cumulus_primitives_storage_weight_reclaim::get_proof_size().expect("ensure the proof size host function is enabled.") };
+	let proof_size = || -> u64 {
+		cumulus_primitives_storage_weight_reclaim::get_proof_size()
+			.expect("ensure the proof size host function is enabled.")
+	};
 
 	let mut test_ext_with_recorder = new_text_ext_with_recorder();
 	test_ext_with_recorder.execute_with(|| {

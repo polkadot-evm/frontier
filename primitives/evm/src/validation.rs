@@ -380,11 +380,7 @@ mod tests {
 		is_transactional: bool,
 	) -> CheckEvmTransaction<'config, TestError> {
 		test_env(TestCase {
-			transaction_pov: Some(TransactionPov::new(
-				Weight::from_parts(100, 100),
-				100,
-				20,
-			)),
+			transaction_pov: Some(TransactionPov::new(Weight::from_parts(100, 100), 100, 20)),
 			is_transactional,
 			..Default::default()
 		})

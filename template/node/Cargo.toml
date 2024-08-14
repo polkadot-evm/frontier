@@ -56,6 +56,8 @@ sp-timestamp = { workspace = true, features = ["default"] }
 sp-transaction-pool = { workspace = true, features = ["default"] }
 # Cumulus
 cumulus-client-service = { workspace = true }
+cumulus-primitives-storage-weight-reclaim = { workspace = true, optional = true }
+polkadot-service = { workspace = true }
 # These dependencies are used for RPC
 frame-system-rpc-runtime-api = { workspace = true }
 pallet-transaction-payment-rpc = { workspace = true }
@@ -114,5 +116,9 @@ runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
 	"frame-benchmarking-cli/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
+	# Cumulus
+	"cumulus-primitives-storage-weight-reclaim",
+	"polkadot-service/runtime-benchmarks",
+	# Frontier
 	"frontier-template-runtime/runtime-benchmarks",
 ]
