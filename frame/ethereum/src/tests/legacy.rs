@@ -19,7 +19,7 @@
 
 use super::*;
 use evm::{ExitReason, ExitRevert, ExitSucceed};
-use fp_ethereum::{TransactionData, ValidatedTransaction};
+use fp_ethereum::ValidatedTransaction;
 use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo},
 	weights::Weight,
@@ -475,65 +475,5 @@ fn validated_transaction_apply_zero_gas_price_works() {
 		assert_eq!(Balances::free_balance(&substrate_alice), 900);
 		// Bob received 100 from Alice.
 		assert_eq!(Balances::free_balance(&substrate_bob), 1_100);
-	});
-}
-
-#[test]
-fn proof_size_base_cost_should_keep_the_same_in_execution_and_estimate() {
-	let (pairs, mut ext) = new_test_ext(1);
-	let alice = &pairs[0];
-
-	ext.execute_with(|| {
-		let raw_tx = LegacyUnsignedTransaction {
-			nonce: U256::zero(),
-			gas_price: U256::zero(),
-			gas_limit: U256::from(21_000),
-			action: ethereum::TransactionAction::Create,
-			value: U256::from(100),
-			input: vec![9; 100],
-		};
-
-		let tx_data: TransactionData = (&raw_tx.sign(&alice.private_key)).into();
-		let estimate_tx_data = TransactionData::new(
-			raw_tx.action,
-			raw_tx.input,
-			raw_tx.nonce,
-			raw_tx.gas_limit,
-			Some(raw_tx.gas_price),
-			None,
-			None,
-			raw_tx.value,
-			Some(100),
-			vec![],
-		);
-		assert_eq!(
-			estimate_tx_data.proof_size_base_cost(),
-			tx_data.proof_size_base_cost()
-		);
-	});
-}
-
-#[test]
-fn proof_size_limit_less_than_extrinsic_length_should_not_work() {
-	let (pairs, mut ext) = new_text_ext_with_recorder(1);
-	let alice = &pairs[0];
-	ext.execute_with(|| {
-		let mut transaction = legacy_erc20_creation_transaction(alice);
-		if let Transaction::Legacy(t) = &mut transaction {
-			t.gas_limit = U256::from(50);
-		}
-
-		let call = crate::Call::<Test>::transact { transaction };
-		let source = call.check_self_contained().unwrap().unwrap();
-		let extrinsic = CheckedExtrinsic::<u64, _, SignedExtra, _> {
-			signed: fp_self_contained::CheckedSignature::SelfContained(source),
-			function: RuntimeCall::Ethereum(call.clone()),
-		};
-		let dispatch_info = extrinsic.get_dispatch_info();
-		assert_err!(
-			call.validate_self_contained(&source, &dispatch_info, 0)
-				.unwrap(),
-			InvalidTransaction::Custom(0)
-		);
 	});
 }

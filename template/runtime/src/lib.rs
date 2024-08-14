@@ -806,26 +806,6 @@ impl_runtime_apis! {
 				None
 			};
 
-			// Estimated encoded transaction size must be based on the heaviest transaction
-			// type (EIP1559Transaction) to be compatible with all transaction types.
-			let mut estimated_transaction_len = data.len() +
-				// pallet ethereum index: 1
-				// transact call index: 1
-				// Transaction enum variant: 1
-				// chain_id 8 bytes
-				// nonce: 32
-				// max_priority_fee_per_gas: 32
-				// max_fee_per_gas: 32
-				// gas_limit: 32
-				// action: 21 (enum variant + call address)
-				// value: 32
-				// access_list: 1 (empty vec size)
-				// 65 bytes signature
-				258;
-			if access_list.is_some() {
-				estimated_transaction_len += access_list.encoded_size();
-			}
-
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
 			} else {
@@ -833,9 +813,7 @@ impl_runtime_apis! {
 			};
 			let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
 			let transaction_pov = cumulus_primitives_storage_weight_reclaim::get_proof_size().map(
-				|proof_size_pre_execution| {
-					TransactionPov::new(weight_limit, estimated_transaction_len as u64, proof_size_pre_execution)
-				},
+				|proof_size_pre_execution| { TransactionPov::new(weight_limit, proof_size_pre_execution) },
 			);
 			<Runtime as pallet_evm::Config>::Runner::call(
 				from,
@@ -875,28 +853,6 @@ impl_runtime_apis! {
 				None
 			};
 
-
-			let mut estimated_transaction_len = data.len() +
-				// from: 20
-				// value: 32
-				// gas_limit: 32
-				// nonce: 32
-				// 1 byte transaction action variant
-				// chain id 8 bytes
-				// 65 bytes signature
-				190;
-
-			if max_fee_per_gas.is_some() {
-				estimated_transaction_len += 32;
-			}
-			if max_priority_fee_per_gas.is_some() {
-				estimated_transaction_len += 32;
-			}
-			if access_list.is_some() {
-				estimated_transaction_len += access_list.encoded_size();
-			}
-
-
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
 			} else {
@@ -904,9 +860,7 @@ impl_runtime_apis! {
 			};
 			let weight_limit = <Runtime as pallet_evm::Config>::GasWeightMapping::gas_to_weight(gas_limit, true);
 			let transaction_pov = cumulus_primitives_storage_weight_reclaim::get_proof_size().map(
-				|proof_size_pre_execution| {
-					TransactionPov::new(weight_limit, estimated_transaction_len as u64, proof_size_pre_execution)
-				},
+				|proof_size_pre_execution| { TransactionPov::new(weight_limit, proof_size_pre_execution) },
 			);
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,

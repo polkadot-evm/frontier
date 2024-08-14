@@ -62,15 +62,13 @@ pub struct Vicinity {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct TransactionPov {
 	pub weight_limit: Weight,
-	pub extrinsics_len: u64,
 	pub proof_size_pre_execution: u64,
 }
 
 impl TransactionPov {
-	pub fn new(weight_limit: Weight, extrinsics_len: u64, proof_size_pre_execution: u64) -> Self {
+	pub fn new(weight_limit: Weight, proof_size_pre_execution: u64) -> Self {
 		Self {
 			weight_limit,
-			extrinsics_len,
 			proof_size_pre_execution,
 		}
 	}
@@ -82,9 +80,7 @@ impl TransactionPov {
 			return 0;
 		};
 
-		proof_size_post_execution
-			.saturating_sub(self.proof_size_pre_execution)
-			.saturating_add(self.extrinsics_len)
+		proof_size_post_execution.saturating_sub(self.proof_size_pre_execution)
 	}
 }
 

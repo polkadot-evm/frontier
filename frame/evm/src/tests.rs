@@ -719,7 +719,7 @@ fn proof_size_create_contract() {
 
 	test_ext_with_recorder.execute_with(|| {
 		let transaction_pov =
-			TransactionPov::new(Weight::from_parts(10000000000000, 5000), 100, proof_size());
+			TransactionPov::new(Weight::from_parts(10000000000000, 5000), proof_size());
 		let res = <Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
@@ -742,36 +742,6 @@ fn proof_size_create_contract() {
 }
 
 #[test]
-fn proof_size_create_contract_with_low_proof_limit() {
-	let proof_size = || -> u64 {
-		cumulus_primitives_storage_weight_reclaim::get_proof_size()
-			.expect("ensure the proof size host function is enabled.")
-	};
-
-	let mut test_ext_with_recorder = new_text_ext_with_recorder();
-	test_ext_with_recorder.execute_with(|| {
-		// Return error is the maximum proof size is less than the extrinsic length
-		let transaction_pov =
-			TransactionPov::new(Weight::from_parts(10000000000000, 50), 100, proof_size());
-		assert!(<Test as Config>::Runner::create(
-			H160::default(),
-			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
-			U256::zero(),
-			10000000,
-			Some(FixedGasPrice::min_gas_price().0),
-			None,
-			None,
-			Vec::new(),
-			true, // transactional
-			true, // must be validated
-			Some(transaction_pov),
-			&<Test as Config>::config().clone(),
-		)
-		.is_err());
-	});
-}
-
-#[test]
 fn proof_size_reach_limit() {
 	let proof_size = || -> u64 {
 		cumulus_primitives_storage_weight_reclaim::get_proof_size()
@@ -782,7 +752,7 @@ fn proof_size_reach_limit() {
 	// create contract run out of proof size
 	test_ext_with_recorder.execute_with(|| {
 		let transaction_pov =
-			TransactionPov::new(Weight::from_parts(10000000000000, 101), 100, proof_size());
+			TransactionPov::new(Weight::from_parts(10000000000000, 101), proof_size());
 		let res = <Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
@@ -806,7 +776,7 @@ fn proof_size_reach_limit() {
 	// call contract run out of proof size
 	test_ext_with_recorder.execute_with(|| {
 		let mut transaction_pov =
-			TransactionPov::new(Weight::from_parts(10000000000000, 5000), 100, proof_size());
+			TransactionPov::new(Weight::from_parts(10000000000000, 5000), proof_size());
 		let res = <Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_TEST_BYTECODE).unwrap(),
@@ -827,7 +797,8 @@ fn proof_size_reach_limit() {
 
 		// set_number(6)
 		let calldata = "d6d1ee140000000000000000000000000000000000000000000000000000000000000006";
-		transaction_pov.weight_limit = Weight::from_parts(10000000000000, 99);
+		transaction_pov.proof_size_pre_execution = 100;
+		transaction_pov.weight_limit = Weight::from_parts(10000000000000, 1);
 		let res = <Test as Config>::Runner::call(
 			H160::default(),
 			contract_addr,
@@ -880,7 +851,7 @@ fn proof_size_reach_limit_nonce_increase() {
 	test_ext_with_recorder.execute_with(|| {
 		let original_nonce = EVM::account_basic(&H160::default()).0.nonce;
 		let transaction_pov =
-			TransactionPov::new(Weight::from_parts(10000000000000, 101), 100, proof_size());
+			TransactionPov::new(Weight::from_parts(10000000000000, 101), proof_size());
 		let res = <Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_TEST_BYTECODE).unwrap(),

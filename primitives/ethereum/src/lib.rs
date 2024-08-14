@@ -78,18 +78,6 @@ impl TransactionData {
 			access_list,
 		}
 	}
-
-	// The transact call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-	pub fn proof_size_base_cost(&self) -> u64 {
-		self.encode()
-			.len()
-			// signature
-			.saturating_add(65)
-			// pallet index
-			.saturating_add(1)
-			// call index
-			.saturating_add(1) as u64
-	}
 }
 
 impl From<TransactionData> for CheckEvmTransactionInput {

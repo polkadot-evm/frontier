@@ -26,13 +26,12 @@ use frame_support::{
 	weights::Weight,
 	ConsensusEngineId, PalletId,
 };
-use sp_core::{hashing::keccak_256, Blake2Hasher, H160, H256, U256};
+use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
 	traits::{BlakeTwo256, Dispatchable, IdentityLookup},
 	AccountId32, BuildStorage,
 };
-use sp_state_machine::TrieBackendBuilder;
-use sp_trie::{proof_size_extension::ProofSizeExt, recorder::Recorder};
+
 // Frontier
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 
@@ -300,25 +299,6 @@ pub fn new_test_ext_with_initial_balance(
 
 pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
 	new_test_ext_with_initial_balance(accounts_len, 10_000_000)
-}
-
-pub fn new_text_ext_with_recorder(
-	accounts_len: usize,
-) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
-	let (accounts, ext) = new_test_ext_with_initial_balance(accounts_len, 10_000_000);
-
-	let root = *ext.backend.root();
-	let db = ext.backend.into_storage();
-	let recorder: Recorder<Blake2Hasher> = Default::default();
-	let backend_with_reorder = TrieBackendBuilder::new(db, root)
-		.with_recorder(recorder.clone())
-		.build();
-
-	let mut ext_with_recorder = sp_io::TestExternalities::default();
-	ext_with_recorder.backend = backend_with_reorder;
-	ext_with_recorder.register_extension(ProofSizeExt::new(recorder));
-
-	(accounts, ext_with_recorder)
 }
 
 pub fn contract_address(sender: H160, nonce: u64) -> H160 {

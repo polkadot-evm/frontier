@@ -362,15 +362,12 @@ pub mod pallet {
 
 impl<T: Config> Pallet<T> {
 	pub fn transaction_pov(transaction_data: &TransactionData) -> Option<TransactionPov> {
-		let extrinsics_len = transaction_data.proof_size_base_cost();
 		let weight_limit = <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
 			transaction_data.gas_limit.unique_saturated_into(),
 			true,
 		);
 		cumulus_primitives_storage_weight_reclaim::get_proof_size().map(
-			|proof_size_pre_execution| {
-				TransactionPov::new(weight_limit, extrinsics_len, proof_size_pre_execution)
-			},
+			|proof_size_pre_execution| TransactionPov::new(weight_limit, proof_size_pre_execution),
 		)
 	}
 
