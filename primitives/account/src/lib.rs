@@ -48,7 +48,7 @@ impl core::str::FromStr for AccountId20 {
 	type Err = &'static str;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-		H160::from_str(s)
+		<[u8; 20] as hex::FromHex>::from_hex(s.strip_prefix("0x").unwrap_or(s))
 			.map(Into::into)
 			.map_err(|_| "invalid hex address.")
 	}
