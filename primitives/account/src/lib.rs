@@ -44,12 +44,12 @@ pub struct AccountId20(pub [u8; 20]);
 #[cfg(feature = "serde")]
 impl_serde::impl_fixed_hash_serde!(AccountId20, 20);
 
-impl core::str::FromStr for AccountId20 {
+#[cfg(feature = "std")]
+impl std::str::FromStr for AccountId20 {
 	type Err = &'static str;
 
 	fn from_str(s: &str) -> Result<Self, Self::Err> {
-#[cfg(feature = "std")]
-impl std::str::FromStr for AccountId20 {
+		H160::from_str(s)
 			.map(Into::into)
 			.map_err(|_| "invalid hex address.")
 	}
