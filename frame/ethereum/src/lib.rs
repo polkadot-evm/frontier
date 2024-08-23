@@ -519,7 +519,7 @@ impl<T: Config> Pallet<T> {
 		// Do not allow transactions for which `tx.sender` has any code deployed.
 		//
 		// This check should be done on the transaction validation (here) **and**
-		// on trnasaction execution, otherwise a contract tx will be included in
+		// on transaction execution, otherwise a contract tx will be included in
 		// the mempool and pollute the mempool forever.
 		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
 			return Err(InvalidTransaction::BadSigner.into());
