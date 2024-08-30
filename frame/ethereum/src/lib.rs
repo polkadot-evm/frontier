@@ -34,12 +34,12 @@ mod mock;
 mod tests;
 
 use alloc::{vec, vec::Vec};
+pub use catch_exec_info::catch_exec_info;
 use core::marker::PhantomData;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
 };
-pub use catch_exec_info::catch_exec_info;
 
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -298,7 +298,8 @@ pub mod pallet {
 				"pre log already exists; block is invalid",
 			);
 
-			Self::apply_validated_transaction(source, transaction, None).map(|(post_info, _)| post_info)
+			Self::apply_validated_transaction(source, transaction, None)
+				.map(|(post_info, _)| post_info)
 		}
 	}
 
@@ -364,13 +365,13 @@ pub mod pallet {
 }
 
 impl<T: Config> Pallet<T> {
-		/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
-		fn proof_size_base_cost(transaction: &Transaction) -> u64 {
-			transaction
-				.encoded_size()
-				// pallet index + call index
-				.saturating_add(2) as u64
-		}
+	/// The call wrapped in the extrinsic is part of the PoV, record this as a base cost for the size of the proof.
+	fn proof_size_base_cost(transaction: &Transaction) -> u64 {
+		transaction
+			.encoded_size()
+			// pallet index + call index
+			.saturating_add(2) as u64
+	}
 
 	pub fn transaction_weight(transaction_data: &TransactionData) -> (Option<Weight>, Option<u64>) {
 		match <T as pallet_evm::Config>::GasWeightMapping::gas_to_weight(
