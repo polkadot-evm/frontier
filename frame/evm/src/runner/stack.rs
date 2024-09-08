@@ -1116,30 +1116,27 @@ where
 				return Ok(());
 			};
 
-			let mut record_account_codes_proof_size =
-				|address: H160, empty_check: bool| -> Result<(), ExitError> {
-					let mut base_size = ACCOUNT_CODES_METADATA_PROOF_SIZE;
-					if empty_check {
-						base_size = base_size.saturating_add(IS_EMPTY_CHECK_PROOF_SIZE);
-					}
-					weight_info.try_record_proof_size_or_fail(base_size)?;
+			let mut record_account_codes_proof_size = |address: H160,
+			                                           empty_check: bool|
+			 -> Result<(), ExitError> {
+				let mut base_size = ACCOUNT_CODES_METADATA_PROOF_SIZE;
+				if empty_check {
+					base_size = base_size.saturating_add(IS_EMPTY_CHECK_PROOF_SIZE);
+				}
+				weight_info.try_record_proof_size_or_fail(base_size)?;
 
-					if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
-						weight_info.try_record_proof_size_or_fail(meta.size)?;
-					} else if let Some(remaining_proof_size) = weight_info.remaining_proof_size() {
-						let pre_size = remaining_proof_size.min(size_limit);
-						weight_info.try_record_proof_size_or_fail(pre_size)?;
+				if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+					weight_info.try_record_proof_size_or_fail(meta.size)?;
+				} else {
+					weight_info.try_record_proof_size_or_fail(size_limit)?;
+					let actual_size = AccountCodes::<T>::decode_len(address).unwrap_or_default();
 
-						let actual_size = Pallet::<T>::account_code_metadata(address).size;
-						if actual_size > pre_size {
-							return Err(ExitError::OutOfGas);
-						}
-						// Refund unused proof size
-						weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
-					}
+					// Refund unused proof size
+					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size as u64));
+				}
 
-					Ok(())
-				};
+				Ok(())
+			};
 
 			// Proof size is fixed length for writes (a 32-byte hash in a merkle trie), and
 			// the full key/value for reads. For read and writes over the same storage, the full value
