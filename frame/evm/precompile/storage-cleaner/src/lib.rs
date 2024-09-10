@@ -202,7 +202,7 @@ where
 		pallet_evm::Suicided::<Runtime>::remove(address);
 
 		let account_id = Runtime::AddressMapping::into_account_id(address);
-		let _ = Runtime::AccountProvider::remove_account(&account_id);
+		Runtime::AccountProvider::remove_account(&account_id);
 	}
 }
 
