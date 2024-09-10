@@ -1,70 +1,73 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2017-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
-use ethereum::BlockV2 as EthereumBlock;
-use ethereum_types::{H160, H256, U256};
+use ethereum_types::{Address, H256, U256};
+use scale_codec::Decode;
 // Substrate
-use sp_api::{ApiExt, ProvideRuntimeApi};
+use sc_client_api::{Backend, StorageProvider};
 use sp_io::hashing::{blake2_128, twox_128};
 use sp_runtime::{traits::Block as BlockT, Permill};
+use sp_storage::StorageKey;
 // Frontier
-use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
-use fp_storage::EthereumStorageSchema;
+use fp_rpc::TransactionStatus;
+use fp_storage::{constants::*, EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
-mod schema_v1_override;
-mod schema_v2_override;
-mod schema_v3_override;
+mod runtime_api;
+mod schema;
 
 pub use self::{
-	schema_v1_override::SchemaV1Override, schema_v2_override::SchemaV2Override,
-	schema_v3_override::SchemaV3Override,
+	runtime_api::RuntimeApiStorageOverride,
+	schema::{
+		v1::{
+			SchemaStorageOverride as SchemaV1StorageOverride,
+			SchemaStorageOverrideRef as SchemaV1StorageOverrideRef,
+		},
+		v2::{
+			SchemaStorageOverride as SchemaV2StorageOverride,
+			SchemaStorageOverrideRef as SchemaV2StorageOverrideRef,
+		},
+		v3::{
+			SchemaStorageOverride as SchemaV3StorageOverride,
+			SchemaStorageOverrideRef as SchemaV3StorageOverrideRef,
+		},
+	},
 };
 
-pub struct OverrideHandle<Block: BlockT> {
-	pub schemas: BTreeMap<EthereumStorageSchema, Box<dyn StorageOverride<Block>>>,
-	pub fallback: Box<dyn StorageOverride<Block>>,
-}
-
-/// Something that can fetch Ethereum-related data. This trait is quite similar to the runtime API,
-/// and indeed oe implementation of it uses the runtime API.
-/// Having this trait is useful because it allows optimized implementations that fetch data from a
-/// State Backend with some assumptions about pallet-ethereum's storage schema. Using such an
-/// optimized implementation avoids spawning a runtime and the overhead associated with it.
+/// This trait is used to obtain Ethereum-related data.
 pub trait StorageOverride<Block: BlockT>: Send + Sync {
-	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block_hash: Block::Hash, address: H160) -> Option<Vec<u8>>;
-	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block_hash: Block::Hash, address: H160, index: U256) -> Option<H256>;
-	/// Return the current block.
-	fn current_block(&self, block_hash: Block::Hash) -> Option<EthereumBlock>;
-	/// Return the current receipt.
-	fn current_receipts(&self, block_hash: Block::Hash) -> Option<Vec<ethereum::ReceiptV3>>;
-	/// Return the current transaction status.
-	fn current_transaction_statuses(
-		&self,
-		block_hash: Block::Hash,
-	) -> Option<Vec<TransactionStatus>>;
-	/// Return the base fee at the given height.
-	fn elasticity(&self, block_hash: Block::Hash) -> Option<Permill>;
-	/// Return `true` if the request BlockId is post-eip1559.
-	fn is_eip1559(&self, block_hash: Block::Hash) -> bool;
+	/// Return the code with the given address.
+	fn account_code_at(&self, at: Block::Hash, address: Address) -> Option<Vec<u8>>;
+	/// Return the storage data with the given address and storage index.
+	fn account_storage_at(&self, at: Block::Hash, address: Address, index: U256) -> Option<H256>;
+
+	/// Return the current ethereum block.
+	fn current_block(&self, at: Block::Hash) -> Option<ethereum::BlockV2>;
+	/// Return the current ethereum transaction receipt.
+	fn current_receipts(&self, at: Block::Hash) -> Option<Vec<ethereum::ReceiptV3>>;
+	/// Return the current ethereum transaction status.
+	fn current_transaction_statuses(&self, at: Block::Hash) -> Option<Vec<TransactionStatus>>;
+
+	/// Return the elasticity multiplier at the given post-eip1559 block.
+	fn elasticity(&self, at: Block::Hash) -> Option<Permill>;
+	/// Return `true` if the request block is post-eip1559.
+	fn is_eip1559(&self, at: Block::Hash) -> bool;
 }
 
 fn storage_prefix_build(module: &[u8], storage: &[u8]) -> Vec<u8> {
@@ -77,14 +80,14 @@ fn blake2_128_extend(bytes: &[u8]) -> Vec<u8> {
 	ext
 }
 
-/// A wrapper type for the Runtime API. This type implements `StorageOverride`, so it can be used
-/// when calling the runtime API is desired but a `dyn StorageOverride` is required.
-pub struct RuntimeApiStorageOverride<B: BlockT, C> {
+/// A useful utility for querying storage.
+#[derive(Clone)]
+pub struct StorageQuerier<B, C, BE> {
 	client: Arc<C>,
-	_marker: PhantomData<B>,
+	_marker: PhantomData<(B, BE)>,
 }
 
-impl<B: BlockT, C> RuntimeApiStorageOverride<B, C> {
+impl<B, C, BE> StorageQuerier<B, C, BE> {
 	pub fn new(client: Arc<C>) -> Self {
 		Self {
 			client,
@@ -93,111 +96,60 @@ impl<B: BlockT, C> RuntimeApiStorageOverride<B, C> {
 	}
 }
 
-impl<Block, C> StorageOverride<Block> for RuntimeApiStorageOverride<Block, C>
+impl<B, C, BE> StorageQuerier<B, C, BE>
 where
-	Block: BlockT,
-	C: ProvideRuntimeApi<Block> + Send + Sync,
-	C::Api: EthereumRuntimeRPCApi<Block>,
+	B: BlockT,
+	C: StorageProvider<B, BE>,
+	BE: Backend<B>,
 {
-	/// For a given account address, returns pallet_evm::AccountCodes.
-	fn account_code_at(&self, block_hash: Block::Hash, address: H160) -> Option<Vec<u8>> {
-		self.client
-			.runtime_api()
-			.account_code_at(block_hash, address)
-			.ok()
-	}
-
-	/// For a given account address and index, returns pallet_evm::AccountStorages.
-	fn storage_at(&self, block_hash: Block::Hash, address: H160, index: U256) -> Option<H256> {
-		self.client
-			.runtime_api()
-			.storage_at(block_hash, address, index)
-			.ok()
-	}
-
-	/// Return the current block.
-	fn current_block(&self, block_hash: Block::Hash) -> Option<ethereum::BlockV2> {
-		let api = self.client.runtime_api();
-
-		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block_hash)
-		{
-			api_version
-		} else {
-			return None;
-		};
-		if api_version == 1 {
-			#[allow(deprecated)]
-			let old_block = api.current_block_before_version_2(block_hash).ok()?;
-			old_block.map(|block| block.into())
-		} else {
-			api.current_block(block_hash).ok()?
+	pub fn query<T: Decode>(&self, at: B::Hash, key: &StorageKey) -> Option<T> {
+		if let Ok(Some(data)) = self.client.storage(at, key) {
+			if let Ok(result) = Decode::decode(&mut &data.0[..]) {
+				return Some(result);
+			}
 		}
+		None
 	}
 
-	/// Return the current receipt.
-	fn current_receipts(&self, block_hash: Block::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
-		let api = self.client.runtime_api();
-
-		let api_version = if let Ok(Some(api_version)) =
-			api.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block_hash)
-		{
-			api_version
-		} else {
-			return None;
-		};
-		if api_version < 4 {
-			#[allow(deprecated)]
-			let old_receipts = api.current_receipts_before_version_4(block_hash).ok()?;
-			old_receipts.map(|receipts| {
-				receipts
-					.into_iter()
-					.map(|r| {
-						ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
-							status_code: r.state_root.to_low_u64_be() as u8,
-							used_gas: r.used_gas,
-							logs_bloom: r.logs_bloom,
-							logs: r.logs,
-						})
-					})
-					.collect()
-			})
-		} else {
-			self.client
-				.runtime_api()
-				.current_receipts(block_hash)
-				.ok()?
-		}
+	pub fn storage_schema(&self, at: B::Hash) -> Option<EthereumStorageSchema> {
+		let key = PALLET_ETHEREUM_SCHEMA.to_vec();
+		self.query::<EthereumStorageSchema>(at, &StorageKey(key))
 	}
 
-	/// Return the current transaction status.
-	fn current_transaction_statuses(
-		&self,
-		block_hash: Block::Hash,
-	) -> Option<Vec<TransactionStatus>> {
-		self.client
-			.runtime_api()
-			.current_transaction_statuses(block_hash)
-			.ok()?
+	pub fn account_code(&self, at: B::Hash, address: Address) -> Option<Vec<u8>> {
+		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_CODES);
+		key.extend(blake2_128_extend(address.as_bytes()));
+		self.query::<Vec<u8>>(at, &StorageKey(key))
 	}
 
-	/// Return the elasticity multiplier at the give post-eip1559 height.
-	fn elasticity(&self, block_hash: Block::Hash) -> Option<Permill> {
-		if self.is_eip1559(block_hash) {
-			self.client.runtime_api().elasticity(block_hash).ok()?
-		} else {
-			None
-		}
+	pub fn account_storage(&self, at: B::Hash, address: Address, index: U256) -> Option<H256> {
+		let tmp: &mut [u8; 32] = &mut [0; 32];
+		index.to_big_endian(tmp);
+
+		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_STORAGES);
+		key.extend(blake2_128_extend(address.as_bytes()));
+		key.extend(blake2_128_extend(tmp));
+
+		self.query::<H256>(at, &StorageKey(key))
 	}
 
-	fn is_eip1559(&self, block_hash: Block::Hash) -> bool {
-		if let Ok(Some(api_version)) = self
-			.client
-			.runtime_api()
-			.api_version::<dyn EthereumRuntimeRPCApi<Block>>(block_hash)
-		{
-			return api_version >= 2;
-		}
-		false
+	pub fn current_block<Block: Decode>(&self, at: B::Hash) -> Option<Block> {
+		let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_BLOCK);
+		self.query::<Block>(at, &StorageKey(key))
+	}
+
+	pub fn current_receipts<Receipt: Decode>(&self, at: B::Hash) -> Option<Vec<Receipt>> {
+		let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_RECEIPTS);
+		self.query::<Vec<Receipt>>(at, &StorageKey(key))
+	}
+
+	pub fn current_transaction_statuses(&self, at: B::Hash) -> Option<Vec<TransactionStatus>> {
+		let key = storage_prefix_build(PALLET_ETHEREUM, ETHEREUM_CURRENT_TRANSACTION_STATUSES);
+		self.query::<Vec<TransactionStatus>>(at, &StorageKey(key))
+	}
+
+	pub fn elasticity(&self, at: B::Hash) -> Option<Permill> {
+		let key = storage_prefix_build(PALLET_BASE_FEE, BASE_FEE_ELASTICITY);
+		self.query::<Permill>(at, &StorageKey(key))
 	}
 }

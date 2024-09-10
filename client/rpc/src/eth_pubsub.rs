@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -45,7 +45,7 @@ use fc_rpc_core::{
 	},
 	EthPubSubApiServer,
 };
-use fc_storage::OverrideHandle;
+use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 #[derive(Debug)]
@@ -62,7 +62,7 @@ pub struct EthPubSub<B: BlockT, P, C, BE> {
 	client: Arc<C>,
 	sync: Arc<SyncingService<B>>,
 	executor: SubscriptionTaskExecutor,
-	overrides: Arc<OverrideHandle<B>>,
+	storage_override: Arc<dyn StorageOverride<B>>,
 	starting_block: u64,
 	pubsub_notification_sinks: Arc<EthereumBlockNotificationSinks<EthereumBlockNotification<B>>>,
 	_marker: PhantomData<BE>,
@@ -75,7 +75,7 @@ impl<B: BlockT, P, C, BE> Clone for EthPubSub<B, P, C, BE> {
 			client: self.client.clone(),
 			sync: self.sync.clone(),
 			executor: self.executor.clone(),
-			overrides: self.overrides.clone(),
+			storage_override: self.storage_override.clone(),
 			starting_block: self.starting_block,
 			pubsub_notification_sinks: self.pubsub_notification_sinks.clone(),
 			_marker: PhantomData::<BE>,
@@ -96,7 +96,7 @@ where
 		client: Arc<C>,
 		sync: Arc<SyncingService<B>>,
 		executor: SubscriptionTaskExecutor,
-		overrides: Arc<OverrideHandle<B>>,
+		storage_override: Arc<dyn StorageOverride<B>>,
 		pubsub_notification_sinks: Arc<
 			EthereumBlockNotificationSinks<EthereumBlockNotification<B>>,
 		>,
@@ -109,7 +109,7 @@ where
 			client,
 			sync,
 			executor,
-			overrides,
+			storage_override,
 			starting_block,
 			pubsub_notification_sinks,
 			_marker: PhantomData,
@@ -121,13 +121,7 @@ where
 		notification: EthereumBlockNotification<B>,
 	) -> future::Ready<Option<PubSubResult>> {
 		let res = if notification.is_new_best {
-			let schema = fc_storage::onchain_storage_schema(&*self.client, notification.hash);
-			let handler = self
-				.overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&self.overrides.fallback);
-			handler.current_block(notification.hash)
+			self.storage_override.current_block(notification.hash)
 		} else {
 			None
 		};
@@ -142,15 +136,8 @@ where
 		let res = if notification.is_new_best {
 			let substrate_hash = notification.hash;
 
-			let schema = fc_storage::onchain_storage_schema(&*self.client, substrate_hash);
-			let handler = self
-				.overrides
-				.schemas
-				.get(&schema)
-				.unwrap_or(&self.overrides.fallback);
-
-			let block = handler.current_block(substrate_hash);
-			let receipts = handler.current_receipts(substrate_hash);
+			let block = self.storage_override.current_block(substrate_hash);
+			let receipts = self.storage_override.current_receipts(substrate_hash);
 
 			match (block, receipts) {
 				(Some(block), Some(receipts)) => Some((block, receipts)),

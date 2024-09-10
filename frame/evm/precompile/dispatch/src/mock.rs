@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,15 +17,15 @@
 
 //! Test mock for unit tests and benchmarking
 
+use core::str::FromStr;
 use frame_support::{
-	parameter_types,
+	derive_impl, parameter_types,
 	traits::{ConstU32, FindAuthor},
 	weights::Weight,
 	ConsensusEngineId,
 };
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
-use sp_std::{boxed::Box, prelude::*, str::FromStr};
 
 use fp_evm::{ExitError, ExitReason, Transfer};
 use pallet_evm::{
@@ -48,6 +48,8 @@ parameter_types! {
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
+
+#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type RuntimeEvent = RuntimeEvent;
 	type BaseCallFilter = frame_support::traits::Everything;

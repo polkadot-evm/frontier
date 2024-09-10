@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -40,7 +40,7 @@ use sp_state_machine::OverlayedChanges;
 use fc_rpc_core::types::*;
 use fp_evm::{ExecutionInfo, ExecutionInfoV2};
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
-use fp_storage::{EVM_ACCOUNT_CODES, PALLET_EVM};
+use fp_storage::constants::{EVM_ACCOUNT_CODES, EVM_ACCOUNT_STORAGES, PALLET_EVM};
 
 use crate::{
 	eth::{Eth, EthConfig},
@@ -258,6 +258,7 @@ where
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: "EthereumRuntimeRPCApi_call",
 										error,
+										raw: r
 									},
 								)
 							})
@@ -276,6 +277,7 @@ where
 									|error| sp_api::ApiError::FailedToDecodeReturnValue {
 										function: "EthereumRuntimeRPCApi_call",
 										error,
+										raw: r
 									},
 								)
 							})
@@ -460,8 +462,7 @@ where
 		}
 
 		let block_gas_limit = {
-			let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-			let block = block_data_cache.current_block(schema, substrate_hash).await;
+			let block = block_data_cache.current_block(substrate_hash).await;
 			block
 				.ok_or_else(|| internal_err("block unavailable, cannot query gas limit"))?
 				.header
@@ -912,12 +913,10 @@ where
 					overlayed_changes.set_storage(key.clone(), Some(encoded_code));
 				}
 
-				let mut account_storage_key = [
-					twox_128(PALLET_EVM),
-					twox_128(fp_storage::EVM_ACCOUNT_STORAGES),
-				]
-				.concat()
-				.to_vec();
+				let mut account_storage_key =
+					[twox_128(PALLET_EVM), twox_128(EVM_ACCOUNT_STORAGES)]
+						.concat()
+						.to_vec();
 				account_storage_key.extend(blake2_128(address.as_bytes()));
 				account_storage_key.extend(address.as_bytes());
 
@@ -1044,7 +1043,8 @@ fn fee_details(
 		// Default to EIP-1559 transaction
 		_ => Ok(FeeDetails {
 			gas_price: None,
-			max_fee_per_gas: Some(U256::zero()),
+			// Old runtimes require max_fee_per_gas to be None for non transactional calls.
+			max_fee_per_gas: None,
 			max_priority_fee_per_gas: Some(U256::zero()),
 			fee_cap: U256::zero(),
 		}),

@@ -1,21 +1,20 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
+
+// Copyright (c) Moonsong Labs.
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
 //
-// Copyright (c) 2019-2022 Moonsong Labs.
-// Copyright (c) 2023 Parity Technologies (UK) Ltd.
+// 	http://www.apache.org/licenses/LICENSE-2.0
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program. If not, see <https://www.gnu.org/licenses/>.
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
 
 use super::*;
 use alloc::borrow::ToOwned;
@@ -54,7 +53,7 @@ impl Kind for StringKind {
 /// The `bytes/string` type of Solidity.
 /// It is different from `Vec<u8>` which will be serialized with padding for each `u8` element
 /// of the array, while `Bytes` is tightly packed.
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq)]
 pub struct BoundedBytesString<K, S> {
 	data: Vec<u8>,
 	_phantom: PhantomData<(K, S)>,
@@ -69,21 +68,13 @@ impl<K: Kind, S: Get<u32>> Clone for BoundedBytesString<K, S> {
 	}
 }
 
-impl<K1, S1, K2, S2> PartialEq<BoundedBytesString<K2, S2>> for BoundedBytesString<K1, S1> {
-	fn eq(&self, other: &BoundedBytesString<K2, S2>) -> bool {
-		self.data.eq(&other.data)
-	}
-}
-
-impl<K, S> Eq for BoundedBytesString<K, S> {}
-
 impl<K, S: Get<u32>> BoundedBytesString<K, S> {
 	pub fn as_bytes(&self) -> &[u8] {
 		&self.data
 	}
 
-	pub fn as_str(&self) -> Result<&str, sp_std::str::Utf8Error> {
-		sp_std::str::from_utf8(&self.data)
+	pub fn as_str(&self) -> Result<&str, core::str::Utf8Error> {
+		core::str::from_utf8(&self.data)
 	}
 }
 

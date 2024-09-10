@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -54,10 +54,7 @@ pub use fc_rpc_core::{
 	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
 	Web3ApiServer,
 };
-pub use fc_storage::{
-	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-	SchemaV3Override, StorageOverride,
-};
+pub use fc_storage::{overrides::*, StorageOverrideHandler};
 
 pub mod frontier_backend_client {
 	use super::internal_err;
@@ -208,7 +205,13 @@ pub mod frontier_backend_client {
 				}
 			}
 			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
-			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
+			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
+				Ok(hash) => Some(BlockId::Hash(hash)),
+				Err(e) => {
+					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
+					Some(BlockId::Hash(client.info().best_hash))
+				}
+			},
 			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
 			BlockNumberOrHash::Pending => None,
 			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
@@ -366,8 +369,8 @@ mod tests {
 	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
-		Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
+	) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
+		Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 			client,
 			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {

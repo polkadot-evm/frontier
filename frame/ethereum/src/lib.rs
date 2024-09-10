@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,11 +25,15 @@
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
 #[cfg(all(feature = "std", test))]
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
+use alloc::{vec, vec::Vec};
+use core::marker::PhantomData;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
@@ -55,7 +59,6 @@ use sp_runtime::{
 	},
 	RuntimeDebug, SaturatedConversion,
 };
-use sp_std::{marker::PhantomData, prelude::*};
 // Frontier
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
@@ -319,7 +322,7 @@ pub mod pallet {
 
 	/// Current building block's transactions and receipts.
 	#[pallet::storage]
-	pub(super) type Pending<T: Config> =
+	pub type Pending<T: Config> =
 		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
 
 	/// The current Ethereum block.
@@ -516,7 +519,7 @@ impl<T: Config> Pallet<T> {
 		// Do not allow transactions for which `tx.sender` has any code deployed.
 		//
 		// This check should be done on the transaction validation (here) **and**
-		// on trnasaction execution, otherwise a contract tx will be included in
+		// on transaction execution, otherwise a contract tx will be included in
 		// the mempool and pollute the mempool forever.
 		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
 			return Err(InvalidTransaction::BadSigner.into());
@@ -689,7 +692,7 @@ impl<T: Config> Pallet<T> {
 			PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						sp_std::cmp::max(
+						core::cmp::max(
 							used_gas.standard.unique_saturated_into(),
 							used_gas.effective.unique_saturated_into(),
 						),

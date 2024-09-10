@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -62,14 +62,15 @@ pub mod static_keys {
 }
 
 #[derive(Clone)]
-pub struct Backend<Block: BlockT> {
+pub struct Backend<Block, C> {
+	client: Arc<C>,
 	meta: Arc<MetaDb<Block>>,
 	mapping: Arc<MappingDb<Block>>,
 	log_indexer: LogIndexerBackend<Block>,
 }
 
 #[async_trait::async_trait]
-impl<Block: BlockT> fc_api::Backend<Block> for Backend<Block> {
+impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<Block, C> {
 	async fn block_hash(
 		&self,
 		ethereum_block_hash: &H256,
@@ -87,6 +88,10 @@ impl<Block: BlockT> fc_api::Backend<Block> for Backend<Block> {
 
 	fn log_indexer(&self) -> &dyn fc_api::LogIndexerBackend<Block> {
 		&self.log_indexer
+	}
+
+	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
+		Ok(self.client.info().best_hash)
 	}
 }
 
@@ -115,8 +120,8 @@ pub fn frontier_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
 	db_config_dir.join("frontier").join(db_path)
 }
 
-impl<Block: BlockT> Backend<Block> {
-	pub fn open<C: HeaderBackend<Block>>(
+impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
+	pub fn open(
 		client: Arc<C>,
 		database: &DatabaseSource,
 		db_config_dir: &Path,
@@ -148,13 +153,11 @@ impl<Block: BlockT> Backend<Block> {
 		)
 	}
 
-	pub fn new<C: HeaderBackend<Block>>(
-		client: Arc<C>,
-		config: &DatabaseSettings,
-	) -> Result<Self, String> {
-		let db = utils::open_database::<Block, C>(client, config)?;
+	pub fn new(client: Arc<C>, config: &DatabaseSettings) -> Result<Self, String> {
+		let db = utils::open_database::<Block, C>(client.clone(), config)?;
 
 		Ok(Self {
+			client,
 			mapping: Arc::new(MappingDb {
 				db: db.clone(),
 				write_lock: Arc::new(Mutex::new(())),
@@ -177,7 +180,7 @@ impl<Block: BlockT> Backend<Block> {
 	}
 }
 
-pub struct MetaDb<Block: BlockT> {
+pub struct MetaDb<Block> {
 	db: Arc<dyn Database<DbHash>>,
 	_marker: PhantomData<Block>,
 }
@@ -244,7 +247,7 @@ pub struct MappingCommitment<Block: BlockT> {
 	pub ethereum_transaction_hashes: Vec<H256>,
 }
 
-pub struct MappingDb<Block: BlockT> {
+pub struct MappingDb<Block> {
 	db: Arc<dyn Database<DbHash>>,
 	write_lock: Arc<Mutex<()>>,
 	_marker: PhantomData<Block>,

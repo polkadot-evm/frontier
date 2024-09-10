@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -37,6 +37,7 @@ use sp_runtime::{
 use sp_timestamp::TimestampInherentData;
 
 use crate::eth::Eth;
+use fp_rpc::EthereumRuntimeRPCApi;
 
 const LOG_TARGET: &str = "eth-pending";
 
@@ -60,6 +61,7 @@ where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B>,
+	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
 	A: ChainApi<Block = B>,
@@ -99,7 +101,12 @@ where
 		);
 
 		// Initialize the pending block header
-		api.initialize_block(best_hash, &pending_header)?;
+		if api
+			.initialize_pending_block(best_hash, &pending_header)
+			.is_err()
+		{
+			api.initialize_block(best_hash, &pending_header)?;
+		}
 
 		// Apply inherents to the pending block.
 		let inherents = api.execute_in_transaction(move |api| {

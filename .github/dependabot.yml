@@ -7,13 +7,9 @@ updates:
       interval: daily
       time: "03:00"
       timezone: Europe/Berlin
-  - package-ecosystem: npm
-    directory: "/docs"
-    schedule:
-      interval: "daily"
   - package-ecosystem: cargo
     directory: "/"
-    # Handle updates for crates from github.com/paritytech/substrate manually.
+    # Handle updates for crates from https://github.com/paritytech/polkadot-sdk manually.
     ignore:
       - dependency-name: "sc-*"
       - dependency-name: "sp-*"

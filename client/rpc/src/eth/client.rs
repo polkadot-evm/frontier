@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -71,12 +71,8 @@ where
 
 	pub fn author(&self) -> RpcResult<H160> {
 		let hash = self.client.info().best_hash;
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), hash);
 		let current_block = self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback)
+			.storage_override
 			.current_block(hash)
 			.ok_or_else(|| internal_err("fetching author through override failed"))?;
 		Ok(current_block.header.beneficiary)

@@ -1,0 +1,97 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - master
+      - 'polkadot-v**'
+  pull_request:
+    branches:
+      - master
+      - 'polkadot-v**'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTC_WRAPPER: "sccache"
+  SCCACHE_GHA_ENABLED: "true"
+
+jobs:
+  unit-test:
+    name: Run Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Cache cargo registry & git sources
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-unittest-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-unittest-${{ hashFiles('**/Cargo.lock') }}
+            ${{ runner.os }}-cargo-unittest-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Install Rust toolchain
+        run: make setup
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Run unit tests
+        run: make test-release
+
+  integration-test:
+    name: Run Integration Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Cache cargo registry & git sources
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-integration-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-integration-test-${{ hashFiles('**/Cargo.lock') }}
+            ${{ runner.os }}-cargo-integration-test-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache
+        uses: mozilla-actions/sccache-action@v0.0.5
+
+      - name: Install Rust toolchain
+        run: make setup
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build client
+        run: make build-release
+
+      - name: Setup node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Run integration tests
+        run: make integration-test

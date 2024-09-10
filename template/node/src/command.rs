@@ -1,20 +1,3 @@
-// This file is part of Substrate.
-
-// Copyright (C) 2017-2021 Parity Technologies (UK) Ltd.
-// SPDX-License-Identifier: Apache-2.0
-
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// 	http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 use futures::TryFutureExt;
 // Substrate
 use sc_cli::{ChainSpec, SubstrateCli};
@@ -179,11 +162,12 @@ pub fn run() -> sc_cli::Result<()> {
 			use frame_benchmarking_cli::{
 				BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE,
 			};
-			use frontier_template_runtime::{Block, ExistentialDeposit};
+			use frontier_template_runtime::{Hashing, EXISTENTIAL_DEPOSIT};
 
 			let runner = cli.create_runner(cmd)?;
 			match cmd {
-				BenchmarkCmd::Pallet(cmd) => runner.sync_run(|config| cmd.run::<Block, ()>(config)),
+				BenchmarkCmd::Pallet(cmd) => runner
+					.sync_run(|config| cmd.run_with_spec::<Hashing, ()>(Some(config.chain_spec))),
 				BenchmarkCmd::Block(cmd) => runner.sync_run(|mut config| {
 					let (client, _, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
 					cmd.run(client)
@@ -213,7 +197,7 @@ pub fn run() -> sc_cli::Result<()> {
 						Box::new(TransferKeepAliveBuilder::new(
 							client.clone(),
 							get_account_id_from_seed::<sp_core::ecdsa::Public>("Alice"),
-							ExistentialDeposit::get(),
+							EXISTENTIAL_DEPOSIT,
 						)),
 					]);
 
@@ -234,7 +218,7 @@ pub fn run() -> sc_cli::Result<()> {
 				let (client, _, _, _, frontier_backend) =
 					service::new_chain_ops(&mut config, &cli.eth)?;
 				let frontier_backend = match frontier_backend {
-					fc_db::Backend::KeyValue(kv) => std::sync::Arc::new(kv),
+					fc_db::Backend::KeyValue(kv) => kv,
 					_ => panic!("Only fc_db::Backend::KeyValue supported"),
 				};
 				cmd.run(client, frontier_backend)

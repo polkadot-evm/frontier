@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2023 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -29,7 +29,7 @@ use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::{types::*, DebugApiServer};
-use fc_storage::OverrideHandle;
+use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
@@ -38,7 +38,7 @@ use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err}
 pub struct Debug<B: BlockT, C, BE> {
 	client: Arc<C>,
 	backend: Arc<dyn fc_api::Backend<B>>,
-	overrides: Arc<OverrideHandle<B>>,
+	storage_override: Arc<dyn StorageOverride<B>>,
 	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	_marker: PhantomData<BE>,
 }
@@ -47,13 +47,13 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<dyn fc_api::Backend<B>>,
-		overrides: Arc<OverrideHandle<B>>,
+		storage_override: Arc<dyn StorageOverride<B>>,
 		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	) -> Self {
 		Self {
 			client,
 			backend,
-			overrides,
+			storage_override,
 			block_data_cache,
 			_marker: PhantomData,
 		}
@@ -79,11 +79,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 			.client
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-		let block = self
-			.block_data_cache
-			.current_block(schema, substrate_hash)
-			.await;
+		let block = self.block_data_cache.current_block(substrate_hash).await;
 		Ok(block)
 	}
 
@@ -118,11 +114,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 			None => return Ok(None),
 		};
 
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-		let block = self
-			.block_data_cache
-			.current_block(schema, substrate_hash)
-			.await;
+		let block = self.block_data_cache.current_block(substrate_hash).await;
 		if let Some(block) = block {
 			Ok(Some(block.transactions[index].clone()))
 		} else {
@@ -154,13 +146,8 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 			.expect_block_hash_from_id(&id)
 			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-		let schema = fc_storage::onchain_storage_schema(self.client.as_ref(), substrate_hash);
-		let handler = self
-			.overrides
-			.schemas
-			.get(&schema)
-			.unwrap_or(&self.overrides.fallback);
-		let receipts = handler.current_receipts(substrate_hash);
+		// TODO: use data cache in the future
+		let receipts = self.storage_override.current_receipts(substrate_hash);
 		Ok(receipts)
 	}
 }

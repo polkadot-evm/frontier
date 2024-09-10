@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -34,7 +34,7 @@ use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 // Frontier
-use fc_storage::OverrideHandle;
+use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::SyncStrategy;
@@ -46,8 +46,8 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 
 	client: Arc<C>,
 	substrate_backend: Arc<BE>,
-	overrides: Arc<OverrideHandle<Block>>,
-	frontier_backend: Arc<fc_db::kv::Backend<Block>>,
+	storage_override: Arc<dyn StorageOverride<Block>>,
+	frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 
 	have_next: bool,
 	retry_times: usize,
@@ -67,8 +67,8 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		timeout: Duration,
 		client: Arc<C>,
 		substrate_backend: Arc<BE>,
-		overrides: Arc<OverrideHandle<Block>>,
-		frontier_backend: Arc<fc_db::kv::Backend<Block>>,
+		storage_override: Arc<dyn StorageOverride<Block>>,
+		frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
@@ -84,7 +84,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 
 			client,
 			substrate_backend,
-			overrides,
+			storage_override,
 			frontier_backend,
 
 			have_next: true,
@@ -98,8 +98,9 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 	}
 }
 
-impl<Block: BlockT, C, BE> Stream for MappingSyncWorker<Block, C, BE>
+impl<Block, C, BE> Stream for MappingSyncWorker<Block, C, BE>
 where
+	Block: BlockT,
 	C: ProvideRuntimeApi<Block>,
 	C::Api: EthereumRuntimeRPCApi<Block>,
 	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
@@ -140,7 +141,7 @@ where
 			match crate::kv::sync_blocks(
 				self.client.as_ref(),
 				self.substrate_backend.as_ref(),
-				self.overrides.clone(),
+				self.storage_override.clone(),
 				self.frontier_backend.as_ref(),
 				self.retry_times,
 				self.sync_from,
@@ -168,7 +169,7 @@ where
 mod tests {
 	use super::*;
 	use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks};
-	use fc_storage::{OverrideHandle, SchemaV3Override, StorageOverride};
+	use fc_storage::SchemaV3StorageOverride;
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use sc_block_builder::BlockBuilderBuilder;
 	use sc_client_api::BlockchainEvents;
@@ -176,7 +177,6 @@ mod tests {
 	use sp_consensus::BlockOrigin;
 	use sp_core::{H160, H256, U256};
 	use sp_runtime::{generic::Header, traits::BlakeTwo256, Digest};
-	use std::collections::BTreeMap;
 	use substrate_test_runtime_client::{
 		ClientBlockImportExt, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
@@ -248,18 +248,10 @@ mod tests {
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
 		let frontier_backend = Arc::new(
-			fc_db::kv::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {
@@ -287,7 +279,7 @@ mod tests {
 				Duration::new(6, 0),
 				client_inner,
 				backend,
-				overrides.clone(),
+				storage_override.clone(),
 				frontier_backend,
 				3,
 				0,
@@ -398,18 +390,10 @@ mod tests {
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
 		let mut client = Arc::new(client);
 		// Overrides
-		let mut overrides_map = BTreeMap::new();
-		overrides_map.insert(
-			EthereumStorageSchema::V3,
-			Box::new(SchemaV3Override::new(client.clone())) as Box<dyn StorageOverride<_>>,
-		);
-		let overrides = Arc::new(OverrideHandle {
-			schemas: overrides_map,
-			fallback: Box::new(SchemaV3Override::new(client.clone())),
-		});
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
 		let frontier_backend = Arc::new(
-			fc_db::kv::Backend::<OpaqueBlock>::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
 					source: sc_client_db::DatabaseSource::RocksDb {
@@ -437,7 +421,7 @@ mod tests {
 				Duration::new(6, 0),
 				client_inner,
 				backend,
-				overrides.clone(),
+				storage_override.clone(),
 				frontier_backend,
 				3,
 				0,

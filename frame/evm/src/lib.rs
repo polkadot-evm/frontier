@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -55,6 +55,8 @@
 #![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
+extern crate alloc;
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
@@ -65,6 +67,8 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use core::cmp::min;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -75,13 +79,14 @@ use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
-	storage::child::KillStorageResult,
+	storage::{child::KillStorageResult, KeyPrefixIterator},
 	traits::{
+		fungible::{Balanced, Credit, Debt},
 		tokens::{
 			currency::Currency,
 			fungible::Inspect,
 			imbalance::{Imbalance, OnUnbalanced, SignedImbalance},
-			ExistenceRequirement, Fortitude, Preservation, WithdrawReasons,
+			ExistenceRequirement, Fortitude, Precision, Preservation, WithdrawReasons,
 		},
 		FindAuthor, Get, Time,
 	},
@@ -93,7 +98,6 @@ use sp_runtime::{
 	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
@@ -554,7 +558,10 @@ pub mod pallet {
 					T::AccountProvider::inc_account_nonce(&account_id);
 				}
 
-				T::Currency::deposit_creating(&account_id, account.balance.unique_saturated_into());
+				let _ = T::Currency::deposit_creating(
+					&account_id,
+					account.balance.unique_saturated_into(),
+				);
 
 				Pallet::<T>::create_account(*address, account.code.clone());
 
@@ -652,7 +659,7 @@ where
 }
 
 /// Ensure that the origin is root.
-pub struct EnsureAddressRoot<AccountId>(sp_std::marker::PhantomData<AccountId>);
+pub struct EnsureAddressRoot<AccountId>(core::marker::PhantomData<AccountId>);
 
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId>
 where
@@ -669,7 +676,7 @@ where
 }
 
 /// Ensure that the origin never happens.
-pub struct EnsureAddressNever<AccountId>(sp_std::marker::PhantomData<AccountId>);
+pub struct EnsureAddressNever<AccountId>(core::marker::PhantomData<AccountId>);
 
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressNever<AccountId> {
 	type Success = AccountId;
@@ -732,7 +739,7 @@ impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
 }
 
 /// Hashed address mapping.
-pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
+pub struct HashedAddressMapping<H>(core::marker::PhantomData<H>);
 
 impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
 	fn into_account_id(address: H160) -> AccountId32 {
@@ -751,7 +758,7 @@ pub trait BlockHashMapping {
 }
 
 /// Returns the Substrate block hash by number.
-pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
+pub struct SubstrateBlockHashMapping<T>(core::marker::PhantomData<T>);
 impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 	fn block_hash(number: u32) -> H256 {
 		let number = <NumberFor<T::Block>>::from(number);
@@ -765,7 +772,7 @@ pub trait GasWeightMapping {
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
-pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
+pub struct FixedGasWeightMapping<T>(core::marker::PhantomData<T>);
 impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
 	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
 		let mut weight = T::WeightPerGas::get().saturating_mul(gas);
@@ -799,6 +806,14 @@ impl<T: Config> Pallet<T> {
 		let code_len = <AccountCodes<T>>::decode_len(address).unwrap_or(0);
 
 		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
+	}
+	/// Check whether an account is a suicided contract
+	pub fn is_account_suicided(address: &H160) -> bool {
+		<Suicided<T>>::contains_key(address)
+	}
+
+	pub fn iter_account_storages(address: &H160) -> KeyPrefixIterator<H256> {
+		<AccountStorages<T>>::iter_key_prefix(address)
 	}
 
 	/// Remove an account if its empty.
@@ -895,9 +910,7 @@ impl<T: Config> Pallet<T> {
 	/// Get the account basic in EVM format.
 	pub fn account_basic(address: &H160) -> (Account, frame_support::weights::Weight) {
 		let account_id = T::AddressMapping::into_account_id(*address);
-
 		let nonce = T::AccountProvider::account_nonce(&account_id);
-		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 
@@ -948,7 +961,7 @@ pub trait OnChargeEVMTransaction<T: Config> {
 /// trait (eg. the pallet_balances) using an unbalance handler (implementing
 /// `OnUnbalanced`).
 /// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
-pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+pub struct EVMCurrencyAdapter<C, OU>(core::marker::PhantomData<(C, OU)>);
 
 impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
 where
@@ -1038,26 +1051,38 @@ where
 		}
 	}
 }
+/// Implements transaction payment for a pallet implementing the [`fungible`]
+/// trait (eg. pallet_balances) using an unbalance handler (implementing
+/// [`OnUnbalanced`]).
+///
+/// Equivalent of `EVMCurrencyAdapter` but for fungible traits. Similar to `FungibleAdapter` of
+/// `pallet_transaction_payment`
+pub struct EVMFungibleAdapter<F, OU>(core::marker::PhantomData<(F, OU)>);
 
-/// Implementation for () does not specify what to do with imbalance
-impl<T> OnChargeEVMTransaction<T> for ()
+impl<T, F, OU> OnChargeEVMTransaction<T> for EVMFungibleAdapter<F, OU>
 where
 	T: Config,
-	<T::Currency as Currency<AccountIdOf<T>>>::PositiveImbalance: Imbalance<
-		<T::Currency as Currency<AccountIdOf<T>>>::Balance,
-		Opposite = <T::Currency as Currency<AccountIdOf<T>>>::NegativeImbalance,
-	>,
-	<T::Currency as Currency<AccountIdOf<T>>>::NegativeImbalance: Imbalance<
-		<T::Currency as Currency<AccountIdOf<T>>>::Balance,
-		Opposite = <T::Currency as Currency<AccountIdOf<T>>>::PositiveImbalance,
-	>,
-	U256: UniqueSaturatedInto<BalanceOf<T>>,
+	F: Balanced<AccountIdOf<T>>,
+	OU: OnUnbalanced<Credit<AccountIdOf<T>, F>>,
+	U256: UniqueSaturatedInto<<F as Inspect<AccountIdOf<T>>>::Balance>,
 {
 	// Kept type as Option to satisfy bound of Default
-	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
+	type LiquidityInfo = Option<Credit<AccountIdOf<T>, F>>;
 
 	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
-		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::withdraw_fee(who, fee)
+		if fee.is_zero() {
+			return Ok(None);
+		}
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let imbalance = F::withdraw(
+			&account_id,
+			fee.unique_saturated_into(),
+			Precision::Exact,
+			Preservation::Preserve,
+			Fortitude::Polite,
+		)
+		.map_err(|_| Error::<T>::BalanceLow)?;
+		Ok(Some(imbalance))
 	}
 
 	fn correct_and_deposit_fee(
@@ -1066,11 +1091,70 @@ where
 		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	) -> Self::LiquidityInfo {
-		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, base_fee, already_withdrawn)
+		if let Some(paid) = already_withdrawn {
+			let account_id = T::AddressMapping::into_account_id(*who);
+
+			// Calculate how much refund we should return
+			let refund_amount = paid
+				.peek()
+				.saturating_sub(corrected_fee.unique_saturated_into());
+			// refund to the account that paid the fees.
+			let refund_imbalance = F::deposit(&account_id, refund_amount, Precision::BestEffort)
+				.unwrap_or_else(|_| Debt::<AccountIdOf<T>, F>::zero());
+
+			// merge the imbalance caused by paying the fees and refunding parts of it again.
+			let adjusted_paid = paid
+				.offset(refund_imbalance)
+				.same()
+				.unwrap_or_else(|_| Credit::<AccountIdOf<T>, F>::zero());
+
+			let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+			// Handle base fee. Can be either burned, rationed, etc ...
+			OU::on_unbalanced(base_fee);
+			return Some(tip);
+		}
+		None
 	}
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
-		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
+		// Default Ethereum behaviour: issue the tip to the block author.
+		if let Some(tip) = tip {
+			let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
+			let _ = F::deposit(&account_id, tip.peek(), Precision::BestEffort);
+		}
+	}
+}
+
+/// Implementation for () does not specify what to do with imbalance
+impl<T> OnChargeEVMTransaction<T> for ()
+where
+	T: Config,
+	T::Currency: Balanced<AccountIdOf<T>>,
+	U256: UniqueSaturatedInto<<<T as Config>::Currency as Inspect<AccountIdOf<T>>>::Balance>,
+{
+	// Kept type as Option to satisfy bound of Default
+	type LiquidityInfo = Option<Credit<AccountIdOf<T>, T::Currency>>;
+
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		EVMFungibleAdapter::<T::Currency, ()>::withdraw_fee(who, fee)
+	}
+
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		base_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Self::LiquidityInfo {
+		<EVMFungibleAdapter<T::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(
+			who,
+			corrected_fee,
+			base_fee,
+			already_withdrawn,
+		)
+	}
+
+	fn pay_priority_fee(tip: Self::LiquidityInfo) {
+		<EVMFungibleAdapter<T::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
 	}
 }
 
@@ -1092,7 +1176,7 @@ impl<T> OnCreate<T> for Tuple {
 }
 
 /// Native system account provider that `frame_system` provides.
-pub struct NativeSystemAccountProvider<T>(sp_std::marker::PhantomData<T>);
+pub struct NativeSystemAccountProvider<T>(core::marker::PhantomData<T>);
 
 impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
 	type AccountId = T::AccountId;

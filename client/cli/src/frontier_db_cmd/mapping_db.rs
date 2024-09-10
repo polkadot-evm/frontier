@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -40,22 +40,22 @@ pub enum MappingKey {
 	EthBlockOrTransactionHash(H256),
 }
 
-pub struct MappingDb<'a, C, B: BlockT> {
+pub struct MappingDb<'a, B, C> {
 	cmd: &'a FrontierDbCmd,
 	client: Arc<C>,
-	backend: Arc<fc_db::kv::Backend<B>>,
+	backend: Arc<fc_db::kv::Backend<B, C>>,
 }
 
-impl<'a, C, B: BlockT> MappingDb<'a, C, B>
+impl<'a, B, C> MappingDb<'a, B, C>
 where
-	C: ProvideRuntimeApi<B>,
+	B: BlockT,
+	C: HeaderBackend<B> + ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B>,
 {
 	pub fn new(
 		cmd: &'a FrontierDbCmd,
 		client: Arc<C>,
-		backend: Arc<fc_db::kv::Backend<B>>,
+		backend: Arc<fc_db::kv::Backend<B, C>>,
 	) -> Self {
 		Self {
 			cmd,
@@ -176,4 +176,4 @@ where
 	}
 }
 
-impl<'a, C, B: BlockT> FrontierDbMessage for MappingDb<'a, C, B> {}
+impl<'a, B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MappingDb<'a, B, C> {}
