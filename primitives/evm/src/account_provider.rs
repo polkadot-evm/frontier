@@ -33,6 +33,7 @@ pub trait AccountProvider {
 	///
 	/// Represent the account itself in accounts records.
 	type AccountId;
+
 	/// Account nonce type.
 	///
 	/// The number that helps to ensure that each transaction in the network is unique
@@ -43,14 +44,17 @@ pub trait AccountProvider {
 	///
 	/// The account associated with new created address EVM.
 	fn create_account(who: &Self::AccountId);
+
 	/// Removes an account from accounts records.
 	///
 	/// The account associated with removed address from EVM.
 	fn remove_account(who: &Self::AccountId);
+
 	/// Return current account nonce value.
 	///
 	/// Used to represent account basic information in EVM format.
 	fn account_nonce(who: &Self::AccountId) -> Self::Nonce;
+
 	/// Increment a particular account's nonce value.
 	///
 	/// Incremented with each new transaction submitted by the account.
