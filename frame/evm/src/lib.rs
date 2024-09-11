@@ -1175,10 +1175,12 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
-/// Native system account provider that `frame_system` provides.
-pub struct NativeSystemAccountProvider<T>(core::marker::PhantomData<T>);
+/// EVM account provider based on the [`frame_system`] accounts.
+///
+/// Uses standard Substrate accounts system to hold EVM accounts.
+pub struct FrameSystemAccountProvider<T>(core::marker::PhantomData<T>);
 
-impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T> {
+impl<T: frame_system::Config> AccountProvider for FrameSystemAccountProvider<T> {
 	type AccountId = T::AccountId;
 	type Nonce = T::Nonce;
 
@@ -1193,6 +1195,7 @@ impl<T: frame_system::Config> AccountProvider for NativeSystemAccountProvider<T>
 	fn create_account(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::inc_sufficients(who);
 	}
+
 	fn remove_account(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::dec_sufficients(who);
 	}
