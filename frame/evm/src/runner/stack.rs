@@ -214,7 +214,11 @@ where
 		//
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
-		if is_transactional && !<AccountCodes<T>>::get(source).is_empty() {
+		if is_transactional
+			&& !<AccountCodesMetadata<T>>::get(source)
+				.unwrap_or_default()
+				.size == 0
+		{
 			return Err(RunnerError {
 				error: Error::<T>::TransactionMustComeFromEOA,
 				weight,
@@ -835,7 +839,11 @@ where
 	}
 
 	fn code(&self, address: H160) -> Vec<u8> {
-		<AccountCodes<T>>::get(address)
+		if AccountCodesMetadata::<T>::contains_key(address) {
+			<AccountCodes<T>>::get(address)
+		} else {
+			Default::default()
+		}
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
@@ -1001,12 +1009,6 @@ where
 	}
 
 	fn record_external_operation(&mut self, op: evm::ExternalOperation) -> Result<(), ExitError> {
-		let size_limit: u64 = self
-			.metadata()
-			.gasometer()
-			.config()
-			.create_contract_limit
-			.unwrap_or_default() as u64;
 		let (weight_info, recorded) = self.info_mut();
 
 		if let Some(weight_info) = weight_info {
@@ -1022,27 +1024,15 @@ where
 						// Transfers to EOAs with standard 21_000 gas limit are able to
 						// pay for this pov size.
 						weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
-						if <AccountCodes<T>>::decode_len(address).unwrap_or(0) == 0 {
-							return Ok(());
-						}
 
+						// We shoudl record metadata read as well
 						weight_info
 							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+
 						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 							weight_info.try_record_proof_size_or_fail(meta.size)?;
-						} else if let Some(remaining_proof_size) =
-							weight_info.remaining_proof_size()
-						{
-							let pre_size = remaining_proof_size.min(size_limit);
-							weight_info.try_record_proof_size_or_fail(pre_size)?;
-
-							let actual_size = Pallet::<T>::account_code_metadata(address).size;
-							if actual_size > pre_size {
-								return Err(ExitError::OutOfGas);
-							}
-							// Refund unused proof size
-							weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
 						}
+
 						recorded.account_codes.push(address);
 					}
 				}
@@ -1102,12 +1092,6 @@ where
 			_ => None,
 		};
 
-		let size_limit: u64 = self
-			.metadata()
-			.gasometer()
-			.config()
-			.create_contract_limit
-			.unwrap_or_default() as u64;
 		let (weight_info, recorded) = self.info_mut();
 
 		if let Some(weight_info) = weight_info {
@@ -1116,27 +1100,20 @@ where
 				return Ok(());
 			};
 
-			let mut record_account_codes_proof_size = |address: H160,
-			                                           empty_check: bool|
-			 -> Result<(), ExitError> {
-				let mut base_size = ACCOUNT_CODES_METADATA_PROOF_SIZE;
-				if empty_check {
-					base_size = base_size.saturating_add(IS_EMPTY_CHECK_PROOF_SIZE);
-				}
-				weight_info.try_record_proof_size_or_fail(base_size)?;
+			let mut record_account_codes_proof_size =
+				|address: H160, empty_check: bool| -> Result<(), ExitError> {
+					let mut base_size = ACCOUNT_CODES_METADATA_PROOF_SIZE;
+					if empty_check {
+						base_size = base_size.saturating_add(IS_EMPTY_CHECK_PROOF_SIZE);
+					}
+					weight_info.try_record_proof_size_or_fail(base_size)?;
 
-				if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
-					weight_info.try_record_proof_size_or_fail(meta.size)?;
-				} else {
-					weight_info.try_record_proof_size_or_fail(size_limit)?;
-					let actual_size = AccountCodes::<T>::decode_len(address).unwrap_or_default();
+					if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+						weight_info.try_record_proof_size_or_fail(meta.size)?;
+					}
 
-					// Refund unused proof size
-					weight_info.refund_proof_size(size_limit.saturating_sub(actual_size as u64));
-				}
-
-				Ok(())
-			};
+					Ok(())
+				};
 
 			// Proof size is fixed length for writes (a 32-byte hash in a merkle trie), and
 			// the full key/value for reads. For read and writes over the same storage, the full value
