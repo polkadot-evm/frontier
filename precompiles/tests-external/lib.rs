@@ -266,6 +266,7 @@ impl BalanceConverter for SubtensorEvmBalanceConverter {
 
 impl pallet_evm::Config for Runtime {
 	type BalanceConverter = SubtensorEvmBalanceConverter;
+	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type FeeCalculator = ();
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;

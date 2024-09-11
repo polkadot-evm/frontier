@@ -47,7 +47,9 @@ use fp_evm::{
 };
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping, BalanceConverter, BalanceOf, BlockHashMapping, Config, Error, Event, EvmBalance, FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountProvider,
+	AccountStorages, AddressMapping, BalanceConverter, BalanceOf, BlockHashMapping, Config, Error,
+	Event, EvmBalance, FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -860,7 +862,7 @@ where
 
 	fn inc_nonce(&mut self, address: H160) -> Result<(), ExitError> {
 		let account_id = T::AddressMapping::into_account_id(address);
-		frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+		T::AccountProvider::inc_account_nonce(&account_id);
 		Ok(())
 	}
 
@@ -925,8 +927,9 @@ where
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
 		// Adjust decimals
-		let value_sub = T::BalanceConverter::into_substrate_balance(EvmBalance::new(transfer.value))
-			.ok_or(ExitError::OutOfFund)?;
+		let value_sub =
+			T::BalanceConverter::into_substrate_balance(EvmBalance::new(transfer.value))
+				.ok_or(ExitError::OutOfFund)?;
 
 		T::Currency::transfer(
 			&source,

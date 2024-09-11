@@ -23,7 +23,9 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 use core::marker::PhantomData;
-use fp_evm::{PrecompileFailure, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE};
+use fp_evm::{
+	AccountProvider, PrecompileFailure, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
+};
 use pallet_evm::AddressMapping;
 use precompile_utils::{prelude::*, EvmResult};
 use sp_core::H160;
@@ -200,7 +202,7 @@ where
 		pallet_evm::Suicided::<Runtime>::remove(address);
 
 		let account_id = Runtime::AddressMapping::into_account_id(address);
-		let _ = frame_system::Pallet::<Runtime>::dec_sufficients(&account_id);
+		Runtime::AccountProvider::remove_account(&account_id);
 	}
 }
 

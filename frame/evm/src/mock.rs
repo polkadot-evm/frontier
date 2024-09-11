@@ -30,7 +30,9 @@ use sp_runtime::{
 };
 
 use crate::{
-	BalanceConverter, EnsureAddressNever, EnsureAddressRoot, EvmBalance, FeeCalculator, IdentityAddressMapping, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet, SubstrateBalance
+	BalanceConverter, EnsureAddressNever, EnsureAddressRoot, EvmBalance, FeeCalculator,
+	IdentityAddressMapping, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
+	PrecompileSet, SubstrateBalance,
 };
 
 frame_support::construct_runtime! {
@@ -170,6 +172,7 @@ impl BalanceConverter for SubtensorEvmBalanceConverter {
 
 impl crate::Config for Test {
 	type BalanceConverter = SubtensorEvmBalanceConverter;
+	type AccountProvider = crate::FrameSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;

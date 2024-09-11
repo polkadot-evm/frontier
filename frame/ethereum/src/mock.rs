@@ -194,6 +194,7 @@ impl BalanceConverter for SubtensorEvmBalanceConverter {
 }
 
 impl pallet_evm::Config for Test {
+	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type BalanceConverter = SubtensorEvmBalanceConverter;
 	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
