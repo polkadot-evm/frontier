@@ -2840,6 +2840,7 @@ dependencies = [
 name = "fp-evm"
 version = "3.0.0-dev"
 dependencies = [
+ "environmental",
  "evm",
  "frame-support",
  "num_enum",
