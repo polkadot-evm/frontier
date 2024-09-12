@@ -45,7 +45,7 @@ where
 	})
 }
 
-pub(super) fn set_storage_oog() {
+pub fn set_storage_oog() {
 	STORAGE_OOG::with(|storage_oog| {
 		*storage_oog = true;
 	});

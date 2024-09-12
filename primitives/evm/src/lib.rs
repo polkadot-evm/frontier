@@ -44,7 +44,7 @@ pub use self::{
 		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
 		PrecompileSet, Transfer,
 	},
-	storage_oog::handle_storage_oog,
+	storage_oog::{handle_storage_oog, set_storage_oog},
 	validation::{
 		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
 		TransactionValidationError,
