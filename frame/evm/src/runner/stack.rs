@@ -1143,6 +1143,7 @@ where
 
 							let actual_size = Pallet::<T>::account_code_metadata(address).size;
 							if actual_size > pre_size {
+								fp_evm::set_storage_oog();
 								return Err(ExitError::OutOfGas);
 							}
 							// Refund unused proof size
