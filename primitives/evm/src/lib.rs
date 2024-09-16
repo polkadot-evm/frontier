@@ -118,6 +118,7 @@ impl WeightInfo {
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
 		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
 		if usage > limit {
+			storage_oog::set_storage_oog();
 			return Err(ExitError::OutOfGas);
 		}
 		Ok(usage)
