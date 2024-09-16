@@ -51,12 +51,13 @@ impl StorageMeter {
 	/// Records the given amount of storage usage. The amount is added to the current usage.
 	/// If the limit is reached, an error is returned.
 	pub fn record(&mut self, amount: u64) -> Result<(), MeterError> {
-		let usage = self
-			.usage
-			.checked_add(amount)
-			.ok_or(MeterError::LimitExceeded)?;
+		let usage = self.usage.checked_add(amount).ok_or_else(|| {
+			fp_evm::set_storage_oog();
+			MeterError::LimitExceeded
+		})?;
 
 		if usage > self.limit {
+			fp_evm::set_storage_oog();
 			return Err(MeterError::LimitExceeded);
 		}
 		self.usage = usage;
