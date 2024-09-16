@@ -9,7 +9,7 @@ use sc_client_api::{Backend as BackendT, BlockBackend};
 use sc_consensus::{BasicQueue, BoxBlockImport};
 use sc_consensus_grandpa::BlockNumberOps;
 use sc_executor::HostFunctions as HostFunctionsT;
-use sc_network_sync::strategy::warp::{WarpSyncParams, WarpSyncProvider};
+use sc_network_sync::strategy::warp::{WarpSyncConfig, WarpSyncProvider};
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
 use sc_transaction_pool::FullPool;
@@ -103,7 +103,7 @@ where
 		})
 		.transpose()?;
 
-	let executor = sc_service::new_wasm_executor(config);
+	let executor = sc_service::new_wasm_executor(&config.executor);
 
 	let (client, backend, keystore_container, task_manager) = sc_service::new_full_parts::<B, RA, _>(
 		config,
@@ -310,12 +310,11 @@ where
 		fee_history_cache_limit,
 	} = new_frontier_partial(&eth_config)?;
 
+	let maybe_registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
 	let mut net_config =
-		sc_network::config::FullNetworkConfiguration::<_, _, NB>::new(&config.network);
+		sc_network::config::FullNetworkConfiguration::<_, _, NB>::new(&config.network, maybe_registry.cloned());
 	let peer_store_handle = net_config.peer_store_handle();
-	let metrics = NB::register_notification_metrics(
-		config.prometheus_config.as_ref().map(|cfg| &cfg.registry),
-	);
+	let metrics = NB::register_notification_metrics(maybe_registry);
 
 	let grandpa_protocol_name = sc_consensus_grandpa::protocol_standard_name(
 		&client
@@ -331,7 +330,7 @@ where
 			peer_store_handle,
 		);
 
-	let warp_sync_params = if sealing.is_some() {
+	let warp_sync_config = if sealing.is_some() {
 		None
 	} else {
 		net_config.add_notification_protocol(grandpa_protocol_config);
@@ -341,7 +340,7 @@ where
 				grandpa_link.shared_authority_set().clone(),
 				Vec::new(),
 			));
-		Some(WarpSyncParams::WithProvider(warp_sync))
+		Some(WarpSyncConfig::WithProvider(warp_sync))
 	};
 
 	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
@@ -353,7 +352,7 @@ where
 			spawn_handle: task_manager.spawn_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
-			warp_sync_params,
+			warp_sync_config,
 			block_relay: None,
 			metrics,
 		})?;
@@ -399,7 +398,7 @@ where
 	let pubsub_notification_sinks = Arc::new(pubsub_notification_sinks);
 
 	// for ethereum-compatibility rpc.
-	config.rpc_id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
+	config.rpc.id_provider = Some(Box::new(fc_rpc::EthereumSubIdProvider));
 
 	let rpc_builder = {
 		let client = client.clone();
@@ -438,7 +437,7 @@ where
 			Ok((slot, timestamp, dynamic_fee))
 		};
 
-		Box::new(move |deny_unsafe, subscription_task_executor| {
+		Box::new(move |subscription_task_executor| {
 			let eth_deps = crate::rpc::EthDeps {
 				client: client.clone(),
 				pool: pool.clone(),
@@ -465,7 +464,6 @@ where
 			let deps = crate::rpc::FullDeps {
 				client: client.clone(),
 				pool: pool.clone(),
-				deny_unsafe,
 				command_sink: if sealing.is_some() {
 					Some(command_sink.clone())
 				} else {
