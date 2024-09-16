@@ -311,8 +311,10 @@ where
 	} = new_frontier_partial(&eth_config)?;
 
 	let maybe_registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
-	let mut net_config =
-		sc_network::config::FullNetworkConfiguration::<_, _, NB>::new(&config.network, maybe_registry.cloned());
+	let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, NB>::new(
+		&config.network,
+		maybe_registry.cloned(),
+	);
 	let peer_store_handle = net_config.peer_store_handle();
 	let metrics = NB::register_notification_metrics(maybe_registry);
 
