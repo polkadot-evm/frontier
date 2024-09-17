@@ -380,7 +380,7 @@ where
 		);
 	}
 
-	let role = config.role.clone();
+	let role = config.role;
 	let force_authoring = config.force_authoring;
 	let name = config.network.node_name.clone();
 	let frontier_backend = Arc::new(frontier_backend);

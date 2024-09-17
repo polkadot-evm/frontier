@@ -547,7 +547,7 @@ mod test {
 		// Client
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
@@ -750,7 +750,7 @@ mod test {
 		// Client
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
@@ -954,7 +954,7 @@ mod test {
 		// Client
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
@@ -1120,7 +1120,7 @@ mod test {
 		// Client
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		// Indexer backend
@@ -1266,7 +1266,7 @@ mod test {
 		let backend = builder.backend();
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1367,7 +1367,7 @@ mod test {
 		let backend = builder.backend();
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1482,7 +1482,7 @@ mod test {
 		let backend = builder.backend();
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1583,7 +1583,7 @@ mod test {
 		let backend = builder.backend();
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1698,7 +1698,7 @@ mod test {
 		let backend = builder.backend();
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
@@ -1799,7 +1799,7 @@ mod test {
 		let backend = builder.backend();
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
 			fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
