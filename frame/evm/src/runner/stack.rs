@@ -903,11 +903,14 @@ where
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
+
+		// Adjust decimals
+		let value_sub: u64 = (transfer.value / U256::from(1_000_000_000)).as_u64();
+
 		T::Currency::transfer(
 			&source,
 			&target,
-			transfer
-				.value
+			value_sub
 				.try_into()
 				.map_err(|_| ExitError::OutOfFund)?,
 			ExistenceRequirement::AllowDeath,
