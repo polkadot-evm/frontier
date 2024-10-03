@@ -908,11 +908,13 @@ impl<T: Config> Pallet<T> {
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
+		let balance_eth = 
+			U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)) * U256::from(1_000_000_000);
 
 		(
 			Account {
 				nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-				balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+				balance: balance_eth,
 			},
 			T::DbWeight::get().reads(2),
 		)
