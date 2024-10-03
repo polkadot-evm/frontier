@@ -907,6 +907,8 @@ where
 		// Adjust decimals
 		let value_sub: u64 = (transfer.value / U256::from(1_000_000_000)).as_u64();
 
+		log::warn!("============== Transfer of {:?} (sub) == {:?} (eth)", value_sub, transfer.value);
+
 		T::Currency::transfer(
 			&source,
 			&target,
