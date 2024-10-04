@@ -182,6 +182,9 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		/// Balance conversion 
+		type BalanceConverter: BalanceConverter<Self>;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&SHANGHAI_CONFIG
@@ -1175,5 +1178,26 @@ impl<T> OnCreate<T> for Tuple {
 		for_tuples!(#(
 			Tuple::on_create(owner, contract);
 		)*)
+	}
+}
+
+pub trait BalanceConverter<T: Config> {
+	/// Convert from Substrate balance to EVM balance (U256) with correct decimals
+	fn into_evm_balance(value: BalanceOf<T>) -> Option<U256>;
+
+	/// Convert from EVM (U256) balance to Substrate balance with correct decimals
+	fn into_substrate_balance(value: U256) -> Option<BalanceOf<T>>;
+}
+
+impl<T: Config> BalanceConverter<T> for ()
+where
+	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+{
+	fn into_evm_balance(value: BalanceOf<T>) -> Option<U256> {
+		Some(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(value)))
+	}
+
+	fn into_substrate_balance(value: U256) -> Option<BalanceOf<T>> {
+		value.try_into().ok()
 	}
 }
