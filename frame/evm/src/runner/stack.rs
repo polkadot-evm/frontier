@@ -48,8 +48,8 @@ use fp_evm::{
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError,
+	BalanceOf, BalanceConverter, BlockHashMapping, Config, Error, Event, FeeCalculator, 
+	OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -905,16 +905,12 @@ where
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
 		// Adjust decimals
-		let value_sub: u64 = (transfer.value / U256::from(1_000_000_000)).as_u64();
-
-		log::warn!("============== Transfer of {:?} (sub) == {:?} (eth)", value_sub, transfer.value);
+		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value).ok_or(ExitError::OutOfFund)?;
 
 		T::Currency::transfer(
 			&source,
 			&target,
-			value_sub
-				.try_into()
-				.map_err(|_| ExitError::OutOfFund)?,
+			value_sub,
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)

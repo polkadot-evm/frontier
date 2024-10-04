@@ -911,8 +911,7 @@ impl<T: Config> Pallet<T> {
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
-		let balance_eth = 
-			U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)) * U256::from(1_000_000_000);
+		let balance_eth = T::BalanceConverter::into_evm_balance(balance).unwrap_or(U256::from(0));
 
 		(
 			Account {
@@ -1183,7 +1182,7 @@ impl<T> OnCreate<T> for Tuple {
 
 pub trait BalanceConverter<T: Config> {
 	/// Convert from Substrate balance to EVM balance (U256) with correct decimals
-	fn into_evm_balance(value: BalanceOf<T>) -> Option<U256>;
+	fn into_evm_balance(value: <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance) -> Option<U256>;
 
 	/// Convert from EVM (U256) balance to Substrate balance with correct decimals
 	fn into_substrate_balance(value: U256) -> Option<BalanceOf<T>>;
@@ -1193,7 +1192,7 @@ impl<T: Config> BalanceConverter<T> for ()
 where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
-	fn into_evm_balance(value: BalanceOf<T>) -> Option<U256> {
+	fn into_evm_balance(value: <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance) -> Option<U256> {
 		Some(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(value)))
 	}
 
