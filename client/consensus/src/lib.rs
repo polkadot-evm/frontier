@@ -109,10 +109,7 @@ where
 		self.inner.check_block(block).await.map_err(Into::into)
 	}
 
-	async fn import_block(
-		&mut self,
-		block: BlockImportParams<B>,
-	) -> Result<ImportResult, Self::Error> {
+	async fn import_block(&self, block: BlockImportParams<B>) -> Result<ImportResult, Self::Error> {
 		// We validate that there are only one frontier log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.

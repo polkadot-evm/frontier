@@ -91,10 +91,6 @@ pub trait FrontierDbMessage {
 		format!("Operation not allowed for non-empty Key `{:?}`", key).into()
 	}
 
-	fn one_to_many_error(&self) -> sc_cli::Error {
-		"One-to-many operation not allowed".into()
-	}
-
 	#[cfg(not(test))]
 	fn confirmation_prompt<K: core::fmt::Debug, V: core::fmt::Debug>(
 		&self,
