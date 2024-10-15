@@ -910,7 +910,7 @@ where
 		T::Currency::transfer(
 			&source,
 			&target,
-			value_sub,
+			value_sub.unique_saturated_into(),
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)

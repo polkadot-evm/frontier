@@ -182,8 +182,8 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
-		/// Balance conversion 
-		type BalanceConverter: BalanceConverter<Self>;
+		/// Balance conversion between Substrate balances and EVM balances
+		type BalanceConverter: BalanceConverter;
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
@@ -911,7 +911,8 @@ impl<T: Config> Pallet<T> {
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
-		let balance_eth = T::BalanceConverter::into_evm_balance(balance).unwrap_or(U256::from(0));
+		let balance_u256 = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance));
+		let balance_eth = T::BalanceConverter::into_evm_balance(balance_u256).unwrap_or(U256::from(0));
 
 		(
 			Account {
@@ -985,9 +986,13 @@ where
 			return Ok(None);
 		}
 		let account_id = T::AddressMapping::into_account_id(*who);
+
+		// Recalculate fee decimals using BalanceConverter
+		let fee_sub = T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
+
 		let imbalance = C::withdraw(
 			&account_id,
-			fee.unique_saturated_into(),
+			fee_sub.unique_saturated_into(),
 			WithdrawReasons::FEE,
 			ExistenceRequirement::AllowDeath,
 		)
@@ -1077,9 +1082,13 @@ where
 			return Ok(None);
 		}
 		let account_id = T::AddressMapping::into_account_id(*who);
+
+		// Recalculate fee decimals using BalanceConverter
+		let fee_sub = T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
+
 		let imbalance = F::withdraw(
 			&account_id,
-			fee.unique_saturated_into(),
+			fee_sub.unique_saturated_into(),
 			Precision::Exact,
 			Preservation::Preserve,
 			Fortitude::Polite,
@@ -1180,23 +1189,21 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
-pub trait BalanceConverter<T: Config> {
+pub trait BalanceConverter {
 	/// Convert from Substrate balance to EVM balance (U256) with correct decimals
-	fn into_evm_balance(value: <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance) -> Option<U256>;
+	fn into_evm_balance(value: U256) -> Option<U256>;
 
 	/// Convert from EVM (U256) balance to Substrate balance with correct decimals
-	fn into_substrate_balance(value: U256) -> Option<BalanceOf<T>>;
+	fn into_substrate_balance(value: U256) -> Option<U256>;
 }
 
-impl<T: Config> BalanceConverter<T> for ()
-where
-	BalanceOf<T>: TryFrom<U256> + Into<U256>,
+impl BalanceConverter for ()
 {
-	fn into_evm_balance(value: <<T as Config>::Currency as Inspect<<T as frame_system::Config>::AccountId>>::Balance) -> Option<U256> {
+	fn into_evm_balance(value: U256) -> Option<U256> {
 		Some(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(value)))
 	}
 
-	fn into_substrate_balance(value: U256) -> Option<BalanceOf<T>> {
-		value.try_into().ok()
+	fn into_substrate_balance(value: U256) -> Option<U256> {
+		Some(value)
 	}
 }
