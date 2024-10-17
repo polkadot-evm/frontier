@@ -59,6 +59,7 @@ use sp_runtime::{
 	},
 	RuntimeDebug, SaturatedConversion,
 };
+use sp_version::RuntimeVersion;
 // Frontier
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
@@ -192,9 +193,10 @@ pub mod pallet {
 	#[pallet::origin]
 	pub type Origin = RawOrigin;
 
-	#[pallet::config]
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + pallet_evm::Config {
 		/// The overarching event type.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
@@ -202,6 +204,32 @@ pub mod pallet {
 		type PostLogContent: Get<PostLogContent>;
 		/// The maximum length of the extra data in the Executed event.
 		type ExtraDataLength: Get<u32>;
+	}
+
+	pub mod config_preludes {
+		use super::*;
+		use frame_support::{derive_impl, parameter_types};
+
+		pub struct TestDefaultConfig;
+
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		#[derive_impl(pallet_evm::config_preludes::TestDefaultConfig, no_aggregated_types)]
+		impl pallet_evm::DefaultConfig for TestDefaultConfig {}
+
+		parameter_types! {
+			pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+		}
+
+		#[register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			type StateRoot = IntermediateStateRoot<Self::Version>;
+			type PostLogContent = PostBlockAndTxnHashes;
+			type ExtraDataLength = ConstU32<30>;
+		}
 	}
 
 	#[pallet::hooks]
@@ -968,9 +996,9 @@ pub enum ReturnValue {
 }
 
 pub struct IntermediateStateRoot<T>(PhantomData<T>);
-impl<T: Config> Get<H256> for IntermediateStateRoot<T> {
+impl<T: Get<RuntimeVersion>> Get<H256> for IntermediateStateRoot<T> {
 	fn get() -> H256 {
-		let version = T::Version::get().state_version();
+		let version = T::get().state_version();
 		H256::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed")
 	}

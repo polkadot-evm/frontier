@@ -35,7 +35,6 @@ use sp_runtime::{
 use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
 
 use super::*;
-use crate::IntermediateStateRoot;
 
 pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
 
@@ -183,16 +182,8 @@ impl pallet_evm::Config for Test {
 	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
-}
-
-impl Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type StateRoot = IntermediateStateRoot<Self>;
-	type PostLogContent = PostBlockAndTxnHashes;
-	type ExtraDataLength = ConstU32<30>;
-}
+#[derive_impl(crate::config_preludes::TestDefaultConfig)]
+impl Config for Test {}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
