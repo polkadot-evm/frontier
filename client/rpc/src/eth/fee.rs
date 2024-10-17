@@ -53,17 +53,13 @@ where
 
 	pub async fn fee_history(
 		&self,
-		block_count: U256,
+		block_count: u64,
 		newest_block: BlockNumberOrHash,
 		reward_percentiles: Option<Vec<f64>>,
 	) -> RpcResult<FeeHistory> {
 		// The max supported range size is 1024 by spec.
-		let range_limit = U256::from(1024);
-		let block_count = if block_count > range_limit {
-			range_limit.as_u64()
-		} else {
-			block_count.as_u64()
-		};
+		let range_limit: u64 = 1024;
+		let block_count: u64 = u64::min(block_count, range_limit);
 
 		if let Some(id) = frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
