@@ -15,7 +15,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 use super::*;
-use crate::mock::*;
+use crate::{config_preludes::*, mock::*};
 
 use frame_support::{
 	assert_ok,
