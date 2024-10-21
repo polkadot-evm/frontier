@@ -172,7 +172,7 @@ fn address_build(seed: u8) -> AccountInfo {
 
 	AccountInfo {
 		private_key,
-		account_id: <Test as pallet_evm::Config>::AddressMapping::into_account_id(address.clone()),
+		account_id: <Test as pallet_evm::Config>::AddressMapping::into_account_id(address),
 		address,
 	}
 }
