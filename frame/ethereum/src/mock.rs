@@ -20,19 +20,14 @@
 use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
-use frame_support::{
-	derive_impl, parameter_types,
-	traits::{ConstU32, FindAuthor},
-	weights::Weight,
-	ConsensusEngineId, PalletId,
-};
+use frame_support::{derive_impl, parameter_types, traits::FindAuthor, ConsensusEngineId};
 use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Dispatchable, IdentityLookup},
+	traits::{Dispatchable, IdentityLookup},
 	AccountId32, BuildStorage,
 };
 // Frontier
-use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
+use pallet_evm::{config_preludes::ChainId, AddressMapping};
 
 use super::*;
 
@@ -90,7 +85,6 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
-	pub const ChainId: u64 = 42;
 }
 
 #[derive_impl(pallet_evm::config_preludes::TestDefaultConfig)]
@@ -100,7 +94,6 @@ impl pallet_evm::Config for Test {
 	type Currency = Balances;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
-	type ChainId = ChainId;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type FindAuthor = FindAuthorTruncated;
 	type Timestamp = Timestamp;
@@ -177,12 +170,9 @@ fn address_build(seed: u8) -> AccountInfo {
 	let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
 	let address = H160::from(H256::from(keccak_256(public_key)));
 
-	let mut data = [0u8; 32];
-	data[0..20].copy_from_slice(&address[..]);
-
 	AccountInfo {
 		private_key,
-		account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
+		account_id: <Test as pallet_evm::Config>::AddressMapping::into_account_id(address.clone()),
 		address,
 	}
 }
@@ -200,7 +190,7 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 		.collect::<Vec<_>>();
 
 	let balances: Vec<_> = (0..accounts_len)
-		.map(|i| (pairs[i].account_id.clone(), 2 << 50))
+		.map(|i| (pairs[i].account_id.clone(), 10_000_000))
 		.collect();
 
 	pallet_balances::GenesisConfig::<Test> { balances }

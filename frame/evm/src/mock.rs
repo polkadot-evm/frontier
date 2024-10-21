@@ -18,9 +18,12 @@
 //! Test mock for unit tests and benchmarking
 
 use frame_support::{derive_impl, parameter_types, weights::Weight};
-use sp_core::H160;
+use sp_core::{H160, U256};
 
-use crate::{IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
+use crate::{
+	FeeCalculator, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
+	PrecompileSet,
+};
 
 frame_support::construct_runtime! {
 	pub enum Test {
@@ -64,12 +67,21 @@ parameter_types! {
 #[derive_impl(crate::config_preludes::TestDefaultConfig)]
 impl crate::Config for Test {
 	type AccountProvider = crate::FrameSystemAccountProvider<Self>;
+	type FeeCalculator = FixedGasPrice;
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type Currency = Balances;
 	type PrecompilesType = MockPrecompileSet;
 	type PrecompilesValue = MockPrecompiles;
 	type Runner = crate::runner::stack::Runner<Self>;
 	type Timestamp = Timestamp;
+}
+
+pub struct FixedGasPrice;
+impl FeeCalculator for FixedGasPrice {
+	fn min_gas_price() -> (U256, Weight) {
+		// Return some meaningful gas price and weight
+		(1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+	}
 }
 
 /// Example PrecompileSet with only Identity precompile.

@@ -264,8 +264,7 @@ pub mod pallet {
 		pub struct FixedGasPrice;
 		impl FeeCalculator for FixedGasPrice {
 			fn min_gas_price() -> (U256, Weight) {
-				// Return some meaningful gas price and weight
-				(1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
+				(1.into(), Weight::zero())
 			}
 		}
 

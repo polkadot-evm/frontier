@@ -160,7 +160,6 @@ where
 			if let Err(e) = CheckWeight::<T>::do_validate(dispatch_info, len) {
 				return Some(Err(e));
 			}
-			println!("bear: --- pass the check weight");
 
 			Some(Pallet::<T>::validate_transaction_in_pool(
 				*origin,
@@ -543,7 +542,6 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&who))
 		.map_err(|e| e.0)?;
-
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
