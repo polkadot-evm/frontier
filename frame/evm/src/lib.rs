@@ -212,6 +212,7 @@ pub mod pallet {
 		use super::*;
 		use core::str::FromStr;
 		use frame_support::{derive_impl, parameter_types, ConsensusEngineId};
+		use sp_runtime::traits::BlakeTwo256;
 
 		pub struct TestDefaultConfig;
 
@@ -232,7 +233,6 @@ pub mod pallet {
 			pub SuicideQuickClearLimit: u32 = 0;
 		}
 
-		use sp_runtime::traits::BlakeTwo256;
 		#[register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
 			type CallOrigin = EnsureAddressRoot<Self::AccountId>;
