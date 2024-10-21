@@ -26,8 +26,8 @@ use pallet_evm::{AddressMapping, GasWeightMapping};
 fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 	EIP1559UnsignedTransaction {
 		nonce: U256::zero(),
-		max_priority_fee_per_gas: U256::from(1),
-		max_fee_per_gas: U256::from(1),
+		max_priority_fee_per_gas: U256::from(1_000_000_000u128),
+		max_fee_per_gas: U256::from(1_000_000_000u128),
 		gas_limit: U256::from(0x100000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),
@@ -41,7 +41,7 @@ fn eip1559_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
 
 #[test]
 fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
-	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 2 << 50);
 	let alice = &pairs[0];
 	let bob = &pairs[1];
 
@@ -78,7 +78,7 @@ fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
 
 #[test]
 fn transaction_with_gas_limit_greater_than_max_extrinsic_should_fail_pre_dispatch() {
-	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 2 << 50);
 	let alice = &pairs[0];
 	let bob = &pairs[1];
 
@@ -523,7 +523,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 
 #[test]
 fn validated_transaction_apply_zero_gas_price_works() {
-	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 1_000);
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 2 << 50);
 	let alice = &pairs[0];
 	let bob = &pairs[1];
 	let substrate_alice =

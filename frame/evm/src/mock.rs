@@ -19,9 +19,12 @@
 
 use frame_support::{derive_impl, parameter_types, weights::Weight};
 use sp_core::H160;
-use sp_runtime::traits::IdentityLookup;
+use sp_runtime::traits::BlakeTwo256;
 
-use crate::{IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet};
+use crate::{
+	EnsureAddressNever, EnsureAddressRoot, HashedAddressMapping, IsPrecompileResult, Precompile,
+	PrecompileHandle, PrecompileResult, PrecompileSet,
+};
 
 frame_support::construct_runtime! {
 	pub enum Test {
@@ -38,11 +41,9 @@ parameter_types! {
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
 
-#[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
+#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
 	type Nonce = u64;
-	type AccountId = H160;
-	type Lookup = IdentityLookup<Self::AccountId>;
 	type Block = frame_system::mocking::MockBlock<Self>;
 	type BlockHashCount = BlockHashCount;
 	type AccountData = pallet_balances::AccountData<u64>;
@@ -55,20 +56,15 @@ parameter_types! {
 impl pallet_balances::Config for Test {
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = [u8; 8];
 }
 
-parameter_types! {
-	pub const MinimumPeriod: u64 = 1000;
-}
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
-impl pallet_timestamp::Config for Test {
-	type MinimumPeriod = MinimumPeriod;
-}
+impl pallet_timestamp::Config for Test {}
 
 parameter_types! {
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
+
 #[derive_impl(crate::config_preludes::TestDefaultConfig)]
 impl crate::Config for Test {
 	type AccountProvider = crate::FrameSystemAccountProvider<Self>;

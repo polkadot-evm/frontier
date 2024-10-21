@@ -29,7 +29,7 @@ use pallet_evm::AddressMapping;
 fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 	LegacyUnsignedTransaction {
 		nonce: U256::zero(),
-		gas_price: U256::from(1),
+		gas_price: U256::from(1_000_000_000u128),
 		gas_limit: U256::from(0x100000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),

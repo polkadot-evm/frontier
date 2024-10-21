@@ -663,10 +663,11 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 		},
 	);
 
+	// Create the block author account with some balance.
+	let author = H160::from_str("0x1234500000000000000000000000000000000000").unwrap();
 	pallet_balances::GenesisConfig::<Test> {
-		// Create the block author account with some balance.
 		balances: vec![(
-			H160::from_str("0x1234500000000000000000000000000000000000").unwrap(),
+			<Test as Config>::AddressMapping::into_account_id(author),
 			12345,
 		)],
 	}
@@ -723,15 +724,15 @@ fn fee_deduction() {
 
 		// Seed account
 		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 100);
-		assert_eq!(Balances::free_balance(substrate_addr), 100);
+		assert_eq!(Balances::free_balance(&substrate_addr), 100);
 
 		// Deduct fees as 10 units
 		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10)).unwrap();
-		assert_eq!(Balances::free_balance(substrate_addr), 90);
+		assert_eq!(Balances::free_balance(&substrate_addr), 90);
 
 		// Refund fees as 5 units
 		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), U256::from(5), imbalance);
-		assert_eq!(Balances::free_balance(substrate_addr), 95);
+		assert_eq!(Balances::free_balance(&substrate_addr), 95);
 	});
 }
 
@@ -744,7 +745,7 @@ fn ed_0_refund_patch_works() {
 		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
 		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 21_777_000_000_000);
-		assert_eq!(Balances::free_balance(substrate_addr), 21_777_000_000_000);
+		assert_eq!(Balances::free_balance(&substrate_addr), 21_777_000_000_000);
 
 		let _ = EVM::call(
 			RuntimeOrigin::root(),
@@ -759,7 +760,7 @@ fn ed_0_refund_patch_works() {
 			Vec::new(),
 		);
 		// All that was due, was refunded.
-		assert_eq!(Balances::free_balance(substrate_addr), 776_000_000_000);
+		assert_eq!(Balances::free_balance(&substrate_addr), 776_000_000_000);
 	});
 }
 
@@ -772,7 +773,7 @@ fn ed_0_refund_patch_is_required() {
 		let substrate_addr = <Test as Config>::AddressMapping::into_account_id(evm_addr);
 
 		let _ = <Test as Config>::Currency::deposit_creating(&substrate_addr, 100);
-		assert_eq!(Balances::free_balance(substrate_addr), 100);
+		assert_eq!(Balances::free_balance(&substrate_addr), 100);
 
 		// Drain funds
 		let _ =
@@ -781,7 +782,7 @@ fn ed_0_refund_patch_is_required() {
 				U256::from(100),
 			)
 			.unwrap();
-		assert_eq!(Balances::free_balance(substrate_addr), 0);
+		assert_eq!(Balances::free_balance(&substrate_addr), 0);
 
 		// Try to refund. With ED 0, although the balance is now 0, the account still exists.
 		// So its expected that calling `deposit_into_existing` results in the AccountData to increase the Balance.
@@ -1023,13 +1024,13 @@ fn handle_sufficient_reference() {
 
 		// Sufficients should increase when creating EVM accounts.
 		<crate::AccountCodes<Test>>::insert(addr, vec![0]);
-		let account = frame_system::Account::<Test>::get(substrate_addr);
+		let account = frame_system::Account::<Test>::get(&substrate_addr);
 		// Using storage is not correct as it leads to a sufficient reference mismatch.
 		assert_eq!(account.sufficients, 0);
 
 		// Using the create / remove account functions is the correct way to handle it.
 		EVM::create_account(addr_2, vec![1, 2, 3]);
-		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
+		let account_2 = frame_system::Account::<Test>::get(&substrate_addr_2);
 		// We increased the sufficient reference by 1.
 		assert_eq!(account_2.sufficients, 1);
 		EVM::remove_account(&addr_2);

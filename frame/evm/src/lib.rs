@@ -146,6 +146,7 @@ pub mod pallet {
 		/// Allow the origin to call on behalf of given address.
 		#[pallet::no_default_bounds]
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
+
 		/// Allow the origin to withdraw on behalf of given address.
 		#[pallet::no_default_bounds]
 		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = AccountIdOf<Self>>;
@@ -153,6 +154,7 @@ pub mod pallet {
 		/// Mapping from address to account id.
 		#[pallet::no_default_bounds]
 		type AddressMapping: AddressMapping<AccountIdOf<Self>>;
+
 		/// Currency type for withdraw and balance storage.
 		#[pallet::no_default]
 		type Currency: Currency<AccountIdOf<Self>> + Inspect<AccountIdOf<Self>>;
@@ -160,13 +162,16 @@ pub mod pallet {
 		/// The overarching event type.
 		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
 		type PrecompilesValue: Get<Self::PrecompilesType>;
+
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
 		type BlockGasLimit: Get<U256>;
+
 		/// EVM execution runner.
 		#[pallet::no_default]
 		type Runner: Runner<Self>;
@@ -207,15 +212,14 @@ pub mod pallet {
 		use super::*;
 		use core::str::FromStr;
 		use frame_support::{derive_impl, parameter_types, ConsensusEngineId};
-		use sp_runtime::traits::IdentityLookup;
 
 		pub struct TestDefaultConfig;
 
-		#[derive_impl(frame_system::config_preludes::TestDefaultConfig, no_aggregated_types)]
-		impl frame_system::DefaultConfig for TestDefaultConfig {
-			type AccountId = H160;
-			type Lookup = IdentityLookup<Self::AccountId>;
-		}
+		#[derive_impl(
+			frame_system::config_preludes::SolochainDefaultConfig,
+			no_aggregated_types
+		)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
 
 		const BLOCK_GAS_LIMIT: u64 = 150_000_000;
 		const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
@@ -227,14 +231,15 @@ pub mod pallet {
 			pub SuicideQuickClearLimit: u32 = 0;
 		}
 
+		use sp_runtime::traits::BlakeTwo256;
 		#[register_default_impl(TestDefaultConfig)]
 		impl DefaultConfig for TestDefaultConfig {
+			type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+			type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+			type AddressMapping = HashedAddressMapping<BlakeTwo256>;
 			type FeeCalculator = FixedGasPrice;
 			type GasWeightMapping = FixedGasWeightMapping<Self>;
 			type WeightPerGas = WeightPerGas;
-			type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-			type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-			type AddressMapping = IdentityAddressMapping;
 			#[inject_runtime_type]
 			type RuntimeEvent = ();
 			type PrecompilesType = ();

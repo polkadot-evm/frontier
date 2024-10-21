@@ -29,7 +29,7 @@ use pallet_evm::AddressMapping;
 fn eip2930_erc20_creation_unsigned_transaction() -> EIP2930UnsignedTransaction {
 	EIP2930UnsignedTransaction {
 		nonce: U256::zero(),
-		gas_price: U256::from(1),
+		gas_price: U256::from(1_000_000_000u128),
 		gas_limit: U256::from(0x100000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),
@@ -449,7 +449,7 @@ fn self_contained_transaction_with_extra_gas_should_adjust_weight_with_post_disp
 
 #[test]
 fn validated_transaction_apply_zero_gas_price_works() {
-	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 1_000);
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 2 << 50);
 	let alice = &pairs[0];
 	let bob = &pairs[1];
 	let substrate_alice =
