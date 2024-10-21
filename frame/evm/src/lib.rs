@@ -226,6 +226,7 @@ pub mod pallet {
 
 		parameter_types! {
 			pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+			pub const ChainId: u64 = 42;
 			pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 			pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 			pub SuicideQuickClearLimit: u32 = 0;
@@ -244,7 +245,7 @@ pub mod pallet {
 			type RuntimeEvent = ();
 			type PrecompilesType = ();
 			type PrecompilesValue = ();
-			type ChainId = ();
+			type ChainId = ChainId;
 			type BlockGasLimit = BlockGasLimit;
 			type OnChargeTransaction = ();
 			type OnCreate = ();
