@@ -1024,7 +1024,7 @@ fn handle_sufficient_reference() {
 
 		// Sufficients should increase when creating EVM accounts.
 		<crate::AccountCodes<Test>>::insert(addr, vec![0]);
-		let account = frame_system::Account::<Test>::get(&substrate_addr);
+		let account = frame_system::Account::<Test>::get(substrate_addr);
 		// Using storage is not correct as it leads to a sufficient reference mismatch.
 		assert_eq!(account.sufficients, 0);
 
