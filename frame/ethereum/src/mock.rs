@@ -20,22 +20,16 @@
 use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
-use frame_support::{
-	derive_impl, parameter_types,
-	traits::{ConstU32, FindAuthor},
-	weights::Weight,
-	ConsensusEngineId, PalletId,
-};
+use frame_support::{derive_impl, parameter_types, traits::FindAuthor, ConsensusEngineId};
 use sp_core::{hashing::keccak_256, H160, H256, U256};
 use sp_runtime::{
-	traits::{BlakeTwo256, Dispatchable, IdentityLookup},
+	traits::{Dispatchable, IdentityLookup},
 	AccountId32, BuildStorage,
 };
 // Frontier
-use pallet_evm::{AddressMapping, EnsureAddressTruncated, FeeCalculator};
+use pallet_evm::{config_preludes::ChainId, AddressMapping};
 
 use super::*;
-use crate::IntermediateStateRoot;
 
 pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
 
@@ -55,30 +49,11 @@ parameter_types! {
 
 #[derive_impl(frame_system::config_preludes::TestDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockWeights = ();
-	type BlockLength = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
-	type RuntimeTask = RuntimeTask;
-	type Nonce = u64;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
 	type AccountId = AccountId32;
 	type Lookup = IdentityLookup<Self::AccountId>;
 	type Block = frame_system::mocking::MockBlock<Self>;
 	type BlockHashCount = BlockHashCount;
-	type DbWeight = ();
-	type Version = ();
-	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
@@ -89,39 +64,14 @@ parameter_types! {
 	pub const MaxReserves: u32 = 50;
 }
 
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type RuntimeHoldReason = RuntimeHoldReason;
-	type RuntimeFreezeReason = RuntimeFreezeReason;
-	type WeightInfo = ();
-	type Balance = u64;
-	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = [u8; 8];
-	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxLocks = MaxLocks;
-	type MaxReserves = MaxReserves;
-	type MaxFreezes = ConstU32<1>;
 }
 
-parameter_types! {
-	pub const MinimumPeriod: u64 = 6000 / 2;
-}
-
-impl pallet_timestamp::Config for Test {
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
-}
-
-pub struct FixedGasPrice;
-impl FeeCalculator for FixedGasPrice {
-	fn min_gas_price() -> (U256, Weight) {
-		(1.into(), Weight::zero())
-	}
-}
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
+impl pallet_timestamp::Config for Test {}
 
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
@@ -133,66 +83,24 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 	}
 }
 
-const BLOCK_GAS_LIMIT: u64 = 150_000_000;
-const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
-
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
-	pub const ChainId: u64 = 42;
-	pub const EVMModuleId: PalletId = PalletId(*b"py/evmpa");
-	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-	pub const WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 
-pub struct HashedAddressMapping;
-impl AddressMapping<AccountId32> for HashedAddressMapping {
-	fn into_account_id(address: H160) -> AccountId32 {
-		let mut data = [0u8; 32];
-		data[0..20].copy_from_slice(&address[..]);
-		AccountId32::from(Into::<[u8; 32]>::into(data))
-	}
-}
-
-parameter_types! {
-	pub SuicideQuickClearLimit: u32 = 0;
-}
-
+#[derive_impl(pallet_evm::config_preludes::TestDefaultConfig)]
 impl pallet_evm::Config for Test {
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
-	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = pallet_evm::FixedGasWeightMapping<Self>;
-	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
-	type WithdrawOrigin = EnsureAddressTruncated;
-	type AddressMapping = HashedAddressMapping;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
-	type ChainId = ChainId;
-	type BlockGasLimit = BlockGasLimit;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
-	type OnChargeTransaction = ();
-	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
-	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
-	type WeightInfo = ();
 }
 
-parameter_types! {
-	pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
-}
-
-impl Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type StateRoot = IntermediateStateRoot<Self>;
-	type PostLogContent = PostBlockAndTxnHashes;
-	type ExtraDataLength = ConstU32<30>;
-}
+#[derive_impl(crate::config_preludes::TestDefaultConfig)]
+impl Config for Test {}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
@@ -262,12 +170,9 @@ fn address_build(seed: u8) -> AccountInfo {
 	let public_key = &libsecp256k1::PublicKey::from_secret_key(&secret_key).serialize()[1..65];
 	let address = H160::from(H256::from(keccak_256(public_key)));
 
-	let mut data = [0u8; 32];
-	data[0..20].copy_from_slice(&address[..]);
-
 	AccountInfo {
 		private_key,
-		account_id: AccountId32::from(Into::<[u8; 32]>::into(data)),
+		account_id: <Test as pallet_evm::Config>::AddressMapping::into_account_id(address),
 		address,
 	}
 }
@@ -301,7 +206,6 @@ pub fn new_test_ext_with_initial_balance(
 	accounts_len: usize,
 	initial_balance: u64,
 ) -> (Vec<AccountInfo>, sp_io::TestExternalities) {
-	// sc_cli::init_logger("");
 	let mut ext = frame_system::GenesisConfig::<Test>::default()
 		.build_storage()
 		.unwrap();

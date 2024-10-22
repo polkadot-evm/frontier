@@ -21,6 +21,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
+sp-version = { workspace = true }
 # Frontier
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
@@ -54,6 +55,7 @@ std = [
 	"frame-system/std",
 	"sp-io/std",
 	"sp-runtime/std",
+	"sp-version/std",
 	# Frontier
 	"fp-consensus/std",
 	"fp-ethereum/std",
