@@ -5881,6 +5881,7 @@ dependencies = [
  "sp-core",
  "sp-io",
  "sp-runtime",
+ "sp-version",
 ]
 
 [[package]]

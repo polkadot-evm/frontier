@@ -124,9 +124,10 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
-	#[pallet::config]
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
 		/// Account info provider.
+		#[pallet::no_default]
 		type AccountProvider: AccountProvider;
 
 		/// Calculator for current gas price.
@@ -139,36 +140,50 @@ pub mod pallet {
 		type WeightPerGas: Get<Weight>;
 
 		/// Block number to block hash.
+		#[pallet::no_default]
 		type BlockHashMapping: BlockHashMapping;
 
 		/// Allow the origin to call on behalf of given address.
+		#[pallet::no_default_bounds]
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
+
 		/// Allow the origin to withdraw on behalf of given address.
+		#[pallet::no_default_bounds]
 		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = AccountIdOf<Self>>;
 
 		/// Mapping from address to account id.
+		#[pallet::no_default_bounds]
 		type AddressMapping: AddressMapping<AccountIdOf<Self>>;
+
 		/// Currency type for withdraw and balance storage.
+		#[pallet::no_default]
 		type Currency: Currency<AccountIdOf<Self>> + Inspect<AccountIdOf<Self>>;
 
 		/// The overarching event type.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
 		type PrecompilesValue: Get<Self::PrecompilesType>;
+
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
 		type BlockGasLimit: Get<U256>;
+
 		/// EVM execution runner.
+		#[pallet::no_default]
 		type Runner: Runner<Self>;
 
 		/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
 		/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
 		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+		#[pallet::no_default_bounds]
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
 		/// Called on create calls, used to record owner
+		#[pallet::no_default_bounds]
 		type OnCreate: OnCreate<Self>;
 
 		/// Find author for the current block.
@@ -181,17 +196,90 @@ pub mod pallet {
 		type SuicideQuickClearLimit: Get<u32>;
 
 		/// Get the timestamp for the current block.
+		#[pallet::no_default]
 		type Timestamp: Time;
 
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
 		/// Balance conversion between Substrate balances and EVM balances
+		#[pallet::no_default]
 		type BalanceConverter: BalanceConverter;
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&SHANGHAI_CONFIG
+		}
+	}
+
+	pub mod config_preludes {
+		use super::*;
+		use core::str::FromStr;
+		use frame_support::{derive_impl, parameter_types, ConsensusEngineId};
+		use sp_runtime::traits::BlakeTwo256;
+
+		pub struct TestDefaultConfig;
+
+		#[derive_impl(
+			frame_system::config_preludes::SolochainDefaultConfig,
+			no_aggregated_types
+		)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+		const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+
+		parameter_types! {
+			pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+			pub const ChainId: u64 = 42;
+			pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+			pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+			pub SuicideQuickClearLimit: u32 = 0;
+		}
+
+		#[register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+			type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+			type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+			type FeeCalculator = FixedGasPrice;
+			type GasWeightMapping = FixedGasWeightMapping<Self>;
+			type WeightPerGas = WeightPerGas;
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			type PrecompilesType = ();
+			type PrecompilesValue = ();
+			type ChainId = ChainId;
+			type BlockGasLimit = BlockGasLimit;
+			type OnChargeTransaction = ();
+			type OnCreate = ();
+			type FindAuthor = FindAuthorTruncated;
+			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+			type SuicideQuickClearLimit = SuicideQuickClearLimit;
+			type WeightInfo = ();
+		}
+
+		impl FixedGasWeightMappingAssociatedTypes for TestDefaultConfig {
+			type WeightPerGas = <Self as DefaultConfig>::WeightPerGas;
+			type BlockWeights = <Self as frame_system::DefaultConfig>::BlockWeights;
+			type GasLimitPovSizeRatio = <Self as DefaultConfig>::GasLimitPovSizeRatio;
+		}
+
+		pub struct FixedGasPrice;
+		impl FeeCalculator for FixedGasPrice {
+			fn min_gas_price() -> (U256, Weight) {
+				(1.into(), Weight::zero())
+			}
+		}
+
+		pub struct FindAuthorTruncated;
+		impl FindAuthor<H160> for FindAuthorTruncated {
+			fn find_author<'a, I>(_digests: I) -> Option<H160>
+			where
+				I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+			{
+				Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
+			}
 		}
 	}
 
@@ -814,8 +902,23 @@ pub trait GasWeightMapping {
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
+pub trait FixedGasWeightMappingAssociatedTypes {
+	type WeightPerGas: Get<Weight>;
+	type BlockWeights: Get<frame_system::limits::BlockWeights>;
+	type GasLimitPovSizeRatio: Get<u64>;
+}
+
+impl<T: Config> FixedGasWeightMappingAssociatedTypes for T {
+	type WeightPerGas = T::WeightPerGas;
+	type BlockWeights = T::BlockWeights;
+	type GasLimitPovSizeRatio = T::GasLimitPovSizeRatio;
+}
+
 pub struct FixedGasWeightMapping<T>(core::marker::PhantomData<T>);
-impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
+impl<T> GasWeightMapping for FixedGasWeightMapping<T>
+where
+	T: FixedGasWeightMappingAssociatedTypes,
+{
 	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
 		let mut weight = T::WeightPerGas::get().saturating_mul(gas);
 		if without_base_weight {
