@@ -461,6 +461,16 @@ pub mod pallet {
 				pays_fee: Pays::No,
 			})
 		}
+
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn set_whitelist(origin: OriginFor<T>, new: Vec<H160>) -> DispatchResult {
+			ensure_root(origin)?;
+
+			<WhitelistedCreators<T>>::put(new);
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]
@@ -530,6 +540,7 @@ pub mod pallet {
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T> {
 		pub accounts: BTreeMap<H160, GenesisAccount>,
+		pub whitelisted: Vec<H160>,
 		#[serde(skip)]
 		pub _marker: PhantomData<T>,
 	}
@@ -565,6 +576,8 @@ pub mod pallet {
 					<AccountStorages<T>>::insert(address, index, value);
 				}
 			}
+
+			<WhitelistedCreators<T>>::put(self.whitelisted.clone());
 		}
 	}
 
@@ -581,6 +594,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
+
+	#[pallet::storage]
+	pub type WhitelistedCreators<T: Config> = StorageValue<_, Vec<H160>, ValueQuery>;
 }
 
 /// Type alias for currency balance.
