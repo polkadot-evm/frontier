@@ -307,6 +307,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let whitelist = <WhitelistedCreators<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create(
@@ -318,6 +319,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				whitelist,
 				is_transactional,
 				validate,
 				None,
@@ -394,6 +396,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let whitelist = <WhitelistedCreators<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create2(
@@ -406,6 +409,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				whitelist,
 				is_transactional,
 				validate,
 				None,
@@ -516,6 +520,8 @@ pub mod pallet {
 		TransactionMustComeFromEOA,
 		/// Undefined error.
 		Undefined,
+		/// Origin is not allowed to perform the operation.
+		NotAllowed,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
