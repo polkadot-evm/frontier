@@ -462,6 +462,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		whitelist: Vec<H160>,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -469,6 +470,13 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
+			if !whitelist.contains(&source) {
+				return Err(RunnerError {
+					error: Error::<T>::NotAllowed,
+					weight: Weight::zero(),
+				});
+			}
+
 			Self::validate(
 				source,
 				None,
@@ -517,6 +525,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		whitelist: Vec<H160>,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -524,6 +533,13 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
+			if !whitelist.contains(&source) {
+				return Err(RunnerError {
+					error: Error::<T>::NotAllowed,
+					weight: Weight::zero(),
+				});
+			}
+
 			Self::validate(
 				source,
 				None,

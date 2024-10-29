@@ -307,6 +307,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let whitelist = <WhitelistedCreators<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create(
@@ -318,6 +319,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				whitelist,
 				is_transactional,
 				validate,
 				None,
@@ -394,6 +396,7 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let whitelist = <WhitelistedCreators<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create2(
@@ -406,6 +409,7 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				whitelist,
 				is_transactional,
 				validate,
 				None,
@@ -461,6 +465,16 @@ pub mod pallet {
 				pays_fee: Pays::No,
 			})
 		}
+
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn set_whitelist(origin: OriginFor<T>, new: Vec<H160>) -> DispatchResult {
+			ensure_root(origin)?;
+
+			<WhitelistedCreators<T>>::put(new);
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]
@@ -506,6 +520,8 @@ pub mod pallet {
 		TransactionMustComeFromEOA,
 		/// Undefined error.
 		Undefined,
+		/// Origin is not allowed to perform the operation.
+		NotAllowed,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
@@ -530,6 +546,7 @@ pub mod pallet {
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T> {
 		pub accounts: BTreeMap<H160, GenesisAccount>,
+		pub whitelisted: Vec<H160>,
 		#[serde(skip)]
 		pub _marker: PhantomData<T>,
 	}
@@ -565,6 +582,8 @@ pub mod pallet {
 					<AccountStorages<T>>::insert(address, index, value);
 				}
 			}
+
+			<WhitelistedCreators<T>>::put(self.whitelisted.clone());
 		}
 	}
 
@@ -581,6 +600,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
+
+	#[pallet::storage]
+	pub type WhitelistedCreators<T: Config> = StorageValue<_, Vec<H160>, ValueQuery>;
 }
 
 /// Type alias for currency balance.
