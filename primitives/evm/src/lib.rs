@@ -81,7 +81,7 @@ pub enum AccessedStorage {
 	AccountStorages((H160, H256)),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, Default, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
 	pub ref_time_limit: Option<u64>,
