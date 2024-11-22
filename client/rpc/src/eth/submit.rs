@@ -219,7 +219,7 @@ where
 
 		Ok(ethereum_txs
 			.into_iter()
-			.map(|tx| Transaction::build_from(tx.recover_signer().unwrap_or_default(), &tx))
+			.map(|tx| Transaction::build_from(tx.recover_from().unwrap_or_default(), &tx))
 			.collect())
 	}
 

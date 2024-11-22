@@ -203,7 +203,7 @@ pub trait EthApi {
 	) -> RpcResult<U256>;
 
 	/// Returns all pending transactions.
-	#[method(name = "eth_PendingTransactions")]
+	#[method(name = "eth_pendingTransactions")]
 	async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>>;
 
 	// ########################################################################
