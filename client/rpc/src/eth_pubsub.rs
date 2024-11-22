@@ -151,7 +151,7 @@ where
 		future::ready(res.map(|(block, receipts)| PubSubResult::logs(block, receipts, params)))
 	}
 
-	fn pending_transaction(&self, hash: &TxHash<P>) -> future::Ready<Option<PubSubResult>> {
+	fn pending_transactions(&self, hash: &TxHash<P>) -> future::Ready<Option<PubSubResult>> {
 		let res = if let Some(xt) = self.pool.ready_transaction(hash) {
 			let best_block = self.client.info().best_hash;
 
@@ -263,7 +263,7 @@ where
 					let pool = pubsub.pool.clone();
 					let stream = pool
 						.import_notification_stream()
-						.filter_map(move |hash| pubsub.pending_transaction(&hash));
+						.filter_map(move |hash| pubsub.pending_transactions(&hash));
 					PendingSubscription::from(pending)
 						.pipe_from_stream(stream, BoundedVecDeque::new(16))
 						.await;

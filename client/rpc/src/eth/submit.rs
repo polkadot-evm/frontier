@@ -178,6 +178,51 @@ where
 			.await
 	}
 
+	pub async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>> {
+		let ready = self
+			.graph
+			.validated_pool()
+			.ready()
+			.map(|in_pool_tx| in_pool_tx.clone())
+			.collect();
+
+		let future = self
+			.graph
+			.validated_pool()
+			.futures()
+			.iter()
+			.map(|(_, extrinsic)| extrinsic.clone())
+			.collect();
+
+		let mut all_extrinsics = Vec::new();
+		all_extrinsics.extend(ready);
+		all_extrinsics.extend(future);
+
+		let best_block = self.client.info().best_hash;
+		let api = self.client.runtime_api();
+
+		let api_version = api
+			.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_block)
+			.map_err(|err| internal_err(format!("Failed to get API version: {}", err)))?
+			.ok_or_else(|| internal_err("Failed to get API version"))?;
+
+		let ethereum_txs = if api_version > 1 {
+			api.extrinsic_filter(best_block, all_extrinsics)
+				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?
+		} else {
+			#[allow(deprecated)]
+			let legacy = api
+				.extrinsic_filter_before_version_2(best_block, all_extrinsics)
+				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?;
+			legacy.into_iter().map(|tx| tx.into()).collect()
+		};
+
+		Ok(ethereum_txs
+			.into_iter()
+			.map(|tx| Transaction::build_from(tx.recover_signer().unwrap_or_default(), &tx))
+			.collect())
+	}
+
 	fn convert_transaction(
 		&self,
 		block_hash: B::Hash,
