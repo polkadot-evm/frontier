@@ -1331,7 +1331,7 @@ mod tests {
 	fn test_evm_reentrancy() {
 		let config = evm::Config::istanbul();
 
-		let measured_proof_size_before = get_proof_size().unwrap_or_default();
+		let measured_proof_size_before = 0;
 		// Should fail with the appropriate error if there is reentrancy
 		let res = Runner::<Test>::execute(
 			H160::default(),
@@ -1346,7 +1346,7 @@ mod tests {
 			None,
 			measured_proof_size_before,
 			|_| {
-				let measured_proof_size_before2 = get_proof_size().unwrap_or_default();
+				let measured_proof_size_before2 = 0;
 				let res = Runner::<Test>::execute(
 					H160::default(),
 					U256::default(),
@@ -1379,7 +1379,7 @@ mod tests {
 			})
 		);
 
-		let measured_proof_size_before = get_proof_size().unwrap_or_default();
+		let measured_proof_size_before = 0;
 		// Should succeed if there is no reentrancy
 		let res = Runner::<Test>::execute(
 			H160::default(),
