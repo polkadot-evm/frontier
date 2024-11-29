@@ -1,8 +1,7 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, GENESIS_ACCOUNT_BALANCE, EXISTENTIAL_DEPOSIT } from "./config";
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import { createAndFinalizeBlock, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (BlockNumber tags)", (context) => {
 	before("Send some transactions across blocks", async function () {

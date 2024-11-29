@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -25,11 +25,15 @@
 #![allow(clippy::comparison_chain, clippy::large_enum_variant)]
 #![warn(unused_crate_dependencies)]
 
+extern crate alloc;
+
 #[cfg(all(feature = "std", test))]
 mod mock;
 #[cfg(all(feature = "std", test))]
 mod tests;
 
+use alloc::{vec, vec::Vec};
+use core::marker::PhantomData;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV2 as Transaction,
@@ -55,7 +59,7 @@ use sp_runtime::{
 	},
 	RuntimeDebug, SaturatedConversion,
 };
-use sp_std::{marker::PhantomData, prelude::*};
+use sp_version::RuntimeVersion;
 // Frontier
 use fp_consensus::{PostLog, PreLog, FRONTIER_ENGINE_ID};
 pub use fp_ethereum::TransactionData;
@@ -189,9 +193,10 @@ pub mod pallet {
 	#[pallet::origin]
 	pub type Origin = RawOrigin;
 
-	#[pallet::config]
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config + pallet_evm::Config {
 		/// The overarching event type.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
 		/// How Ethereum state root is calculated.
 		type StateRoot: Get<H256>;
@@ -199,6 +204,32 @@ pub mod pallet {
 		type PostLogContent: Get<PostLogContent>;
 		/// The maximum length of the extra data in the Executed event.
 		type ExtraDataLength: Get<u32>;
+	}
+
+	pub mod config_preludes {
+		use super::*;
+		use frame_support::{derive_impl, parameter_types};
+
+		pub struct TestDefaultConfig;
+
+		#[derive_impl(frame_system::config_preludes::TestDefaultConfig, no_aggregated_types)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		#[derive_impl(pallet_evm::config_preludes::TestDefaultConfig, no_aggregated_types)]
+		impl pallet_evm::DefaultConfig for TestDefaultConfig {}
+
+		parameter_types! {
+			pub const PostBlockAndTxnHashes: PostLogContent = PostLogContent::BlockAndTxnHashes;
+		}
+
+		#[register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			type StateRoot = IntermediateStateRoot<Self::Version>;
+			type PostLogContent = PostBlockAndTxnHashes;
+			type ExtraDataLength = ConstU32<30>;
+		}
 	}
 
 	#[pallet::hooks]
@@ -319,7 +350,7 @@ pub mod pallet {
 
 	/// Current building block's transactions and receipts.
 	#[pallet::storage]
-	pub(super) type Pending<T: Config> =
+	pub type Pending<T: Config> =
 		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
 
 	/// The current Ethereum block.
@@ -365,7 +396,7 @@ impl<T: Config> Pallet<T> {
 		) {
 			weight_limit if weight_limit.proof_size() > 0 => (
 				Some(weight_limit),
-				Some(transaction_data.proof_size_base_cost.unwrap_or_default()),
+				Some(transaction_data.proof_size_base_cost()),
 			),
 			_ => (None, None),
 		}
@@ -516,7 +547,7 @@ impl<T: Config> Pallet<T> {
 		// Do not allow transactions for which `tx.sender` has any code deployed.
 		//
 		// This check should be done on the transaction validation (here) **and**
-		// on trnasaction execution, otherwise a contract tx will be included in
+		// on transaction execution, otherwise a contract tx will be included in
 		// the mempool and pollute the mempool forever.
 		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
 			return Err(InvalidTransaction::BadSigner.into());
@@ -689,7 +720,7 @@ impl<T: Config> Pallet<T> {
 			PostDispatchInfo {
 				actual_weight: {
 					let mut gas_to_weight = T::GasWeightMapping::gas_to_weight(
-						sp_std::cmp::max(
+						core::cmp::max(
 							used_gas.standard.unique_saturated_into(),
 							used_gas.effective.unique_saturated_into(),
 						),
@@ -965,9 +996,9 @@ pub enum ReturnValue {
 }
 
 pub struct IntermediateStateRoot<T>(PhantomData<T>);
-impl<T: Config> Get<H256> for IntermediateStateRoot<T> {
+impl<T: Get<RuntimeVersion>> Get<H256> for IntermediateStateRoot<T> {
 	fn get() -> H256 {
-		let version = T::Version::get().state_version();
+		let version = T::get().state_version();
 		H256::decode(&mut &sp_io::storage::root(version)[..])
 			.expect("Node is configured to use the same hash; qed")
 	}

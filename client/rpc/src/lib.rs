@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -24,8 +24,10 @@
 	clippy::len_zero,
 	clippy::new_without_default
 )]
-#![deny(unused_crate_dependencies)]
+#![warn(unused_crate_dependencies)]
 
+mod cache;
+mod debug;
 mod eth;
 mod eth_pubsub;
 mod net;
@@ -37,10 +39,9 @@ mod web3;
 #[cfg(feature = "txpool")]
 pub use self::txpool::TxPool;
 pub use self::{
-	eth::{
-		format, pending, EstimateGasAdapter, Eth, EthBlockDataCacheTask, EthConfig, EthFilter,
-		EthTask,
-	},
+	cache::{EthBlockDataCacheTask, EthTask},
+	debug::Debug,
+	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
@@ -50,12 +51,10 @@ pub use ethereum::TransactionV2 as EthereumTransaction;
 #[cfg(feature = "txpool")]
 pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
-	EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer, Web3ApiServer,
+	DebugApiServer, EthApiServer, EthFilterApiServer, EthPubSubApiServer, NetApiServer,
+	Web3ApiServer,
 };
-pub use fc_storage::{
-	OverrideHandle, RuntimeApiStorageOverride, SchemaV1Override, SchemaV2Override,
-	SchemaV3Override, StorageOverride,
-};
+pub use fc_storage::{overrides::*, StorageOverrideHandler};
 
 pub mod frontier_backend_client {
 	use super::internal_err;
@@ -72,7 +71,7 @@ pub mod frontier_backend_client {
 	use sp_io::hashing::{blake2_128, twox_128};
 	use sp_runtime::{
 		generic::BlockId,
-		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto, Zero},
+		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto},
 	};
 	use sp_state_machine::OverlayedChanges;
 	// Frontier
@@ -188,7 +187,7 @@ pub mod frontier_backend_client {
 		}
 	}
 
-	pub async fn native_block_id<B: BlockT, C>(
+	pub async fn native_block_id<B, C>(
 		client: &C,
 		backend: &dyn fc_api::Backend<B>,
 		number: Option<BlockNumberOrHash>,
@@ -206,15 +205,21 @@ pub mod frontier_backend_client {
 				}
 			}
 			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
-			BlockNumberOrHash::Latest => Some(BlockId::Hash(client.info().best_hash)),
-			BlockNumberOrHash::Earliest => Some(BlockId::Number(Zero::zero())),
+			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
+				Ok(hash) => Some(BlockId::Hash(hash)),
+				Err(e) => {
+					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
+					Some(BlockId::Hash(client.info().best_hash))
+				}
+			},
+			BlockNumberOrHash::Earliest => Some(BlockId::Hash(client.info().genesis_hash)),
 			BlockNumberOrHash::Pending => None,
 			BlockNumberOrHash::Safe => Some(BlockId::Hash(client.info().finalized_hash)),
 			BlockNumberOrHash::Finalized => Some(BlockId::Hash(client.info().finalized_hash)),
 		})
 	}
 
-	pub async fn load_hash<B: BlockT, C>(
+	pub async fn load_hash<B, C>(
 		client: &C,
 		backend: &dyn fc_api::Backend<B>,
 		hash: H256,
@@ -238,7 +243,7 @@ pub mod frontier_backend_client {
 		Ok(None)
 	}
 
-	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: B::Hash) -> bool
+	pub fn is_canon<B, C>(client: &C, target_hash: B::Hash) -> bool
 	where
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
@@ -251,7 +256,7 @@ pub mod frontier_backend_client {
 		false
 	}
 
-	pub async fn load_transactions<B: BlockT, C>(
+	pub async fn load_transactions<B, C>(
 		client: &C,
 		backend: &dyn fc_api::Backend<B>,
 		transaction_hash: H256,
@@ -285,24 +290,29 @@ pub mod frontier_backend_client {
 	}
 }
 
-pub fn err<T: ToString>(code: i32, message: T, data: Option<&[u8]>) -> jsonrpsee::core::Error {
-	jsonrpsee::core::Error::Call(jsonrpsee::types::error::CallError::Custom(
-		jsonrpsee::types::error::ErrorObject::owned(
-			code,
-			message.to_string(),
-			data.map(|bytes| {
-				jsonrpsee::core::to_json_raw_value(&format!("0x{}", hex::encode(bytes)))
-					.expect("fail to serialize data")
-			}),
-		),
-	))
+pub fn err<T: ToString>(
+	code: i32,
+	message: T,
+	data: Option<&[u8]>,
+) -> jsonrpsee::types::error::ErrorObjectOwned {
+	jsonrpsee::types::error::ErrorObject::owned(
+		code,
+		message.to_string(),
+		data.map(|bytes| {
+			jsonrpsee::core::to_json_raw_value(&format!("0x{}", hex::encode(bytes)))
+				.expect("fail to serialize data")
+		}),
+	)
 }
 
-pub fn internal_err<T: ToString>(message: T) -> jsonrpsee::core::Error {
+pub fn internal_err<T: ToString>(message: T) -> jsonrpsee::types::error::ErrorObjectOwned {
 	err(jsonrpsee::types::error::INTERNAL_ERROR_CODE, message, None)
 }
 
-pub fn internal_err_with_data<T: ToString>(message: T, data: &[u8]) -> jsonrpsee::core::Error {
+pub fn internal_err_with_data<T: ToString>(
+	message: T,
+	data: &[u8],
+) -> jsonrpsee::types::error::ErrorObjectOwned {
 	err(
 		jsonrpsee::types::error::INTERNAL_ERROR_CODE,
 		message,
@@ -341,7 +351,7 @@ mod tests {
 	use std::{path::PathBuf, sync::Arc};
 
 	use futures::executor;
-	use sc_block_builder::BlockBuilderProvider;
+	use sc_block_builder::BlockBuilderBuilder;
 	use sp_blockchain::HeaderBackend;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
@@ -359,8 +369,8 @@ mod tests {
 	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
-	) -> Result<Arc<fc_db::kv::Backend<Block>>, String> {
-		Ok(Arc::new(fc_db::kv::Backend::<Block>::new(
+	) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
+		Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 			client,
 			&fc_db::kv::DatabaseSettings {
 				source: sc_client_db::DatabaseSource::RocksDb {
@@ -379,7 +389,7 @@ mod tests {
 			None,
 		);
 
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
@@ -389,15 +399,23 @@ mod tests {
 		let ethereum_block_hash = sp_core::H256::random();
 
 		// G -> A1.
-		let mut builder = client.new_block(Default::default()).unwrap();
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let a1 = builder.build().unwrap().block;
 		let a1_hash = a1.header.hash();
 		executor::block_on(client.import(BlockOrigin::Own, a1)).unwrap();
 
 		// A1 -> B1
-		let mut builder = client
-			.new_block_at(a1_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let b1 = builder.build().unwrap().block;
@@ -425,8 +443,11 @@ mod tests {
 		);
 
 		// A1 -> B2
-		let mut builder = client
-			.new_block_at(a1_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![2], None).unwrap();
 		let b2 = builder.build().unwrap().block;
@@ -454,8 +475,11 @@ mod tests {
 		);
 
 		// B2 -> C1. B2 branch is now canon.
-		let mut builder = client
-			.new_block_at(b2_hash, Default::default(), false)
+		let mut builder = BlockBuilderBuilder::new(&*client)
+			.on_parent_block(b2_hash)
+			.fetch_parent_block_number(&*client)
+			.unwrap()
+			.build()
 			.unwrap();
 		builder.push_storage_change(vec![1], None).unwrap();
 		let c1 = builder.build().unwrap().block;

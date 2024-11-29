@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,21 +17,12 @@
 
 //! Test mock for unit tests and benchmarking
 
-use frame_support::{
-	parameter_types,
-	traits::{ConstU32, FindAuthor},
-	weights::Weight,
-};
-use sp_core::{H160, H256, U256};
-use sp_runtime::{
-	traits::{BlakeTwo256, IdentityLookup},
-	ConsensusEngineId,
-};
-use sp_std::{boxed::Box, prelude::*, str::FromStr};
+use frame_support::{derive_impl, parameter_types, weights::Weight};
+use sp_core::{H160, U256};
 
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
-	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
+	FeeCalculator, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
+	PrecompileSet,
 };
 
 frame_support::construct_runtime! {
@@ -48,59 +39,41 @@ parameter_types! {
 	pub BlockWeights: frame_system::limits::BlockWeights =
 		frame_system::limits::BlockWeights::simple_max(Weight::from_parts(1024, 0));
 }
+
+#[derive_impl(frame_system::config_preludes::SolochainDefaultConfig as frame_system::DefaultConfig)]
 impl frame_system::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type BaseCallFilter = frame_support::traits::Everything;
-	type BlockWeights = ();
-	type BlockLength = ();
-	type RuntimeOrigin = RuntimeOrigin;
-	type RuntimeCall = RuntimeCall;
 	type Nonce = u64;
-	type Hash = H256;
-	type Hashing = BlakeTwo256;
-	type AccountId = H160;
-	type Lookup = IdentityLookup<Self::AccountId>;
 	type Block = frame_system::mocking::MockBlock<Self>;
 	type BlockHashCount = BlockHashCount;
-	type DbWeight = ();
-	type Version = ();
-	type PalletInfo = PalletInfo;
 	type AccountData = pallet_balances::AccountData<u64>;
-	type OnNewAccount = ();
-	type OnKilledAccount = ();
-	type SystemWeightInfo = ();
-	type SS58Prefix = ();
-	type OnSetCode = ();
-	type MaxConsumers = ConstU32<16>;
 }
 
 parameter_types! {
 	pub const ExistentialDeposit: u64 = 0;
 }
+#[derive_impl(pallet_balances::config_preludes::TestDefaultConfig)]
 impl pallet_balances::Config for Test {
-	type RuntimeEvent = RuntimeEvent;
-	type WeightInfo = ();
-	type Balance = u64;
-	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
 	type AccountStore = System;
-	type ReserveIdentifier = ();
-	type RuntimeHoldReason = ();
-	type FreezeIdentifier = ();
-	type MaxLocks = ();
-	type MaxReserves = ();
-	type MaxHolds = ();
-	type MaxFreezes = ();
 }
 
+#[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
+impl pallet_timestamp::Config for Test {}
+
 parameter_types! {
-	pub const MinimumPeriod: u64 = 1000;
+	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 }
-impl pallet_timestamp::Config for Test {
-	type Moment = u64;
-	type OnTimestampSet = ();
-	type MinimumPeriod = MinimumPeriod;
-	type WeightInfo = ();
+
+#[derive_impl(crate::config_preludes::TestDefaultConfig)]
+impl crate::Config for Test {
+	type AccountProvider = crate::FrameSystemAccountProvider<Self>;
+	type FeeCalculator = FixedGasPrice;
+	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
+	type Currency = Balances;
+	type PrecompilesType = MockPrecompileSet;
+	type PrecompilesValue = MockPrecompiles;
+	type Runner = crate::runner::stack::Runner<Self>;
+	type Timestamp = Timestamp;
 }
 
 pub struct FixedGasPrice;
@@ -109,56 +82,6 @@ impl FeeCalculator for FixedGasPrice {
 		// Return some meaningful gas price and weight
 		(1_000_000_000u128.into(), Weight::from_parts(7u64, 0))
 	}
-}
-
-pub struct FindAuthorTruncated;
-impl FindAuthor<H160> for FindAuthorTruncated {
-	fn find_author<'a, I>(_digests: I) -> Option<H160>
-	where
-		I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
-	{
-		Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
-	}
-}
-const BLOCK_GAS_LIMIT: u64 = 150_000_000;
-const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
-/// The maximum storage growth per block in bytes.
-const MAX_STORAGE_GROWTH: u64 = 400 * 1024;
-
-parameter_types! {
-	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
-	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
-	pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
-	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
-	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
-	pub SuicideQuickClearLimit: u32 = 0;
-}
-impl crate::Config for Test {
-	type FeeCalculator = FixedGasPrice;
-	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
-	type WeightPerGas = WeightPerGas;
-
-	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-
-	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
-	type AddressMapping = IdentityAddressMapping;
-	type Currency = Balances;
-
-	type RuntimeEvent = RuntimeEvent;
-	type PrecompilesType = MockPrecompileSet;
-	type PrecompilesValue = MockPrecompiles;
-	type ChainId = ();
-	type BlockGasLimit = BlockGasLimit;
-	type Runner = crate::runner::stack::Runner<Self>;
-	type OnChargeTransaction = ();
-	type OnCreate = ();
-	type FindAuthor = FindAuthorTruncated;
-	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-	type SuicideQuickClearLimit = SuicideQuickClearLimit;
-	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
-	type Timestamp = Timestamp;
-	type WeightInfo = ();
 }
 
 /// Example PrecompileSet with only Identity precompile.

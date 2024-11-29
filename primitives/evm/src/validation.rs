@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -17,10 +17,10 @@
 
 #![allow(clippy::comparison_chain)]
 
+use alloc::vec::Vec;
 pub use evm::backend::Basic as Account;
 use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
 use sp_core::{H160, H256, U256};
-use sp_std::vec::Vec;
 
 #[derive(Debug)]
 pub struct CheckEvmTransactionInput {
@@ -51,7 +51,7 @@ pub struct CheckEvmTransaction<'config, E: From<TransactionValidationError>> {
 	pub transaction: CheckEvmTransactionInput,
 	pub weight_limit: Option<Weight>,
 	pub proof_size_base_cost: Option<u64>,
-	_marker: sp_std::marker::PhantomData<E>,
+	_marker: core::marker::PhantomData<E>,
 }
 
 /// Transaction validation errors

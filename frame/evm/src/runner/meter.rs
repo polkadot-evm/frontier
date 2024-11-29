@@ -22,7 +22,7 @@ use evm::{
 };
 use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
 use sp_core::{H160, H256};
-use sp_std::collections::btree_set::BTreeSet;
+use alloc::collections::btree_set::BTreeSet;
 
 /// An error that is returned when the storage limit has been exceeded.
 #[derive(Debug, PartialEq)]

@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2021-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -22,10 +22,10 @@
 #[cfg(test)]
 mod tests;
 
+use core::cmp::{max, min};
 use frame_support::{inherent::IsFatalError, traits::Get, weights::Weight};
 use sp_core::U256;
 use sp_inherents::{InherentData, InherentIdentifier};
-use sp_std::cmp::{max, min};
 
 pub use self::pallet::*;
 #[cfg(feature = "std")]

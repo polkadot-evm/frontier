@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2015-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -22,7 +22,7 @@ use ethereum_types::{H512, U256};
 use serde::{Serialize, Serializer};
 
 /// Sync info
-#[derive(Debug, Eq, PartialEq, Default, Serialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Default, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct SyncInfo {
 	/// Starting block
@@ -50,7 +50,7 @@ pub struct Peers {
 	pub peers: Vec<PeerInfo>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Clone, Debug, Serialize)]
 #[serde(untagged)]
 pub enum PeerCount {
 	U32(u32),
@@ -114,7 +114,7 @@ pub struct PipProtocolInfo {
 }
 
 /// Sync status
-#[derive(Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum SyncStatus {
 	/// Info when syncing
 	Info(SyncInfo),

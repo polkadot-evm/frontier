@@ -1,8 +1,8 @@
-// SPDX-License-Identifier: Apache-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2020-2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: Apache-2.0
+
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
@@ -55,6 +55,8 @@
 #![warn(unused_crate_dependencies)]
 #![allow(clippy::too_many_arguments)]
 
+extern crate alloc;
+
 #[cfg(feature = "runtime-benchmarks")]
 pub mod benchmarking;
 
@@ -65,6 +67,8 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use core::cmp::min;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -75,13 +79,14 @@ use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
-	storage::child::KillStorageResult,
+	storage::{child::KillStorageResult, KeyPrefixIterator},
 	traits::{
+		fungible::{Balanced, Credit, Debt},
 		tokens::{
 			currency::Currency,
 			fungible::Inspect,
 			imbalance::{Imbalance, OnUnbalanced, SignedImbalance},
-			ExistenceRequirement, Fortitude, Preservation, WithdrawReasons,
+			ExistenceRequirement, Fortitude, Precision, Preservation, WithdrawReasons,
 		},
 		FindAuthor, Get, Time,
 	},
@@ -93,14 +98,14 @@ use sp_runtime::{
 	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
 	AccountId32, DispatchErrorWithPostInfo,
 };
-use sp_std::{cmp::min, collections::btree_map::BTreeMap, vec::Vec};
 // Frontier
 use fp_account::AccountId20;
 use fp_evm::GenesisAccount;
 pub use fp_evm::{
-	Account, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo, FeeCalculator,
-	IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileOutput, PrecompileResult, PrecompileSet, TransactionValidationError, Vicinity,
+	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo,
+	FeeCalculator, IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
+	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
+	TransactionValidationError, Vicinity,
 };
 
 pub use self::{
@@ -119,8 +124,12 @@ pub mod pallet {
 	#[pallet::without_storage_info]
 	pub struct Pallet<T>(PhantomData<T>);
 
-	#[pallet::config]
+	#[pallet::config(with_default)]
 	pub trait Config: frame_system::Config {
+		/// Account info provider.
+		#[pallet::no_default]
+		type AccountProvider: AccountProvider;
+
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
 
@@ -131,36 +140,50 @@ pub mod pallet {
 		type WeightPerGas: Get<Weight>;
 
 		/// Block number to block hash.
+		#[pallet::no_default]
 		type BlockHashMapping: BlockHashMapping;
 
 		/// Allow the origin to call on behalf of given address.
+		#[pallet::no_default_bounds]
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
+
 		/// Allow the origin to withdraw on behalf of given address.
-		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = Self::AccountId>;
+		#[pallet::no_default_bounds]
+		type WithdrawOrigin: EnsureAddressOrigin<Self::RuntimeOrigin, Success = AccountIdOf<Self>>;
 
 		/// Mapping from address to account id.
-		type AddressMapping: AddressMapping<Self::AccountId>;
+		#[pallet::no_default_bounds]
+		type AddressMapping: AddressMapping<AccountIdOf<Self>>;
+
 		/// Currency type for withdraw and balance storage.
-		type Currency: Currency<Self::AccountId> + Inspect<Self::AccountId>;
+		#[pallet::no_default]
+		type Currency: Currency<AccountIdOf<Self>> + Inspect<AccountIdOf<Self>>;
 
 		/// The overarching event type.
+		#[pallet::no_default_bounds]
 		type RuntimeEvent: From<Event<Self>> + IsType<<Self as frame_system::Config>::RuntimeEvent>;
+
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
 		type PrecompilesValue: Get<Self::PrecompilesType>;
+
 		/// Chain ID of EVM.
 		type ChainId: Get<u64>;
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
 		type BlockGasLimit: Get<U256>;
+
 		/// EVM execution runner.
+		#[pallet::no_default]
 		type Runner: Runner<Self>;
 
 		/// To handle fee deduction for EVM transactions. An example is this pallet being used by `pallet_ethereum`
 		/// where the chain implementing `pallet_ethereum` should be able to configure what happens to the fees
 		/// Similar to `OnChargeTransaction` of `pallet_transaction_payment`
+		#[pallet::no_default_bounds]
 		type OnChargeTransaction: OnChargeEVMTransaction<Self>;
 
 		/// Called on create calls, used to record owner
+		#[pallet::no_default_bounds]
 		type OnCreate: OnCreate<Self>;
 
 		/// Find author for the current block.
@@ -176,6 +199,7 @@ pub mod pallet {
 		type GasLimitStorageGrowthRatio: Get<u64>;
 
 		/// Get the timestamp for the current block.
+		#[pallet::no_default]
 		type Timestamp: Time;
 
 		/// Weight information for extrinsics in this pallet.
@@ -184,6 +208,81 @@ pub mod pallet {
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&SHANGHAI_CONFIG
+		}
+	}
+
+	pub mod config_preludes {
+		use super::*;
+		use core::str::FromStr;
+		use frame_support::{derive_impl, parameter_types, ConsensusEngineId};
+		use sp_runtime::traits::BlakeTwo256;
+
+		pub struct TestDefaultConfig;
+
+		#[derive_impl(
+			frame_system::config_preludes::SolochainDefaultConfig,
+			no_aggregated_types
+		)]
+		impl frame_system::DefaultConfig for TestDefaultConfig {}
+
+		const BLOCK_GAS_LIMIT: u64 = 150_000_000;
+		const MAX_POV_SIZE: u64 = 5 * 1024 * 1024;
+		/// The maximum storage growth per block in bytes.
+		const MAX_STORAGE_GROWTH: u64 = 400 * 1024;
+
+		parameter_types! {
+			pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+			pub const ChainId: u64 = 42;
+			pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
+			pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
+			pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
+			pub SuicideQuickClearLimit: u32 = 0;
+		}
+
+		#[register_default_impl(TestDefaultConfig)]
+		impl DefaultConfig for TestDefaultConfig {
+			type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+			type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
+			type AddressMapping = HashedAddressMapping<BlakeTwo256>;
+			type FeeCalculator = FixedGasPrice;
+			type GasWeightMapping = FixedGasWeightMapping<Self>;
+			type WeightPerGas = WeightPerGas;
+			#[inject_runtime_type]
+			type RuntimeEvent = ();
+			type PrecompilesType = ();
+			type PrecompilesValue = ();
+			type ChainId = ChainId;
+			type BlockGasLimit = BlockGasLimit;
+			type OnChargeTransaction = ();
+			type OnCreate = ();
+			type FindAuthor = FindAuthorTruncated;
+			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
+			type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
+			type SuicideQuickClearLimit = SuicideQuickClearLimit;
+			type WeightInfo = ();
+		}
+
+		impl FixedGasWeightMappingAssociatedTypes for TestDefaultConfig {
+			type WeightPerGas = <Self as DefaultConfig>::WeightPerGas;
+			type BlockWeights = <Self as frame_system::DefaultConfig>::BlockWeights;
+			type GasLimitPovSizeRatio = <Self as DefaultConfig>::GasLimitPovSizeRatio;
+		}
+
+		pub struct FixedGasPrice;
+		impl FeeCalculator for FixedGasPrice {
+			fn min_gas_price() -> (U256, Weight) {
+				(1.into(), Weight::zero())
+			}
+		}
+
+		pub struct FindAuthorTruncated;
+		impl FindAuthor<H160> for FindAuthorTruncated {
+			fn find_author<'a, I>(_digests: I) -> Option<H160>
+			where
+				I: 'a + IntoIterator<Item = (ConsensusEngineId, &'a [u8])>,
+			{
+				Some(H160::from_str("1234500000000000000000000000000000000000").unwrap())
+			}
 		}
 	}
 
@@ -550,10 +649,13 @@ pub mod pallet {
 					MAX_ACCOUNT_NONCE,
 					UniqueSaturatedInto::<usize>::unique_saturated_into(account.nonce),
 				) {
-					frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+					T::AccountProvider::inc_account_nonce(&account_id);
 				}
 
-				T::Currency::deposit_creating(&account_id, account.balance.unique_saturated_into());
+				let _ = T::Currency::deposit_creating(
+					&account_id,
+					account.balance.unique_saturated_into(),
+				);
 
 				Pallet::<T>::create_account(*address, account.code.clone());
 
@@ -579,13 +681,14 @@ pub mod pallet {
 	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
 }
 
+/// Utility alias for easy access to the [`AccountProvider::AccountId`] type from a given config.
+pub type AccountIdOf<T> = <<T as Config>::AccountProvider as AccountProvider>::AccountId;
+
 /// Type alias for currency balance.
-pub type BalanceOf<T> =
-	<<T as Config>::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance;
+pub type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
 
 /// Type alias for negative imbalance during fees
-type NegativeImbalanceOf<C, T> =
-	<C as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance;
+type NegativeImbalanceOf<C, T> = <C as Currency<AccountIdOf<T>>>::NegativeImbalance;
 
 #[derive(
 	Debug,
@@ -650,7 +753,7 @@ where
 }
 
 /// Ensure that the origin is root.
-pub struct EnsureAddressRoot<AccountId>(sp_std::marker::PhantomData<AccountId>);
+pub struct EnsureAddressRoot<AccountId>(core::marker::PhantomData<AccountId>);
 
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressRoot<AccountId>
 where
@@ -667,7 +770,7 @@ where
 }
 
 /// Ensure that the origin never happens.
-pub struct EnsureAddressNever<AccountId>(sp_std::marker::PhantomData<AccountId>);
+pub struct EnsureAddressNever<AccountId>(core::marker::PhantomData<AccountId>);
 
 impl<OuterOrigin, AccountId> EnsureAddressOrigin<OuterOrigin> for EnsureAddressNever<AccountId> {
 	type Success = AccountId;
@@ -730,7 +833,7 @@ impl<T: From<H160>> AddressMapping<T> for IdentityAddressMapping {
 }
 
 /// Hashed address mapping.
-pub struct HashedAddressMapping<H>(sp_std::marker::PhantomData<H>);
+pub struct HashedAddressMapping<H>(core::marker::PhantomData<H>);
 
 impl<H: Hasher<Out = H256>> AddressMapping<AccountId32> for HashedAddressMapping<H> {
 	fn into_account_id(address: H160) -> AccountId32 {
@@ -749,7 +852,7 @@ pub trait BlockHashMapping {
 }
 
 /// Returns the Substrate block hash by number.
-pub struct SubstrateBlockHashMapping<T>(sp_std::marker::PhantomData<T>);
+pub struct SubstrateBlockHashMapping<T>(core::marker::PhantomData<T>);
 impl<T: Config> BlockHashMapping for SubstrateBlockHashMapping<T> {
 	fn block_hash(number: u32) -> H256 {
 		let number = <NumberFor<T::Block>>::from(number);
@@ -763,8 +866,23 @@ pub trait GasWeightMapping {
 	fn weight_to_gas(weight: Weight) -> u64;
 }
 
-pub struct FixedGasWeightMapping<T>(sp_std::marker::PhantomData<T>);
-impl<T: Config> GasWeightMapping for FixedGasWeightMapping<T> {
+pub trait FixedGasWeightMappingAssociatedTypes {
+	type WeightPerGas: Get<Weight>;
+	type BlockWeights: Get<frame_system::limits::BlockWeights>;
+	type GasLimitPovSizeRatio: Get<u64>;
+}
+
+impl<T: Config> FixedGasWeightMappingAssociatedTypes for T {
+	type WeightPerGas = T::WeightPerGas;
+	type BlockWeights = T::BlockWeights;
+	type GasLimitPovSizeRatio = T::GasLimitPovSizeRatio;
+}
+
+pub struct FixedGasWeightMapping<T>(core::marker::PhantomData<T>);
+impl<T> GasWeightMapping for FixedGasWeightMapping<T>
+where
+	T: FixedGasWeightMappingAssociatedTypes,
+{
 	fn gas_to_weight(gas: u64, without_base_weight: bool) -> Weight {
 		let mut weight = T::WeightPerGas::get().saturating_mul(gas);
 		if without_base_weight {
@@ -798,6 +916,14 @@ impl<T: Config> Pallet<T> {
 
 		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
 	}
+	/// Check whether an account is a suicided contract
+	pub fn is_account_suicided(address: &H160) -> bool {
+		<Suicided<T>>::contains_key(address)
+	}
+
+	pub fn iter_account_storages(address: &H160) -> KeyPrefixIterator<H256> {
+		<AccountStorages<T>>::iter_key_prefix(address)
+	}
 
 	/// Remove an account if its empty.
 	pub fn remove_account_if_empty(address: &H160) {
@@ -815,7 +941,7 @@ impl<T: Config> Pallet<T> {
 			// In theory, we can always have pre-EIP161 contracts, so we
 			// make sure the account nonce is at least one.
 			let account_id = T::AddressMapping::into_account_id(*address);
-			frame_system::Pallet::<T>::inc_account_nonce(&account_id);
+			T::AccountProvider::inc_account_nonce(&account_id);
 		}
 
 		<AccountCodes<T>>::remove(address);
@@ -830,7 +956,7 @@ impl<T: Config> Pallet<T> {
 					<Suicided<T>>::remove(address);
 
 					let account_id = T::AddressMapping::into_account_id(*address);
-					let _ = frame_system::Pallet::<T>::dec_sufficients(&account_id);
+					T::AccountProvider::remove_account(&account_id);
 				}
 				KillStorageResult::SomeRemaining(_) => (),
 			}
@@ -853,7 +979,7 @@ impl<T: Config> Pallet<T> {
 
 		if !<AccountCodes<T>>::contains_key(address) {
 			let account_id = T::AddressMapping::into_account_id(address);
-			let _ = frame_system::Pallet::<T>::inc_sufficients(&account_id);
+			T::AccountProvider::create_account(&account_id);
 		}
 
 		// Update metadata.
@@ -893,9 +1019,7 @@ impl<T: Config> Pallet<T> {
 	/// Get the account basic in EVM format.
 	pub fn account_basic(address: &H160) -> (Account, frame_support::weights::Weight) {
 		let account_id = T::AddressMapping::into_account_id(*address);
-
-		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
-		// keepalive `true` takes into account ExistentialDeposit as part of what's considered liquid balance.
+		let nonce = T::AccountProvider::account_nonce(&account_id);
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 
@@ -946,22 +1070,18 @@ pub trait OnChargeEVMTransaction<T: Config> {
 /// trait (eg. the pallet_balances) using an unbalance handler (implementing
 /// `OnUnbalanced`).
 /// Similar to `CurrencyAdapter` of `pallet_transaction_payment`
-pub struct EVMCurrencyAdapter<C, OU>(sp_std::marker::PhantomData<(C, OU)>);
+pub struct EVMCurrencyAdapter<C, OU>(core::marker::PhantomData<(C, OU)>);
 
 impl<T, C, OU> OnChargeEVMTransaction<T> for EVMCurrencyAdapter<C, OU>
 where
 	T: Config,
-	C: Currency<<T as frame_system::Config>::AccountId>,
-	C::PositiveImbalance: Imbalance<
-		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
-		Opposite = C::NegativeImbalance,
-	>,
-	C::NegativeImbalance: Imbalance<
-		<C as Currency<<T as frame_system::Config>::AccountId>>::Balance,
-		Opposite = C::PositiveImbalance,
-	>,
+	C: Currency<AccountIdOf<T>>,
+	C::PositiveImbalance:
+		Imbalance<<C as Currency<AccountIdOf<T>>>::Balance, Opposite = C::NegativeImbalance>,
+	C::NegativeImbalance:
+		Imbalance<<C as Currency<AccountIdOf<T>>>::Balance, Opposite = C::PositiveImbalance>,
 	OU: OnUnbalanced<NegativeImbalanceOf<C, T>>,
-	U256: UniqueSaturatedInto<<C as Currency<<T as frame_system::Config>::AccountId>>::Balance>,
+	U256: UniqueSaturatedInto<<C as Currency<AccountIdOf<T>>>::Balance>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<NegativeImbalanceOf<C, T>>;
@@ -1040,26 +1160,38 @@ where
 		}
 	}
 }
+/// Implements transaction payment for a pallet implementing the [`fungible`]
+/// trait (eg. pallet_balances) using an unbalance handler (implementing
+/// [`OnUnbalanced`]).
+///
+/// Equivalent of `EVMCurrencyAdapter` but for fungible traits. Similar to `FungibleAdapter` of
+/// `pallet_transaction_payment`
+pub struct EVMFungibleAdapter<F, OU>(core::marker::PhantomData<(F, OU)>);
 
-/// Implementation for () does not specify what to do with imbalance
-impl<T> OnChargeEVMTransaction<T> for ()
-	where
+impl<T, F, OU> OnChargeEVMTransaction<T> for EVMFungibleAdapter<F, OU>
+where
 	T: Config,
-	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance:
-		Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance>,
-	<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::NegativeImbalance:
-Imbalance<<T::Currency as Currency<<T as frame_system::Config>::AccountId>>::Balance, Opposite = <T::Currency as Currency<<T as frame_system::Config>::AccountId>>::PositiveImbalance>,
-U256: UniqueSaturatedInto<BalanceOf<T>>,
-
+	F: Balanced<AccountIdOf<T>>,
+	OU: OnUnbalanced<Credit<AccountIdOf<T>, F>>,
+	U256: UniqueSaturatedInto<<F as Inspect<AccountIdOf<T>>>::Balance>,
 {
 	// Kept type as Option to satisfy bound of Default
-	type LiquidityInfo = Option<NegativeImbalanceOf<T::Currency, T>>;
+	type LiquidityInfo = Option<Credit<AccountIdOf<T>, F>>;
 
-	fn withdraw_fee(
-		who: &H160,
-		fee: U256,
-	) -> Result<Self::LiquidityInfo, Error<T>> {
-		EVMCurrencyAdapter::<<T as Config>::Currency, ()>::withdraw_fee(who, fee)
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		if fee.is_zero() {
+			return Ok(None);
+		}
+		let account_id = T::AddressMapping::into_account_id(*who);
+		let imbalance = F::withdraw(
+			&account_id,
+			fee.unique_saturated_into(),
+			Precision::Exact,
+			Preservation::Preserve,
+			Fortitude::Polite,
+		)
+		.map_err(|_| Error::<T>::BalanceLow)?;
+		Ok(Some(imbalance))
 	}
 
 	fn correct_and_deposit_fee(
@@ -1068,11 +1200,70 @@ U256: UniqueSaturatedInto<BalanceOf<T>>,
 		base_fee: U256,
 		already_withdrawn: Self::LiquidityInfo,
 	) -> Self::LiquidityInfo {
-		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(who, corrected_fee, base_fee, already_withdrawn)
+		if let Some(paid) = already_withdrawn {
+			let account_id = T::AddressMapping::into_account_id(*who);
+
+			// Calculate how much refund we should return
+			let refund_amount = paid
+				.peek()
+				.saturating_sub(corrected_fee.unique_saturated_into());
+			// refund to the account that paid the fees.
+			let refund_imbalance = F::deposit(&account_id, refund_amount, Precision::BestEffort)
+				.unwrap_or_else(|_| Debt::<AccountIdOf<T>, F>::zero());
+
+			// merge the imbalance caused by paying the fees and refunding parts of it again.
+			let adjusted_paid = paid
+				.offset(refund_imbalance)
+				.same()
+				.unwrap_or_else(|_| Credit::<AccountIdOf<T>, F>::zero());
+
+			let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+			// Handle base fee. Can be either burned, rationed, etc ...
+			OU::on_unbalanced(base_fee);
+			return Some(tip);
+		}
+		None
 	}
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
-		<EVMCurrencyAdapter::<<T as Config>::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
+		// Default Ethereum behaviour: issue the tip to the block author.
+		if let Some(tip) = tip {
+			let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
+			let _ = F::deposit(&account_id, tip.peek(), Precision::BestEffort);
+		}
+	}
+}
+
+/// Implementation for () does not specify what to do with imbalance
+impl<T> OnChargeEVMTransaction<T> for ()
+where
+	T: Config,
+	T::Currency: Balanced<AccountIdOf<T>>,
+	U256: UniqueSaturatedInto<<<T as Config>::Currency as Inspect<AccountIdOf<T>>>::Balance>,
+{
+	// Kept type as Option to satisfy bound of Default
+	type LiquidityInfo = Option<Credit<AccountIdOf<T>, T::Currency>>;
+
+	fn withdraw_fee(who: &H160, fee: U256) -> Result<Self::LiquidityInfo, Error<T>> {
+		EVMFungibleAdapter::<T::Currency, ()>::withdraw_fee(who, fee)
+	}
+
+	fn correct_and_deposit_fee(
+		who: &H160,
+		corrected_fee: U256,
+		base_fee: U256,
+		already_withdrawn: Self::LiquidityInfo,
+	) -> Self::LiquidityInfo {
+		<EVMFungibleAdapter<T::Currency, ()> as OnChargeEVMTransaction<T>>::correct_and_deposit_fee(
+			who,
+			corrected_fee,
+			base_fee,
+			already_withdrawn,
+		)
+	}
+
+	fn pay_priority_fee(tip: Self::LiquidityInfo) {
+		<EVMFungibleAdapter<T::Currency, ()> as OnChargeEVMTransaction<T>>::pay_priority_fee(tip);
 	}
 }
 
@@ -1090,5 +1281,31 @@ impl<T> OnCreate<T> for Tuple {
 		for_tuples!(#(
 			Tuple::on_create(owner, contract);
 		)*)
+	}
+}
+
+/// EVM account provider based on the [`frame_system`] accounts.
+///
+/// Uses standard Substrate accounts system to hold EVM accounts.
+pub struct FrameSystemAccountProvider<T>(core::marker::PhantomData<T>);
+
+impl<T: frame_system::Config> AccountProvider for FrameSystemAccountProvider<T> {
+	type AccountId = T::AccountId;
+	type Nonce = T::Nonce;
+
+	fn account_nonce(who: &Self::AccountId) -> Self::Nonce {
+		frame_system::Pallet::<T>::account_nonce(who)
+	}
+
+	fn inc_account_nonce(who: &Self::AccountId) {
+		frame_system::Pallet::<T>::inc_account_nonce(who)
+	}
+
+	fn create_account(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::inc_sufficients(who);
+	}
+
+	fn remove_account(who: &Self::AccountId) {
+		let _ = frame_system::Pallet::<T>::dec_sufficients(who);
 	}
 }

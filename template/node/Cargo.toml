@@ -20,7 +20,7 @@ hex-literal = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 log = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
-serde = { workspace = true }
+serde_json = { workspace = true, features = ["arbitrary_precision"] }
 
 # Substrate
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", workspace = true }
@@ -37,7 +37,6 @@ sc-network = { workspace = true }
 sc-network-sync = { workspace = true }
 sc-offchain = { workspace = true }
 sc-rpc = { workspace = true }
-sc-rpc-api = { workspace = true }
 sc-service = { workspace = true }
 sc-telemetry = { workspace = true }
 sc-transaction-pool = { workspace = true }
@@ -49,10 +48,10 @@ sp-consensus-aura = { workspace = true, features = ["default"] }
 sp-consensus-grandpa = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 sp-inherents = { workspace = true, features = ["default"] }
+sp-io = { workspace = true, features = ["default"] }
 sp-offchain = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
 sp-session = { workspace = true, features = ["default"] }
-sp-state-machine = { workspace = true, features = ["default"] }
 sp-timestamp = { workspace = true, features = ["default"] }
 sp-transaction-pool = { workspace = true, features = ["default"] }
 # These dependencies are used for RPC
@@ -86,10 +85,10 @@ substrate-build-script-utils = { workspace = true }
 
 [features]
 default = [
-	"with-rocksdb-weights",
 	"rocksdb",
 	"sql",
 	"txpool",
+	"rpc-binary-search-estimate",
 ]
 rocksdb = [
 	"sc-cli/rocksdb",
@@ -98,13 +97,15 @@ rocksdb = [
 	"fc-db/rocksdb",
 	"fc-mapping-sync/rocksdb",
 	"fc-rpc/rocksdb",
+	"frontier-template-runtime/with-rocksdb-weights",
+]
+paritydb = [
+	"frontier-template-runtime/with-paritydb-weights",
 ]
 sql = [
 	"fc-db/sql",
 	"fc-mapping-sync/sql",
 ]
-with-rocksdb-weights = ["frontier-template-runtime/with-rocksdb-weights"]
-with-paritydb-weights = ["frontier-template-runtime/with-paritydb-weights"]
 txpool = ["fc-rpc/txpool"]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [

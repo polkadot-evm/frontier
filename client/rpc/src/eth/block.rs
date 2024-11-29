@@ -1,18 +1,18 @@
-// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
 // This file is part of Frontier.
-//
-// Copyright (c) 2022 Parity Technologies (UK) Ltd.
-//
+
+// Copyright (C) Parity Technologies (UK) Ltd.
+// SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
+
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
-//
+
 // This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU General Public License for more details.
-//
+
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
@@ -33,7 +33,7 @@ use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	eth::{rich_block_build, BlockInfo, Eth, EthConfig},
+	eth::{rich_block_build, BlockInfo, Eth},
 	frontier_backend_client, internal_err,
 };
 
@@ -45,7 +45,6 @@ where
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
 	A: ChainApi<Block = B>,
-	EC: EthConfig<B, C>,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
 		let BlockInfo {
@@ -104,11 +103,9 @@ where
 					.expect_block_hash_from_id(&id)
 					.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
 
-				let schema = fc_storage::onchain_storage_schema(client.as_ref(), substrate_hash);
-
-				let block = block_data_cache.current_block(schema, substrate_hash).await;
+				let block = block_data_cache.current_block(substrate_hash).await;
 				let statuses = block_data_cache
-					.current_transaction_statuses(schema, substrate_hash)
+					.current_transaction_statuses(substrate_hash)
 					.await;
 
 				let base_fee = client.runtime_api().gas_price(substrate_hash).ok();
