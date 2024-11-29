@@ -16,13 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
+use alloc::collections::btree_set::BTreeSet;
 use evm::{
 	gasometer::{GasCost, StorageTarget},
 	Opcode,
 };
 use fp_evm::ACCOUNT_STORAGE_PROOF_SIZE;
 use sp_core::{H160, H256};
-use alloc::collections::btree_set::BTreeSet;
 
 /// An error that is returned when the storage limit has been exceeded.
 #[derive(Debug, PartialEq)]
