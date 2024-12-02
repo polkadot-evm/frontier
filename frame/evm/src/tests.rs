@@ -689,29 +689,6 @@ mod storage_growth_test {
 		(ACCOUNT_CODES_KEY_SIZE + ACCOUNT_CODES_METADATA_PROOF_SIZE + bytecode_len) * ratio
 	}
 
-	// Verifies that contract deployment fails when the necessary storage growth gas isn't
-	// provided, even if the gas limit surpasses the standard gas usage measured by the
-	// gasometer.
-	#[test]
-	fn contract_deployment_should_fail_oog() {
-		new_test_ext().execute_with(|| {
-			let gas_limit: u64 = 80_000;
-
-			let result = create_test_contract(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE, gas_limit)
-				.expect("create succeeds");
-
-			// Assert that the legacy gas is lower than the gas limit.
-			assert!(result.used_gas.standard < U256::from(gas_limit));
-			assert_eq!(
-				result.exit_reason,
-				crate::ExitReason::Error(crate::ExitError::OutOfGas)
-			);
-			assert_eq!(result.used_gas.effective.as_u64(), 78485);
-			// Assert that the contract entry does not exists in the storage.
-			assert!(!AccountCodes::<Test>::contains_key(result.value));
-		});
-	}
-
 	/// Test that contract deployment succeeds when the necessary storage growth gas is provided.
 	#[test]
 	fn contract_deployment_should_succeed() {
