@@ -20,6 +20,7 @@
 
 extern crate alloc;
 
+mod account_provider;
 mod precompile;
 mod validation;
 
@@ -38,6 +39,7 @@ pub use evm::{
 };
 
 pub use self::{
+	account_provider::AccountProvider,
 	precompile::{
 		Context, ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, LinearCostPrecompile,
 		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
@@ -59,8 +61,8 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
-/// `System::Account` 16(hash) + 20 (key) + 60 (AccountInfo::max_encoded_len)
-pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 96;
+/// `System::Account` 16(hash) + 20 (key) + 72 (AccountInfo::max_encoded_len)
+pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 108;
 /// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
 pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
 /// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)

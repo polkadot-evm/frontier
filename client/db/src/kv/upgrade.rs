@@ -385,7 +385,7 @@ mod tests {
 				.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
 				None,
 			);
-			let mut client = Arc::new(client);
+			let client = Arc::new(client);
 
 			// Genesis block
 			let chain_info = client.chain_info();

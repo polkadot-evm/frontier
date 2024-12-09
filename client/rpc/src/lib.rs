@@ -187,7 +187,7 @@ pub mod frontier_backend_client {
 		}
 	}
 
-	pub async fn native_block_id<B: BlockT, C>(
+	pub async fn native_block_id<B, C>(
 		client: &C,
 		backend: &dyn fc_api::Backend<B>,
 		number: Option<BlockNumberOrHash>,
@@ -219,7 +219,7 @@ pub mod frontier_backend_client {
 		})
 	}
 
-	pub async fn load_hash<B: BlockT, C>(
+	pub async fn load_hash<B, C>(
 		client: &C,
 		backend: &dyn fc_api::Backend<B>,
 		hash: H256,
@@ -243,7 +243,7 @@ pub mod frontier_backend_client {
 		Ok(None)
 	}
 
-	pub fn is_canon<B: BlockT, C>(client: &C, target_hash: B::Hash) -> bool
+	pub fn is_canon<B, C>(client: &C, target_hash: B::Hash) -> bool
 	where
 		B: BlockT,
 		C: HeaderBackend<B> + 'static,
@@ -256,7 +256,7 @@ pub mod frontier_backend_client {
 		false
 	}
 
-	pub async fn load_transactions<B: BlockT, C>(
+	pub async fn load_transactions<B, C>(
 		client: &C,
 		backend: &dyn fc_api::Backend<B>,
 		transaction_hash: H256,
@@ -389,7 +389,7 @@ mod tests {
 			None,
 		);
 
-		let mut client = Arc::new(client);
+		let client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
