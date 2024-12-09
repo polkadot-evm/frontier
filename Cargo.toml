@@ -82,8 +82,8 @@ thiserror = "1.0"
 tokio = "1.38.0"
 
 # Substrate Client
-sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
-sc-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
+sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "0.44.0" }
+sc-block-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "0.42.0" }
 sc-chain-spec = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
 sc-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407", default-features = false }
 sc-client-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2407" }
