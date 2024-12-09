@@ -82,26 +82,26 @@ thiserror = "1.0"
 tokio = "1.38.0"
 
 # Substrate Client
-sc-basic-authorship = { version = "0.44.0" }
+sc-basic-authorship = { version = "0.45.0" }
 sc-block-builder = { version = "0.42.0" }
-sc-chain-spec = { version = "37.0.0" }
-sc-cli = { version = "0.46.0", default-features = false }
+sc-chain-spec = { version = "38.0.0" }
+sc-cli = { version = "0.47.0", default-features = false }
 sc-client-api = { version = "37.0.0" }
 sc-client-db = { version = "0.44.0", default-features = false }
-sc-consensus = { version = "0.43.0"}
-sc-consensus-aura = { version = "0.44.0"}
-sc-consensus-grandpa = { version = "0.29.1"}
-sc-consensus-manual-seal = { version = "0.45.0"}
-sc-executor = { version = "0.40.0"}
+sc-consensus = { version = "0.44.0" }
+sc-consensus-aura = { version = "0.45.0" }
+sc-consensus-grandpa = { version = "0.30.0" }
+sc-consensus-manual-seal = { version = "0.46.0" }
+sc-executor = { version = "0.40.1" }
 sc-keystore = { version = "33.0.0" }
-sc-network = { version = "0.44.0" }
-sc-network-common = { version = "0.43.0" }
-sc-network-sync = { version = "0.43.0" }
-sc-offchain = { version = "39.0.0" }
-sc-rpc = { version = "39.0.0" }
-sc-rpc-api = { version = "0.43.0" }
-sc-service = { version = "0.45.0", default-features = false }
-sc-telemetry = { version = "24.0.0" }
+sc-network = { version = "0.45.0" }
+sc-network-common = { version = "0.44.0" }
+sc-network-sync = { version = "0.44.0" }
+sc-offchain = { version = "40.0.0" }
+sc-rpc = { version = "40.0.0" }
+sc-rpc-api = { version = "0.44.0" }
+sc-service = { version = "0.46.0", default-features = false }
+sc-telemetry = { version = "25.0.0" }
 sc-transaction-pool = { version = "37.0.0" }
 sc-transaction-pool-api = { version = "37.0.0" }
 sc-utils = { version = "17.0.0" }
@@ -116,15 +116,15 @@ sp-core = { version = "34.0.0", default-features = false }
 sp-crypto-hashing = { version = "0.1.0", default-features = false }
 sp-database = { version = "10.0.0" }
 sp-externalities = { version = "0.29.0", default-features = false }
-sp-genesis-builder = { version = "0.15.0", default-features = false }
+sp-genesis-builder = { version = "0.15.1", default-features = false }
 sp-inherents = { version = "34.0.0", default-features = false }
 sp-io = { version = "38.0.0", default-features = false }
 sp-keyring = { version = "39.0.0" }
 sp-keystore = { version = "0.40.0" }
 sp-offchain = { version = "34.0.0", default-features = false }
-sp-runtime = { version = "39.0.2", default-features = false }
+sp-runtime = { version = "39.0.1", default-features = false }
 sp-runtime-interface = { version = "28.0.0", default-features = false }
-sp-session = { version = "35.0.0", default-features = false }
+sp-session = { version = "36.0.0", default-features = false }
 sp-state-machine = { version = "0.43.0", default-features = false }
 sp-std = { version = "14.0.0", default-features = false }
 sp-storage = { version = "21.0.0", default-features = false }
@@ -133,35 +133,35 @@ sp-transaction-pool = { version = "34.0.0", default-features = false }
 sp-version = { version = "37.0.0", default-features = false }
 sp-weights = { version = "31.0.0", default-features = false }
 # Substrate FRAME
-frame-benchmarking = { version = "37.0.0", default-features = false }
-frame-executive = { version = "37.0.0", default-features = false }
-frame-support = { version = "37.0.1", default-features = false }
-frame-system = { version = "37.1.0", default-features = false }
-frame-system-benchmarking = { version = "37.0.0", default-features = false }
+frame-benchmarking = { version = "38.0.0", default-features = false }
+frame-executive = { version = "38.0.0", default-features = false }
+frame-support = { version = "38.0.0", default-features = false }
+frame-system = { version = "38.0.0", default-features = false }
+frame-system-benchmarking = { version = "38.0.0", default-features = false }
 frame-system-rpc-runtime-api = { version = "34.0.0", default-features = false }
-frame-metadata-hash-extension = { version = "0.5.0" }
-pallet-aura = { version = "36.0.0", default-features = false }
-pallet-balances = { version = "38.0.0", default-features = false }
-pallet-grandpa = { version = "37.0.0", default-features = false }
-pallet-sudo = { version = "37.0.0", default-features = false }
-pallet-timestamp = { version = "36.0.1", default-features = false }
-pallet-transaction-payment = { version = "37.0.0", default-features = false }
-pallet-transaction-payment-rpc = { version = "40.0.0" }
-pallet-transaction-payment-rpc-runtime-api = { version = "37.0.0", default-features = false }
-pallet-utility = { version = "37.0.1", default-features = false }
-pallet-babe = { version = "37.0.0" }
+frame-metadata-hash-extension = { version = "0.6.0" }
+pallet-aura = { version = "37.0.0", default-features = false }
+pallet-balances = { version = "39.0.0", default-features = false }
+pallet-grandpa = { version = "38.0.0", default-features = false }
+pallet-sudo = { version = "38.0.0", default-features = false }
+pallet-timestamp = { version = "37.0.0", default-features = false }
+pallet-transaction-payment = { version = "38.0.0", default-features = false }
+pallet-transaction-payment-rpc = { version = "41.0.0" }
+pallet-transaction-payment-rpc-runtime-api = { version = "38.0.0", default-features = false }
+pallet-utility = { version = "38.0.0", default-features = false }
+pallet-babe = { version = "38.0.0" }
 # Substrate Utility
-frame-benchmarking-cli = { version = "42.0.0" }
-prometheus-endpoint = { package = "substrate-prometheus-endpoint", version = "0.17.0" }
+frame-benchmarking-cli = { version = "43.0.0" }
+prometheus-endpoint = { version = "0.17.0", package = "substrate-prometheus-endpoint" }
 substrate-build-script-utils = { version = "11.0.0" }
-substrate-frame-rpc-system = { version = "38.0.0" }
+substrate-frame-rpc-system = { version = "39.0.0" }
 substrate-test-client = { path = "test-utils/client", version = "2.0.1" }
 substrate-test-runtime = { path = "test-utils/runtime", version = "2.0.0" }
 substrate-test-runtime-client = { path = "test-utils/runtime/client", version = "2.0.0" }
-substrate-wasm-builder = { version = "24.0.0" }
+substrate-wasm-builder = { version = "24.0.1" }
 
 # XCM
-xcm = { package = "staging-xcm", version = "14.1.0", default-features = false }
+xcm = { version = "14.2.0", package = "staging-xcm", default-features = false }
 
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
@@ -210,13 +210,13 @@ frontier-template-runtime = { path = "template/runtime", default-features = fals
 
 array-bytes = { version = "6.2.2", default-features = false }
 codec = { version = "3.6.12", default-features = false, package = "parity-scale-codec" }
-sp-application-crypto = {  version = "38.0.0" }
+sp-application-crypto = { version = "38.0.0" }
 sp-consensus-babe = { version = "0.40.0" }
 sp-trie = { version = "37.0.0" }
 tracing = { version = "0.1.37", default-features = false }
 trie-db = { version = "0.29.0", default-features = false }
 sc-executor-common = { version = "0.35.0" }
-sp-tracing = { version = "17.0.0" }
+sp-tracing = { version = "17.0.1" }
 
 
 [profile.release]
