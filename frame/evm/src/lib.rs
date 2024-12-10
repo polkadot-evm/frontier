@@ -77,6 +77,7 @@ use impl_trait_for_tuples::impl_for_tuples;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
+use frame_support::traits::tokens::WithdrawConsequence;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	storage::{child::KillStorageResult, KeyPrefixIterator},
@@ -92,7 +93,6 @@ use frame_support::{
 	},
 	weights::Weight,
 };
-use frame_support::traits::tokens::WithdrawConsequence;
 use frame_system::RawOrigin;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{

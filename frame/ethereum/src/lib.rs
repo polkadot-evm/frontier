@@ -545,8 +545,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|e| e.0)?;
 
 		use pallet_evm::OnChargeEVMTransaction;
-		let max_withdraw = check_transaction.max_withdraw_amount()
-			.map_err(|e| e.0)?;
+		let max_withdraw = check_transaction.max_withdraw_amount().map_err(|e| e.0)?;
 		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
 			.map_err(|_| InvalidTransaction::Payment)?;
 
@@ -920,8 +919,7 @@ impl<T: Config> Pallet<T> {
 			.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		use pallet_evm::OnChargeEVMTransaction;
-		let max_withdraw = check_transaction.max_withdraw_amount()
-			.map_err(|e| e.0)?;
+		let max_withdraw = check_transaction.max_withdraw_amount().map_err(|e| e.0)?;
 		<T as pallet_evm::Config>::OnChargeTransaction::can_withdraw(&origin, max_withdraw)
 			.map_err(|_| InvalidTransaction::Payment)?;
 
