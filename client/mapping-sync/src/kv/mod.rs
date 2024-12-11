@@ -176,11 +176,7 @@ where
 	}
 
 	let best_hash = client.info().best_hash;
-	if SyncStrategy::Parachain == strategy
-		&& !frontier_backend
-			.mapping()
-			.is_synced(&best_hash)?
-	{
+	if SyncStrategy::Parachain == strategy && !frontier_backend.mapping().is_synced(&best_hash)? {
 		// Add best block to current_syncing_tips
 		current_syncing_tips.push(best_hash);
 	}
