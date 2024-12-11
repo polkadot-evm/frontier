@@ -621,6 +621,217 @@ mod proof_size_test {
 	}
 }
 
+mod storage_growth_test {
+	use super::*;
+	use crate::tests::proof_size_test::PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE;
+	use fp_evm::{
+		ACCOUNT_CODES_KEY_SIZE, ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE,
+	};
+
+	const PROOF_SIZE_CALLEE_CONTRACT_BYTECODE_LEN: u64 = 116;
+	// The contract bytecode stored on chain.
+	const STORAGE_GROWTH_TEST_CONTRACT: &str =
+		include_str!("./res/storage_growth_test_contract_bytecode.txt");
+	const STORAGE_GROWTH_TEST_CONTRACT_BYTECODE_LEN: u64 = 455;
+
+	fn create_test_contract(
+		contract: &str,
+		gas_limit: u64,
+	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(contract.trim_end()).expect("Failed to decode contract"),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(FixedGasWeightMapping::<Test>::gas_to_weight(
+				gas_limit, true,
+			)),
+			Some(0),
+			<Test as Config>::config(),
+		)
+	}
+
+	// Calls the given contract
+	fn call_test_contract(
+		contract_addr: H160,
+		call_data: &[u8],
+		value: U256,
+		gas_limit: u64,
+	) -> Result<CallInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::call(
+			H160::default(),
+			contract_addr,
+			call_data.to_vec(),
+			value,
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			None,
+			Some(0),
+			<Test as Config>::config(),
+		)
+	}
+
+	// Computes the expected gas for contract creation (related to storage growth).
+	// `byte_code_len` represents the length of the contract bytecode stored on-chain.
+	fn expected_contract_create_storage_growth_gas(bytecode_len: u64) -> u64 {
+		let ratio = <<Test as Config>::GasLimitStorageGrowthRatio as Get<u64>>::get();
+		(ACCOUNT_CODES_KEY_SIZE + ACCOUNT_CODES_METADATA_PROOF_SIZE + bytecode_len) * ratio
+	}
+
+	/// Test that contract deployment succeeds when the necessary storage growth gas is provided.
+	#[test]
+	fn contract_deployment_should_succeed() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 85_000;
+
+			let result = create_test_contract(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE, gas_limit)
+				.expect("create succeeds");
+
+			assert_eq!(
+				result.used_gas.effective.as_u64(),
+				expected_contract_create_storage_growth_gas(
+					PROOF_SIZE_CALLEE_CONTRACT_BYTECODE_LEN
+				)
+			);
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Succeed(ExitSucceed::Returned)
+			);
+			// Assert that the contract entry exists in the storage.
+			assert!(AccountCodes::<Test>::contains_key(result.value));
+		});
+	}
+
+	// Test that contract creation with code initialization that results in new storage entries
+	// succeeds when the necessary storage growth gas is provided.
+	#[test]
+	fn contract_creation_with_code_initialization_should_succeed() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 863_394;
+			let ratio = <<Test as Config>::GasLimitStorageGrowthRatio as Get<u64>>::get();
+			// The constructor of the contract creates 3 new storage entries (uint256). So,
+			// the expected gas is the gas for contract creation + 3 * ACCOUNT_STORAGE_PROOF_SIZE.
+			let expected_storage_growth_gas = expected_contract_create_storage_growth_gas(
+				STORAGE_GROWTH_TEST_CONTRACT_BYTECODE_LEN,
+			) + (3 * ACCOUNT_STORAGE_PROOF_SIZE * ratio);
+
+			// Deploy the contract.
+			let result = create_test_contract(STORAGE_GROWTH_TEST_CONTRACT, gas_limit)
+				.expect("create succeeds");
+
+			assert_eq!(
+				result.used_gas.effective.as_u64(),
+				expected_storage_growth_gas
+			);
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Succeed(ExitSucceed::Returned)
+			);
+		});
+	}
+
+	// Verify that saving new entries fails when insufficient storage growth gas is supplied.
+	#[test]
+	fn store_new_entries_should_fail_oog() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 863_394;
+			// Deploy the contract.
+			let res = create_test_contract(STORAGE_GROWTH_TEST_CONTRACT, gas_limit)
+				.expect("create succeeds");
+			let contract_addr = res.value;
+
+			let gas_limit = 120_000;
+			// Call the contract method store to store new entries.
+			let result = call_test_contract(
+				contract_addr,
+				&hex::decode("975057e7").unwrap(),
+				U256::zero(),
+				gas_limit,
+			)
+			.expect("call should succeed");
+
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Error(crate::ExitError::OutOfGas)
+			);
+		});
+	}
+
+	// Verify that saving new entries succeeds when sufficient storage growth gas is supplied.
+	#[test]
+	fn store_new_entries_should_succeeds() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 863_394;
+			// Deploy the contract.
+			let res = create_test_contract(STORAGE_GROWTH_TEST_CONTRACT, gas_limit)
+				.expect("create succeeds");
+			let contract_addr = res.value;
+
+			let gas_limit = 128_000;
+			// Call the contract method store to store new entries.
+			let result = call_test_contract(
+				contract_addr,
+				&hex::decode("975057e7").unwrap(),
+				U256::zero(),
+				gas_limit,
+			)
+			.expect("call should succeed");
+
+			let expected_storage_growth_gas = 3
+				* ACCOUNT_STORAGE_PROOF_SIZE
+				* <<Test as Config>::GasLimitStorageGrowthRatio as Get<u64>>::get();
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Succeed(ExitSucceed::Stopped)
+			);
+			assert_eq!(
+				result.used_gas.effective.as_u64(),
+				expected_storage_growth_gas
+			);
+		});
+	}
+
+	// Verify that updating existing storage entries does not incur any storage growth charges.
+	#[test]
+	fn update_exisiting_entries_succeeds() {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 863_394;
+			// Deploy the contract.
+			let res = create_test_contract(STORAGE_GROWTH_TEST_CONTRACT, gas_limit)
+				.expect("create succeeds");
+			let contract_addr = res.value;
+
+			// Providing gas limit of 37_000 is enough to update existing entries, but not enough
+			// to store new entries.
+			let gas_limit = 37_000;
+			// Call the contract method update to update existing entries.
+			let result = call_test_contract(
+				contract_addr,
+				&hex::decode("a2e62045").unwrap(),
+				U256::zero(),
+				gas_limit,
+			)
+			.expect("call should succeed");
+
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Succeed(ExitSucceed::Stopped)
+			);
+		});
+	}
+}
+
 type Balances = pallet_balances::Pallet<Test>;
 #[allow(clippy::upper_case_acronyms)]
 type EVM = Pallet<Test>;
