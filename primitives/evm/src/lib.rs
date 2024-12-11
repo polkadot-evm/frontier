@@ -63,7 +63,7 @@ pub struct Vicinity {
 
 /// `System::Account` 16(hash) + 20 (key) + 72 (AccountInfo::max_encoded_len)
 pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 108;
-/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
+/// `AccountCodesMetadata` read, temtatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
 pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
 /// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
 pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
@@ -71,6 +71,8 @@ pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 pub const WRITE_PROOF_SIZE: u64 = 32;
 /// Account basic proof size + 5 bytes max of `decode_len` call.
 pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+/// `AccountCodes` key size. 16 (hash) + 20 (key)
+pub const ACCOUNT_CODES_KEY_SIZE: u64 = 36;
 
 pub enum AccessedStorage {
 	AccountCodes(H160),

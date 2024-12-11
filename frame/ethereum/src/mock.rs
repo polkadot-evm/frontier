@@ -87,6 +87,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
+	pub const GasLimitStorageGrowthRatio: u64 = 0;
 }
 
 const EVM_DECIMALS_FACTOR: u64 = 1_000_000_000_u64;
@@ -135,6 +136,7 @@ impl pallet_evm::Config for Test {
 	type PrecompilesValue = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type FindAuthor = FindAuthorTruncated;
+	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
 	type Timestamp = Timestamp;
 }
 
