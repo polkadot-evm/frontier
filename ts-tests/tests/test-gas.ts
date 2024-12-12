@@ -132,6 +132,15 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 		expect(result).to.equal(197732);
 	});
 
+	it("eth_estimateGas should ignore nonce", async function () {
+		let result = await context.web3.eth.estimateGas({
+			from: GENESIS_ACCOUNT,
+			data: Test.bytecode,
+			nonce: 42, // Arbitrary nonce value
+		});
+		expect(result).to.equal(197732);
+	});
+
 	it("tx gas limit below ETH_BLOCK_GAS_LIMIT", async function () {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
