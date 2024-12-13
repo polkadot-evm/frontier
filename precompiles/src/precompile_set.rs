@@ -129,6 +129,7 @@ impl<T> From<DiscriminantResult<T>> for IsPrecompileResult {
 pub enum PrecompileKind {
 	Single(H160),
 	Prefixed(Vec<u8>),
+	Multiple(Vec<H160>),
 }
 
 #[derive(Debug, Clone)]
@@ -828,6 +829,68 @@ impl<A> IsActivePrecompile for RevertPrecompile<A> {
 	fn is_active_precompile(&self, _address: H160, _gas: u64) -> IsPrecompileResult {
 		IsPrecompileResult::Answer {
 			is_precompile: true,
+			extra_cost: 0,
+		}
+	}
+}
+
+/// Precompiles that were removed from a precompile set.
+/// Still considered precompiles but are inactive and always revert.
+pub struct RemovedPrecompilesAt<A>(PhantomData<A>);
+impl<A> PrecompileSetFragment for RemovedPrecompilesAt<A>
+where
+	A: Get<Vec<H160>>,
+{
+	#[inline(always)]
+	fn new() -> Self {
+		Self(PhantomData)
+	}
+
+	#[inline(always)]
+	fn execute<R: pallet_evm::Config>(
+		&self,
+		handle: &mut impl PrecompileHandle,
+	) -> Option<PrecompileResult> {
+		if A::get().contains(&handle.code_address()) {
+			Some(Err(revert("Removed precompile")))
+		} else {
+			None
+		}
+	}
+
+	#[inline(always)]
+	fn is_precompile(&self, address: H160, _gas: u64) -> IsPrecompileResult {
+		IsPrecompileResult::Answer {
+			is_precompile: A::get().contains(&address),
+			extra_cost: 0,
+		}
+	}
+
+	#[inline(always)]
+	fn used_addresses(&self) -> Vec<H160> {
+		A::get()
+	}
+
+	fn summarize_checks(&self) -> Vec<PrecompileCheckSummary> {
+		vec![PrecompileCheckSummary {
+			name: None,
+			precompile_kind: PrecompileKind::Multiple(A::get()),
+			recursion_limit: Some(0),
+			accept_delegate_call: true,
+			callable_by_smart_contract: "Reverts in all cases".into(),
+			callable_by_precompile: "Reverts in all cases".into(),
+		}]
+	}
+}
+
+impl<A> IsActivePrecompile for RemovedPrecompilesAt<A>
+where
+	Self: PrecompileSetFragment,
+{
+	#[inline(always)]
+	fn is_active_precompile(&self, _address: H160, _gas: u64) -> IsPrecompileResult {
+		IsPrecompileResult::Answer {
+			is_precompile: false,
 			extra_cost: 0,
 		}
 	}
