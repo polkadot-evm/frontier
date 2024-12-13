@@ -399,5 +399,3 @@ impl<T, S> BoundedVec<T, S> {
 		self.inner.is_empty()
 	}
 }
-
-
