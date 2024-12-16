@@ -821,6 +821,7 @@ impl<T: Config> Pallet<T> {
 			}
 			ethereum::TransactionAction::Create => {
 				let whitelist = pallet_evm::WhitelistedCreators::<T>::get();
+				let whitelist_disabled = pallet_evm::DisableWhitelistCheck::<T>::get();
 				let res = match T::Runner::create(
 					from,
 					input,
@@ -831,6 +832,7 @@ impl<T: Config> Pallet<T> {
 					nonce,
 					access_list,
 					whitelist,
+					whitelist_disabled,
 					is_transactional,
 					validate,
 					weight_limit,

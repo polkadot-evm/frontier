@@ -311,6 +311,7 @@ pub mod pallet {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
 			let whitelist = <WhitelistedCreators<T>>::get();
+			let whitelist_disabled = <DisableWhitelistCheck<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create(
@@ -323,6 +324,7 @@ pub mod pallet {
 				nonce,
 				access_list,
 				whitelist,
+				whitelist_disabled,
 				is_transactional,
 				validate,
 				None,
@@ -400,6 +402,7 @@ pub mod pallet {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
 			let whitelist = <WhitelistedCreators<T>>::get();
+			let whitelist_disabled = <DisableWhitelistCheck<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create2(
@@ -413,6 +416,7 @@ pub mod pallet {
 				nonce,
 				access_list,
 				whitelist,
+				whitelist_disabled,
 				is_transactional,
 				validate,
 				None,
@@ -475,6 +479,16 @@ pub mod pallet {
 			ensure_root(origin)?;
 
 			<WhitelistedCreators<T>>::put(new);
+
+			Ok(())
+		}
+
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn disable_whitelist(origin: OriginFor<T>, disabled: bool) -> DispatchResult {
+			ensure_root(origin)?;
+
+			<DisableWhitelistCheck<T>>::put(disabled);
 
 			Ok(())
 		}
@@ -606,6 +620,9 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type WhitelistedCreators<T: Config> = StorageValue<_, Vec<H160>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type DisableWhitelistCheck<T: Config> = StorageValue<_, bool, ValueQuery>;
 }
 
 /// Type alias for currency balance.
