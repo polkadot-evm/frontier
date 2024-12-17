@@ -44,7 +44,6 @@ members = [
 	"test-utils/client",
 	"test-utils/runtime",
 	"test-utils/runtime/client",
-	"test-utils/runtime/transaction-pool",
 ]
 resolver = "2"
 
@@ -167,7 +166,6 @@ substrate-wasm-builder = { version = "24.0.0", default-features = false }
 substrate-test-client = { path = "test-utils/client", version = "2.0.1" }
 substrate-test-runtime = { path = "test-utils/runtime", version = "2.0.0" }
 substrate-test-runtime-client = { path = "test-utils/runtime/client", version = "2.0.0" }
-substrate-test-runtime-transaction-pool = { path = "test-utils/runtime/transaction-pool" }
 substrate-test-utils = { path = "test-utils" }
 # XCM
 xcm = { version = "14.2.0", package = "staging-xcm", default-features = false }

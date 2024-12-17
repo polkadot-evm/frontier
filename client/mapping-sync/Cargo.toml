@@ -43,7 +43,7 @@ sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 sp-core = { workspace = true, features = ["default"] }
 sp-io = { workspace = true }
-substrate-test-runtime-client = { path = "../../test-utils/runtime/client", version = "2.0.0" }
+substrate-test-runtime-client = { workspace = true }
 # Frontier
 fp-consensus = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
