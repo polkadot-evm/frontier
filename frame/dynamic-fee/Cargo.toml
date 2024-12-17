@@ -29,7 +29,7 @@ sp-io = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
 
 [features]
-default = [ "std" ]
+default = ["std"]
 std = [
 	"scale-codec/std",
 	"scale-info/std",

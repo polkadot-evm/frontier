@@ -68,7 +68,7 @@ tempfile = "3.10.1"
 sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
-substrate-test-runtime-client ={ workspace = true }
+substrate-test-runtime-client = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 

@@ -35,7 +35,6 @@ sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
-
 # Frontier
 fc-api = { workspace = true }
 fc-db = { workspace = true, features = ["rocksdb"] }
