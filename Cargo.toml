@@ -1,46 +1,45 @@
 [workspace]
 members = [
-	# "frame/base-fee",
-	# "frame/dynamic-fee",
-	# "frame/ethereum",
-	# "frame/evm",
-	# "frame/evm/precompile/sha3fips",
-	# "frame/evm/precompile/simple",
-	# "frame/evm/precompile/modexp",
-	# "frame/evm/precompile/ed25519",
-	# "frame/evm/precompile/bn128",
-	# "frame/evm/precompile/blake2",
-	# "frame/evm/precompile/bw6761",
-	# "frame/evm/precompile/bls12377",
-	# "frame/evm/precompile/bls12381",
-	# "frame/evm/precompile/dispatch",
-	# "frame/evm/precompile/curve25519",
-	# "frame/evm/precompile/storage-cleaner",
-	# "frame/evm-chain-id",
-	# "frame/hotfix-sufficients",
-	# "client/api",
-	# "client/consensus",
-	# "client/rpc-core",
-	# "client/rpc",
-	# "client/rpc-v2",
-	# "client/rpc-v2/api",
-	# "client/rpc-v2/types",
-	# "client/db",
-	# "client/storage",
-	# "client/mapping-sync",
-	# "primitives/account",
-	# "primitives/consensus",
-	# "primitives/dynamic-fee",
-	# "primitives/evm",
-	# "primitives/rpc",
-	# "primitives/self-contained",
-	# "template/node",
-	# "template/runtime",
-	# "precompiles",
-	# "precompiles/macro",
-	# "precompiles/tests-external",
+	"frame/base-fee",
+	"frame/dynamic-fee",
+	"frame/ethereum",
+	"frame/evm",
+	"frame/evm/precompile/sha3fips",
+	"frame/evm/precompile/simple",
+	"frame/evm/precompile/modexp",
+	"frame/evm/precompile/ed25519",
+	"frame/evm/precompile/bn128",
+	"frame/evm/precompile/blake2",
+	"frame/evm/precompile/bw6761",
+	"frame/evm/precompile/bls12377",
+	"frame/evm/precompile/bls12381",
+	"frame/evm/precompile/dispatch",
+	"frame/evm/precompile/curve25519",
+	"frame/evm/precompile/storage-cleaner",
+	"frame/evm-chain-id",
+	"frame/hotfix-sufficients",
+	"client/api",
+	"client/consensus",
+	"client/rpc-core",
+	"client/rpc",
+	"client/rpc-v2",
+	"client/rpc-v2/api",
+	"client/rpc-v2/types",
+	"client/db",
+	"client/storage",
+	"client/mapping-sync",
+	"primitives/account",
+	"primitives/consensus",
+	"primitives/dynamic-fee",
+	"primitives/evm",
+	"primitives/rpc",
+	"primitives/self-contained",
+	"template/node",
+	"template/runtime",
+	"precompiles",
+	"precompiles/macro",
+	"precompiles/tests-external",
 	"test-utils",
-	# "test-utils/cli",
 	"test-utils/client",
 	"test-utils/runtime",
 	"test-utils/runtime/client",
@@ -104,7 +103,7 @@ sc-keystore = { version = "33.0.0", default-features = false }
 sc-network = { version = "0.45.0", default-features = false }
 sc-network-common = { version = "0.44.0", default-features = false }
 sc-network-sync = { version = "0.44.0", default-features = false }
-sc-offchain = { version = "34.0.0", default-features = false }
+sc-offchain = { version = "40.0.0", default-features = false }
 sc-rpc = { version = "40.0.0", default-features = false }
 sc-rpc-api = { version = "0.44.0", default-features = false }
 sc-service = { version = "0.46.0", default-features = false }
@@ -158,11 +157,11 @@ pallet-transaction-payment-rpc-runtime-api = { version = "38.0.0", default-featu
 pallet-utility = { version = "38.0.0", default-features = false }
 pallet-babe = { version = "38.0.0", default-features = false }
 # Substrate Utility
-frame-benchmarking-cli = { default-features = false, version = "42.0.1" }
-prometheus-endpoint = { default-features = false, package = "substrate-prometheus-endpoint", version = "0.17.0" }
+frame-benchmarking-cli = { version = "43.0.0", default-features = false }
+prometheus-endpoint = { version = "0.17.0", default-features = false, package = "substrate-prometheus-endpoint" }
 substrate-build-script-utils = { version = "11.0.0", default-features = false }
 substrate-frame-rpc-system = { version = "39.0.0", default-features = false }
-substrate-wasm-builder = { version = "24.0.0", default-features = false }
+substrate-wasm-builder = { version = "24.0.1", default-features = false }
 substrate-test-client = { path = "test-utils/client", version = "2.0.1" }
 substrate-test-runtime = { path = "test-utils/runtime", version = "2.0.0" }
 substrate-test-runtime-client = { path = "test-utils/runtime/client", version = "2.0.0" }
@@ -179,57 +178,51 @@ ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
 
 # Frontier Client
-# fc-api = { path = "client/api" }
-# fc-cli = { path = "client/cli", default-features = false }
-# fc-consensus = { path = "client/consensus" }
-# fc-db = { path = "client/db", default-features = false }
-# fc-mapping-sync = { path = "client/mapping-sync", default-features = false }
-# fc-rpc = { path = "client/rpc", default-features = false }
-# fc-rpc-core = { path = "client/rpc-core" }
-# fc-rpc-v2 = { path = "client/rpc-v2" }
-# fc-rpc-v2-api = { path = "client/rpc-v2/api" }
-# fc-rpc-v2-types = { path = "client/rpc-v2/types" }
-# fc-storage = { path = "client/storage" }
+fc-api = { path = "client/api" }
+fc-cli = { path = "client/cli", default-features = false }
+fc-consensus = { path = "client/consensus" }
+fc-db = { path = "client/db", default-features = false }
+fc-mapping-sync = { path = "client/mapping-sync", default-features = false }
+fc-rpc = { path = "client/rpc", default-features = false }
+fc-rpc-core = { path = "client/rpc-core" }
+fc-rpc-v2 = { path = "client/rpc-v2" }
+fc-rpc-v2-api = { path = "client/rpc-v2/api" }
+fc-rpc-v2-types = { path = "client/rpc-v2/types" }
+fc-storage = { path = "client/storage" }
 # Frontier Primitive
-# fp-account = { path = "primitives/account", default-features = false }
-# fp-consensus = { path = "primitives/consensus", default-features = false }
-# fp-dynamic-fee = { path = "primitives/dynamic-fee", default-features = false }
-# fp-ethereum = { path = "primitives/ethereum", default-features = false }
-# fp-evm = { path = "primitives/evm", default-features = false }
-# fp-rpc = { path = "primitives/rpc", default-features = false }
-# fp-self-contained = { path = "primitives/self-contained", default-features = false }
-# fp-storage = { path = "primitives/storage", default-features = false }
+fp-account = { path = "primitives/account", default-features = false }
+fp-consensus = { path = "primitives/consensus", default-features = false }
+fp-dynamic-fee = { path = "primitives/dynamic-fee", default-features = false }
+fp-ethereum = { path = "primitives/ethereum", default-features = false }
+fp-evm = { path = "primitives/evm", default-features = false }
+fp-rpc = { path = "primitives/rpc", default-features = false }
+fp-self-contained = { path = "primitives/self-contained", default-features = false }
+fp-storage = { path = "primitives/storage", default-features = false }
 # Frontier FRAME
-# pallet-base-fee = { path = "frame/base-fee", default-features = false }
-# pallet-dynamic-fee = { path = "frame/dynamic-fee", default-features = false }
-# pallet-ethereum = { path = "frame/ethereum", default-features = false }
-# pallet-evm = { path = "frame/evm", default-features = false }
-# pallet-evm-chain-id = { path = "frame/evm-chain-id", default-features = false }
-# pallet-evm-precompile-modexp = { path = "frame/evm/precompile/modexp", default-features = false }
-# pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", default-features = false }
-# pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
-# pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
-# pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
+pallet-base-fee = { path = "frame/base-fee", default-features = false }
+pallet-dynamic-fee = { path = "frame/dynamic-fee", default-features = false }
+pallet-ethereum = { path = "frame/ethereum", default-features = false }
+pallet-evm = { path = "frame/evm", default-features = false }
+pallet-evm-chain-id = { path = "frame/evm-chain-id", default-features = false }
+pallet-evm-precompile-modexp = { path = "frame/evm/precompile/modexp", default-features = false }
+pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", default-features = false }
+pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
+pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
+pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Utility
-# precompile-utils = { path = "precompiles", default-features = false }
+precompile-utils = { path = "precompiles", default-features = false }
 # Frontier Template
-# frontier-template-runtime = { path = "template/runtime", default-features = false }
+frontier-template-runtime = { path = "template/runtime", default-features = false }
 
 array-bytes = { version = "6.2.2", default-features = false }
 codec = { version = "3.6.12", default-features = false, package = "parity-scale-codec" }
 sp-application-crypto = { version = "38.0.0", default-features = false }
-sp-consensus-babe = { default-features = false, version = "0.40.0" }
-sp-trie = { default-features = false, version = "37.0.0" }
+sp-consensus-babe = { version = "0.40.0", default-features = false }
+sp-trie = { version = "37.0.0", default-features = false }
 tracing = { version = "0.1.37", default-features = false }
 trie-db = { version = "0.29.0", default-features = false }
-sc-executor-common = { default-features = false, version = "0.35.0" }
-sp-tracing = { default-features = false, version = "17.0.0" }
-
-# [workspace.dev-dependencies]
-# substrate-test-client = { path = "test-utils/client", version = "2.0.1", default-features = false }
-# substrate-test-runtime = { path = "test-utils/runtime", version = "2.0.0", default-features = false }
-# substrate-test-runtime-client = { path = "test-utils/runtime/client", version = "2.0.0", default-features = false }
-
+sc-executor-common = { version = "0.35.0", default-features = false }
+sp-tracing = { version = "17.0.1", default-features = false }
 
 [profile.release]
 # Substrate runtime requires unwinding.
