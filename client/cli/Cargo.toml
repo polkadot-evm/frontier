@@ -34,7 +34,8 @@ sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 sp-io = { workspace = true }
-substrate-test-runtime-client = { workspace = true }
+substrate-test-runtime-client = { path = "../../test-utils/runtime/client", version = "2.0.0" }
+
 # Frontier
 fc-api = { workspace = true }
 fc-db = { workspace = true, features = ["rocksdb"] }
