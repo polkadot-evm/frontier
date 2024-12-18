@@ -59,7 +59,6 @@ impl Default for GenesisStorageBuilder {
 				Sr25519Keyring::Charlie.into(),
 			],
 			(0..16_usize)
-				.into_iter()
 				.map(|i| AccountKeyring::numeric(i).public())
 				.chain(vec![
 					AccountKeyring::Alice.into(),
@@ -93,7 +92,7 @@ impl GenesisStorageBuilder {
 
 	/// Override default wasm code to be placed into RuntimeGenesisConfig.
 	pub fn with_wasm_code(mut self, wasm_code: &Option<Vec<u8>>) -> Self {
-		self.wasm_code = wasm_code.clone();
+		self.wasm_code.clone_from(wasm_code);
 		self
 	}
 
@@ -113,7 +112,7 @@ impl GenesisStorageBuilder {
 			.authorities
 			.clone()
 			.into_iter()
-			.map(|id| sr25519::Public::from(id))
+			.map(sr25519::Public::from)
 			.collect();
 
 		RuntimeGenesisConfig {
@@ -181,7 +180,5 @@ pub fn insert_genesis_block(storage: &mut Storage) -> sp_core::hash::H256 {
 		sp_runtime::StateVersion::V1,
 	);
 	let block: crate::Block = construct_genesis_block(state_root, StateVersion::V1);
-	let genesis_hash = block.header.hash();
-
-	genesis_hash
+	block.header.hash()
 }

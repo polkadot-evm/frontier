@@ -89,7 +89,7 @@ impl<Block: BlockT, ExecutorDispatch, G: GenesisInit>
 {
 	/// Create new `TestClientBuilder` with default backend.
 	pub fn with_default_backend() -> Self {
-		let backend = Arc::new(Backend::new_test(std::u32::MAX, std::u64::MAX));
+		let backend = Arc::new(Backend::new_test(u32::MAX, u64::MAX));
 		Self::with_backend(backend)
 	}
 
@@ -253,6 +253,7 @@ impl<Block: BlockT, ExecutorDispatch, Backend, G: GenesisInit>
 	}
 }
 
+#[allow(clippy::type_complexity)]
 impl<Block: BlockT, H, Backend, G: GenesisInit>
 	TestClientBuilder<Block, client::LocalCallExecutor<Block, Backend, WasmExecutor<H>>, Backend, G>
 {
@@ -348,7 +349,7 @@ impl RpcHandlersExt for RpcHandlers {
 						"params": ["0x{}"],
 						"id": 0
 					}}"#,
-				array_bytes::bytes2hex("", &extrinsic.encode())
+				array_bytes::bytes2hex("", extrinsic.encode())
 			))
 			.await
 			.expect("valid JSON-RPC request object; qed");

@@ -200,12 +200,10 @@ pub mod pallet {
 					sp_io::storage::get(&next);
 
 					next_key = next;
+				} else if panic_at_end {
+					return Ok(());
 				} else {
-					if panic_at_end {
-						return Ok(());
-					} else {
-						panic!("Could not read {read} times from the state");
-					}
+					panic!("Could not read {read} times from the state");
 				}
 			}
 

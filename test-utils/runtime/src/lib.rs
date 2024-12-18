@@ -191,6 +191,7 @@ decl_runtime_apis! {
 		fn benchmark_add_one(val: &u64) -> u64;
 		/// A benchmark function that adds one to each value in the given vector and returns the
 		/// result.
+		#[allow(clippy::ptr_arg)]
 		fn benchmark_vector_add_one(vec: &Vec<u64>) -> Vec<u64>;
 		/// A function for that the signature changed in version `2`.
 		#[changed_in(2)]
@@ -372,7 +373,7 @@ pub mod currency {
 }
 
 parameter_types! {
-	pub const ExistentialDeposit: Balance = 1 * currency::DOLLARS;
+	pub const ExistentialDeposit: Balance = currency::DOLLARS;
 	// For weight estimation, we assume that the most locks on an individual account will be 50.
 	// This number may need to be adjusted in the future if this assumption no longer holds true.
 	pub const MaxLocks: u32 = 50;
@@ -627,7 +628,7 @@ impl_runtime_apis! {
 		}
 
 		fn authorities() -> Vec<AuraId> {
-			SubstrateTest::authorities().into_iter().map(|auth| AuraId::from(auth)).collect()
+			SubstrateTest::authorities().into_iter().map(AuraId::from).collect()
 		}
 	}
 
@@ -734,8 +735,8 @@ impl_runtime_apis! {
 				let patch = match name.try_into() {
 					Ok("staging") => {
 						let endowed_accounts: Vec<AccountId> = vec![
-							AccountKeyring::Bob.public().into(),
-							AccountKeyring::Charlie.public().into(),
+							AccountKeyring::Bob.public(),
+							AccountKeyring::Charlie.public(),
 						];
 
 						json!({
@@ -881,6 +882,7 @@ pub mod storage_key_generator {
 		x.hex(Default::default())
 	}
 
+	#[allow(clippy::ptr_arg)]
 	fn concat_hashes(input: &Vec<&[u8]>) -> String {
 		input
 			.iter()
@@ -927,7 +929,6 @@ pub mod storage_key_generator {
 		expected_keys.extend(literals.into_iter().map(hex));
 
 		let balances_map_keys = (0..16_usize)
-			.into_iter()
 			.map(|i| AccountKeyring::numeric(i).public().to_vec())
 			.chain(vec![
 				AccountKeyring::Alice.public().to_vec(),
@@ -1156,10 +1157,7 @@ mod tests {
 
 	pub fn new_test_ext() -> sp_io::TestExternalities {
 		genesismap::GenesisStorageBuilder::new(
-			vec![
-				AccountKeyring::One.public().into(),
-				AccountKeyring::Two.public().into(),
-			],
+			vec![AccountKeyring::One.public(), AccountKeyring::Two.public()],
 			vec![AccountKeyring::One.into(), AccountKeyring::Two.into()],
 			1000 * currency::DOLLARS,
 		)
@@ -1253,8 +1251,8 @@ mod tests {
 				16
 			);
 
-			assert_eq!(
-				CheckSubstrateCall {}
+			assert!(
+				!CheckSubstrateCall {}
 					.validate(
 						&x,
 						&ExtrinsicBuilder::new_call_do_not_propagate()
@@ -1264,8 +1262,7 @@ mod tests {
 						len
 					)
 					.unwrap()
-					.propagate,
-				false
+					.propagate
 			);
 		})
 	}
@@ -1371,7 +1368,7 @@ mod tests {
 			let r = Option::<Vec<u8>>::decode(&mut &r[..])
 				.unwrap()
 				.expect("default config is there");
-			let json = String::from_utf8(r.into()).expect("returned value is json. qed.");
+			let json = String::from_utf8(r).expect("returned value is json. qed.");
 
 			let expected = r#"{"system":{},"babe":{"authorities":[],"epochConfig":{"c":[1,4],"allowed_slots":"PrimaryAndSecondaryVRFSlots"}},"substrateTest":{"authorities":[]},"balances":{"balances":[]}}"#;
 			assert_eq!(expected.to_string(), json);
@@ -1381,7 +1378,7 @@ mod tests {
 		fn preset_names_listing_works() {
 			sp_tracing::try_init_simple();
 			let mut t = BasicExternalities::new_empty();
-			let r = executor_call(&mut t, "GenesisBuilder_preset_names", &vec![]).unwrap();
+			let r = executor_call(&mut t, "GenesisBuilder_preset_names", &[]).unwrap();
 			let r = Vec::<PresetId>::decode(&mut &r[..]).unwrap();
 			assert_eq!(
 				r,
@@ -1403,8 +1400,7 @@ mod tests {
 				)
 				.unwrap();
 				let r = Option::<Vec<u8>>::decode(&mut &r[..]).unwrap();
-				let json =
-					String::from_utf8(r.unwrap().into()).expect("returned value is json. qed.");
+				let json = String::from_utf8(r.unwrap()).expect("returned value is json. qed.");
 				log::info!("json: {:#?}", json);
 				assert_eq!(expected.to_string(), json);
 			};
@@ -1498,6 +1494,7 @@ mod tests {
 				sp_tracing::try_init_simple();
 				let mut file = fs::OpenOptions::new()
 					.create(true)
+					.truncate(true)
 					.write(true)
 					.open("/tmp/default_genesis_config.json")
 					.unwrap();

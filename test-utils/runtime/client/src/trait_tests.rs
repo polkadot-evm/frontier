@@ -36,9 +36,9 @@ use sp_runtime::traits::Block as BlockT;
 use substrate_test_runtime::Transfer;
 
 /// helper to test the `leaves` implementation for various backends
-pub fn test_leaves_for_backend<B: 'static>(backend: Arc<B>)
+pub fn test_leaves_for_backend<B>(backend: Arc<B>)
 where
-	B: backend::Backend<substrate_test_runtime::Block>,
+	B: 'static + backend::Backend<substrate_test_runtime::Block>,
 {
 	// block tree:
 	// G -> A1 -> A2 -> A3 -> A4 -> A5
@@ -217,9 +217,9 @@ where
 }
 
 /// helper to test the `children` implementation for various backends
-pub fn test_children_for_backend<B: 'static>(backend: Arc<B>)
+pub fn test_children_for_backend<B>(backend: Arc<B>)
 where
-	B: backend::LocalBackend<substrate_test_runtime::Block>,
+	B: 'static + backend::LocalBackend<substrate_test_runtime::Block>,
 {
 	// block tree:
 	// G -> A1 -> A2 -> A3 -> A4 -> A5
@@ -387,9 +387,9 @@ where
 	assert_eq!(vec![b3.hash(), c3.hash()], children4);
 }
 
-pub fn test_blockchain_query_by_number_gets_canonical<B: 'static>(backend: Arc<B>)
+pub fn test_blockchain_query_by_number_gets_canonical<B>(backend: Arc<B>)
 where
-	B: backend::LocalBackend<substrate_test_runtime::Block>,
+	B: 'static + backend::LocalBackend<substrate_test_runtime::Block>,
 {
 	// block tree:
 	// G -> A1 -> A2 -> A3 -> A4 -> A5

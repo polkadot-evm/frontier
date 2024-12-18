@@ -367,7 +367,7 @@ fn tips_update_works() {
 	let test_value_path = test_json_file(&tmp, &tips_test_value());
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
-	let mut client = Arc::new(client);
+	let client = Arc::new(client);
 	// Create a temporary frontier secondary DB.
 	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
 		.expect("a temporary db was created");
@@ -394,7 +394,7 @@ fn tips_delete_works() {
 	let tmp = tempdir().expect("create a temporary directory");
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
-	let mut client = Arc::new(client);
+	let client = Arc::new(client);
 	// Create a temporary frontier secondary DB.
 	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
 		.expect("a temporary db was created");
