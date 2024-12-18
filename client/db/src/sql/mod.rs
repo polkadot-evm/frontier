@@ -820,6 +820,15 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 		self
 	}
 
+	async fn first_block_hash(&self) -> Result<Block::Hash, String> {
+		// Retrieves the block hash for the latest indexed block, maybe it's not canon.
+		sqlx::query("SELECT substrate_block_hash FROM blocks ORDER BY block_number ASC LIMIT 1")
+			.fetch_one(self.pool())
+			.await
+			.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+			.map_err(|e| format!("Failed to fetch oldest block hash: {}", e))
+	}
+
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
 		// Retrieves the block hash for the latest indexed block, maybe it's not canon.
 		sqlx::query("SELECT substrate_block_hash FROM blocks ORDER BY block_number DESC LIMIT 1")
