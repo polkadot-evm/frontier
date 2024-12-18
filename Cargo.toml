@@ -82,7 +82,7 @@ rlp = { version = "0.5.2", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11.3", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
-serde_json = "1.0"
+serde_json = { version = "1.0", default-features = false }
 similar-asserts = "1.6.0"
 sqlx = { version = "0.7.4", default-features = false, features = ["macros"] }
 thiserror = "1.0"
@@ -131,7 +131,7 @@ sp-externalities = { version = "0.29.0", default-features = false }
 sp-genesis-builder = { version = "0.15.1", default-features = false }
 sp-inherents = { version = "34.0.0", default-features = false }
 sp-io = { version = "38.0.0", default-features = false }
-sp-keyring = { version = "39.0.0" }
+sp-keyring = { version = "39.0.0", default-features = false }
 sp-keystore = { version = "0.40.0", default-features = false }
 sp-offchain = { version = "34.0.0", default-features = false }
 sp-runtime = { version = "39.0.1", default-features = false }
