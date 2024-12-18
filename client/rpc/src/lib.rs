@@ -389,7 +389,7 @@ mod tests {
 			None,
 		);
 
-		let client = Arc::new(client);
+		let mut client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
 		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
