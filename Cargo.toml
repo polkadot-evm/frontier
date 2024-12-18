@@ -52,8 +52,8 @@ edition = "2021"
 repository = "https://github.com/paritytech/frontier/"
 
 [workspace.dependencies]
-async-trait = "0.1"
 array-bytes = { version = "6.2.2", default-features = false }
+async-trait = "0.1"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.5", features = ["derive", "deprecated"] }
 codec = { version = "3.6.12", default-features = false, package = "parity-scale-codec" }
@@ -121,8 +121,8 @@ sp-application-crypto = { version = "38.0.0", default-features = false }
 sp-block-builder = { version = "34.0.0", default-features = false }
 sp-blockchain = { version = "37.0.1" }
 sp-consensus = { version = "0.40.0" }
-sp-consensus-babe = { version = "0.40.0", default-features = false }
 sp-consensus-aura = { version = "0.40.0", default-features = false }
+sp-consensus-babe = { version = "0.40.0", default-features = false }
 sp-consensus-grandpa = { version = "21.0.0", default-features = false }
 sp-core = { version = "34.0.0", default-features = false }
 sp-crypto-hashing = { version = "0.1.0", default-features = false }
@@ -149,12 +149,13 @@ sp-weights = { version = "31.0.0", default-features = false }
 # Substrate FRAME
 frame-benchmarking = { version = "38.0.0", default-features = false }
 frame-executive = { version = "38.0.0", default-features = false }
+frame-metadata-hash-extension = { version = "0.6.0", default-features = false }
 frame-support = { version = "38.0.0", default-features = false }
 frame-system = { version = "38.0.0", default-features = false }
 frame-system-benchmarking = { version = "38.0.0", default-features = false }
 frame-system-rpc-runtime-api = { version = "34.0.0", default-features = false }
-frame-metadata-hash-extension = { version = "0.6.0", default-features = false }
 pallet-aura = { version = "37.0.0", default-features = false }
+pallet-babe = { version = "38.0.0", default-features = false }
 pallet-balances = { version = "39.0.0", default-features = false }
 pallet-grandpa = { version = "38.0.0", default-features = false }
 pallet-sudo = { version = "38.0.0", default-features = false }
@@ -163,20 +164,19 @@ pallet-transaction-payment = { version = "38.0.0", default-features = false }
 pallet-transaction-payment-rpc = { version = "41.0.0" }
 pallet-transaction-payment-rpc-runtime-api = { version = "38.0.0", default-features = false }
 pallet-utility = { version = "38.0.0", default-features = false }
-pallet-babe = { version = "38.0.0", default-features = false }
 # Substrate Utility
 frame-benchmarking-cli = { version = "43.0.0" }
 prometheus-endpoint = { version = "0.17.0", package = "substrate-prometheus-endpoint" }
 substrate-build-script-utils = { version = "11.0.0" }
 substrate-frame-rpc-system = { version = "39.0.0" }
-substrate-wasm-builder = { version = "24.0.1" }
 substrate-test-client = { path = "test-utils/client", version = "2.0.1" }
 substrate-test-runtime = { path = "test-utils/runtime", version = "2.0.0" }
 substrate-test-runtime-client = { path = "test-utils/runtime/client", version = "2.0.0" }
 substrate-test-utils = { path = "test-utils" }
+substrate-wasm-builder = { version = "24.0.1" }
 # XCM
-xcm = { version = "14.2.0", package = "staging-xcm", default-features = false }
 trybuild = { version = "1.0.88" }
+xcm = { version = "14.2.0", package = "staging-xcm", default-features = false }
 # Arkworks
 ark-bls12-377 = { version = "0.4.0", default-features = false, features = ["curve"] }
 ark-bls12-381 = { version = "0.4.0", default-features = false, features = ["curve"] }
