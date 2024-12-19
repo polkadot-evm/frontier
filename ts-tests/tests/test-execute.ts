@@ -1,4 +1,4 @@
-import { assert, expect } from "chai";
+import {  expect } from "chai";
 import { step } from "mocha-steps";
 import { ETH_BLOCK_GAS_LIMIT, GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
 
