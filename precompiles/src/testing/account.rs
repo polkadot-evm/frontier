@@ -19,7 +19,7 @@
 use pallet_evm::AddressMapping;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sp_core::{Decode, Encode, MaxEncodedLen, H160, H256};
+use sp_core::{keccak_256, Decode, Encode, MaxEncodedLen, H160, H256};
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 #[derive(Serialize, Deserialize, derive_more::Display)]
@@ -96,6 +96,94 @@ impl AddressMapping<MockAccount> for MockAccount {
 impl sp_runtime::traits::Convert<H160, MockAccount> for MockAccount {
 	fn convert(address: H160) -> MockAccount {
 		address.into()
+	}
+}
+
+#[derive(
+	Eq,
+	PartialEq,
+	Clone,
+	Encode,
+	Decode,
+	sp_core::RuntimeDebug,
+	TypeInfo,
+	Serialize,
+	Deserialize
+)]
+pub struct MockSignature(sp_core::ecdsa::Signature);
+
+impl From<sp_core::ecdsa::Signature> for MockSignature {
+	fn from(x: sp_core::ecdsa::Signature) -> Self {
+		MockSignature(x)
+	}
+}
+
+impl From<sp_runtime::MultiSignature> for MockSignature {
+	fn from(signature: sp_runtime::MultiSignature) -> Self {
+		match signature {
+			sp_runtime::MultiSignature::Ed25519(_) => {
+				panic!("Ed25519 not supported for MockSignature")
+			}
+			sp_runtime::MultiSignature::Sr25519(_) => {
+				panic!("Sr25519 not supported for MockSignature")
+			}
+			sp_runtime::MultiSignature::Ecdsa(sig) => Self(sig),
+		}
+	}
+}
+
+impl sp_runtime::traits::Verify for MockSignature {
+	type Signer = MockSigner;
+	fn verify<L: sp_runtime::traits::Lazy<[u8]>>(&self, mut msg: L, signer: &MockAccount) -> bool {
+		let mut m = [0u8; 32];
+		m.copy_from_slice(keccak_256(msg.get()).as_slice());
+		match sp_io::crypto::secp256k1_ecdsa_recover(self.0.as_ref(), &m) {
+			Ok(pubkey) => {
+				MockAccount(sp_core::H160::from_slice(
+					&keccak_256(&pubkey).as_slice()[12..32],
+				)) == *signer
+			}
+			Err(sp_io::EcdsaVerifyError::BadRS) => {
+				log::error!(target: "evm", "Error recovering: Incorrect value of R or S");
+				false
+			}
+			Err(sp_io::EcdsaVerifyError::BadV) => {
+				log::error!(target: "evm", "Error recovering: Incorrect value of V");
+				false
+			}
+			Err(sp_io::EcdsaVerifyError::BadSignature) => {
+				log::error!(target: "evm", "Error recovering: Invalid signature");
+				false
+			}
+		}
+	}
+}
+
+/// Public key for an Ethereum compatible account
+#[derive(
+	Eq,
+	PartialEq,
+	Ord,
+	PartialOrd,
+	Clone,
+	Encode,
+	Decode,
+	sp_core::RuntimeDebug,
+	TypeInfo
+)]
+#[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]
+pub struct MockSigner([u8; 20]);
+
+impl sp_runtime::traits::IdentifyAccount for MockSigner {
+	type AccountId = MockAccount;
+	fn into_account(self) -> MockAccount {
+		MockAccount(self.0.into())
+	}
+}
+
+impl From<[u8; 20]> for MockSigner {
+	fn from(x: [u8; 20]) -> Self {
+		MockSigner(x)
 	}
 }
 
