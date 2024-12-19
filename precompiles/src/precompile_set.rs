@@ -716,7 +716,7 @@ where
 				Ok(mut recursion_level_map) => {
 					let recursion_level = match recursion_level_map.get_mut(&code_address) {
 						Some(recursion_level) => recursion_level,
-						None => return Some(Err(revert("Couldn't retreive precompile nesting"))),
+						None => return Some(Err(revert("Couldn't retrieve precompile nesting"))),
 					};
 
 					*recursion_level -= 1;
