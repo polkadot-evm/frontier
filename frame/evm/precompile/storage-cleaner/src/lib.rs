@@ -91,7 +91,7 @@ where
 				.count();
 			deleted_entries = deleted_entries.saturating_add(deleted as u64);
 
-			// Check if the storage of this contract has been completly removed
+			// Check if the storage of this contract has been completely removed
 			if pallet_evm::AccountStorages::<Runtime>::iter_key_prefix(address)
 				.next()
 				.is_none()
