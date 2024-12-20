@@ -62,7 +62,7 @@ hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
 impl-serde = { version = "0.4.0", default-features = false }
-impl-trait-for-tuples = "0.2.1"
+impl-trait-for-tuples = "0.2.3"
 jsonrpsee = { version = "0.24.7" }
 jsonrpsee-core = { version = "0.24.4" }
 kvdb-rocksdb = "0.19.0"
