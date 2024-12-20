@@ -659,7 +659,7 @@ dependencies = [
  "lazy_static",
  "lazycell",
  "peeking_take_while",
- "prettyplease 0.2.24",
+ "prettyplease 0.2.25",
  "proc-macro2",
  "quote",
  "regex",
@@ -4941,7 +4941,7 @@ dependencies = [
  "basic-toml",
  "diff",
  "glob",
- "prettyplease 0.2.24",
+ "prettyplease 0.2.25",
  "serde",
  "serde_derive",
  "serde_json",
@@ -6657,7 +6657,7 @@ dependencies = [
  "macrotest",
  "num_enum",
  "precompile-utils",
- "prettyplease 0.2.24",
+ "prettyplease 0.2.25",
  "proc-macro2",
  "quote",
  "sp-crypto-hashing",
@@ -6737,9 +6737,9 @@ dependencies = [
 
 [[package]]
 name = "prettyplease"
-version = "0.2.24"
+version = "0.2.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "910d41a655dac3b764f1ade94821093d3610248694320cd072303a8eedcf221d"
+checksum = "64d1ec885c64d0457d564db4ec299b2dae3f9c02808b8ad9c3a089c591b18033"
 dependencies = [
  "proc-macro2",
  "syn 2.0.90",
@@ -6945,7 +6945,7 @@ dependencies = [
  "multimap",
  "once_cell",
  "petgraph",
- "prettyplease 0.2.24",
+ "prettyplease 0.2.25",
  "prost 0.12.6",
  "prost-types 0.12.6",
  "regex",
