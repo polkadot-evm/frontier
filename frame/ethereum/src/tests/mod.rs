@@ -19,7 +19,7 @@ use frame_support::{
 	assert_err, assert_ok, dispatch::GetDispatchInfo, unsigned::TransactionValidityError,
 };
 use sp_runtime::{
-	traits::Applyable,
+	traits::Applicable,
 	transaction_validity::{InvalidTransaction, ValidTransactionBuilder},
 };
 use std::str::FromStr;
