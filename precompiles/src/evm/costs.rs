@@ -25,7 +25,7 @@ use sp_core::U256;
 
 pub fn log_costs(topics: usize, data_len: usize) -> EvmResult<u64> {
 	// Cost calculation is copied from EVM code that is not publicly exposed by the crates.
-	// https://github.com/rust-blockchain/evm/blob/master/gasometer/src/costs.rs#L148
+	// https://github.com/rust-ethereum/evm/blob/master/src/standard/gasometer/costs.rs#L148
 
 	const G_LOG: u64 = 375;
 	const G_LOGDATA: u64 = 8;
