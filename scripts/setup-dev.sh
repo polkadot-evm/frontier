@@ -12,12 +12,18 @@ function install_rustup {
 }
 
 function install_cargo_binary {
+  if [ -z "$1" ]; then
+    echo "Error: Crate name is required."
+    return 1
+  fi
+
   CRATE_NAME=$1
   BIN_NAME=${2:-$1}
+
   if command -v "$BIN_NAME" &> /dev/null; then
     echo "$CRATE_NAME is already installed"
   else
-    cargo install "$CRATE_NAME" --force --locked
+    cargo install "$CRATE_NAME" --locked
   fi
 }
 
