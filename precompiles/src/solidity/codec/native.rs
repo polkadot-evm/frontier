@@ -322,7 +322,7 @@ impl<T: Codec, S: Get<u32>> Codec for BoundedVec<T, S> {
 
 		for inner in value {
 			// Any offset in items are relative to the start of the item instead of the
-			// start of the array. However if there is offseted data it must but appended after
+			// start of the array. However if there is offset data it must but appended after
 			// all items (offsets) are written. We thus need to rely on `compute_offsets` to do
 			// that, and must store a "shift" to correct the offsets.
 			let shift = inner_writer.data.len();
