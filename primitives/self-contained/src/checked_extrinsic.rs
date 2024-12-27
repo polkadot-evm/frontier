@@ -15,7 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use frame_support::dispatch::{DispatchInfo, GetDispatchInfo};
+use frame_support::{
+	dispatch::{DispatchInfo, GetDispatchInfo, PostDispatchInfo},
+	pallet_prelude::Weight,
+};
 use sp_runtime::{
 	traits::{
 		self, DispatchInfoOf, Dispatchable, MaybeDisplay, Member, PostDispatchInfoOf,
@@ -62,7 +65,7 @@ impl<AccountId, Call, Extra, SelfContainedSignedInfo, Origin> traits::Applyable
 where
 	AccountId: Member + MaybeDisplay,
 	Call: Member
-		+ Dispatchable<RuntimeOrigin = Origin>
+		+ Dispatchable<RuntimeOrigin = Origin, PostInfo = PostDispatchInfo>
 		+ SelfContainedCall<SignedInfo = SelfContainedSignedInfo>,
 	Extra: SignedExtension<AccountId = AccountId, Call = Call>,
 	Origin: From<Option<AccountId>>,
@@ -148,7 +151,26 @@ where
 					TransactionValidityError::Invalid(InvalidTransaction::BadProof),
 				)?;
 				let post_info = match res {
-					Ok(info) => info,
+					Ok(PostDispatchInfo {
+						actual_weight,
+						pays_fee,
+					}) => {
+						if let Some(weight) = &actual_weight {
+							// Ethereum extrinsic size is accounted twice for proof size,
+							// so we need to substract it's size here.
+							PostDispatchInfo {
+								actual_weight: Some(
+									weight.saturating_sub(Weight::from_parts(0, len as u64)),
+								),
+								pays_fee,
+							}
+						} else {
+							PostDispatchInfo {
+								actual_weight,
+								pays_fee,
+							}
+						}
+					}
 					Err(err) => err.post_info,
 				};
 				Extra::post_dispatch(
