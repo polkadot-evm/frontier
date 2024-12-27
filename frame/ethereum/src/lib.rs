@@ -255,7 +255,8 @@ pub mod pallet {
 					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove),
 				));
 			}
-			Pending::<T>::kill();
+			// Reset the next transaction index
+			NextTxIndex::<T>::set(0);
 		}
 
 		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
@@ -348,10 +349,14 @@ pub mod pallet {
 		PreLogExists,
 	}
 
-	/// Current building block's transactions and receipts.
+	/// The next transcation index.
+	#[pallet::storage]
+	pub type NextTxIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
+
+	/// Mapping from transaction index to transaction in the current building block.
 	#[pallet::storage]
 	pub type Pending<T: Config> =
-		StorageValue<_, Vec<(Transaction, TransactionStatus, Receipt)>, ValueQuery>;
+		StorageMap<_, Identity, u32, (Transaction, TransactionStatus, Receipt), OptionQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
@@ -441,17 +446,19 @@ impl<T: Config> Pallet<T> {
 		let mut receipts = Vec::new();
 		let mut logs_bloom = Bloom::default();
 		let mut cumulative_gas_used = U256::zero();
-		for (transaction, status, receipt) in Pending::<T>::get() {
-			transactions.push(transaction);
-			statuses.push(status);
-			receipts.push(receipt.clone());
-			let (logs, used_gas) = match receipt {
-				Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
-					(d.logs.clone(), d.used_gas)
-				}
-			};
-			cumulative_gas_used = used_gas;
-			Self::logs_bloom(logs, &mut logs_bloom);
+		for tx_index in 0..NextTxIndex::<T>::get() {
+			if let Some((transaction, status, receipt)) = Pending::<T>::take(tx_index) {
+				transactions.push(transaction);
+				statuses.push(status);
+				receipts.push(receipt.clone());
+				let (logs, used_gas) = match receipt {
+					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
+						(d.logs.clone(), d.used_gas)
+					}
+				};
+				cumulative_gas_used = used_gas;
+				Self::logs_bloom(logs, &mut logs_bloom);
+			}
 		}
 
 		let ommers = Vec::<ethereum::Header>::new();
@@ -597,9 +604,8 @@ impl<T: Config> Pallet<T> {
 	) -> Result<(PostDispatchInfo, CallOrCreateInfo), DispatchErrorWithPostInfo> {
 		let (to, _, info) = Self::execute(source, &transaction, None)?;
 
-		let pending = Pending::<T>::get();
 		let transaction_hash = transaction.hash();
-		let transaction_index = pending.len() as u32;
+		let transaction_index = NextTxIndex::<T>::get();
 
 		let (reason, status, weight_info, used_gas, dest, extra_data) = match info.clone() {
 			CallOrCreateInfo::Call(info) => (
@@ -675,7 +681,9 @@ impl<T: Config> Pallet<T> {
 			};
 			let logs_bloom = status.logs_bloom;
 			let logs = status.clone().logs;
-			let cumulative_gas_used = if let Some((_, _, receipt)) = pending.last() {
+			let cumulative_gas_used = if let Some((_, _, receipt)) =
+				Pending::<T>::get(transaction_index.saturating_sub(1))
+			{
 				match receipt {
 					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
 						d.used_gas.saturating_add(used_gas.effective)
@@ -706,7 +714,8 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 
-		Pending::<T>::append((transaction, status, receipt));
+		Pending::<T>::insert(transaction_index, (transaction, status, receipt));
+		NextTxIndex::<T>::set(transaction_index + 1);
 
 		Self::deposit_event(Event::Executed {
 			from: source,
