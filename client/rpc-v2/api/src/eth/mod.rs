@@ -178,7 +178,7 @@ pub trait EthExecuteApi {
 		// block_overrides: Option<BlockOverrides>,
 	) -> RpcResult<Bytes>;
 
-	/// Generates and returns an estimate of hou much gas is necessary to allow the transaction to complete.
+	/// Generates and returns an estimate of how much gas is necessary to allow the transaction to complete.
 	#[method(name = "estimateGas")]
 	async fn estimate_gas(
 		&self,

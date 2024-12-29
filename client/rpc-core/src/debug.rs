@@ -39,7 +39,7 @@ pub trait DebugApi {
 	#[method(name = "debug_getRawTransaction")]
 	async fn raw_transaction(&self, hash: H256) -> RpcResult<Option<Bytes>>;
 
-	/// Returns an array of EIP-2718 binary-encoded receipts with the given number of hash.
+	/// Returns an array of EIP-2718 binary-encoded receipts with the given number or hash.
 	#[method(name = "debug_getRawReceipts")]
 	async fn raw_receipts(&self, number: BlockNumberOrHash) -> RpcResult<Vec<Bytes>>;
 

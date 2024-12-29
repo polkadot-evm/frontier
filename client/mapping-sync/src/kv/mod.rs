@@ -217,7 +217,7 @@ where
 			.write_current_syncing_tips(current_syncing_tips)?;
 	}
 	// Notify on import and remove closed channels.
-	// Only notify when the node is node in major syncing.
+	// Only notify when the node is not in major syncing.
 	let sinks = &mut pubsub_notification_sinks.lock();
 	sinks.retain(|sink| {
 		if !sync_oracle.is_major_syncing() {
