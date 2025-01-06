@@ -182,6 +182,9 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		/// Balance conversion between Substrate balances and EVM balances
+		type BalanceConverter: BalanceConverter;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&SHANGHAI_CONFIG
@@ -307,6 +310,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let whitelist = <WhitelistedCreators<T>>::get();
+			let whitelist_disabled = <DisableWhitelistCheck<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create(
@@ -318,6 +323,8 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				whitelist,
+				whitelist_disabled,
 				is_transactional,
 				validate,
 				None,
@@ -394,6 +401,8 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
+			let whitelist = <WhitelistedCreators<T>>::get();
+			let whitelist_disabled = <DisableWhitelistCheck<T>>::get();
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::create2(
@@ -406,6 +415,8 @@ pub mod pallet {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list,
+				whitelist,
+				whitelist_disabled,
 				is_transactional,
 				validate,
 				None,
@@ -461,6 +472,26 @@ pub mod pallet {
 				pays_fee: Pays::No,
 			})
 		}
+
+		#[pallet::call_index(4)]
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn set_whitelist(origin: OriginFor<T>, new: Vec<H160>) -> DispatchResult {
+			ensure_root(origin)?;
+
+			<WhitelistedCreators<T>>::put(new);
+
+			Ok(())
+		}
+
+		#[pallet::call_index(5)]
+		#[pallet::weight(T::DbWeight::get().writes(1))]
+		pub fn disable_whitelist(origin: OriginFor<T>, disabled: bool) -> DispatchResult {
+			ensure_root(origin)?;
+
+			<DisableWhitelistCheck<T>>::put(disabled);
+
+			Ok(())
+		}
 	}
 
 	#[pallet::event]
@@ -506,6 +537,8 @@ pub mod pallet {
 		TransactionMustComeFromEOA,
 		/// Undefined error.
 		Undefined,
+		/// Origin is not allowed to perform the operation.
+		NotAllowed,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
@@ -530,6 +563,7 @@ pub mod pallet {
 	#[derive(frame_support::DefaultNoBound)]
 	pub struct GenesisConfig<T> {
 		pub accounts: BTreeMap<H160, GenesisAccount>,
+		pub whitelisted: Vec<H160>,
 		#[serde(skip)]
 		pub _marker: PhantomData<T>,
 	}
@@ -565,6 +599,8 @@ pub mod pallet {
 					<AccountStorages<T>>::insert(address, index, value);
 				}
 			}
+
+			<WhitelistedCreators<T>>::put(self.whitelisted.clone());
 		}
 	}
 
@@ -581,6 +617,12 @@ pub mod pallet {
 
 	#[pallet::storage]
 	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
+
+	#[pallet::storage]
+	pub type WhitelistedCreators<T: Config> = StorageValue<_, Vec<H160>, ValueQuery>;
+
+	#[pallet::storage]
+	pub type DisableWhitelistCheck<T: Config> = StorageValue<_, bool, ValueQuery>;
 }
 
 /// Type alias for currency balance.
@@ -908,11 +950,13 @@ impl<T: Config> Pallet<T> {
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
+		let balance_u256 = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance));
+		let balance_eth = T::BalanceConverter::into_evm_balance(balance_u256).unwrap_or(U256::from(0));
 
 		(
 			Account {
 				nonce: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(nonce)),
-				balance: U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance)),
+				balance: balance_eth,
 			},
 			T::DbWeight::get().reads(2),
 		)
@@ -981,9 +1025,13 @@ where
 			return Ok(None);
 		}
 		let account_id = T::AddressMapping::into_account_id(*who);
+
+		// Recalculate fee decimals using BalanceConverter
+		let fee_sub = T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
+
 		let imbalance = C::withdraw(
 			&account_id,
-			fee.unique_saturated_into(),
+			fee_sub.unique_saturated_into(),
 			WithdrawReasons::FEE,
 			ExistenceRequirement::AllowDeath,
 		)
@@ -1073,9 +1121,13 @@ where
 			return Ok(None);
 		}
 		let account_id = T::AddressMapping::into_account_id(*who);
+
+		// Recalculate fee decimals using BalanceConverter
+		let fee_sub = T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
+
 		let imbalance = F::withdraw(
 			&account_id,
-			fee.unique_saturated_into(),
+			fee_sub.unique_saturated_into(),
 			Precision::Exact,
 			Preservation::Preserve,
 			Fortitude::Polite,
@@ -1173,5 +1225,24 @@ impl<T> OnCreate<T> for Tuple {
 		for_tuples!(#(
 			Tuple::on_create(owner, contract);
 		)*)
+	}
+}
+
+pub trait BalanceConverter {
+	/// Convert from Substrate balance to EVM balance (U256) with correct decimals
+	fn into_evm_balance(value: U256) -> Option<U256>;
+
+	/// Convert from EVM (U256) balance to Substrate balance with correct decimals
+	fn into_substrate_balance(value: U256) -> Option<U256>;
+}
+
+impl BalanceConverter for ()
+{
+	fn into_evm_balance(value: U256) -> Option<U256> {
+		Some(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(value)))
+	}
+
+	fn into_substrate_balance(value: U256) -> Option<U256> {
+		Some(value)
 	}
 }

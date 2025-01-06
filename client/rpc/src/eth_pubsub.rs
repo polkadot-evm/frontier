@@ -28,9 +28,10 @@ use sc_client_api::{
 };
 use sc_network_sync::SyncingService;
 use sc_rpc::{
-	utils::{pipe_from_stream, to_sub_message},
+	utils::{BoundedVecDeque, PendingSubscription, Subscription},
 	SubscriptionTaskExecutor,
 };
+use sc_service::config::RpcSubscriptionIdProvider;
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool, TxHash};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
@@ -48,13 +49,14 @@ use fc_rpc_core::{
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct EthereumSubIdProvider;
 impl IdProvider for EthereumSubIdProvider {
 	fn next_id(&self) -> jsonrpsee::types::SubscriptionId<'static> {
 		format!("0x{}", hex::encode(rand::random::<u128>().to_le_bytes())).into()
 	}
 }
+impl RpcSubscriptionIdProvider for EthereumSubIdProvider {}
 
 /// Eth pub-sub API implementation.
 pub struct EthPubSub<B: BlockT, P, C, BE> {
@@ -197,7 +199,12 @@ where
 			// Best imported block.
 			let current_number = self.client.info().best_number;
 			// Get the target block to sync.
-			let highest_number = self.sync.best_seen_block().await.ok().flatten();
+			let highest_number = self
+				.sync
+				.status()
+				.await
+				.ok()
+				.and_then(|status| status.best_seen_block);
 
 			PubSubSyncing::Syncing(SyncingStatus {
 				starting_block: self.starting_block,
@@ -238,7 +245,9 @@ where
 				Kind::NewHeads => {
 					let stream = block_notification_stream
 						.filter_map(move |notification| pubsub.notify_header(notification));
-					pipe_from_stream(pending, stream).await
+					PendingSubscription::from(pending)
+						.pipe_from_stream(stream, BoundedVecDeque::new(16))
+						.await
 				}
 				Kind::Logs => {
 					let stream = block_notification_stream
@@ -246,14 +255,18 @@ where
 							pubsub.notify_logs(notification, &filtered_params)
 						})
 						.flat_map(futures::stream::iter);
-					pipe_from_stream(pending, stream).await
+					PendingSubscription::from(pending)
+						.pipe_from_stream(stream, BoundedVecDeque::new(16))
+						.await
 				}
 				Kind::NewPendingTransactions => {
 					let pool = pubsub.pool.clone();
 					let stream = pool
 						.import_notification_stream()
 						.filter_map(move |hash| pubsub.pending_transaction(&hash));
-					pipe_from_stream(pending, stream).await;
+					PendingSubscription::from(pending)
+						.pipe_from_stream(stream, BoundedVecDeque::new(16))
+						.await;
 				}
 				Kind::Syncing => {
 					let Ok(sink) = pending.accept().await else {
@@ -263,8 +276,10 @@ where
 					// Because import notifications are only emitted when the node is synced or
 					// in case of reorg, the first event is emitted right away.
 					let syncing_status = pubsub.syncing_status().await;
-					let msg = to_sub_message(&sink, &PubSubResult::SyncingStatus(syncing_status));
-					let _ = sink.send(msg).await;
+					let subscription = Subscription::from(sink);
+					let _ = subscription
+						.send(&PubSubResult::SyncingStatus(syncing_status))
+						.await;
 
 					// When the node is not under a major syncing (i.e. from genesis), react
 					// normally to import notifications.
@@ -276,9 +291,9 @@ where
 						let syncing_status = pubsub.sync.is_major_syncing();
 						if syncing_status != last_syncing_status {
 							let syncing_status = pubsub.syncing_status().await;
-							let msg =
-								to_sub_message(&sink, &PubSubResult::SyncingStatus(syncing_status));
-							let _ = sink.send(msg).await;
+							let _ = subscription
+								.send(&PubSubResult::SyncingStatus(syncing_status))
+								.await;
 						}
 						last_syncing_status = syncing_status;
 					}

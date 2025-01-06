@@ -48,8 +48,8 @@ use fp_evm::{
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator, OnChargeEVMTransaction,
-	OnCreate, Pallet, RunnerError,
+	BalanceOf, BalanceConverter, BlockHashMapping, Config, Error, Event, FeeCalculator, 
+	OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -462,6 +462,8 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		whitelist: Vec<H160>,
+		disable_whitelist_check: bool,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -469,6 +471,13 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
+			if !disable_whitelist_check && !whitelist.contains(&source) {
+				return Err(RunnerError {
+					error: Error::<T>::NotAllowed,
+					weight: Weight::zero(),
+				});
+			}
+
 			Self::validate(
 				source,
 				None,
@@ -517,6 +526,8 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		whitelist: Vec<H160>,
+		disable_whitelist_check: bool,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -524,6 +535,13 @@ where
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
 		if validate {
+			if !disable_whitelist_check && !whitelist.contains(&source) {
+				return Err(RunnerError {
+					error: Error::<T>::NotAllowed,
+					weight: Weight::zero(),
+				});
+			}
+
 			Self::validate(
 				source,
 				None,
@@ -903,13 +921,14 @@ where
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
+
+		// Adjust decimals
+		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value).ok_or(ExitError::OutOfFund)?;
+
 		T::Currency::transfer(
 			&source,
 			&target,
-			transfer
-				.value
-				.try_into()
-				.map_err(|_| ExitError::OutOfFund)?,
+			value_sub.unique_saturated_into(),
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)

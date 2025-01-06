@@ -820,6 +820,8 @@ impl<T: Config> Pallet<T> {
 				Ok((Some(target), None, CallOrCreateInfo::Call(res)))
 			}
 			ethereum::TransactionAction::Create => {
+				let whitelist = pallet_evm::WhitelistedCreators::<T>::get();
+				let whitelist_disabled = pallet_evm::DisableWhitelistCheck::<T>::get();
 				let res = match T::Runner::create(
 					from,
 					input,
@@ -829,6 +831,8 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					whitelist,
+					whitelist_disabled,
 					is_transactional,
 					validate,
 					weight_limit,

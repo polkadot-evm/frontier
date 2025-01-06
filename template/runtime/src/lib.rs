@@ -369,6 +369,7 @@ impl pallet_evm::Config for Runtime {
 	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
+	type BalanceConverter = ();
 }
 
 parameter_types! {
@@ -924,6 +925,8 @@ impl_runtime_apis! {
 					_ => (None, None),
 				};
 
+			let whitelist = pallet_evm::WhitelistedCreators::<Runtime>::get();
+			let whitelist_disabled = pallet_evm::DisableWhitelistCheck::<Runtime>::get();
 			<Runtime as pallet_evm::Config>::Runner::create(
 				from,
 				data,
@@ -933,6 +936,8 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				whitelist,
+				whitelist_disabled,
 				false,
 				true,
 				weight_limit,
