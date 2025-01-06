@@ -48,7 +48,7 @@ use fp_evm::{
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BalanceConverter, BlockHashMapping, Config, Error, Event, FeeCalculator, 
+	BalanceConverter, BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator,
 	OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
@@ -927,7 +927,8 @@ where
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
 		// Adjust decimals
-		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value).ok_or(ExitError::OutOfFund)?;
+		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value)
+			.ok_or(ExitError::OutOfFund)?;
 
 		T::Currency::transfer(
 			&source,

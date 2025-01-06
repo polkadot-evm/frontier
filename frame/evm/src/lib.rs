@@ -951,7 +951,8 @@ impl<T: Config> Pallet<T> {
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 		let balance_u256 = U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance));
-		let balance_eth = T::BalanceConverter::into_evm_balance(balance_u256).unwrap_or(U256::from(0));
+		let balance_eth =
+			T::BalanceConverter::into_evm_balance(balance_u256).unwrap_or(U256::from(0));
 
 		(
 			Account {
@@ -1257,10 +1258,11 @@ pub trait BalanceConverter {
 	fn into_substrate_balance(value: U256) -> Option<U256>;
 }
 
-impl BalanceConverter for ()
-{
+impl BalanceConverter for () {
 	fn into_evm_balance(value: U256) -> Option<U256> {
-		Some(U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(value)))
+		Some(U256::from(
+			UniqueSaturatedInto::<u128>::unique_saturated_into(value),
+		))
 	}
 
 	fn into_substrate_balance(value: U256) -> Option<U256> {
