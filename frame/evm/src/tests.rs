@@ -89,6 +89,9 @@ mod proof_size_test {
 		gas_limit: u64,
 		weight_limit: Option<Weight>,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		let whitelist = Vec::new();
+		let whitelist_disabled = true;
+
 		<Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_SIZE_TEST_CALLEE_CONTRACT_BYTECODE.trim_end()).unwrap(),
@@ -98,6 +101,8 @@ mod proof_size_test {
 			None,
 			None,
 			Vec::new(),
+			whitelist,
+			whitelist_disabled,
 			true, // transactional
 			true, // must be validated
 			weight_limit,
@@ -110,6 +115,9 @@ mod proof_size_test {
 		gas_limit: u64,
 		weight_limit: Option<Weight>,
 	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		let whitelist = Vec::new();
+		let whitelist_disabled = true;
+
 		<Test as Config>::Runner::create(
 			H160::default(),
 			hex::decode(PROOF_SIZE_TEST_CONTRACT_BYTECODE.trim_end()).unwrap(),
@@ -119,6 +127,8 @@ mod proof_size_test {
 			None,
 			None,
 			Vec::new(),
+			whitelist,
+			whitelist_disabled,
 			true, // non-transactional
 			true, // must be validated
 			weight_limit,
@@ -714,6 +724,7 @@ fn fail_call_return_ok() {
 	});
 }
 
+// cargo test --package pallet-evm --lib -- tests::fee_deduction --exact --show-output
 #[test]
 fn fee_deduction() {
 	new_test_ext().execute_with(|| {
@@ -726,11 +737,11 @@ fn fee_deduction() {
 		assert_eq!(Balances::free_balance(substrate_addr), 100);
 
 		// Deduct fees as 10 units
-		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10)).unwrap();
+		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10e9 as u64)).unwrap();
 		assert_eq!(Balances::free_balance(substrate_addr), 90);
 
 		// Refund fees as 5 units
-		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5), U256::from(5), imbalance);
+		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5e9 as u64), U256::from(5e9 as u64), imbalance);
 		assert_eq!(Balances::free_balance(substrate_addr), 95);
 	});
 }

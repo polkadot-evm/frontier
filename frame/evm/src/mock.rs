@@ -30,7 +30,7 @@ use sp_runtime::{
 };
 
 use crate::{
-	EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
+	BalanceConverter, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
 	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
@@ -133,7 +133,42 @@ parameter_types! {
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
 	pub SuicideQuickClearLimit: u32 = 0;
 }
+
+const EVM_DECIMALS_FACTOR: u64 = 1_000_000_000_u64;
+pub struct SubtensorEvmBalanceConverter;
+
+impl BalanceConverter for SubtensorEvmBalanceConverter {
+	/// Convert from Substrate balance (u64) to EVM balance (U256)
+	fn into_evm_balance(value: U256) -> Option<U256> {
+		value
+			.checked_mul(U256::from(EVM_DECIMALS_FACTOR))
+			.and_then(|evm_value| {
+				// Ensure the result fits within the maximum U256 value
+				if evm_value <= U256::MAX {
+					Some(evm_value)
+				} else {
+					None
+				}
+			})
+	}
+
+	/// Convert from EVM balance (U256) to Substrate balance (u64)
+	fn into_substrate_balance(value: U256) -> Option<U256> {
+		value
+			.checked_div(U256::from(EVM_DECIMALS_FACTOR))
+			.and_then(|substrate_value| {
+				// Ensure the result fits within the TAO balance type (u64)
+				if substrate_value <= U256::from(u64::MAX) {
+					Some(substrate_value)
+				} else {
+					None
+				}
+			})
+	}
+}
+
 impl crate::Config for Test {
+	type BalanceConverter = SubtensorEvmBalanceConverter;
 	type FeeCalculator = FixedGasPrice;
 	type GasWeightMapping = crate::FixedGasWeightMapping<Self>;
 	type WeightPerGas = WeightPerGas;
