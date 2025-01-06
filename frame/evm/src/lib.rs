@@ -1027,7 +1027,8 @@ where
 		let account_id = T::AddressMapping::into_account_id(*who);
 
 		// Recalculate fee decimals using BalanceConverter
-		let fee_sub = T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
+		let fee_sub =
+			T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
 
 		let imbalance = C::withdraw(
 			&account_id,
@@ -1036,22 +1037,27 @@ where
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| Error::<T>::BalanceLow)?;
-		Ok(Some(imbalance))
+		Ok(Some(imbalance)) // Returns substrate balance
 	}
 
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
 		base_fee: U256,
-		already_withdrawn: Self::LiquidityInfo,
+		already_withdrawn: Self::LiquidityInfo, // Expects substrate balance
 	) -> Self::LiquidityInfo {
 		if let Some(paid) = already_withdrawn {
 			let account_id = T::AddressMapping::into_account_id(*who);
 
+			// Convert corrected fee into substrate balance
+			let corrected_fee_sub = T::BalanceConverter::into_substrate_balance(corrected_fee)
+				.ok_or(Error::<T>::FeeOverflow)?;
+
 			// Calculate how much refund we should return
 			let refund_amount = paid
 				.peek()
-				.saturating_sub(corrected_fee.unique_saturated_into());
+				.saturating_sub(corrected_fee_sub.unique_saturated_into());
+
 			// refund to the account that paid the fees. If this fails, the
 			// account might have dropped below the existential balance. In
 			// that case we don't refund anything.
@@ -1082,15 +1088,20 @@ where
 				.same()
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 
-			let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+			// Convert base fee into substrate balance
+			let base_fee_sub = T::BalanceConverter::into_substrate_balance(base_fee)
+				.ok_or(Error::<T>::FeeOverflow)?;
+
+			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
 			OU::on_unbalanced(base_fee);
-			return Some(tip);
+			return Some(tip); // Returns substrate balance
 		}
 		None
 	}
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
+		// Expects substrate balance
 		// Default Ethereum behaviour: issue the tip to the block author.
 		if let Some(tip) = tip {
 			let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
@@ -1123,7 +1134,8 @@ where
 		let account_id = T::AddressMapping::into_account_id(*who);
 
 		// Recalculate fee decimals using BalanceConverter
-		let fee_sub = T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
+		let fee_sub =
+			T::BalanceConverter::into_substrate_balance(fee).ok_or(Error::<T>::FeeOverflow)?;
 
 		let imbalance = F::withdraw(
 			&account_id,
@@ -1133,22 +1145,26 @@ where
 			Fortitude::Polite,
 		)
 		.map_err(|_| Error::<T>::BalanceLow)?;
-		Ok(Some(imbalance))
+		Ok(Some(imbalance)) // Returns substrate balance
 	}
 
 	fn correct_and_deposit_fee(
 		who: &H160,
 		corrected_fee: U256,
 		base_fee: U256,
-		already_withdrawn: Self::LiquidityInfo,
+		already_withdrawn: Self::LiquidityInfo, // Expects substrate balance
 	) -> Self::LiquidityInfo {
 		if let Some(paid) = already_withdrawn {
 			let account_id = T::AddressMapping::into_account_id(*who);
 
+			// Convert corrected fee into substrate balance
+			let corrected_fee_sub = T::BalanceConverter::into_substrate_balance(corrected_fee)
+				.ok_or(Error::<T>::FeeOverflow)?;
+
 			// Calculate how much refund we should return
 			let refund_amount = paid
 				.peek()
-				.saturating_sub(corrected_fee.unique_saturated_into());
+				.saturating_sub(corrected_fee_sub.unique_saturated_into());
 			// refund to the account that paid the fees.
 			let refund_imbalance = F::deposit(&account_id, refund_amount, Precision::BestEffort)
 				.unwrap_or_else(|_| Debt::<T::AccountId, F>::zero());
@@ -1159,15 +1175,20 @@ where
 				.same()
 				.unwrap_or_else(|_| Credit::<T::AccountId, F>::zero());
 
-			let (base_fee, tip) = adjusted_paid.split(base_fee.unique_saturated_into());
+			// Convert base fee into substrate balance
+			let base_fee_sub = T::BalanceConverter::into_substrate_balance(base_fee)
+				.ok_or(Error::<T>::FeeOverflow)?;
+
+			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
 			OU::on_unbalanced(base_fee);
-			return Some(tip);
+			return Some(tip); // Returns substrate balance
 		}
 		None
 	}
 
 	fn pay_priority_fee(tip: Self::LiquidityInfo) {
+		// Expects substrate balance
 		// Default Ethereum behaviour: issue the tip to the block author.
 		if let Some(tip) = tip {
 			let account_id = T::AddressMapping::into_account_id(<Pallet<T>>::find_author());
