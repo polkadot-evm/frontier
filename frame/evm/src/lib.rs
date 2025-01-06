@@ -1051,8 +1051,8 @@ where
 			let account_id = T::AddressMapping::into_account_id(*who);
 
 			// Convert corrected fee into substrate balance
-			let corrected_fee_sub =
-				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(U256::from(0));
+			 let corrected_fee_sub = corrected_fee;
+			/// T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(U256::from(0));
 
 			// Calculate how much refund we should return
 			let refund_amount = paid
@@ -1090,8 +1090,8 @@ where
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 
 			// Convert base fee into substrate balance
-			let base_fee_sub =
-				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(U256::from(0));
+			let base_fee_sub = base_fee;
+			/// T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(U256::from(0));
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
@@ -1159,8 +1159,8 @@ where
 			let account_id = T::AddressMapping::into_account_id(*who);
 
 			// Convert corrected fee into substrate balance
-			let corrected_fee_sub =
-				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(U256::from(0));
+			let corrected_fee_sub = corrected_fee;
+			/// T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(U256::from(0));
 
 			// Calculate how much refund we should return
 			let refund_amount = paid
@@ -1177,8 +1177,8 @@ where
 				.unwrap_or_else(|_| Credit::<T::AccountId, F>::zero());
 
 			// Convert base fee into substrate balance
-			let base_fee_sub =
-				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(U256::from(0));
+			let base_fee_sub = base_fee;
+			/// T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(U256::from(0));
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
