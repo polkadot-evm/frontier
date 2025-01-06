@@ -31,7 +31,6 @@ tokio = { workspace = true, features = ["sync"] }
 # Substrate
 prometheus-endpoint = { workspace = true }
 sc-client-api = { workspace = true }
-sc-consensus-aura = { workspace = true }
 sc-network = { workspace = true }
 sc-network-sync = { workspace = true }
 sc-rpc = { workspace = true }
@@ -43,7 +42,6 @@ sp-api = { workspace = true, features = ["default"] }
 sp-block-builder = { workspace = true, features = ["default"] }
 sp-blockchain = { workspace = true }
 sp-consensus = { workspace = true }
-sp-consensus-aura = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
 sp-externalities = { workspace = true, features = ["default"] }
 sp-inherents = { workspace = true, features = ["default"] }
@@ -51,7 +49,6 @@ sp-io = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
 sp-state-machine = { workspace = true, features = ["default"] }
 sp-storage = { workspace = true, features = ["default"] }
-sp-timestamp = { workspace = true, features = ["default"] }
 # Frontier
 fc-api = { workspace = true }
 fc-mapping-sync = { workspace = true }

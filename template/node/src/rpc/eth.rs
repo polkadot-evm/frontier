@@ -66,6 +66,67 @@ pub struct EthDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
 	pub pending_create_inherent_data_providers: CIDP,
 }
 
+mod aura {
+	use super::*;
+	use fc_rpc::pending::ConsensusDataProvider;
+	use sp_consensus_aura::{
+		digests::CompatibleDigestItem,
+		sr25519::{AuthorityId, AuthoritySignature},
+		AuraApi, Slot, SlotDuration,
+	};
+	use sp_inherents::InherentData;
+	use sp_runtime::{Digest, DigestItem};
+	use sp_timestamp::TimestampInherentData;
+	use std::marker::PhantomData;
+
+	/// Consensus data provider for Aura.
+	pub struct AuraConsensusDataProvider<B, C> {
+		// slot duration
+		slot_duration: SlotDuration,
+		// phantom data for required generics
+		_phantom: PhantomData<(B, C)>,
+	}
+
+	impl<B, C> AuraConsensusDataProvider<B, C>
+	where
+		B: BlockT,
+		C: AuxStore + ProvideRuntimeApi<B> + UsageProvider<B>,
+		C::Api: AuraApi<B, AuthorityId>,
+	{
+		/// Creates a new instance of the [`AuraConsensusDataProvider`], requires that `client`
+		/// implements [`sp_consensus_aura::AuraApi`]
+		pub fn new(client: Arc<C>) -> Self {
+			let slot_duration = sc_consensus_aura::slot_duration(&*client)
+				.expect("slot_duration is always present; qed.");
+			Self {
+				slot_duration,
+				_phantom: PhantomData,
+			}
+		}
+	}
+
+	impl<B: BlockT, C: Send + Sync> ConsensusDataProvider<B> for AuraConsensusDataProvider<B, C> {
+		fn create_digest(
+			&self,
+			_parent: &B::Header,
+			data: &InherentData,
+		) -> Result<Digest, sp_inherents::Error> {
+			let timestamp = data
+				.timestamp_inherent_data()?
+				.expect("Timestamp is always present; qed");
+
+			let digest_item =
+				<DigestItem as CompatibleDigestItem<AuthoritySignature>>::aura_pre_digest(
+					Slot::from_timestamp(timestamp, self.slot_duration),
+				);
+
+			Ok(Digest {
+				logs: vec![digest_item],
+			})
+		}
+	}
+}
+
 /// Instantiate Ethereum-compatible RPC extensions.
 pub fn create_eth<B, C, BE, P, A, CT, CIDP, EC>(
 	mut io: RpcModule<()>,
@@ -94,9 +155,8 @@ where
 	EC: EthConfig<B, C>,
 {
 	use fc_rpc::{
-		pending::AuraConsensusDataProvider, Debug, DebugApiServer, Eth, EthApiServer, EthDevSigner,
-		EthFilter, EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer,
-		Web3, Web3ApiServer,
+		Debug, DebugApiServer, Eth, EthApiServer, EthDevSigner, EthFilter, EthFilterApiServer,
+		EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer, Web3, Web3ApiServer,
 	};
 	#[cfg(feature = "txpool")]
 	use fc_rpc::{TxPool, TxPoolApiServer};
@@ -144,7 +204,9 @@ where
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
 			pending_create_inherent_data_providers,
-			Some(Box::new(AuraConsensusDataProvider::new(client.clone()))),
+			Some(Box::new(aura::AuraConsensusDataProvider::new(
+				client.clone(),
+			))),
 		)
 		.replace_config::<EC>()
 		.into_rpc(),
