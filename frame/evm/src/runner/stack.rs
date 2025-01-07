@@ -48,7 +48,7 @@ use fp_evm::{
 
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceOf, BalanceConverter, BlockHashMapping, Config, Error, Event, FeeCalculator, 
+	BalanceConverter, BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator,
 	OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
@@ -230,6 +230,7 @@ where
 				})?;
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
+		// === Note: This fee gets converted to substrate decimals in `withdraw_fee` ===
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
 			.map_err(|e| RunnerError { error: e, weight })?;
 
@@ -295,6 +296,8 @@ where
 		// Refunded 200 - 40 = 160.
 		// Tip 5 * 6 = 30.
 		// Burned 200 - (160 + 30) = 10. Which is equivalent to gas_used * base_fee.
+		// === Note: we expect acutal_fee and actual_base_fee to be in EVM decimals. but `fee` should be in substrate decimals already ===
+		// === Note: `actual_priority_fee` gets converted to substrate decimals in `correct_and_deposit_fee` ===
 		let actual_priority_fee = T::OnChargeTransaction::correct_and_deposit_fee(
 			&source,
 			// Actual fee after evm execution, including tip.
@@ -304,6 +307,7 @@ where
 			// Fee initially withdrawn.
 			fee,
 		);
+		// === Note: `actual_priority_fee` is already in substrate decimals ===
 		T::OnChargeTransaction::pay_priority_fee(actual_priority_fee);
 
 		let state = executor.into_state();
@@ -923,7 +927,8 @@ where
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
 		// Adjust decimals
-		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value).ok_or(ExitError::OutOfFund)?;
+		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value)
+			.ok_or(ExitError::OutOfFund)?;
 
 		T::Currency::transfer(
 			&source,

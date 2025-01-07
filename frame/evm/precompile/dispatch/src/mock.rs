@@ -29,8 +29,8 @@ use sp_runtime::traits::{BlakeTwo256, IdentityLookup};
 
 use fp_evm::{ExitError, ExitReason, Transfer};
 use pallet_evm::{
-	Context, EnsureAddressNever, EnsureAddressRoot, FeeCalculator, IdentityAddressMapping,
-	PrecompileHandle,
+	BalanceConverter, Context, EnsureAddressNever, EnsureAddressRoot, FeeCalculator,
+	IdentityAddressMapping, PrecompileHandle,
 };
 
 frame_support::construct_runtime! {
@@ -121,6 +121,39 @@ impl FeeCalculator for FixedGasPrice {
 	}
 }
 
+const EVM_DECIMALS_FACTOR: u64 = 1_000_000_000_u64;
+pub struct SubtensorEvmBalanceConverter;
+
+impl BalanceConverter for SubtensorEvmBalanceConverter {
+	/// Convert from Substrate balance (u64) to EVM balance (U256)
+	fn into_evm_balance(value: U256) -> Option<U256> {
+		value
+			.checked_mul(U256::from(EVM_DECIMALS_FACTOR))
+			.and_then(|evm_value| {
+				// Ensure the result fits within the maximum U256 value
+				if evm_value <= U256::MAX {
+					Some(evm_value)
+				} else {
+					None
+				}
+			})
+	}
+
+	/// Convert from EVM balance (U256) to Substrate balance (u64)
+	fn into_substrate_balance(value: U256) -> Option<U256> {
+		value
+			.checked_div(U256::from(EVM_DECIMALS_FACTOR))
+			.and_then(|substrate_value| {
+				// Ensure the result fits within the TAO balance type (u64)
+				if substrate_value <= U256::from(u64::MAX) {
+					Some(substrate_value)
+				} else {
+					None
+				}
+			})
+	}
+}
+
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
 	fn find_author<'a, I>(_digests: I) -> Option<H160>
@@ -146,6 +179,8 @@ impl pallet_evm::Config for Test {
 	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
+
+	type BalanceConverter = SubtensorEvmBalanceConverter;
 
 	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();

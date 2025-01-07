@@ -462,7 +462,7 @@ fn validated_transaction_apply_zero_gas_price_works() {
 			gas_price: U256::zero(),
 			gas_limit: U256::from(21_000),
 			action: ethereum::TransactionAction::Call(bob.address),
-			value: U256::from(100),
+			value: U256::from(100e9 as u128),
 			input: Default::default(),
 		}
 		.sign(&alice.private_key, None);
