@@ -16,7 +16,7 @@ environmental = { workspace = true, optional = true }
 evm = { workspace = true, features = ["with-codec"] }
 hash-db = { workspace = true }
 hex-literal = { workspace = true }
-impl-trait-for-tuples = "0.2.2"
+impl-trait-for-tuples = "0.2.3"
 log = { workspace = true }
 scale-codec = { package = "parity-scale-codec", workspace = true }
 scale-info = { workspace = true }
