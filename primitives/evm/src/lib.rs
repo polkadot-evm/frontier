@@ -22,6 +22,7 @@ extern crate alloc;
 
 mod account_provider;
 mod precompile;
+mod storage_oog;
 mod validation;
 
 use alloc::{collections::BTreeMap, vec::Vec};
@@ -45,6 +46,7 @@ pub use self::{
 		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
 		PrecompileSet, Transfer,
 	},
+	storage_oog::{handle_storage_oog, set_storage_oog},
 	validation::{
 		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
 		TransactionValidationError,
@@ -118,6 +120,7 @@ impl WeightInfo {
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
 		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
 		if usage > limit {
+			storage_oog::set_storage_oog();
 			return Err(ExitError::OutOfGas);
 		}
 		Ok(usage)
@@ -142,6 +145,7 @@ impl WeightInfo {
 		{
 			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
 			if proof_size_usage > proof_size_limit {
+				storage_oog::set_storage_oog();
 				return Err(ExitError::OutOfGas);
 			}
 			self.proof_size_usage = Some(proof_size_usage);
