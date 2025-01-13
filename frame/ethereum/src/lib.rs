@@ -255,8 +255,6 @@ pub mod pallet {
 					UniqueSaturatedInto::<u32>::unique_saturated_into(to_remove),
 				));
 			}
-			// Reset the next transaction index
-			NextTxIndex::<T>::set(0);
 		}
 
 		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
@@ -349,14 +347,10 @@ pub mod pallet {
 		PreLogExists,
 	}
 
-	/// The next transcation index.
-	#[pallet::storage]
-	pub type NextTxIndex<T: Config> = StorageValue<_, u32, ValueQuery>;
-
 	/// Mapping from transaction index to transaction in the current building block.
 	#[pallet::storage]
 	pub type Pending<T: Config> =
-		StorageMap<_, Identity, u32, (Transaction, TransactionStatus, Receipt), OptionQuery>;
+		CountedStorageMap<_, Identity, u32, (Transaction, TransactionStatus, Receipt), OptionQuery>;
 
 	/// The current Ethereum block.
 	#[pallet::storage]
@@ -441,13 +435,14 @@ impl<T: Config> Pallet<T> {
 	}
 
 	fn store_block(post_log: Option<PostLogContent>, block_number: U256) {
-		let mut transactions = Vec::new();
-		let mut statuses = Vec::new();
-		let mut receipts = Vec::new();
+		let transactions_count = Pending::<T>::count();
+		let mut transactions = Vec::with_capacity(transactions_count as usize);
+		let mut statuses = Vec::with_capacity(transactions_count as usize);
+		let mut receipts = Vec::with_capacity(transactions_count as usize);
 		let mut logs_bloom = Bloom::default();
 		let mut cumulative_gas_used = U256::zero();
-		for tx_index in 0..NextTxIndex::<T>::get() {
-			if let Some((transaction, status, receipt)) = Pending::<T>::take(tx_index) {
+		for transaction_index in 0..transactions_count {
+			if let Some((transaction, status, receipt)) = Pending::<T>::take(transaction_index) {
 				transactions.push(transaction);
 				statuses.push(status);
 				receipts.push(receipt.clone());
@@ -605,7 +600,7 @@ impl<T: Config> Pallet<T> {
 		let (to, _, info) = Self::execute(source, &transaction, None)?;
 
 		let transaction_hash = transaction.hash();
-		let transaction_index = NextTxIndex::<T>::get();
+		let transaction_index = Pending::<T>::count();
 
 		let (reason, status, weight_info, used_gas, dest, extra_data) = match info.clone() {
 			CallOrCreateInfo::Call(info) => (
@@ -715,7 +710,6 @@ impl<T: Config> Pallet<T> {
 		};
 
 		Pending::<T>::insert(transaction_index, (transaction, status, receipt));
-		NextTxIndex::<T>::set(transaction_index + 1);
 
 		Self::deposit_event(Event::Executed {
 			from: source,
