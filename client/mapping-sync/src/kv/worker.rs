@@ -246,7 +246,7 @@ mod tests {
 		// Client
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let client = Arc::new(client);
+		let mut client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
@@ -388,7 +388,7 @@ mod tests {
 		// Client
 		let (client, _) =
 			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
-		let client = Arc::new(client);
+		let mut client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 

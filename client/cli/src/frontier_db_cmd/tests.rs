@@ -537,7 +537,7 @@ fn commitment_create() {
 
 	// Test client.
 	let (c, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
-	let client = Arc::new(c);
+	let mut client = Arc::new(c);
 
 	// Get some transaction status.
 	let t1 = fp_rpc::TransactionStatus::default();
@@ -612,7 +612,7 @@ fn commitment_update() {
 
 	// Test client.
 	let (c, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
-	let client = Arc::new(c);
+	let mut client = Arc::new(c);
 
 	// Get some transaction status.
 	let t1 = fp_rpc::TransactionStatus::default();
@@ -748,7 +748,7 @@ fn mapping_read_works() {
 
 	// Test client.
 	let (c, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
-	let client = Arc::new(c);
+	let mut client = Arc::new(c);
 
 	// Get some transaction status.
 	let t1 = fp_rpc::TransactionStatus::default();
