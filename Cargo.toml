@@ -71,7 +71,7 @@ log = { version = "0.4.22", default-features = false }
 num_enum = { version = "0.7.3", default-features = false }
 parity-db = "0.4.13"
 parking_lot = "0.12.3"
-quote = "1.0.37"
+quote = "1.0.38"
 rlp = { version = "0.5.2", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
