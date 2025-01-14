@@ -77,7 +77,6 @@ use impl_trait_for_tuples::impl_for_tuples;
 use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
-use frame_support::traits::tokens::WithdrawConsequence;
 use frame_support::{
 	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	storage::KeyPrefixIterator,
@@ -942,7 +941,7 @@ impl<T: Config> Pallet<T> {
 
 		<AccountCodes<T>>::remove(address);
 		<AccountCodesMetadata<T>>::remove(address);
-		let _ = <AccountStorages<T>>::clear_prefix(address, u32::max_value(), None);
+		let _ = <AccountStorages<T>>::clear_prefix(address, u32::MAX, None);
 	}
 
 	/// Create an account.
