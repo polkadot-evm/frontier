@@ -38,7 +38,7 @@ describeWithFrontier("Frontier RPC (EIP-1153)", (context) => {
 	it("should detect reentrant call and revert", async function () {
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, contract_address, {
 			from: GENESIS_ACCOUNT,
-			gasPrice: "0x3B9ACA00"
+			gasPrice: "0x3B9ACA00",
 		});
 
 		try {
