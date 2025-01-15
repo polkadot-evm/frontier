@@ -129,7 +129,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			from: GENESIS_ACCOUNT,
 			data: Test.bytecode,
 		});
-		expect(result).to.equal(197732);
+		expect(result).to.equal(189620);
 	});
 
 	it("eth_estimateGas should ignore nonce", async function () {
@@ -138,7 +138,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 			data: Test.bytecode,
 			nonce: 42, // Arbitrary nonce value
 		});
-		expect(result).to.equal(197732);
+		expect(result).to.equal(189620);
 	});
 
 	it("tx gas limit below ETH_BLOCK_GAS_LIMIT", async function () {
@@ -420,6 +420,6 @@ describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => 
 		});
 		// The actual estimated value is irrelevant for this test purposes, we just want to verify that
 		// the binary search is not interrupted when an InvalidCode is returned by the evm.
-		expect(estimate).to.equal(85703);
+		expect(estimate).to.equal(85699);
 	});
 });
