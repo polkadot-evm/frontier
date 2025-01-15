@@ -44,7 +44,7 @@ impl Precompile {
 		precompile.process_impl_attr(impl_)?;
 		for mut item in &mut impl_.items {
 			// We only interact with methods and leave the rest as-is.
-			if let syn::ImplItem::Method(ref mut method) = &mut item {
+			if let syn::ImplItem::Fn(ref mut method) = &mut item {
 				precompile.process_method(method)?;
 			}
 		}
@@ -113,7 +113,7 @@ impl Precompile {
 	}
 
 	/// Process a single method, looking for attributes and checking mandatory parameters.
-	fn process_method(&mut self, method: &mut syn::ImplItemMethod) -> syn::Result<()> {
+	fn process_method(&mut self, method: &mut syn::ImplItemFn) -> syn::Result<()> {
 		// Take (remove) all attributes related to this macro.
 		let attrs = attr::take_attributes::<attr::MethodAttr>(&mut method.attrs)?;
 
@@ -397,11 +397,7 @@ impl Precompile {
 	}
 
 	/// Process the discriminant function.
-	fn parse_discriminant_fn(
-		&mut self,
-		span: Span,
-		method: &syn::ImplItemMethod,
-	) -> syn::Result<()> {
+	fn parse_discriminant_fn(&mut self, span: Span, method: &syn::ImplItemFn) -> syn::Result<()> {
 		if !self.tagged_as_precompile_set {
 			let msg = "The impl block must be tagged with `#[precompile::precompile_set]` for
 			the discriminant attribute to be used";
@@ -472,7 +468,7 @@ impl Precompile {
 	}
 
 	/// Process the pre_check function.
-	fn parse_pre_check_fn(&mut self, span: Span, method: &syn::ImplItemMethod) -> syn::Result<()> {
+	fn parse_pre_check_fn(&mut self, span: Span, method: &syn::ImplItemFn) -> syn::Result<()> {
 		if self.pre_check.is_some() {
 			let msg = "A Precompile can only have 1 pre_check function";
 			return Err(syn::Error::new(span, msg));
@@ -590,7 +586,7 @@ ensuring the Solidity function signatures are correct.";
 					if let syn::PathArguments::AngleBracketed(args) = &segment.arguments {
 						let types = args.args.iter().filter_map(|arg| match arg {
 							syn::GenericArgument::Type(ty)
-							| syn::GenericArgument::Binding(syn::Binding { ty, .. }) => Some(ty),
+							| syn::GenericArgument::AssocType(syn::AssocType { ty, .. }) => Some(ty),
 							_ => None,
 						});
 
