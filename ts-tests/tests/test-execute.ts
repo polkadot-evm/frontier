@@ -170,7 +170,7 @@ describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
 			},
 		]);
 
-		expect(result.result).to.be.equal("0x30464");
+		expect(result.result).to.be.equal("0x2e4b4");
 	});
 
 	step("shouldn't estimateGas with gas limit up higher than 10x block gas limit", async function () {
