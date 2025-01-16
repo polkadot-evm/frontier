@@ -266,7 +266,6 @@ where
 		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
 			.map_err(|e| RunnerError { error: e, weight })?;
 
-		// Execute the EVM call.
 		let vicinity = Vicinity {
 			gas_price: base_fee,
 			origin: source,
@@ -285,28 +284,34 @@ where
 		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info, storage_limit);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
-		let (reason, retv) = f(&mut executor);
+		// Execute the EVM call.
+		let (reason, retv, used_gas, effective_gas) =
+			fp_evm::handle_storage_oog::<R, _>(gas_limit, || {
+				let (reason, retv) = f(&mut executor);
 
-		// Compute the storage gas cost based on the storage growth.
-		let storage_gas = match &executor.state().storage_meter {
-			Some(storage_meter) => storage_meter.storage_to_gas(storage_growth_ratio),
-			None => 0,
-		};
+				// Compute the storage gas cost based on the storage growth.
+				let storage_gas = match &executor.state().storage_meter {
+					Some(storage_meter) => storage_meter.storage_to_gas(storage_growth_ratio),
+					None => 0,
+				};
 
-		let pov_gas = match executor.state().weight_info() {
-			Some(weight_info) => weight_info
-				.proof_size_usage
-				.unwrap_or_default()
-				.saturating_mul(T::GasLimitPovSizeRatio::get()),
-			None => 0,
-		};
+				let pov_gas = match executor.state().weight_info() {
+					Some(weight_info) => weight_info
+						.proof_size_usage
+						.unwrap_or_default()
+						.saturating_mul(T::GasLimitPovSizeRatio::get()),
+					None => 0,
+				};
 
-		// Post execution.
-		let used_gas = executor.used_gas();
-		let effective_gas = U256::from(core::cmp::max(
-			core::cmp::max(used_gas, pov_gas),
-			storage_gas,
-		));
+				// Post execution.
+				let used_gas = executor.used_gas();
+				let effective_gas = U256::from(core::cmp::max(
+					core::cmp::max(used_gas, pov_gas),
+					storage_gas,
+				));
+
+				(reason, retv, used_gas, effective_gas)
+			});
 
 		let actual_fee = effective_gas.saturating_mul(total_fee_per_gas);
 		let actual_base_fee = effective_gas.saturating_mul(base_fee);
@@ -1031,6 +1036,19 @@ where
 
 						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 							weight_info.try_record_proof_size_or_fail(meta.size)?;
+						} else if let Some(remaining_proof_size) =
+							weight_info.remaining_proof_size()
+						{
+							let pre_size = remaining_proof_size.min(size_limit);
+							weight_info.try_record_proof_size_or_fail(pre_size)?;
+
+							let actual_size = Pallet::<T>::account_code_metadata(address).size;
+							if actual_size > pre_size {
+								fp_evm::set_storage_oog();
+								return Err(ExitError::OutOfGas);
+							}
+							// Refund unused proof size
+							weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
 						}
 
 						recorded.account_codes.push(address);

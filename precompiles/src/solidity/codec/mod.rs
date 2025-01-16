@@ -37,7 +37,7 @@ pub use native::{Address, BoundedVec};
 // derive macro
 pub use precompile_utils_macro::Codec;
 
-/// Data that can be encoded/encoded followiong the Solidity ABI Specification.
+/// Data that can be encoded/encoded following the Solidity ABI Specification.
 pub trait Codec: Sized {
 	fn read(reader: &mut Reader) -> MayRevert<Self>;
 	fn write(writer: &mut Writer, value: Self);

@@ -322,7 +322,7 @@ impl<T: Codec, S: Get<u32>> Codec for BoundedVec<T, S> {
 
 		for inner in value {
 			// Any offset in items are relative to the start of the item instead of the
-			// start of the array. However if there is offseted data it must but appended after
+			// start of the array. However if there is offset data it must but appended after
 			// all items (offsets) are written. We thus need to rely on `compute_offsets` to do
 			// that, and must store a "shift" to correct the offsets.
 			let shift = inner_writer.data.len();
@@ -378,5 +378,24 @@ impl<T: Clone, S, const N: usize> From<[T; N]> for BoundedVec<T, S> {
 impl<T, S> From<BoundedVec<T, S>> for Vec<T> {
 	fn from(value: BoundedVec<T, S>) -> Self {
 		value.inner
+	}
+}
+
+impl<T, S> Default for BoundedVec<T, S> {
+	fn default() -> Self {
+		Self {
+			inner: Default::default(),
+			_phantom: PhantomData,
+		}
+	}
+}
+
+impl<T, S> BoundedVec<T, S> {
+	pub fn len(&self) -> usize {
+		self.inner.len()
+	}
+
+	pub fn is_empty(&self) -> bool {
+		self.inner.is_empty()
 	}
 }

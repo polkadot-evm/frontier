@@ -4,7 +4,7 @@ Frontier provides two different strategies for handling `H160` addresses.
 
 ## H256 -> H160 mapping
 
-The first strategy consists of of a truncated hash scheme, where the first 160 LE bytes of a `H256` address are used to form the `H160` address.
+The first strategy consists of a truncated hash scheme, where the first 160 LE bytes of a `H256` address are used to form the `H160` address.
 
 `AccountId32` is the Account type used for `frame_system::pallet::Config::AccountId`.
 
