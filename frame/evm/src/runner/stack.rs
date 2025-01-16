@@ -47,9 +47,7 @@ use fp_evm::{
 };
 
 use crate::{
-	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping,
-	BalanceConverter, BalanceOf, BlockHashMapping, Config, Error, Event, FeeCalculator,
-	OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
+	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountStorages, AddressMapping, BalanceConverter, BalanceOf, BlockHashMapping, Config, Error, Event, EvmBalance, FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -231,7 +229,7 @@ where
 
 		// Deduct fee from the `source` account. Returns `None` if `total_fee` is Zero.
 		// === Note: This fee gets converted to substrate decimals in `withdraw_fee` ===
-		let fee = T::OnChargeTransaction::withdraw_fee(&source, total_fee)
+		let fee = T::OnChargeTransaction::withdraw_fee(&source, EvmBalance::new(total_fee))
 			.map_err(|e| RunnerError { error: e, weight })?;
 
 		// Execute the EVM call.
@@ -301,9 +299,9 @@ where
 		let actual_priority_fee = T::OnChargeTransaction::correct_and_deposit_fee(
 			&source,
 			// Actual fee after evm execution, including tip.
-			actual_fee,
+			EvmBalance::new(actual_fee),
 			// Base fee.
-			actual_base_fee,
+			EvmBalance::new(actual_base_fee),
 			// Fee initially withdrawn.
 			fee,
 		);
@@ -927,13 +925,13 @@ where
 		let target = T::AddressMapping::into_account_id(transfer.target);
 
 		// Adjust decimals
-		let value_sub = T::BalanceConverter::into_substrate_balance(transfer.value)
+		let value_sub = T::BalanceConverter::into_substrate_balance(EvmBalance::new(transfer.value))
 			.ok_or(ExitError::OutOfFund)?;
 
 		T::Currency::transfer(
 			&source,
 			&target,
-			value_sub.unique_saturated_into(),
+			value_sub.0.unique_saturated_into(),
 			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)
