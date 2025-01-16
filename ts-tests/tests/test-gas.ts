@@ -192,9 +192,9 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
 
 	// First call to contract storageLoop method
-	const FIRST_CALL = 752_450;
+	const FIRST_CALL = 611_438;
 	// Rest of calls
-	const CALL_COST = 735_350;
+	const CALL_COST = 594_338;
 	// Block gas limit
 	const BLOCK_GAS_LIMIT = ETH_BLOCK_GAS_LIMIT - FIRST_CALL;
 	// Number of calls per block
