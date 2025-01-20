@@ -45,7 +45,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Run sccache
-        uses: mozilla-actions/sccache-action@v0.0.6
+        uses: mozilla-actions/sccache-action@v0.0.7
 
       - name: Install Rust toolchain
         run: make setup
