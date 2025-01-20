@@ -676,9 +676,6 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type AccountStorages<T: Config> =
 		StorageDoubleMap<_, Blake2_128Concat, H160, Blake2_128Concat, H256, H256, ValueQuery>;
-
-	#[pallet::storage]
-	pub type Suicided<T: Config> = StorageMap<_, Blake2_128Concat, H160, (), OptionQuery>;
 }
 
 /// Utility alias for easy access to the [`AccountProvider::AccountId`] type from a given config.
@@ -916,10 +913,6 @@ impl<T: Config> Pallet<T> {
 
 		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
 	}
-	/// Check whether an account is a suicided contract
-	pub fn is_account_suicided(address: &H160) -> bool {
-		<Suicided<T>>::contains_key(address)
-	}
 
 	pub fn iter_account_storages(address: &H160) -> KeyPrefixIterator<H256> {
 		<AccountStorages<T>>::iter_key_prefix(address)
@@ -946,14 +939,6 @@ impl<T: Config> Pallet<T> {
 
 	/// Create an account.
 	pub fn create_account(address: H160, code: Vec<u8>) {
-		if <Suicided<T>>::contains_key(address) {
-			// This branch should never trigger, because when Suicided
-			// contains an address, then its nonce will be at least one,
-			// which causes CreateCollision error in EVM, but we add it
-			// here for safeguard.
-			return;
-		}
-
 		if code.is_empty() {
 			return;
 		}
