@@ -26,7 +26,7 @@ where
 {
 	let mut output = vec![];
 	let pred = |attr: &syn::Attribute| {
-		attr.path
+		attr.path()
 			.segments
 			.first()
 			.map_or(false, |segment| segment.ident == "precompile")
@@ -132,7 +132,7 @@ impl syn::parse::Parse for ImplAttr {
 
 			let inner;
 			syn::parenthesized!(inner in content);
-			let types = inner.parse_terminated::<_, syn::Token![,]>(syn::Type::parse)?;
+			let types = inner.parse_terminated(syn::Type::parse, syn::Token![,])?;
 
 			Ok(ImplAttr::TestConcreteTypes(
 				span,
