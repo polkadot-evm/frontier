@@ -117,7 +117,7 @@ impl PrecompileHandle for MockHandle {
 		if self
 			.record_cost(crate::evm::costs::call_cost(
 				context.apparent_value,
-				&evm::Config::london(),
+				&evm::Config::cancun(),
 			))
 			.is_err()
 		{
