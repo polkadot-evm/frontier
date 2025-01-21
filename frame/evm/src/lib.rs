@@ -192,9 +192,6 @@ pub mod pallet {
 		/// Gas limit Pov size ratio.
 		type GasLimitPovSizeRatio: Get<u64>;
 
-		/// Define the quick clear limit of storage clearing when a contract suicides. Set to 0 to disable it.
-		type SuicideQuickClearLimit: Get<u32>;
-
 		/// Gas limit storage growth ratio.
 		type GasLimitStorageGrowthRatio: Get<u64>;
 
@@ -236,7 +233,6 @@ pub mod pallet {
 			pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 			pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
 			pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
-			pub SuicideQuickClearLimit: u32 = 0;
 		}
 
 		#[register_default_impl(TestDefaultConfig)]
@@ -258,7 +254,6 @@ pub mod pallet {
 			type FindAuthor = FindAuthorTruncated;
 			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 			type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
-			type SuicideQuickClearLimit = SuicideQuickClearLimit;
 			type WeightInfo = ();
 		}
 
