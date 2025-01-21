@@ -133,7 +133,6 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
-	pub SuicideQuickClearLimit: u32 = 0;
 }
 impl pallet_evm::Config for Test {
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
@@ -157,7 +156,6 @@ impl pallet_evm::Config for Test {
 	type OnChargeTransaction = ();
 	type OnCreate = ();
 	type FindAuthor = FindAuthorTruncated;
-	type SuicideQuickClearLimit = SuicideQuickClearLimit;
 	type GasLimitPovSizeRatio = ();
 	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;

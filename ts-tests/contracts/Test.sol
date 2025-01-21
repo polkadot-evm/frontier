@@ -1,4 +1,4 @@
-pragma solidity 0.8.2;
+pragma solidity >=0.8.2 <0.9.0;
 
 contract Test {
     function multiply(uint a) public pure returns(uint d) {

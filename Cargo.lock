@@ -2137,9 +2137,9 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.41.1"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "767f43e9630cc36cf8ff2777cbb0121b055f0d1fd6eaaa13b46a1808f0d0e7e9"
+checksum = "8d4b86ab0845a40c27ce2a54e01f4c1aa356bd2658028ae87c570e469a2286d6"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2158,9 +2158,9 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.41.0"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1da6cedc5cedb4208e59467106db0d1f50db01b920920589f8e672c02fdc04f"
+checksum = "67c39818f9bc4cbd39fce2ed63c2707c3685b15e877796f730a1ff72a49dc094"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2170,9 +2170,9 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.41.0"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1dc0eb591abc5cd7b05bef6a036c2bb6c66ab6c5e0c5ce94bfe377ab670b1fd7"
+checksum = "f8c114afd9f616fac0cfa7cbd0af139bef11b9e1901781d8a1620657ba49f37e"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2182,9 +2182,9 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.41.0"
+version = "0.42.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "84bbe09b64ae13a29514048c1bb6fda6374ac0b4f6a1f15a443348ab88ef42cd"
+checksum = "56a7f1d44af271868a63f66e724c2da74f661dbada2a1d5da87aa51231c218f3"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -6034,26 +6034,6 @@ dependencies = [
  "pallet-evm-test-vector-support",
  "ripemd",
  "sp-io",
-]
-
-[[package]]
-name = "pallet-evm-precompile-storage-cleaner"
-version = "0.1.0"
-dependencies = [
- "fp-evm",
- "frame-support",
- "frame-system",
- "pallet-balances",
- "pallet-evm",
- "pallet-timestamp",
- "pallet-utility",
- "parity-scale-codec",
- "precompile-utils",
- "rlp",
- "scale-info",
- "sp-core",
- "sp-io",
- "sp-runtime",
 ]
 
 [[package]]
