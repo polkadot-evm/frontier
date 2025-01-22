@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
+use std::{ops::Deref, sync::Arc};
 
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult;
@@ -147,7 +147,7 @@ where
 					graph
 						.validated_pool()
 						.ready()
-						.map(|in_pool_tx| in_pool_tx.data().clone())
+						.map(|in_pool_tx| in_pool_tx.data().deref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 
@@ -157,7 +157,7 @@ where
 						.validated_pool()
 						.futures()
 						.iter()
-						.map(|(_hash, extrinsic)| extrinsic.clone())
+						.map(|(_hash, extrinsic)| extrinsic.deref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 

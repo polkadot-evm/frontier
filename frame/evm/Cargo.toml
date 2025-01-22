@@ -18,7 +18,7 @@ hash-db = { workspace = true }
 hex-literal = { workspace = true }
 impl-trait-for-tuples = "0.2.3"
 log = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 scale-info = { workspace = true }
 # Substrate
 frame-benchmarking = { workspace = true, optional = true }
@@ -43,7 +43,7 @@ default = ["std"]
 std = [
 	"environmental?/std",
 	"evm/std",
-	"evm/with-serde",
+	"evm/serde",
 	"hex/std",
 	"log/std",
 	"scale-codec/std",

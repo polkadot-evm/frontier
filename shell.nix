@@ -5,14 +5,14 @@ let
       rev = "78e723925daf5c9e8d0a1837ec27059e61649cb6";
     });
   nixpkgs = import <nixpkgs> { overlays = [ mozillaOverlay ]; };
-  rust-nightly = with nixpkgs; ((rustChannelOf { date = "2023-07-23"; channel = "nightly"; }).rust.override {
+  rust-stable = with nixpkgs; ((rustChannelOf { date = "2024-10-15"; channel = "stable"; }).rust.override {
     extensions = [ "rust-src" ];
     targets = [ "wasm32-unknown-unknown" ];
   });
 in
 with nixpkgs; pkgs.mkShell {
   nativeBuildInputs = [
-    rust-nightly
+    rust-stable
   ];
   buildInputs = [
     clang
@@ -23,7 +23,7 @@ with nixpkgs; pkgs.mkShell {
     darwin.apple_sdk.frameworks.Security
   ];
 
-  RUST_SRC_PATH = "${rust-nightly}/lib/rustlib/src/rust/src";
+  RUST_SRC_PATH = "${rust-stable}/lib/rustlib/src/rust/src";
   LIBCLANG_PATH = "${llvmPackages.libclang.lib}/lib";
   PROTOC = "${protobuf}/bin/protoc";
   ROCKSDB_LIB_DIR = "${rocksdb}/lib";

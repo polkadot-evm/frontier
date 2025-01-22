@@ -70,8 +70,8 @@ where
 		let info = call.get_dispatch_info();
 
 		if let Some(gas) = target_gas {
-			let valid_weight =
-				info.weight.ref_time() <= T::GasWeightMapping::gas_to_weight(gas, false).ref_time();
+			let valid_weight = info.total_weight().ref_time()
+				<= T::GasWeightMapping::gas_to_weight(gas, false).ref_time();
 			if !valid_weight {
 				return Err(PrecompileFailure::Error {
 					exit_status: ExitError::OutOfGas,
@@ -86,26 +86,26 @@ where
 		}
 
 		handle.record_external_cost(
-			Some(info.weight.ref_time()),
-			Some(info.weight.proof_size()),
+			Some(info.total_weight().ref_time()),
+			Some(info.total_weight().proof_size()),
 			None,
 		)?;
 
 		match call.dispatch(Some(origin).into()) {
 			Ok(post_info) => {
 				if post_info.pays_fee(&info) == Pays::Yes {
-					let actual_weight = post_info.actual_weight.unwrap_or(info.weight);
+					let actual_weight = post_info.actual_weight.unwrap_or(info.total_weight());
 					let cost = T::GasWeightMapping::weight_to_gas(actual_weight);
 					handle.record_cost(cost)?;
 
 					handle.refund_external_cost(
 						Some(
-							info.weight
+							info.total_weight()
 								.ref_time()
 								.saturating_sub(actual_weight.ref_time()),
 						),
 						Some(
-							info.weight
+							info.total_weight()
 								.proof_size()
 								.saturating_sub(actual_weight.proof_size()),
 						),

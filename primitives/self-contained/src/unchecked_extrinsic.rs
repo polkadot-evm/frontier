@@ -17,14 +17,15 @@
 
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	traits::ExtrinsicCall,
+	traits::{ExtrinsicCall, InherentBuilder, SignedTransactionBuilder},
 };
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
+	generic::{self, Preamble},
 	traits::{
-		self, Checkable, Extrinsic, ExtrinsicMetadata, IdentifyAccount, MaybeDisplay, Member,
-		SignedExtension,
+		self, Checkable, Dispatchable, ExtrinsicLike, ExtrinsicMetadata, IdentifyAccount,
+		MaybeDisplay, Member, TransactionExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	OpaqueExtrinsic, RuntimeDebug,
@@ -35,70 +36,57 @@ use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct UncheckedExtrinsic<Address, Call, Signature, Extra: SignedExtension>(
-	pub sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>,
-);
+pub struct UncheckedExtrinsic<
+	Address,
+	Call: Dispatchable,
+	Signature,
+	Extension: TransactionExtension<Call>,
+>(pub generic::UncheckedExtrinsic<Address, Call, Signature, Extension>);
 
-impl<Address, Call, Signature, Extra: SignedExtension>
+impl<Address, Call: Dispatchable, Signature, Extra: TransactionExtension<Call>>
 	UncheckedExtrinsic<Address, Call, Signature, Extra>
 {
 	/// New instance of a signed extrinsic aka "transaction".
 	pub fn new_signed(function: Call, signed: Address, signature: Signature, extra: Extra) -> Self {
-		Self(sp_runtime::generic::UncheckedExtrinsic::new_signed(
+		Self(generic::UncheckedExtrinsic::new_signed(
 			function, signed, signature, extra,
 		))
 	}
 
 	/// New instance of an unsigned extrinsic aka "inherent".
-	pub fn new_unsigned(function: Call) -> Self {
-		Self(sp_runtime::generic::UncheckedExtrinsic::new_unsigned(
-			function,
-		))
+	pub fn new_bare(function: Call) -> Self {
+		Self(generic::UncheckedExtrinsic::new_bare(function))
 	}
 }
 
-impl<Address, Call, Signature, Extra> Extrinsic
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address: TypeInfo, Call, Signature: TypeInfo, Extension> ExtrinsicLike
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
-	Address: TypeInfo,
-	Call: SelfContainedCall + TypeInfo,
-	Signature: TypeInfo,
-	Extra: SignedExtension,
+	Call: TypeInfo + Dispatchable,
+	Extension: TypeInfo + TransactionExtension<Call>,
 {
-	type Call = Call;
-
-	type SignaturePayload = (Address, Signature, Extra);
-
-	fn is_signed(&self) -> Option<bool> {
-		if self.0.function.is_self_contained() {
-			Some(true)
-		} else {
-			self.0.is_signed()
-		}
-	}
-
-	fn new(function: Call, signed_data: Option<Self::SignaturePayload>) -> Option<Self> {
-		sp_runtime::generic::UncheckedExtrinsic::new(function, signed_data).map(Self)
+	fn is_bare(&self) -> bool {
+		ExtrinsicLike::is_bare(&self.0)
 	}
 }
 
-impl<Address, AccountId, Call, Signature, Extra, Lookup> Checkable<Lookup>
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address, AccountId, Call, Signature, Extension, Lookup> Checkable<Lookup>
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
 	Address: Member + MaybeDisplay,
 	Call: Encode + Member + SelfContainedCall,
 	Signature: Member + traits::Verify,
 	<Signature as traits::Verify>::Signer: IdentifyAccount<AccountId = AccountId>,
-	Extra: SignedExtension<AccountId = AccountId>,
+	Extension: Encode + TransactionExtension<Call>,
 	AccountId: Member + MaybeDisplay,
 	Lookup: traits::Lookup<Source = Address, Target = AccountId>,
 {
 	type Checked =
-		CheckedExtrinsic<AccountId, Call, Extra, <Call as SelfContainedCall>::SignedInfo>;
+		CheckedExtrinsic<AccountId, Call, Extension, <Call as SelfContainedCall>::SignedInfo>;
 
 	fn check(self, lookup: &Lookup) -> Result<Self::Checked, TransactionValidityError> {
 		if self.0.function.is_self_contained() {
-			if self.0.signature.is_some() {
+			if matches!(self.0.preamble, Preamble::Signed(_, _, _)) {
 				return Err(TransactionValidityError::Invalid(
 					InvalidTransaction::BadProof,
 				));
@@ -114,10 +102,7 @@ where
 		} else {
 			let checked = Checkable::<Lookup>::check(self.0, lookup)?;
 			Ok(CheckedExtrinsic {
-				signed: match checked.signed {
-					Some((id, extra)) => CheckedSignature::Signed(id, extra),
-					None => CheckedSignature::Unsigned,
-				},
+				signed: CheckedSignature::GenericDelegated(checked.format),
 				function: checked.function,
 			})
 		}
@@ -128,17 +113,18 @@ where
 		self,
 		lookup: &Lookup,
 	) -> Result<Self::Checked, TransactionValidityError> {
+		use generic::ExtrinsicFormat;
 		if self.0.function.is_self_contained() {
 			match self.0.function.check_self_contained() {
 				Some(signed_info) => Ok(CheckedExtrinsic {
 					signed: match signed_info {
 						Ok(info) => CheckedSignature::SelfContained(info),
-						_ => CheckedSignature::Unsigned,
+						_ => CheckedSignature::GenericDelegated(ExtrinsicFormat::Bare),
 					},
 					function: self.0.function,
 				}),
 				None => Ok(CheckedExtrinsic {
-					signed: CheckedSignature::Unsigned,
+					signed: CheckedSignature::GenericDelegated(ExtrinsicFormat::Bare),
 					function: self.0.function,
 				}),
 			}
@@ -146,10 +132,7 @@ where
 			let checked =
 				Checkable::<Lookup>::unchecked_into_checked_i_know_what_i_am_doing(self.0, lookup)?;
 			Ok(CheckedExtrinsic {
-				signed: match checked.signed {
-					Some((id, extra)) => CheckedSignature::Signed(id, extra),
-					None => CheckedSignature::Unsigned,
-				},
+				signed: CheckedSignature::GenericDelegated(checked.format),
 				function: checked.function,
 			})
 		}
@@ -159,29 +142,34 @@ where
 impl<Address, Call, Signature, Extra> ExtrinsicMetadata
 	for UncheckedExtrinsic<Address, Call, Signature, Extra>
 where
-	Extra: SignedExtension,
+	Call: Dispatchable,
+	Extra: TransactionExtension<Call>,
 {
-	const VERSION: u8 = <sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra> as ExtrinsicMetadata>::VERSION;
-	type SignedExtensions = Extra;
+	const VERSIONS: &'static [u8] =
+		generic::UncheckedExtrinsic::<Address, Call, Signature, Extra>::VERSIONS;
+	type TransactionExtensions = Extra;
 }
 
-impl<Address, Call, Signature, Extra> ExtrinsicCall
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address, Call, Signature, Extension> ExtrinsicCall
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
 	Address: TypeInfo,
 	Call: SelfContainedCall + TypeInfo,
 	Signature: TypeInfo,
-	Extra: SignedExtension,
+	Extension: TransactionExtension<Call>,
 {
+	type Call = Call;
+
 	fn call(&self) -> &Self::Call {
 		&self.0.function
 	}
 }
 
-impl<Address, Call: GetDispatchInfo, Signature, Extra> GetDispatchInfo
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address, Call, Signature, Extension> GetDispatchInfo
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
-	Extra: SignedExtension,
+	Call: GetDispatchInfo + Dispatchable,
+	Extension: TransactionExtension<Call>,
 {
 	fn get_dispatch_info(&self) -> DispatchInfo {
 		self.0.function.get_dispatch_info()
@@ -189,8 +177,11 @@ where
 }
 
 #[cfg(feature = "serde")]
-impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> serde::Serialize
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address: Encode, Signature: Encode, Call, Extension> serde::Serialize
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+	Call: Encode + Dispatchable,
+	Extension: Encode + TransactionExtension<Call>,
 {
 	fn serialize<S>(&self, seq: S) -> Result<S::Ok, S::Error>
 	where
@@ -201,27 +192,77 @@ impl<Address: Encode, Signature: Encode, Call: Encode, Extra: SignedExtension> s
 }
 
 #[cfg(feature = "serde")]
-impl<'a, Address: Decode, Signature: Decode, Call: Decode, Extra: SignedExtension>
-	serde::Deserialize<'a> for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<'a, Address: Decode, Signature: Decode, Call, Extension> serde::Deserialize<'a>
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+	Call: Decode + Dispatchable,
+	Extension: Decode + TransactionExtension<Call>,
 {
 	fn deserialize<D>(de: D) -> Result<Self, D::Error>
 	where
 		D: serde::Deserializer<'a>,
 	{
-		<sp_runtime::generic::UncheckedExtrinsic<Address, Call, Signature, Extra>>::deserialize(de)
+		<generic::UncheckedExtrinsic<Address, Call, Signature, Extension>>::deserialize(de)
 			.map(Self)
 	}
 }
 
-impl<Address, Call, Signature, Extra> From<UncheckedExtrinsic<Address, Call, Signature, Extra>>
-	for OpaqueExtrinsic
+impl<Address, Signature, Call, Extension> SignedTransactionBuilder
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+	Address: TypeInfo,
+	Signature: TypeInfo,
+	Call: TypeInfo + SelfContainedCall,
+	Extension: TypeInfo + TransactionExtension<Call>,
+{
+	type Address = Address;
+	type Signature = Signature;
+	type Extension = Extension;
+
+	fn new_signed_transaction(
+		call: Self::Call,
+		signed: Address,
+		signature: Signature,
+		tx_ext: Extension,
+	) -> Self {
+		generic::UncheckedExtrinsic::new_signed(call, signed, signature, tx_ext).into()
+	}
+}
+
+impl<Address, Signature, Call, Extension> InherentBuilder
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+	Address: TypeInfo,
+	Signature: TypeInfo,
+	Call: TypeInfo + SelfContainedCall,
+	Extension: TypeInfo + TransactionExtension<Call>,
+{
+	fn new_inherent(call: Self::Call) -> Self {
+		generic::UncheckedExtrinsic::new_bare(call).into()
+	}
+}
+
+impl<Address, Call, Signature, Extension>
+	From<UncheckedExtrinsic<Address, Call, Signature, Extension>> for OpaqueExtrinsic
 where
 	Address: Encode,
 	Signature: Encode,
-	Call: Encode,
-	Extra: SignedExtension,
+	Call: Encode + SelfContainedCall,
+	Extension: TransactionExtension<Call>,
 {
-	fn from(extrinsic: UncheckedExtrinsic<Address, Call, Signature, Extra>) -> Self {
+	fn from(extrinsic: UncheckedExtrinsic<Address, Call, Signature, Extension>) -> Self {
 		extrinsic.0.into()
+	}
+}
+
+impl<Address, Call, Signature, Extension>
+	From<generic::UncheckedExtrinsic<Address, Call, Signature, Extension>>
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+	Call: Dispatchable,
+	Extension: TransactionExtension<Call>,
+{
+	fn from(utx: generic::UncheckedExtrinsic<Address, Call, Signature, Extension>) -> Self {
+		Self(utx)
 	}
 }

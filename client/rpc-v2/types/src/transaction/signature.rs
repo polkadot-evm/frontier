@@ -32,7 +32,7 @@ pub struct TransactionSignature {
 	///
 	/// - For legacy transactions, this is the recovery id.
 	/// - For typed transactions (EIP-2930, EIP-1559, EIP-4844), this is set to the parity
-	/// (0 for even, 1 for odd) of the y-value of the secp256k1 signature.
+	///   (0 for even, 1 for odd) of the y-value of the secp256k1 signature.
 	///
 	/// # Note
 	///

@@ -23,7 +23,7 @@ precompile-utils-macro = { path = "macro" }
 # Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
