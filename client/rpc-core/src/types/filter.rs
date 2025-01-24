@@ -66,9 +66,9 @@ where
 					if vec.len() <= VARIADIC_MULTIPLE_MAX_SIZE {
 						Ok(VariadicValue::Multiple(vec))
 					} else {
-						Err(D::Error::custom(format!(
-							"Invalid variadic value type: too big array"
-						)))
+						Err(D::Error::custom(
+							"Invalid variadic value type: too big array".to_string(),
+						))
 					}
 				}
 				Err(err) => Err(D::Error::custom(format!(
