@@ -395,7 +395,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => {
 	const INVALID_OPCODE_BYTECODE = InvalidOpcode.bytecode;
 
-	let contractAddess;
+	let contractAddress;
 	before(async () => {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
@@ -409,13 +409,13 @@ describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => 
 		);
 		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 		await createAndFinalizeBlock(context.web3);
-		contractAddess = (await context.web3.eth.getTransactionReceipt(txHash)).contractAddress;
+		contractAddress = (await context.web3.eth.getTransactionReceipt(txHash)).contractAddress;
 	});
 
 	it("should estimate gas with invalid opcode", async function () {
 		let estimate = await context.web3.eth.estimateGas({
 			from: GENESIS_ACCOUNT,
-			to: contractAddess,
+			to: contractAddress,
 			data: "0x28b5e32b", // selector for the contract's `call` method
 		});
 		// The actual estimated value is irrelevant for this test purposes, we just want to verify that
