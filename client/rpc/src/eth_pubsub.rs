@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use futures::{future, FutureExt as _, StreamExt as _};
@@ -165,7 +165,7 @@ where
 				return future::ready(None);
 			};
 
-			let xts = vec![xt.data().deref().clone()];
+			let xts = vec![xt.data().as_ref().clone()];
 
 			let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
 				api.extrinsic_filter(best_block, xts).ok()

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, ops::Deref, sync::Arc};
+use std::{marker::PhantomData, sync::Arc};
 
 use ethereum::TransactionV2 as EthereumTransaction;
 use ethereum_types::{H160, H256, U256};
@@ -109,7 +109,7 @@ where
 			.graph
 			.validated_pool()
 			.ready()
-			.map(|in_pool_tx| in_pool_tx.data().deref().clone())
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect();
 
 		// Collect extrinsics in the future validated pool.
@@ -118,7 +118,7 @@ where
 			.validated_pool()
 			.futures()
 			.iter()
-			.map(|(_, extrinsic)| extrinsic.deref().clone())
+			.map(|(_, extrinsic)| extrinsic.as_ref().clone())
 			.collect();
 
 		// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
