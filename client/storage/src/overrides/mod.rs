@@ -123,12 +123,9 @@ where
 	}
 
 	pub fn account_storage(&self, at: B::Hash, address: Address, index: U256) -> Option<H256> {
-		let tmp: &mut [u8; 32] = &mut [0; 32];
-		index.write_as_big_endian(tmp);
-
 		let mut key: Vec<u8> = storage_prefix_build(PALLET_EVM, EVM_ACCOUNT_STORAGES);
 		key.extend(blake2_128_extend(address.as_bytes()));
-		key.extend(blake2_128_extend(tmp));
+		key.extend(blake2_128_extend(&index.to_big_endian()));
 
 		self.query::<H256>(at, &StorageKey(key))
 	}

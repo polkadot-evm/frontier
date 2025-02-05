@@ -282,11 +282,9 @@ impl Precompile for Bn128Pairing {
 			}
 		};
 
-		let buf = ret_val.to_big_endian();
-
 		Ok(PrecompileOutput {
 			exit_status: ExitSucceed::Returned,
-			output: buf.to_vec(),
+			output: ret_val.to_big_endian().to_vec(),
 		})
 	}
 }
