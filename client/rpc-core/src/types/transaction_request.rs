@@ -53,7 +53,7 @@ pub struct TransactionRequest {
 	pub data: Data,
 
 	/// EIP-2930 access list
-	#[serde(with = "access_list_item_camelcase")]
+	#[serde(with = "access_list_item_camelcase", default)]
 	pub access_list: Option<Vec<AccessListItem>>,
 	/// Chain ID that this transaction is valid on
 	pub chain_id: Option<U64>,
@@ -255,6 +255,31 @@ mod tests {
 			"input": "0x123abc",
 			"nonce": "0x60",
 			"accessList": [{"address": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b", "storageKeys": []}],
+			"type": "0x70"
+		});
+
+		let args = serde_json::from_value::<TransactionRequest>(data).unwrap();
+		assert_eq!(
+			args.data,
+			Data {
+				input: Some(Bytes::from(vec![0x12, 0x3a, 0xbc])),
+				data: None,
+			}
+		);
+	}
+
+	#[test]
+	fn test_deserialize_missing_field_access_list() {
+		let data = json!({
+			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"gasPrice": "0x10",
+			"maxFeePerGas": "0x20",
+			"maxPriorityFeePerGas": "0x30",
+			"gas": "0x40",
+			"value": "0x50",
+			"input": "0x123abc",
+			"nonce": "0x60",
 			"type": "0x70"
 		});
 
