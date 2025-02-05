@@ -1741,6 +1741,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.96",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -6624,7 +6625,7 @@ checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
 name = "precompile-utils"
 version = "0.1.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "environmental",
  "evm",
  "fp-evm",
