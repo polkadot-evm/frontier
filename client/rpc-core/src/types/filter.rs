@@ -30,6 +30,8 @@ use serde_json::{from_value, Value};
 
 use crate::types::{BlockNumberOrHash, Log};
 
+const VARIADIC_MULTIPLE_MAX_SIZE: usize = 1024;
+
 /// Variadic value
 #[derive(Clone, Debug, Eq, PartialEq, Hash)]
 pub enum VariadicValue<T>
@@ -55,13 +57,26 @@ where
 		let v: Value = Deserialize::deserialize(deserializer)?;
 
 		if v.is_null() {
-			return Ok(VariadicValue::Null);
+			Ok(VariadicValue::Null)
+		} else if let Ok(value) = from_value::<T>(v.clone()) {
+			Ok(VariadicValue::Single(value))
+		} else {
+			match from_value::<Vec<T>>(v) {
+				Ok(vec) => {
+					if vec.len() <= VARIADIC_MULTIPLE_MAX_SIZE {
+						Ok(VariadicValue::Multiple(vec))
+					} else {
+						Err(D::Error::custom(
+							"Invalid variadic value type: too big array".to_string(),
+						))
+					}
+				}
+				Err(err) => Err(D::Error::custom(format!(
+					"Invalid variadic value type: {}",
+					err
+				))),
+			}
 		}
-
-		from_value(v.clone())
-			.map(VariadicValue::Single)
-			.or_else(|_| from_value(v).map(VariadicValue::Multiple))
-			.map_err(|err| D::Error::custom(format!("Invalid variadic value type: {}", err)))
 	}
 }
 
