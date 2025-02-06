@@ -16,7 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::convert::Into;
 use std::{fmt, str::FromStr};
 
 use ethereum_types::U256;
@@ -57,20 +56,20 @@ impl Serialize for BlockCount {
 
 struct BlockCountVisitor;
 
-impl Into<U256> for BlockCount {
-	fn into(self) -> U256 {
-		match self {
-			BlockCount::U256(n) => n,
+impl From<BlockCount> for U256 {
+	fn from(block_count: BlockCount) -> U256 {
+		match block_count {
 			BlockCount::Num(n) => U256::from(n),
+			BlockCount::U256(n) => n,
 		}
 	}
 }
 
-impl Into<u64> for BlockCount {
-	fn into(self) -> u64 {
-		match self {
-			BlockCount::U256(n) => n.as_u64(),
+impl From<BlockCount> for u64 {
+	fn from(block_count: BlockCount) -> u64 {
+		match block_count {
 			BlockCount::Num(n) => n,
+			BlockCount::U256(n) => n.as_u64(),
 		}
 	}
 }
