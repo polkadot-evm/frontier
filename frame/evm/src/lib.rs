@@ -952,7 +952,7 @@ impl<T: Config> Pallet<T> {
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
 		let balance_sub = SubstrateBalance::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance));
 		let balance_eth =
-			T::BalanceConverter::into_evm_balance(balance_sub).unwrap_or(EvmBalance::from(0));
+			T::BalanceConverter::into_evm_balance(balance_sub).unwrap_or(EvmBalance::from(0u64));
 
 		(
 			Account {
@@ -1052,7 +1052,7 @@ where
 
 			// Convert corrected fee into substrate balance
 			let corrected_fee_sub =
-				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(SubstrateBalance::from(0));
+				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(SubstrateBalance::from(0u64));
 
 			// Calculate how much refund we should return
 			let refund_amount = paid
@@ -1091,7 +1091,7 @@ where
 
 			// Convert base fee into substrate balance
 			let base_fee_sub =
-				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(SubstrateBalance::from(0));
+				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(SubstrateBalance::from(0u64));
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.0.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
@@ -1160,7 +1160,7 @@ where
 
 			// Convert corrected fee into substrate balance
 			let corrected_fee_sub =
-				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(SubstrateBalance::from(0));
+				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(SubstrateBalance::from(0u64));
 
 			// Calculate how much refund we should return
 			let refund_amount = paid
@@ -1178,7 +1178,7 @@ where
 
 			// Convert base fee into substrate balance
 			let base_fee_sub =
-				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(SubstrateBalance::from(0));
+				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(SubstrateBalance::from(0u64));
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.0.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
