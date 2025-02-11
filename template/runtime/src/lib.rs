@@ -52,8 +52,7 @@ use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
 use pallet_ethereum::{Call::transact, PostLogContent, Transaction as EthereumTransaction};
 use pallet_evm::{
-	Account as EVMAccount, BalanceConverter, EnsureAccountId20, FeeCalculator,
-	IdentityAddressMapping, Runner,
+	Account as EVMAccount, BalanceConverter, EnsureAccountId20, EvmBalance, FeeCalculator, IdentityAddressMapping, Runner, SubstrateBalance
 };
 
 // A few exports that help ease life for downstream crates.
@@ -353,13 +352,14 @@ pub struct SubtensorEvmBalanceConverter;
 
 impl BalanceConverter for SubtensorEvmBalanceConverter {
 	/// Convert from Substrate balance (u64) to EVM balance (U256)
-	fn into_evm_balance(value: U256) -> Option<U256> {
+	fn into_evm_balance(value: SubstrateBalance) -> Option<EvmBalance> {
 		value
+			.into_u256()
 			.checked_mul(U256::from(EVM_DECIMALS_FACTOR))
 			.and_then(|evm_value| {
 				// Ensure the result fits within the maximum U256 value
 				if evm_value <= U256::MAX {
-					Some(evm_value)
+					Some(EvmBalance::new(evm_value))
 				} else {
 					None
 				}
@@ -367,13 +367,14 @@ impl BalanceConverter for SubtensorEvmBalanceConverter {
 	}
 
 	/// Convert from EVM balance (U256) to Substrate balance (u64)
-	fn into_substrate_balance(value: U256) -> Option<U256> {
+	fn into_substrate_balance(value: EvmBalance) -> Option<SubstrateBalance> {
 		value
+			.into_u256()
 			.checked_div(U256::from(EVM_DECIMALS_FACTOR))
 			.and_then(|substrate_value| {
 				// Ensure the result fits within the TAO balance type (u64)
 				if substrate_value <= U256::from(u64::MAX) {
-					Some(substrate_value)
+					Some(SubstrateBalance::new(substrate_value))
 				} else {
 					None
 				}

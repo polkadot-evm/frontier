@@ -737,11 +737,11 @@ fn fee_deduction() {
 		assert_eq!(Balances::free_balance(substrate_addr), 100);
 
 		// Deduct fees as 10 units
-		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, U256::from(10e9 as u64)).unwrap();
+		let imbalance = <<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(&evm_addr, EvmBalance::from(10e9 as u128)).unwrap();
 		assert_eq!(Balances::free_balance(substrate_addr), 90);
 
 		// Refund fees as 5 units
-		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, U256::from(5e9 as u64), U256::from(5e9 as u64), imbalance);
+		<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::correct_and_deposit_fee(&evm_addr, EvmBalance::from(5e9 as u128), EvmBalance::from(5e9 as u128), imbalance);
 		assert_eq!(Balances::free_balance(substrate_addr), 95);
 	});
 }
@@ -789,7 +789,7 @@ fn ed_0_refund_patch_is_required() {
 		let _ =
 			<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(
 				&evm_addr,
-				U256::from(100),
+				EvmBalance::from(100u64),
 			)
 			.unwrap();
 		assert_eq!(Balances::free_balance(substrate_addr), 0);
