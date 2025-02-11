@@ -789,7 +789,7 @@ fn ed_0_refund_patch_is_required() {
 		let _ =
 			<<Test as Config>::OnChargeTransaction as OnChargeEVMTransaction<Test>>::withdraw_fee(
 				&evm_addr,
-				EvmBalance::from(100),
+				EvmBalance::from(100u64),
 			)
 			.unwrap();
 		assert_eq!(Balances::free_balance(substrate_addr), 0);
