@@ -1261,6 +1261,20 @@ impl SubstrateBalance {
 	pub fn into_u256(self) -> U256 {
 		self.0
 	}
+
+	pub fn into_u64_saturating(self) -> u64 {
+		if self.0 > U256::from(u64::MAX) {
+			u64::MAX
+		} else {
+			self.0.as_u64()
+		}
+	}
+}
+
+impl From<u64> for SubstrateBalance {
+	fn from(value: u64) -> Self {
+		SubstrateBalance(U256::from(value))
+	}
 }
 
 impl From<u128> for SubstrateBalance {
@@ -1285,6 +1299,20 @@ impl EvmBalance {
 
 	pub fn into_u256(self) -> U256 {
 		self.0
+	}
+
+	pub fn into_u64_saturating(self) -> u64 {
+		if self.0 > U256::from(u64::MAX) {
+			u64::MAX
+		} else {
+			self.0.as_u64()
+		}
+	}
+}
+
+impl From<u64> for EvmBalance {
+	fn from(value: u64) -> Self {
+		EvmBalance(U256::from(value))
 	}
 }
 
