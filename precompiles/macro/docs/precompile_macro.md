@@ -17,10 +17,10 @@ reused to generate the `Precompile`/`PrecompileSet` trait implementation and the
 each public function of precompile with its parsed arguments.
 
 ```rust,ignore
-pub struct ExemplePrecompile<R, I>(PhantomData<(R,I)>);
+pub struct ExamplePrecompile<R, I>(PhantomData<(R,I)>);
 
 #[precomile_utils::precompile]
-impl<R, I> ExemplePrecompile<R, I>
+impl<R, I> ExamplePrecompile<R, I>
 where
     R: pallet_evm::Config
 {
@@ -35,7 +35,7 @@ The example code above will automatically generate an enum like
 
 ```rust,ignore
 #[allow(non_camel_case_types)]
-pub enum ExemplePrecompileCall<R, I>
+pub enum ExamplePrecompileCall<R, I>
 where
     R: pallet_evm::Config
 {
@@ -104,7 +104,7 @@ Finally, every other function annotated with a `precompile::_` attribute must no
 discriminant as first parameter, before the `PrecompileHandle`.
 
 ```rust,ignore
-pub struct ExemplePrecompileSet<R>(PhantomData<R>);
+pub struct ExamplePrecompileSet<R>(PhantomData<R>);
 
 #[precompile_utils::precompile]
 #[precompile::precompile_set]
