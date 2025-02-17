@@ -119,9 +119,8 @@ where
 		info: &DispatchInfoOf<Self::Call>,
 		len: usize,
 	) -> sp_runtime::ApplyExtrinsicResultWithInfo<PostDispatchInfoOf<Self::Call>> {
-		use CheckedSignature::*;
 		match self.signed {
-			GenericDelegated(format) => match format {
+			CheckedSignature::GenericDelegated(format) => match format {
 				ExtrinsicFormat::Bare => {
 					U::pre_dispatch(&self.function)?;
 					// TODO: Separate logic from `TransactionExtension` into a new `InherentExtension`
@@ -141,7 +140,7 @@ where
 				ExtrinsicFormat::General(extension_version, extension) => extension
 					.dispatch_transaction(None.into(), self.function, info, len, extension_version),
 			},
-			SelfContained(signed_info) => {
+			CheckedSignature::SelfContained(signed_info) => {
 				// If pre-dispatch fail, the block must be considered invalid
 				self.function
 					.pre_dispatch_self_contained(&signed_info, info, len)
