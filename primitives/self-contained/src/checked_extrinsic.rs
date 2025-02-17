@@ -51,8 +51,8 @@ pub struct CheckedExtrinsic<AccountId, Call, Extension, SelfContainedSignedInfo>
 	pub function: Call,
 }
 
-impl<AccountId, Call: GetDispatchInfo, Extra, SelfContainedSignedInfo> GetDispatchInfo
-	for CheckedExtrinsic<AccountId, Call, Extra, SelfContainedSignedInfo>
+impl<AccountId, Call: GetDispatchInfo, Extension, SelfContainedSignedInfo> GetDispatchInfo
+	for CheckedExtrinsic<AccountId, Call, Extension, SelfContainedSignedInfo>
 {
 	fn get_dispatch_info(&self) -> DispatchInfo {
 		self.function.get_dispatch_info()

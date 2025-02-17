@@ -36,20 +36,20 @@ use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
 #[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
-pub struct UncheckedExtrinsic<
-	Address,
-	Call: Dispatchable,
-	Signature,
-	Extension: TransactionExtension<Call>,
->(pub generic::UncheckedExtrinsic<Address, Call, Signature, Extension>);
+pub struct UncheckedExtrinsic<Address, Call, Signature, Extension>(
+	pub generic::UncheckedExtrinsic<Address, Call, Signature, Extension>,
+);
 
-impl<Address, Call: Dispatchable, Signature, Extra: TransactionExtension<Call>>
-	UncheckedExtrinsic<Address, Call, Signature, Extra>
-{
+impl<Address, Call, Signature, Extension> UncheckedExtrinsic<Address, Call, Signature, Extension> {
 	/// New instance of a signed extrinsic aka "transaction".
-	pub fn new_signed(function: Call, signed: Address, signature: Signature, extra: Extra) -> Self {
+	pub fn new_signed(
+		function: Call,
+		signed: Address,
+		signature: Signature,
+		tx_ext: Extension,
+	) -> Self {
 		Self(generic::UncheckedExtrinsic::new_signed(
-			function, signed, signature, extra,
+			function, signed, signature, tx_ext,
 		))
 	}
 
@@ -59,11 +59,8 @@ impl<Address, Call: Dispatchable, Signature, Extra: TransactionExtension<Call>>
 	}
 }
 
-impl<Address: TypeInfo, Call, Signature: TypeInfo, Extension> ExtrinsicLike
+impl<Address: TypeInfo, Call: TypeInfo, Signature: TypeInfo, Extension: TypeInfo> ExtrinsicLike
 	for UncheckedExtrinsic<Address, Call, Signature, Extension>
-where
-	Call: TypeInfo + Dispatchable,
-	Extension: TypeInfo + TransactionExtension<Call>,
 {
 	fn is_bare(&self) -> bool {
 		ExtrinsicLike::is_bare(&self.0)
@@ -139,24 +136,24 @@ where
 	}
 }
 
-impl<Address, Call, Signature, Extra> ExtrinsicMetadata
-	for UncheckedExtrinsic<Address, Call, Signature, Extra>
+impl<Address, Call, Signature, Extension> ExtrinsicMetadata
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
 	Call: Dispatchable,
-	Extra: TransactionExtension<Call>,
+	Extension: TransactionExtension<Call>,
 {
 	const VERSIONS: &'static [u8] =
-		generic::UncheckedExtrinsic::<Address, Call, Signature, Extra>::VERSIONS;
-	type TransactionExtensions = Extra;
+		generic::UncheckedExtrinsic::<Address, Call, Signature, Extension>::VERSIONS;
+	type TransactionExtensions = Extension;
 }
 
 impl<Address, Call, Signature, Extension> ExtrinsicCall
 	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
 	Address: TypeInfo,
-	Call: SelfContainedCall + TypeInfo,
+	Call: TypeInfo,
 	Signature: TypeInfo,
-	Extension: TransactionExtension<Call>,
+	Extension: TypeInfo,
 {
 	type Call = Call;
 
@@ -212,8 +209,8 @@ impl<Address, Signature, Call, Extension> SignedTransactionBuilder
 where
 	Address: TypeInfo,
 	Signature: TypeInfo,
-	Call: TypeInfo + SelfContainedCall,
-	Extension: TypeInfo + TransactionExtension<Call>,
+	Call: TypeInfo,
+	Extension: TypeInfo,
 {
 	type Address = Address;
 	type Signature = Signature;
@@ -234,8 +231,8 @@ impl<Address, Signature, Call, Extension> InherentBuilder
 where
 	Address: TypeInfo,
 	Signature: TypeInfo,
-	Call: TypeInfo + SelfContainedCall,
-	Extension: TypeInfo + TransactionExtension<Call>,
+	Call: TypeInfo,
+	Extension: TypeInfo,
 {
 	fn new_inherent(call: Self::Call) -> Self {
 		generic::UncheckedExtrinsic::new_bare(call).into()
@@ -247,8 +244,8 @@ impl<Address, Call, Signature, Extension>
 where
 	Address: Encode,
 	Signature: Encode,
-	Call: Encode + SelfContainedCall,
-	Extension: TransactionExtension<Call>,
+	Call: Encode,
+	Extension: Encode,
 {
 	fn from(extrinsic: UncheckedExtrinsic<Address, Call, Signature, Extension>) -> Self {
 		extrinsic.0.into()
@@ -258,9 +255,6 @@ where
 impl<Address, Call, Signature, Extension>
 	From<generic::UncheckedExtrinsic<Address, Call, Signature, Extension>>
 	for UncheckedExtrinsic<Address, Call, Signature, Extension>
-where
-	Call: Dispatchable,
-	Extension: TransactionExtension<Call>,
 {
 	fn from(utx: generic::UncheckedExtrinsic<Address, Call, Signature, Extension>) -> Self {
 		Self(utx)
