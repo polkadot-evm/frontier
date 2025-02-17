@@ -12,7 +12,7 @@ hex = { workspace = true }
 impl-serde = { workspace = true, optional = true }
 libsecp256k1 = { workspace = true }
 log = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 

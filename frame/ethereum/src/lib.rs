@@ -137,7 +137,10 @@ where
 		len: usize,
 	) -> Option<Result<(), TransactionValidityError>> {
 		if let Call::transact { transaction } = self {
-			if let Err(e) = CheckWeight::<T>::do_pre_dispatch(dispatch_info, len) {
+			if let Err(e) =
+				CheckWeight::<T>::do_validate(dispatch_info, len).and_then(|(_, next_len)| {
+					CheckWeight::<T>::do_prepare(dispatch_info, len, next_len)
+				}) {
 				return Some(Err(e));
 			}
 
@@ -629,8 +632,9 @@ impl<T: Config> Pallet<T> {
 						let data = info.value;
 						let data_len = data.len();
 						if data_len > MESSAGE_START {
-							let message_len = U256::from(&data[LEN_START..MESSAGE_START])
-								.saturated_into::<usize>();
+							let message_len =
+								U256::from_big_endian(&data[LEN_START..MESSAGE_START])
+									.saturated_into::<usize>();
 							let message_end = MESSAGE_START.saturating_add(
 								message_len.min(T::ExtraDataLength::get() as usize),
 							);

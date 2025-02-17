@@ -23,7 +23,7 @@ use alloc::{string::String, vec::Vec};
 use frame_support::{ensure, traits::ConstU32};
 use sp_core::H256;
 use sp_weights::Weight;
-use xcm::latest::{Junction, Junctions, Location, NetworkId};
+use xcm::lts::{Junction, Junctions, Location, NetworkId};
 
 use crate::solidity::{
 	codec::{bytes::*, Codec, Reader, Writer},

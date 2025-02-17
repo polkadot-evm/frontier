@@ -19,11 +19,11 @@ futures = { workspace = true }
 hex-literal = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
 log = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 serde_json = { workspace = true, features = ["arbitrary_precision"] }
 
 # Substrate
-prometheus-endpoint = { package = "substrate-prometheus-endpoint", workspace = true }
+prometheus-endpoint = { workspace = true }
 sc-basic-authorship = { workspace = true }
 sc-chain-spec = { workspace = true }
 sc-cli = { workspace = true }

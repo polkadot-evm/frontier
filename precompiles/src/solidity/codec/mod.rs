@@ -273,7 +273,7 @@ impl Writer {
 
 			// Override dummy offset to the offset it will be in the final output.
 			U256::from(free_space_offset)
-				.to_big_endian(&mut output[offset_position..offset_position_end]);
+				.write_as_big_endian(&mut output[offset_position..offset_position_end]);
 
 			// Append this data at the end of the current output.
 			output.append(&mut offset_chunk.data);
