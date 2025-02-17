@@ -12,13 +12,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = { workspace = true }
-ethereum = { workspace = true, features = ["with-codec"], optional = true }
+ethereum = { workspace = true, features = ["with-scale"], optional = true }
 futures = { workspace = true, optional = true }
 kvdb-rocksdb = { workspace = true, optional = true }
 log = { workspace = true }
 parity-db = { workspace = true }
 parking_lot = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 smallvec = { version = "1.13", optional = true }
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"], optional = true }
 tokio = { workspace = true, features = ["macros", "sync"], optional = true }

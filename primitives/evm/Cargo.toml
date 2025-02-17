@@ -14,7 +14,7 @@ targets = ["x86_64-unknown-linux-gnu"]
 environmental = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
 num_enum = { workspace = true, default-features = false }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
 

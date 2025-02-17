@@ -484,8 +484,8 @@ impl Precompile for Bw6761Pairing {
 	/// > Pairing call expects `384*k` bytes as an inputs that is interpreted as byte concatenation of `k` slices. Each slice has the following structure:
 	/// > - `192` bytes of G1 point encoding
 	/// > - `192` bytes of G2 point encoding
-	/// > Output is a `32` bytes where last single byte is `0x01` if pairing result is equal to multiplicative identity in a pairing target field and `0x00` otherwise
-	/// > (which is equivalent of Big Endian encoding of Solidity values `uint256(1)` and `uin256(0)` respectively).
+	/// >   Output is a `32` bytes where last single byte is `0x01` if pairing result is equal to multiplicative identity in a pairing target field and `0x00` otherwise
+	/// >   (which is equivalent of Big Endian encoding of Solidity values `uint256(1)` and `uin256(0)` respectively).
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		if handle.input().is_empty() || handle.input().len() % 384 != 0 {
 			return Err(PrecompileFailure::Error {

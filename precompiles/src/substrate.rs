@@ -115,7 +115,7 @@ where
 		let call = Runtime::RuntimeCall::from(call);
 		let dispatch_info = call.get_dispatch_info();
 
-		Self::record_external_cost(handle, dispatch_info.weight, storage_growth)
+		Self::record_external_cost(handle, dispatch_info.total_weight(), storage_growth)
 			.map_err(TryDispatchError::Evm)?;
 
 		// Dispatch call.
@@ -128,7 +128,7 @@ where
 
 		Self::refund_weight_v2_cost(
 			handle,
-			dispatch_info.weight,
+			dispatch_info.total_weight(),
 			post_dispatch_info.actual_weight,
 		)
 		.map_err(TryDispatchError::Evm)?;

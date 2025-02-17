@@ -41,7 +41,7 @@
 //! Observable differences include:
 //!
 //! - The available length of block hashes may not be 256 depending on the configuration of the System pallet
-//! in the Substrate runtime.
+//!   in the Substrate runtime.
 //! - Difficulty and coinbase, which do not make sense in this pallet and is currently hard coded to zero.
 //!
 //! We currently do not aim to make unobservable behaviors, such as state root, to be the same. We also don't aim to follow

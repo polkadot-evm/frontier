@@ -27,7 +27,7 @@ fp-storage = { workspace = true, features = ["default"] }
 
 [dev-dependencies]
 futures = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 tempfile = "3.3.0"
 # Substrate
 sc-block-builder = { workspace = true }

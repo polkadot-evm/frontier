@@ -109,7 +109,7 @@ where
 			.graph
 			.validated_pool()
 			.ready()
-			.map(|in_pool_tx| in_pool_tx.data().clone())
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect();
 
 		// Collect extrinsics in the future validated pool.
@@ -118,7 +118,7 @@ where
 			.validated_pool()
 			.futures()
 			.iter()
-			.map(|(_, extrinsic)| extrinsic.clone())
+			.map(|(_, extrinsic)| extrinsic.as_ref().clone())
 			.collect();
 
 		// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.

@@ -81,7 +81,7 @@ where
 					graph
 						.validated_pool()
 						.ready()
-						.map(|in_pool_tx| in_pool_tx.data().clone())
+						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 
@@ -91,7 +91,7 @@ where
 						.validated_pool()
 						.futures()
 						.iter()
-						.map(|(_hash, extrinsic)| extrinsic.clone())
+						.map(|(_hash, extrinsic)| extrinsic.as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 

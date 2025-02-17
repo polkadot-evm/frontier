@@ -111,7 +111,7 @@ where
 					.graph
 					.validated_pool()
 					.ready()
-					.map(|in_pool_tx| in_pool_tx.data().clone())
+					.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 					.collect();
 				// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
 				let api = self.client.runtime_api();
@@ -225,7 +225,7 @@ where
 							.graph
 							.validated_pool()
 							.ready()
-							.map(|in_pool_tx| in_pool_tx.data().clone())
+							.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 							.collect();
 						// Use the runtime to match the (here) opaque extrinsics against ethereum transactions.
 						let api = self.client.runtime_api();
