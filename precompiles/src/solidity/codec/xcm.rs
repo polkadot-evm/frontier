@@ -23,7 +23,7 @@ use alloc::{string::String, vec::Vec};
 use frame_support::{ensure, traits::ConstU32};
 use sp_core::H256;
 use sp_weights::Weight;
-use xcm::lts::{Junction, Junctions, Location, NetworkId};
+use xcm::latest::{Junction, Junctions, Location, NetworkId};
 
 use crate::solidity::{
 	codec::{bytes::*, Codec, Reader, Writer},
@@ -76,6 +76,7 @@ pub(crate) fn network_id_to_bytes(network_id: Option<NetworkId>) -> Vec<u8> {
 			encoded.append(&mut block_hash.into());
 			encoded
 		}
+		/*
 		Some(NetworkId::Westend) => {
 			encoded.push(5u8);
 			encoded.push(4u8);
@@ -91,6 +92,7 @@ pub(crate) fn network_id_to_bytes(network_id: Option<NetworkId>) -> Vec<u8> {
 			encoded.push(6u8);
 			encoded
 		}
+		*/
 		Some(NetworkId::Ethereum { chain_id }) => {
 			encoded.push(8u8);
 			encoded.push(7u8);
@@ -152,9 +154,11 @@ pub(crate) fn network_id_from_bytes(encoded_bytes: Vec<u8>) -> MayRevert<Option<
 				block_hash,
 			}))
 		}
+		/*
 		5 => Ok(Some(NetworkId::Westend)),
 		6 => Ok(Some(NetworkId::Rococo)),
 		7 => Ok(Some(NetworkId::Wococo)),
+		*/
 		8 => {
 			let mut chain_id: [u8; 8] = Default::default();
 			chain_id.copy_from_slice(encoded_network_id.read_raw_bytes(8)?);
