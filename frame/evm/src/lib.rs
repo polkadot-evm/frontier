@@ -148,12 +148,12 @@ pub mod pallet {
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
 
 		/// Allow the source address to deploy contracts directly via CREATE calls.
-        #[pallet::no_default_bounds]
-        type CreateOrigin: EnsureCreateOrigin<Self>;
+		#[pallet::no_default_bounds]
+		type CreateOrigin: EnsureCreateOrigin<Self>;
 
 		/// Allow the source address to deploy contracts via CALL(CREATE) calls.
-        #[pallet::no_default_bounds]
-        type CreateInnerOrigin: EnsureCreateOrigin<Self>;
+		#[pallet::no_default_bounds]
+		type CreateInnerOrigin: EnsureCreateOrigin<Self>;
 
 		/// Allow the origin to withdraw on behalf of given address.
 		#[pallet::no_default_bounds]
@@ -262,6 +262,8 @@ pub mod pallet {
 			type FindAuthor = FindAuthorTruncated;
 			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 			type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
+			type CreateOrigin = ();
+			type CreateInnerOrigin = ();
 			type WeightInfo = ();
 		}
 
@@ -831,7 +833,7 @@ where
 	AddressGetter: Get<Vec<H160>>,
 {
 	fn check_create_origin(address: &H160) -> Result<(), Error<T>> {
-		if !AddressGetter::get().contains(address){
+		if !AddressGetter::get().contains(address) {
 			return Err(Error::<T>::CreateOriginNotAllowed);
 		}
 		Ok(())
@@ -967,19 +969,16 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create an account.
-	pub fn create_account(address: H160, code: Vec<u8>, caller: Option<H160>) -> Result<(), ExitError>{
- 		if let Some(caller_address) = caller {
+	pub fn create_account(
+		address: H160,
+		code: Vec<u8>,
+		caller: Option<H160>,
+	) -> Result<(), ExitError> {
+		if let Some(caller_address) = caller {
 			T::CreateInnerOrigin::check_create_origin(&caller_address).map_err(|e| {
 				let error: &'static str = e.into();
 				ExitError::Other(Cow::Borrowed(error))
 			})?;
-		}
-		if <Suicided<T>>::contains_key(address) {
-			// This branch should never trigger, because when Suicided
-			// contains an address, then its nonce will be at least one,
-			// which causes CreateCollision error in EVM, but we add it
-			// here for safeguard.
-			return Ok(());
 		}
 
 		if code.is_empty() {

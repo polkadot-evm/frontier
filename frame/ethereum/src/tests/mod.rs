@@ -67,11 +67,11 @@ pub const TEST_CONTRACT_CODE: &str = "608060405234801561001057600080fd5b50610129
 // contract Bar {
 //  function getNumber()
 //    public
-//    pure 
+//    pure
 //    returns (uint32 number)
 //  {
 //    return 10;
-//  }    
+//  }
 //}
 pub const FOO_BAR_CONTRACT_CREATOR_BYTECODE: &str =
-		include_str!("./res/foo_bar_contract_creator.txt");
+	include_str!("./res/foo_bar_contract_creator.txt");

@@ -359,8 +359,6 @@ impl pallet_evm::Config for Runtime {
 	type WeightPerGas = WeightPerGas;
 	type BlockHashMapping = pallet_ethereum::EthereumBlockHashMapping<Self>;
 	type CallOrigin = EnsureAccountId20;
-	type CreateOrigin = ();
-	type CreateInnerOrigin = ();
 	type WithdrawOrigin = EnsureAccountId20;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
@@ -376,6 +374,8 @@ impl pallet_evm::Config for Runtime {
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
 	type Timestamp = Timestamp;
+	type CreateOrigin = ();
+	type CreateInnerOrigin = ();
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
 }
 

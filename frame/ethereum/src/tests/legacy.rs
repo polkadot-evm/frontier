@@ -326,23 +326,26 @@ fn contract_creation_fails_with_not_allowed_address() {
 		}
 		.sign(&bob.private_key);
 
-		let result = Ethereum::execute(bob.address, &t, None,);
+		let result = Ethereum::execute(bob.address, &t, None);
 		assert!(result.is_err());
 
 		// Note: assert_err! macro doesn't work here because we receive 'None' as
-		// 'actual_weight' using assert_err instead of Some(Weight::default()), 
+		// 'actual_weight' using assert_err instead of Some(Weight::default()),
 		// but the error is the same "CreateOriginNotAllowed".
-		assert_eq!(result, Err(DispatchErrorWithPostInfo {
-			post_info: PostDispatchInfo{
-				actual_weight: Some(Weight::default()),
-				pays_fee: Pays::Yes
-			},
-			error: DispatchError::Module(ModuleError{
-				index: 3,
-				error: [13,0,0,0],
-				message: Some("CreateOriginNotAllowed")
+		assert_eq!(
+			result,
+			Err(DispatchErrorWithPostInfo {
+				post_info: PostDispatchInfo {
+					actual_weight: Some(Weight::default()),
+					pays_fee: Pays::Yes
+				},
+				error: DispatchError::Module(ModuleError {
+					index: 3,
+					error: [13, 0, 0, 0],
+					message: Some("CreateOriginNotAllowed")
+				})
 			})
-		}));
+		);
 	});
 }
 
@@ -367,17 +370,15 @@ fn inner_contract_creation_succeeds_with_allowed_address() {
 			value: U256::zero(),
 			input: new_bar,
 		}
-		.sign(&alice.private_key); 
+		.sign(&alice.private_key);
 
-		let (_, _, info) = Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).unwrap();
+		let (_, _, info) =
+			Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).unwrap();
 
 		assert!(Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).is_ok());
 		match info {
 			CallOrCreateInfo::Call(info) => {
-				assert_eq!(
-					info.exit_reason,
-					ExitReason::Succeed(ExitSucceed::Returned)
-				);
+				assert_eq!(info.exit_reason, ExitReason::Succeed(ExitSucceed::Returned));
 			}
 			CallOrCreateInfo::Create(_) => panic!("expected call info"),
 		}
@@ -406,16 +407,14 @@ fn inner_contract_creation_reverts_with_not_allowed_address() {
 			value: U256::zero(),
 			input: new_bar,
 		}
-		.sign(&bob.private_key); 
+		.sign(&bob.private_key);
 
-		let (_, _, info) = Ethereum::execute(bob.address, &new_bar_inner_creation_tx, None).unwrap();
+		let (_, _, info) =
+			Ethereum::execute(bob.address, &new_bar_inner_creation_tx, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {
-				assert_eq!(
-					info.exit_reason,
-					ExitReason::Revert(ExitRevert::Reverted)
-				);
+				assert_eq!(info.exit_reason, ExitReason::Revert(ExitRevert::Reverted));
 			}
 			CallOrCreateInfo::Create(_) => panic!("expected call info"),
 		}

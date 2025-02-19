@@ -251,6 +251,8 @@ impl pallet_evm::Config for Runtime {
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;
+	type CreateInnerOrigin = ();
+	type CreateOrigin = ();
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -315,6 +317,7 @@ fn default_checks_revert_when_called_by_contract() {
 		pallet_evm::Pallet::<Runtime>::create_account(
 			Alice.into(),
 			hex_literal::hex!("1460006000fd").to_vec(),
+			Some(H160::from_low_u64_be(1))
 		);
 
 		precompiles()
@@ -340,6 +343,7 @@ fn callable_by_contract_works() {
 		pallet_evm::Pallet::<Runtime>::create_account(
 			Alice.into(),
 			hex_literal::hex!("1460006000fd").to_vec(),
+			Some(H160::from_low_u64_be(1))
 		);
 
 		precompiles()
