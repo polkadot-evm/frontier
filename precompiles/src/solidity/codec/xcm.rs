@@ -23,7 +23,10 @@ use alloc::{string::String, vec::Vec};
 use frame_support::{ensure, traits::ConstU32};
 use sp_core::H256;
 use sp_weights::Weight;
-use xcm::latest::{Junction, Junctions, Location, NetworkId};
+use xcm::{
+	latest::{Junction, Junctions, Location, NetworkId},
+	v5::{ROCOCO_GENESIS_HASH, WESTEND_GENESIS_HASH},
+};
 
 use crate::solidity::{
 	codec::{bytes::*, Codec, Reader, Writer},
@@ -137,6 +140,9 @@ pub(crate) fn network_id_from_bytes(encoded_bytes: Vec<u8>) -> MayRevert<Option<
 				block_hash,
 			}))
 		}
+		5 => Ok(Some(NetworkId::ByGenesis(WESTEND_GENESIS_HASH))),
+		6 => Ok(Some(NetworkId::ByGenesis(ROCOCO_GENESIS_HASH))),
+		7 => Err(RevertReason::custom("Wococo Network is no longer supported").into()),
 		8 => {
 			let mut chain_id: [u8; 8] = Default::default();
 			chain_id.copy_from_slice(encoded_network_id.read_raw_bytes(8)?);
