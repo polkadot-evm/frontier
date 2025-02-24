@@ -7,7 +7,7 @@ import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./u
 describeWithFrontier("Frontier RPC (Balance)", (context) => {
 	const TEST_ACCOUNT = "0xdd33Af49c851553841E94066B54Fd28612522901";
 	const TEST_ACCOUNT_PRIVATE_KEY = "0x4ca933bffe83185dda76e7913fc96e5c97cdb7ca1fbfcc085d6376e6f564ef71";
-	const TRANFER_VALUE = "0x200"; // 512, must be higher than ExistentialDeposit
+	const TRANSFER_VALUE = "0x200"; // 512, must be higher than ExistentialDeposit
 	const GAS_PRICE = "0x3B9ACA00"; // 1000000000
 	var nonce = 0;
 
@@ -23,7 +23,7 @@ describeWithFrontier("Frontier RPC (Balance)", (context) => {
 			{
 				from: GENESIS_ACCOUNT,
 				to: TEST_ACCOUNT,
-				value: TRANFER_VALUE,
+				value: TRANSFER_VALUE,
 				gasPrice: GAS_PRICE,
 				gas: "0x100000",
 				nonce: nonce,
