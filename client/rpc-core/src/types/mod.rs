@@ -20,6 +20,7 @@
 
 mod account_info;
 mod block;
+mod block_count;
 mod block_number;
 mod bytes;
 mod call_request;
@@ -45,6 +46,7 @@ pub use self::txpool::{Summary, TransactionMap, TxPoolResult};
 pub use self::{
 	account_info::{AccountInfo, EthAccount, ExtAccountInfo, RecoveredAccount, StorageProof},
 	block::{Block, BlockTransactions, Header, Rich, RichBlock, RichHeader},
+	block_count::BlockCount,
 	block_number::BlockNumberOrHash,
 	bytes::Bytes,
 	call_request::CallStateOverride,

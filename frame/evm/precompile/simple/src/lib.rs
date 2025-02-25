@@ -56,8 +56,8 @@ impl LinearCostPrecompile for ECRecover {
 		sig[32..64].copy_from_slice(&input[96..128]); // s
 		sig[64] = input[63]; // v
 
-		// v can only be 27 or 28 on the full 32 bytes value.
-		// https://github.com/ethereum/go-ethereum/blob/a907d7e81aaeea15d80b2d3209ad8e08e3bf49e0/core/vm/contracts.go#L177
+		// Check if any high bits are set in v value (bytes 32-62 must be 0)
+		// and v (byte 63) can only be 27 or 28
 		if input[32..63] != [0u8; 31] || ![27, 28].contains(&input[63]) {
 			return Ok((ExitSucceed::Returned, [0u8; 0].to_vec()));
 		}
