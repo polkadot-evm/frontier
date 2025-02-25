@@ -29,6 +29,8 @@ use evm::{
 	gasometer::{GasCost, StorageTarget},
 	ExitError, ExitReason, ExternalOperation, Opcode, Transfer,
 };
+// Cumulus
+use cumulus_primitives_storage_weight_reclaim::get_proof_size;
 // Substrate
 use frame_support::{
 	traits::{
@@ -79,6 +81,7 @@ where
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
+		measured_proof_size_before: u64,
 		f: F,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
@@ -109,6 +112,7 @@ where
 			weight,
 			weight_limit,
 			proof_size_base_cost,
+			measured_proof_size_before,
 		);
 
 		#[cfg(feature = "forbid-evm-reentrancy")]
@@ -147,6 +151,7 @@ where
 				weight,
 				weight_limit,
 				proof_size_base_cost,
+				measured_proof_size_before,
 			)
 		});
 
@@ -168,6 +173,7 @@ where
 		weight: Weight,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
+		measured_proof_size_before: u64,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -291,15 +297,20 @@ where
 					None => 0,
 				};
 
-				let pov_gas = match executor.state().weight_info() {
-					Some(weight_info) => weight_info
+				// Measure actual proof size usage (or get computed proof size)
+				let actual_proof_size = if let Some(measured_proof_size_after) = get_proof_size() {
+					measured_proof_size_after.saturating_sub(measured_proof_size_before)
+				} else {
+					executor
+						.state()
+						.weight_info()
+						.unwrap_or_default()
 						.proof_size_usage
 						.unwrap_or_default()
-						.saturating_mul(T::GasLimitPovSizeRatio::get()),
-					None => 0,
 				};
 
 				// Post execution.
+				let pov_gas = actual_proof_size.saturating_mul(T::GasLimitPovSizeRatio::get());
 				let used_gas = executor.used_gas();
 				let effective_gas = U256::from(core::cmp::max(
 					core::cmp::max(used_gas, pov_gas),
@@ -472,6 +483,7 @@ where
 		proof_size_base_cost: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
+		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		if validate {
 			Self::validate(
 				source,
@@ -501,6 +513,7 @@ where
 			is_transactional,
 			weight_limit,
 			proof_size_base_cost,
+			measured_proof_size_before,
 			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
 		)
 	}
@@ -520,6 +533,7 @@ where
 		proof_size_base_cost: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
+		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		if validate {
 			Self::validate(
 				source,
@@ -549,6 +563,7 @@ where
 			is_transactional,
 			weight_limit,
 			proof_size_base_cost,
+			measured_proof_size_before,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
@@ -575,6 +590,7 @@ where
 		proof_size_base_cost: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
+		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		if validate {
 			Self::validate(
 				source,
@@ -605,6 +621,7 @@ where
 			is_transactional,
 			weight_limit,
 			proof_size_base_cost,
+			measured_proof_size_before,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
@@ -1314,6 +1331,7 @@ mod tests {
 	fn test_evm_reentrancy() {
 		let config = evm::Config::istanbul();
 
+		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		// Should fail with the appropriate error if there is reentrancy
 		let res = Runner::<Test>::execute(
 			H160::default(),
@@ -1326,7 +1344,9 @@ mod tests {
 			false,
 			None,
 			None,
+			measured_proof_size_before,
 			|_| {
+				let measured_proof_size_before2 = get_proof_size().unwrap_or_default();
 				let res = Runner::<Test>::execute(
 					H160::default(),
 					U256::default(),
@@ -1338,6 +1358,7 @@ mod tests {
 					false,
 					None,
 					None,
+					measured_proof_size_before2,
 					|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 				);
 				assert_matches!(
@@ -1358,6 +1379,7 @@ mod tests {
 			})
 		);
 
+		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		// Should succeed if there is no reentrancy
 		let res = Runner::<Test>::execute(
 			H160::default(),
@@ -1370,6 +1392,7 @@ mod tests {
 			false,
 			None,
 			None,
+			measured_proof_size_before,
 			|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 		);
 		assert!(res.is_ok());
