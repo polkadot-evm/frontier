@@ -281,7 +281,7 @@ impl Writer {
 	}
 
 	/// Write arbitrary bytes.
-	/// Doesn't handle any alignement checks, prefer using `write` instead if possible.
+	/// Doesn't handle any alignment checks, prefer using `write` instead if possible.
 	fn write_raw_bytes(mut self, value: &[u8]) -> Self {
 		self.data.extend_from_slice(value);
 		self
