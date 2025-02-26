@@ -1441,7 +1441,7 @@ fn metadata_code_gets_cached() {
 	new_test_ext().execute_with(|| {
 		let address = H160::repeat_byte(0xaa);
 
-		crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec());
+		crate::Pallet::<Test>::create_account(address, b"Example".to_vec());
 
 		let metadata = crate::Pallet::<Test>::account_code_metadata(address);
 		assert_eq!(metadata.size, 7);
