@@ -502,7 +502,7 @@ pub trait IsActivePrecompile {
 /// was a PrecompileSet containing only the precompile(set) it wraps.
 /// They can be combined into a real PrecompileSet using `PrecompileSetBuilder`.
 pub trait PrecompileSetFragment {
-	/// Instanciate the fragment.
+	/// Instantiate the fragment.
 	fn new() -> Self;
 
 	/// Execute the fragment.
