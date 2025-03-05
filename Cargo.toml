@@ -129,6 +129,7 @@ sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2
 sp-storage = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
 sp-timestamp = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
 sp-transaction-pool = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
+sp-trie = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
 sp-version = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
 sp-weights = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412", default-features = false }
 # Substrate FRAME
