@@ -82,6 +82,7 @@ frontier-template-runtime = { workspace = true, features = ["std"] }
 
 # Cumulus primitives
 cumulus-primitives-storage-weight-reclaim = { workspace = true }
+cumulus-primitives-proof-size-hostfunction = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
