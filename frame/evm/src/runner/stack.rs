@@ -1410,7 +1410,7 @@ mod tests {
 				})
 			);
 
-			let measured_proof_size_before = get_proof_size().unwrap_or_default();;
+			let measured_proof_size_before = get_proof_size().unwrap_or_default();
 			// Should succeed if there is no reentrancy
 			let res = Runner::<Test>::execute(
 				H160::default(),
