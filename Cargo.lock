@@ -3439,6 +3439,7 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "clap",
+ "cumulus-primitives-storage-weight-reclaim",
  "fc-api",
  "fc-cli",
  "fc-consensus",
