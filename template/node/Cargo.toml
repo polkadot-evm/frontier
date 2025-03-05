@@ -81,8 +81,8 @@ fp-rpc = { workspace = true, features = ["default"] }
 frontier-template-runtime = { workspace = true, features = ["std"] }
 
 # Cumulus primitives
-cumulus-primitives-storage-weight-reclaim = { workspace = true }
 cumulus-primitives-proof-size-hostfunction = { workspace = true }
+cumulus-primitives-storage-weight-reclaim = { workspace = true }
 
 [build-dependencies]
 substrate-build-script-utils = { workspace = true }
