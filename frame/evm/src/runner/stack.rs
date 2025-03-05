@@ -305,6 +305,14 @@ where
 					core::cmp::max(used_gas, pov_gas),
 					storage_gas,
 				));
+				log::debug!(
+					target: "evm",
+					"Calculating effective gas: max(used: {}, pov: {}, storage: {}) = {}",
+					used_gas,
+					pov_gas,
+					storage_gas,
+					effective_gas
+				);
 
 				(reason, retv, used_gas, effective_gas)
 			});
