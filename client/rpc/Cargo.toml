@@ -52,6 +52,7 @@ sp-runtime = { workspace = true, features = ["default"] }
 sp-state-machine = { workspace = true, features = ["default"] }
 sp-storage = { workspace = true, features = ["default"] }
 sp-timestamp = { workspace = true, features = ["default"], optional = true }
+sp-trie = { workspace = true, features = ["default"] }
 # Frontier
 fc-api = { workspace = true }
 fc-mapping-sync = { workspace = true }
