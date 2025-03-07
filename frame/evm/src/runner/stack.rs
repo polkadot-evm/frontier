@@ -1063,7 +1063,7 @@ where
 			code.len(),
 			address
 		);
-		return Pallet::<T>::create_account(address, code, caller);
+		Pallet::<T>::create_account(address, code, caller)
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
