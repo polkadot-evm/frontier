@@ -17,6 +17,7 @@
 
 //! Test utilities
 
+use core::str::FromStr;
 use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
@@ -27,7 +28,7 @@ use sp_runtime::{
 	AccountId32, BuildStorage,
 };
 // Frontier
-use pallet_evm::{config_preludes::ChainId, AddressMapping};
+use pallet_evm::{config_preludes::ChainId, AddressMapping, EnsureAddressTruncated, EnsureAllowedCreateAddress, FeeCalculator};
 
 use super::*;
 
@@ -92,6 +93,10 @@ parameter_types! {
 impl pallet_evm::Config for Test {
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
+	type CallOrigin = EnsureAddressTruncated;
+	type CreateOrigin = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
+	type CreateInnerOrigin = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
+	type WithdrawOrigin = EnsureAddressTruncated;
 	type Currency = Balances;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();

@@ -55,7 +55,7 @@ derive_more = "1.0"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { git = "https://github.com/rust-ethereum/ethereum", rev = "3be0d8fd4c2ad1ba216b69ef65b9382612efc8ba", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
-evm = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
+evm = { git = "https://github.com/moondance-labs/evm", branch = "release-v041", default-features = false }
 futures = "0.3.31"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }

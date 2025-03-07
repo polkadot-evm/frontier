@@ -14,6 +14,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
+#![cfg(test)]
+
 use super::*;
 use crate::mock::*;
 
@@ -23,6 +26,8 @@ use frame_support::{
 };
 use sp_runtime::BuildStorage;
 use std::{collections::BTreeMap, str::FromStr};
+use fp_evm::ExecutionInfoV2;
+use evm::ExitReason;
 
 mod proof_size_test {
 	use super::*;
@@ -876,6 +881,33 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			code: vec![],
 		},
 	);
+	accounts.insert(
+		H160::from([4u8;20]), // alith
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::max_value(),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
+	accounts.insert(
+		H160::from([5u8;20]), // bob
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::max_value(),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
+	accounts.insert(
+		H160::from([6u8;20]), // charleth
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::max_value(),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
 
 	// Create the block author account with some balance.
 	let author = H160::from_str("0x1234500000000000000000000000000000000000").unwrap();
@@ -896,6 +928,179 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	t.into()
+}
+
+
+// pragma solidity ^0.8.2;
+
+// contract Foo {
+
+//  function newBar() // 2fc11060
+//    public
+//    returns(Bar newContract)
+//  {
+//    Bar b = new Bar();
+//    return b;
+//  }
+//}
+
+// contract Bar {
+//  function getNumber()
+//    public
+//    pure
+//    returns (uint32 number)
+//  {
+//    return 10;
+//  }
+//}
+pub const FOO_BAR_CONTRACT_CREATOR_BYTECODE: &str =
+		include_str!("./res/foo_bar_contract_creator.txt");
+
+fn create_foo_bar_contract_creator(
+	gas_limit: u64,
+	weight_limit: Option<Weight>,
+) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+	<Test as Config>::Runner::create(
+		H160::default(),
+		hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+		U256::zero(),
+		gas_limit,
+		Some(FixedGasPrice::min_gas_price().0),
+		None,
+		None,
+		Vec::new(),
+		true, // transactional
+		true, // must be validated
+		weight_limit,
+		Some(0),
+		&<Test as Config>::config().clone(),
+	)
+}
+
+#[test]
+fn test_contract_deploy_succeeds_if_address_is_allowed(){
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		<Test as Config>::Runner::create(
+			// Alith is allowed to deploy contracts
+			H160::from([4u8;20]),
+			hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		).is_ok();
+	});
+}
+
+#[test]
+fn test_contract_deploy_fails_if_address_not_allowed(){
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		match <Test as Config>::Runner::create(
+			// Bob is not allowed to deploy contracts
+			H160::from([5u8;20]),
+			hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::CreateOriginNotAllowed,
+				..
+			}) => (),
+			_ => panic!("Should have failed with CreateOriginNotAllowed"),
+		}
+	});
+}
+
+#[test]
+fn test_inner_contract_deploy_succeeds_if_address_is_allowed(){
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		let result1 = create_foo_bar_contract_creator(gas_limit, Some(weight_limit))
+				.expect("create succeeds");
+
+		let call_data: String = "2fc11060".to_owned();
+		let call_contract_address = result1.value;
+
+		let result = <Test as Config>::Runner::call(
+			// Alith is allowed to deploy inner contracts
+			H160::from([4u8;20]),
+			call_contract_address,
+			hex::decode(&call_data).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call succeeds");
+
+		assert_eq!(result.exit_reason, ExitReason::Succeed(ExitSucceed::Returned));
+	});
+}
+
+#[test]
+fn test_inner_contract_deploy_reverts_if_address_not_allowed(){
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		let result1 = create_foo_bar_contract_creator(gas_limit, Some(weight_limit))
+				.expect("create succeeds");
+
+		let call_data: String = "2fc11060".to_owned();
+		let call_contract_address = result1.value;
+
+		let result = <Test as Config>::Runner::call(
+			// Charleth is not allowed to deploy inner contracts
+			H160::from([6u8;20]),
+			call_contract_address,
+			hex::decode(&call_data).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call succeeds");
+
+		assert_eq!(result.exit_reason, ExitReason::Revert(ExitRevert::Reverted));
+	});
 }
 
 #[test]
@@ -1243,8 +1448,8 @@ fn handle_sufficient_reference() {
 		assert_eq!(account.sufficients, 0);
 
 		// Using the create / remove account functions is the correct way to handle it.
-		EVM::create_account(addr_2, vec![1, 2, 3]);
-		let account_2 = frame_system::Account::<Test>::get(&substrate_addr_2);
+		EVM::create_account(addr_2, vec![1, 2, 3], None);
+		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2);
 		// We increased the sufficient reference by 1.
 		assert_eq!(account_2.sufficients, 1);
 		EVM::remove_account(&addr_2);
@@ -1441,7 +1646,7 @@ fn metadata_code_gets_cached() {
 	new_test_ext().execute_with(|| {
 		let address = H160::repeat_byte(0xaa);
 
-		crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec());
+		crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec(), None);
 
 		let metadata = crate::Pallet::<Test>::account_code_metadata(address);
 		assert_eq!(metadata.size, 7);
