@@ -74,8 +74,8 @@ impl crate::Config for Test {
 	type FeeCalculator = FixedGasPrice;
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
 	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
-	type CreateOrigin = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
-	type CreateInnerOrigin = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
+	type CreateOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
+	type CreateInnerOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
 	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type Currency = Balances;
 	type PrecompilesType = MockPrecompileSet;

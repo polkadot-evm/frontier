@@ -574,7 +574,7 @@ where
 		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		let (_, weight) = T::FeeCalculator::min_gas_price();
 
-		T::CreateOrigin::check_create_origin(&source)
+		T::CreateOriginFilter::check_create_origin(&source)
 			.map_err(|error| RunnerError { error, weight })?;
 
 		if validate {
@@ -636,7 +636,7 @@ where
 		let measured_proof_size_before = get_proof_size().unwrap_or_default();
 		let (_, weight) = T::FeeCalculator::min_gas_price();
 
-		T::CreateOrigin::check_create_origin(&source)
+		T::CreateOriginFilter::check_create_origin(&source)
 			.map_err(|error| RunnerError { error, weight })?;
 
 		if validate {

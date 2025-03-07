@@ -149,11 +149,11 @@ pub mod pallet {
 
 		/// Allow the source address to deploy contracts directly via CREATE calls.
 		#[pallet::no_default_bounds]
-		type CreateOrigin: EnsureCreateOrigin<Self>;
+		type CreateOriginFilter: EnsureCreateOrigin<Self>;
 
 		/// Allow the source address to deploy contracts via CALL(CREATE) calls.
 		#[pallet::no_default_bounds]
-		type CreateInnerOrigin: EnsureCreateOrigin<Self>;
+		type CreateInnerOriginFilter: EnsureCreateOrigin<Self>;
 
 		/// Allow the origin to withdraw on behalf of given address.
 		#[pallet::no_default_bounds]
@@ -262,8 +262,8 @@ pub mod pallet {
 			type FindAuthor = FindAuthorTruncated;
 			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 			type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
-			type CreateOrigin = ();
-			type CreateInnerOrigin = ();
+			type CreateOriginFilter = ();
+			type CreateInnerOriginFilter = ();
 			type WeightInfo = ();
 		}
 
@@ -975,7 +975,7 @@ impl<T: Config> Pallet<T> {
 		caller: Option<H160>,
 	) -> Result<(), ExitError> {
 		if let Some(caller_address) = caller {
-			T::CreateInnerOrigin::check_create_origin(&caller_address).map_err(|e| {
+			T::CreateInnerOriginFilter::check_create_origin(&caller_address).map_err(|e| {
 				let error: &'static str = e.into();
 				ExitError::Other(Cow::Borrowed(error))
 			})?;

@@ -160,8 +160,8 @@ impl pallet_evm::Config for Test {
 	type GasLimitPovSizeRatio = ();
 	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;
-	type CreateInnerOrigin = ();
-	type CreateOrigin = ();
+	type CreateInnerOriginFilter = ();
+	type CreateOriginFilter = ();
 	type WeightInfo = ();
 }
 

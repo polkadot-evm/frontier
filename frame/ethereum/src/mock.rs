@@ -99,10 +99,8 @@ parameter_types! {
 impl pallet_evm::Config for Test {
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
-	type CallOrigin = EnsureAddressTruncated;
-	type CreateOrigin = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
-	type CreateInnerOrigin = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
-	type WithdrawOrigin = EnsureAddressTruncated;
+	type CreateOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
+	type CreateInnerOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
 	type Currency = Balances;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
