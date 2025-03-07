@@ -12210,13 +12210,13 @@ checksum = "42a4d50cdb458045afc8131fd91b64904da29548bcb63c7236e0844936c13078"
 
 [[package]]
 name = "tempfile"
-version = "3.15.0"
+version = "3.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a8a559c81686f576e8cd0290cd2a24a2a9ad80c98b3478856500fcbd7acd704"
+checksum = "22e5a0acb1f3f55f65cc4a866c361b2fb2a0ff6366785ae6fbb5f85df07ba230"
 dependencies = [
  "cfg-if",
  "fastrand",
- "getrandom 0.2.15",
+ "getrandom 0.3.1",
  "once_cell",
  "rustix 0.38.43",
  "windows-sys 0.59.0",
