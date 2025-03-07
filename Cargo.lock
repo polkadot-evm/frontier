@@ -2764,7 +2764,7 @@ dependencies = [
  "fp-storage",
  "futures",
  "hex",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "libsecp256k1",
  "log",
  "pallet-evm",
@@ -2812,7 +2812,7 @@ version = "1.1.0-dev"
 dependencies = [
  "ethereum",
  "ethereum-types",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "rlp",
  "rustc-hex",
  "serde",
@@ -2830,7 +2830,7 @@ version = "0.1.0"
 dependencies = [
  "ethereum-types",
  "fc-rpc-v2-types",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
 ]
 
 [[package]]
@@ -3460,7 +3460,7 @@ dependencies = [
  "frontier-template-runtime",
  "futures",
  "hex-literal",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
@@ -4828,9 +4828,9 @@ dependencies = [
 
 [[package]]
 name = "jsonrpsee"
-version = "0.24.7"
+version = "0.24.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5c71d8c1a731cc4227c2f698d377e7848ca12c8a48866fc5e6951c43a4db843"
+checksum = "834af00800e962dee8f7bfc0f60601de215e73e78e5497d733a2919da837d3c8"
 dependencies = [
  "jsonrpsee-core 0.24.7",
  "jsonrpsee-proc-macros",
@@ -7165,7 +7165,7 @@ name = "pallet-transaction-payment-rpc"
 version = "42.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2412#110d90bb85f866cc757287526022a66f3d576524"
 dependencies = [
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",
  "sp-api",
@@ -9351,7 +9351,7 @@ dependencies = [
  "async-trait",
  "futures",
  "futures-timer",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "parity-scale-codec",
  "sc-client-api",
@@ -9758,7 +9758,7 @@ version = "43.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2412#110d90bb85f866cc757287526022a66f3d576524"
 dependencies = [
  "futures",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -9789,7 +9789,7 @@ name = "sc-rpc-api"
 version = "0.47.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2412#110d90bb85f866cc757287526022a66f3d576524"
 dependencies = [
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "parity-scale-codec",
  "sc-chain-spec",
  "sc-mixnet",
@@ -9817,7 +9817,7 @@ dependencies = [
  "http-body-util",
  "hyper 1.5.2",
  "ip_network",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "sc-rpc-api",
  "serde",
@@ -9838,7 +9838,7 @@ dependencies = [
  "futures-util",
  "hex",
  "itertools 0.11.0",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -9870,7 +9870,7 @@ dependencies = [
  "exit-future",
  "futures",
  "futures-timer",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "parity-scale-codec",
  "parking_lot 0.12.3",
@@ -11814,7 +11814,7 @@ dependencies = [
  "docify",
  "frame-system-rpc-runtime-api",
  "futures",
- "jsonrpsee 0.24.7",
+ "jsonrpsee 0.24.8",
  "log",
  "parity-scale-codec",
  "sc-rpc-api",
