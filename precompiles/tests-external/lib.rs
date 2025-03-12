@@ -314,7 +314,7 @@ fn default_checks_revert_when_called_by_precompile() {
 #[test]
 fn default_checks_revert_when_called_by_contract() {
 	ExtBuilder::default().build().execute_with(|| {
-		pallet_evm::Pallet::<Runtime>::create_account(
+		let _ = pallet_evm::Pallet::<Runtime>::create_account(
 			Alice.into(),
 			hex_literal::hex!("1460006000fd").to_vec(),
 			None,
@@ -340,7 +340,7 @@ fn default_checks_revert_when_doing_subcall() {
 #[test]
 fn callable_by_contract_works() {
 	ExtBuilder::default().build().execute_with(|| {
-		pallet_evm::Pallet::<Runtime>::create_account(
+		let _ = pallet_evm::Pallet::<Runtime>::create_account(
 			Alice.into(),
 			hex_literal::hex!("1460006000fd").to_vec(),
 			None,
