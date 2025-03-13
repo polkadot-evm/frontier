@@ -28,10 +28,7 @@ use sp_runtime::{
 	AccountId32, BuildStorage,
 };
 // Frontier
-use pallet_evm::{
-	config_preludes::ChainId, AddressMapping, EnsureAddressTruncated, EnsureAllowedCreateAddress,
-	FeeCalculator,
-};
+use pallet_evm::{config_preludes::ChainId, AddressMapping, EnsureAllowedCreateAddress};
 
 use super::*;
 
