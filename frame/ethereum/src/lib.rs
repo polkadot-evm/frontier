@@ -45,16 +45,14 @@ use scale_codec::{Decode, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
-	dispatch::{
-		DispatchErrorWithPostInfo, DispatchInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo,
-	},
+	dispatch::{DispatchErrorWithPostInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	traits::{EnsureOrigin, Get, PalletInfoAccess, Time},
 	weights::Weight,
 };
-use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
+use frame_system::{pallet_prelude::OriginFor, WeightInfo};
 use sp_runtime::{
 	generic::DigestItem,
-	traits::{DispatchInfoOf, Dispatchable, One, Saturating, UniqueSaturatedInto, Zero},
+	traits::{One, Saturating, UniqueSaturatedInto, Zero},
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
@@ -102,76 +100,6 @@ impl<O: Into<Result<RawOrigin, O>> + From<RawOrigin>> EnsureOrigin<O>
 	#[cfg(feature = "runtime-benchmarks")]
 	fn try_successful_origin() -> Result<O, ()> {
 		Ok(O::from(RawOrigin::EthereumTransaction(Default::default())))
-	}
-}
-
-impl<T> Call<T>
-where
-	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
-	T: Send + Sync + Config,
-	T::RuntimeCall: Dispatchable<Info = DispatchInfo, PostInfo = PostDispatchInfo>,
-{
-	pub fn is_self_contained(&self) -> bool {
-		matches!(self, Call::transact { .. })
-	}
-
-	pub fn check_self_contained(&self) -> Option<Result<H160, TransactionValidityError>> {
-		if let Call::transact { transaction } = self {
-			let check = || {
-				let origin = Pallet::<T>::recover_signer(transaction).ok_or(
-					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
-				)?;
-
-				Ok(origin)
-			};
-
-			Some(check())
-		} else {
-			None
-		}
-	}
-
-	pub fn pre_dispatch_self_contained(
-		&self,
-		origin: &H160,
-		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
-		len: usize,
-	) -> Option<Result<(), TransactionValidityError>> {
-		if let Call::transact { transaction } = self {
-			if let Err(e) =
-				CheckWeight::<T>::do_validate(dispatch_info, len).and_then(|(_, next_len)| {
-					CheckWeight::<T>::do_prepare(dispatch_info, len, next_len)
-				}) {
-				return Some(Err(e));
-			}
-
-			Some(Pallet::<T>::validate_transaction_in_block(
-				*origin,
-				transaction,
-			))
-		} else {
-			None
-		}
-	}
-
-	pub fn validate_self_contained(
-		&self,
-		origin: &H160,
-		dispatch_info: &DispatchInfoOf<T::RuntimeCall>,
-		len: usize,
-	) -> Option<TransactionValidity> {
-		if let Call::transact { transaction } = self {
-			if let Err(e) = CheckWeight::<T>::do_validate(dispatch_info, len) {
-				return Some(Err(e));
-			}
-
-			Some(Pallet::<T>::validate_transaction_in_pool(
-				*origin,
-				transaction,
-			))
-		} else {
-			None
-		}
 	}
 }
 

@@ -79,6 +79,7 @@ fp-dynamic-fee = { workspace = true, features = ["default"] }
 fp-evm = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }
 frontier-template-runtime = { workspace = true, features = ["std"] }
+pallet-ethereum = { workspace = true }
 
 # Cumulus primitives
 cumulus-primitives-proof-size-hostfunction = { workspace = true }
