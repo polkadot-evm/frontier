@@ -27,6 +27,7 @@
 
 extern crate alloc;
 
+pub mod extension;
 #[cfg(all(feature = "std", test))]
 mod mock;
 #[cfg(all(feature = "std", test))]
