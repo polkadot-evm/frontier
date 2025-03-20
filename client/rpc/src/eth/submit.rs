@@ -26,6 +26,7 @@ use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::H160;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::{traits::Block as BlockT, transaction_validity::TransactionSource};
 // Frontier
@@ -34,7 +35,7 @@ use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRP
 
 use crate::{
 	eth::{format, Eth},
-	internal_err,
+	internal_err, public_key,
 };
 
 impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
@@ -183,8 +184,8 @@ where
 			.graph
 			.validated_pool()
 			.ready()
-			.map(|in_pool_tx| in_pool_tx.clone())
-			.collect();
+			.map(|in_pool_tx| in_pool_tx.data.clone())
+			.collect::<Vec<_>>();
 
 		let future = self
 			.graph
@@ -192,7 +193,7 @@ where
 			.futures()
 			.iter()
 			.map(|(_, extrinsic)| extrinsic.clone())
-			.collect();
+			.collect::<Vec<_>>();
 
 		let mut all_extrinsics = Vec::new();
 		all_extrinsics.extend(ready);
@@ -211,16 +212,27 @@ where
 				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?
 		} else {
 			#[allow(deprecated)]
-			let legacy = api
-				.extrinsic_filter_before_version_2(best_block, all_extrinsics)
+			let legacy = api.extrinsic_filter_before_version_2(best_block, all_extrinsics)
 				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?;
 			legacy.into_iter().map(|tx| tx.into()).collect()
 		};
 
-		Ok(ethereum_txs
+		let transactions = ethereum_txs
 			.into_iter()
-			.map(|tx| Transaction::build_from(tx.recover_from().unwrap_or_default(), &tx))
-			.collect())
+			.filter_map(|tx| {
+				let pubkey = match public_key(&tx) {
+					Ok(pk) => H160::from(H256::from(sp_core::hashing::keccak_256(&pk))),
+					Err(_err) => {
+						// Skip transactions with invalid public keys
+						return None;
+					}
+				};
+
+				Some(Transaction::build_from(pubkey, &tx))
+			})
+			.collect();
+
+		Ok(transactions)
 	}
 
 	fn convert_transaction(
