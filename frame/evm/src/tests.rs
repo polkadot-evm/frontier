@@ -238,8 +238,7 @@ mod proof_size_test {
 			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_contract_len
 				+ reading_main_contract_len
-				+ is_empty_check
-				+ increase_nonce) as u64;
+				+ is_empty_check + increase_nonce) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -296,8 +295,7 @@ mod proof_size_test {
 			let expected_proof_size = (basic_account_size
 				+ read_account_metadata
 				+ reading_main_contract_len
-				+ is_empty_check
-				+ increase_nonce) as u64;
+				+ is_empty_check + increase_nonce) as u64;
 
 			let actual_proof_size = result
 				.weight_info
@@ -522,8 +520,7 @@ mod proof_size_test {
 			let expected_proof_size = ((read_account_metadata * 2)
 				+ reading_callee_contract_len
 				+ reading_main_contract_len
-				+ is_empty_check
-				+ increase_nonce) as u64;
+				+ is_empty_check + increase_nonce) as u64;
 
 			let actual_proof_size = result
 				.weight_info
