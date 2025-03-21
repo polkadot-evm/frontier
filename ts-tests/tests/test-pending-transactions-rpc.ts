@@ -32,15 +32,12 @@ describeWithFrontier("Frontier RPC (Pending Transactions)", (context) => {
 			txParams.nonce = nonce;
 		}
 
-		const tx = await context.web3.eth.accounts.signTransaction(
-			txParams,
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
+		const tx = await context.web3.eth.accounts.signTransaction(txParams, GENESIS_ACCOUNT_PRIVATE_KEY);
 
 		const result = await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 		return {
 			hash: result.result,
-			...txParams
+			...txParams,
 		};
 	}
 
