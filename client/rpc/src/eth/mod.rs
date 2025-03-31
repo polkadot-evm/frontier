@@ -455,6 +455,10 @@ where
 		self.transaction_count(address, number_or_hash).await
 	}
 
+	async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>> {
+		self.pending_transactions().await
+	}
+
 	async fn code_at(
 		&self,
 		address: H160,
