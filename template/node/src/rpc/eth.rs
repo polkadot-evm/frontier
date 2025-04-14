@@ -50,6 +50,8 @@ pub struct EthDeps<B: BlockT, C, P, CT, CIDP> {
 	pub filter_pool: Option<FilterPool>,
 	/// Maximum number of logs in a query.
 	pub max_past_logs: u32,
+	/// Maximum block range for eth_getLogs.
+	pub max_block_range: u32,
 	/// Fee history cache.
 	pub fee_history_cache: FeeHistoryCache,
 	/// Maximum fee history cache size.
@@ -110,6 +112,7 @@ where
 		block_data_cache,
 		filter_pool,
 		max_past_logs,
+		max_block_range,
 		fee_history_cache,
 		fee_history_cache_limit,
 		execute_gas_limit_multiplier,
@@ -153,6 +156,7 @@ where
 				filter_pool,
 				500_usize, // max stored filters
 				max_past_logs,
+				max_block_range,
 				block_data_cache.clone(),
 			)
 			.into_rpc(),

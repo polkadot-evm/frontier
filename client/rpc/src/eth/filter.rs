@@ -49,6 +49,7 @@ pub struct EthFilter<B: BlockT, C, BE, P> {
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
+	max_block_range: u32,
 	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	_marker: PhantomData<BE>,
 }
@@ -61,6 +62,7 @@ impl<B: BlockT, C, BE, P: TransactionPool> EthFilter<B, C, BE, P> {
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
+		max_block_range: u32,
 		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
 	) -> Self {
 		Self {
@@ -70,6 +72,7 @@ impl<B: BlockT, C, BE, P: TransactionPool> EthFilter<B, C, BE, P> {
 			filter_pool,
 			max_stored_filters,
 			max_past_logs,
+			max_block_range,
 			block_data_cache,
 			_marker: PhantomData,
 		}
@@ -497,8 +500,16 @@ where
 				.map(|s| s.unique_saturated_into())
 				.unwrap_or(best_number);
 
-			logs = if backend.is_indexed() {
-				filter_range_logs_indexed(
+			let block_range = current_number.saturating_sub(from_number);
+			if block_range > self.max_block_range.into() {
+				return Err(internal_err(format!(
+					"block range is too wide (maximum {})",
+					self.max_block_range
+				)));
+			}
+
+			if backend.is_indexed() {
+				let _ = filter_range_logs_indexed(
 					client.as_ref(),
 					backend.log_indexer(),
 					&block_data_cache,
@@ -507,7 +518,7 @@ where
 					from_number,
 					current_number,
 				)
-				.await?
+				.await?;
 			} else {
 				filter_range_logs(
 					client.as_ref(),
@@ -517,7 +528,7 @@ where
 					from_number,
 					current_number,
 				)
-				.await?
+				.await?;
 			};
 		}
 		Ok(logs)
