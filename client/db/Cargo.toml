@@ -12,13 +12,13 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 async-trait = { workspace = true }
-ethereum = { workspace = true, features = ["with-codec"], optional = true }
+ethereum = { workspace = true, features = ["with-scale"], optional = true }
 futures = { workspace = true, optional = true }
 kvdb-rocksdb = { workspace = true, optional = true }
 log = { workspace = true }
 parity-db = { workspace = true }
 parking_lot = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 smallvec = { version = "1.13", optional = true }
 sqlx = { workspace = true, features = ["runtime-tokio-native-tls", "sqlite"], optional = true }
 tokio = { workspace = true, features = ["macros", "sync"], optional = true }
@@ -40,7 +40,7 @@ fp-storage = { workspace = true, features = ["default"] }
 [dev-dependencies]
 futures = { workspace = true }
 maplit = "1.0.2"
-tempfile = "3.10.1"
+tempfile = "3.17.1"
 # Substrate
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }

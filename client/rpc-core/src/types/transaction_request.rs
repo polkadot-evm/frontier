@@ -53,6 +53,7 @@ pub struct TransactionRequest {
 	pub data: Data,
 
 	/// EIP-2930 access list
+	#[serde(with = "access_list_item_camelcase", default)]
 	pub access_list: Option<Vec<AccessListItem>>,
 	/// Chain ID that this transaction is valid on
 	pub chain_id: Option<U64>,
@@ -60,6 +61,38 @@ pub struct TransactionRequest {
 	/// EIP-2718 type
 	#[serde(rename = "type")]
 	pub transaction_type: Option<U256>,
+}
+
+/// Fix broken unit-test due to the `serde(rename_all = "camelCase")` attribute of type [ethereum::AccessListItem] has been deleted.
+/// Refer to this [commit](https://github.com/rust-ethereum/ethereum/commit/b160820620aa9fd30050d5fcb306be4e12d58c8c#diff-2a6a2a5c32456901be5ffa0e2d0354f2d48d96a89e486270ae62808c34b6e96f)
+mod access_list_item_camelcase {
+	use ethereum::AccessListItem;
+	use ethereum_types::{Address, H256};
+	use serde::{Deserialize, Deserializer};
+
+	#[derive(Deserialize)]
+	struct AccessListItemDef {
+		address: Address,
+		#[serde(rename = "storageKeys")]
+		storage_keys: Vec<H256>,
+	}
+
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<AccessListItem>>, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		let access_item_defs_opt: Option<Vec<AccessListItemDef>> =
+			Option::deserialize(deserializer)?;
+		Ok(access_item_defs_opt.map(|access_item_defs| {
+			access_item_defs
+				.into_iter()
+				.map(|access_item_def| AccessListItem {
+					address: access_item_def.address,
+					storage_keys: access_item_def.storage_keys,
+				})
+				.collect()
+		}))
+	}
 }
 
 impl TransactionRequest {
@@ -222,6 +255,31 @@ mod tests {
 			"input": "0x123abc",
 			"nonce": "0x60",
 			"accessList": [{"address": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b", "storageKeys": []}],
+			"type": "0x70"
+		});
+
+		let args = serde_json::from_value::<TransactionRequest>(data).unwrap();
+		assert_eq!(
+			args.data,
+			Data {
+				input: Some(Bytes::from(vec![0x12, 0x3a, 0xbc])),
+				data: None,
+			}
+		);
+	}
+
+	#[test]
+	fn test_deserialize_missing_field_access_list() {
+		let data = json!({
+			"from": "0x60be2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"to": "0x13fe2d1d3665660d22ff9624b7be0551ee1ac91b",
+			"gasPrice": "0x10",
+			"maxFeePerGas": "0x20",
+			"maxPriorityFeePerGas": "0x30",
+			"gas": "0x40",
+			"value": "0x50",
+			"input": "0x123abc",
+			"nonce": "0x60",
 			"type": "0x70"
 		});
 

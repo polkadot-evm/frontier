@@ -108,8 +108,8 @@ impl BuildFrom for Transaction {
 				access_list: None,
 				y_parity: None,
 				v: Some(U256::from(t.signature.v())),
-				r: U256::from(t.signature.r().as_bytes()),
-				s: U256::from(t.signature.s().as_bytes()),
+				r: U256::from_big_endian(t.signature.r().as_bytes()),
+				s: U256::from_big_endian(t.signature.s().as_bytes()),
 			},
 			EthereumTransaction::EIP2930(t) => Self {
 				transaction_type: U256::from(1),
@@ -134,8 +134,8 @@ impl BuildFrom for Transaction {
 				access_list: Some(t.access_list.clone()),
 				y_parity: Some(U256::from(t.odd_y_parity as u8)),
 				v: Some(U256::from(t.odd_y_parity as u8)),
-				r: U256::from(t.r.as_bytes()),
-				s: U256::from(t.s.as_bytes()),
+				r: U256::from_big_endian(t.r.as_bytes()),
+				s: U256::from_big_endian(t.s.as_bytes()),
 			},
 			EthereumTransaction::EIP1559(t) => Self {
 				transaction_type: U256::from(2),
@@ -161,8 +161,8 @@ impl BuildFrom for Transaction {
 				access_list: Some(t.access_list.clone()),
 				y_parity: Some(U256::from(t.odd_y_parity as u8)),
 				v: Some(U256::from(t.odd_y_parity as u8)),
-				r: U256::from(t.r.as_bytes()),
-				s: U256::from(t.s.as_bytes()),
+				r: U256::from_big_endian(t.r.as_bytes()),
+				s: U256::from_big_endian(t.s.as_bytes()),
 			},
 		}
 	}

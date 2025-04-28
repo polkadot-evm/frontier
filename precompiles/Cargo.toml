@@ -6,7 +6,7 @@ edition = "2021"
 version = "0.1.0"
 
 [dependencies]
-derive_more = { workspace = true, optional = true }
+derive_more = { workspace = true, features = ["display"], optional = true }
 environmental = { workspace = true }
 hex = { workspace = true }
 hex-literal = { workspace = true, optional = true }
@@ -23,7 +23,7 @@ precompile-utils-macro = { path = "macro" }
 # Substrate
 frame-support = { workspace = true }
 frame-system = { workspace = true }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }

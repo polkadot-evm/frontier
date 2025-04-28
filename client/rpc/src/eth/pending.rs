@@ -16,13 +16,8 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{marker::PhantomData, sync::Arc};
-
 // Substrate
-use sc_client_api::{
-	backend::{AuxStore, Backend, StorageProvider},
-	UsageProvider,
-};
+use sc_client_api::backend::{Backend, StorageProvider};
 use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::InPoolTransaction;
 use sp_api::{ApiExt, ApiRef, Core, ProvideRuntimeApi};
@@ -30,11 +25,10 @@ use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::{ApplyExtrinsicFailed, HeaderBackend};
 use sp_inherents::{CreateInherentDataProviders, InherentData, InherentDataProvider};
 use sp_runtime::{
-	generic::{Digest, DigestItem},
+	generic::Digest,
 	traits::{Block as BlockT, Header as HeaderT, One},
 	TransactionOutcome,
 };
-use sp_timestamp::TimestampInherentData;
 
 use crate::eth::Eth;
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -131,7 +125,7 @@ where
 			.graph
 			.validated_pool()
 			.ready()
-			.map(|in_pool_tx| in_pool_tx.data().clone())
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect::<Vec<<B as BlockT>::Extrinsic>>();
 		log::debug!(target: LOG_TARGET, "Pending runtime API: extrinsic len = {}", extrinsics.len());
 		// Apply the extrinsics from the ready queue to the pending block's state.
@@ -169,14 +163,20 @@ impl<B: BlockT> ConsensusDataProvider<B> for () {
 	}
 }
 
+#[cfg(feature = "aura")]
 pub use self::aura::AuraConsensusDataProvider;
+#[cfg(feature = "aura")]
 mod aura {
 	use super::*;
+	use sc_client_api::{AuxStore, UsageProvider};
 	use sp_consensus_aura::{
 		digests::CompatibleDigestItem,
 		sr25519::{AuthorityId, AuthoritySignature},
 		AuraApi, Slot, SlotDuration,
 	};
+	use sp_runtime::generic::DigestItem;
+	use sp_timestamp::TimestampInherentData;
+	use std::{marker::PhantomData, sync::Arc};
 
 	/// Consensus data provider for Aura.
 	pub struct AuraConsensusDataProvider<B, C> {

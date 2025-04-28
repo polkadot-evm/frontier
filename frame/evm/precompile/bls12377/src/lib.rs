@@ -525,8 +525,8 @@ impl Precompile for Bls12377Pairing {
 	/// > Pairing call expects `384*k` bytes as an inputs that is interpreted as byte concatenation of `k` slices. Each slice has the following structure:
 	/// > - `128` bytes of G1 point encoding
 	/// > - `256` bytes of G2 point encoding
-	/// > Output is a `32` bytes where last single byte is `0x01` if pairing result is equal to multiplicative identity in a pairing target field and `0x00` otherwise
-	/// > (which is equivalent of Big Endian encoding of Solidity values `uint256(1)` and `uin256(0)` respectively).
+	/// >   Output is a `32` bytes where last single byte is `0x01` if pairing result is equal to multiplicative identity in a pairing target field and `0x00` otherwise
+	/// >   (which is equivalent of Big Endian encoding of Solidity values `uint256(1)` and `uin256(0)` respectively).
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		if handle.input().is_empty() || handle.input().len() % 384 != 0 {
 			return Err(PrecompileFailure::Error {
@@ -590,7 +590,7 @@ impl Bls12377MapG1 {
 
 impl Precompile for Bls12377MapG1 {
 	/// Implements EIP-2539 Map_To_G1 precompile.
-	/// > Field-to-curve call expects `64` bytes an an input that is interpreted as a an element of the base field.
+	/// > Field-to-curve call expects `64` bytes as an input that is interpreted as an element of the base field.
 	/// > Output of this call is `128` bytes and is G1 point following respective encoding rules.
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		handle.record_cost(Bls12377MapG1::GAS_COST)?;
@@ -629,7 +629,7 @@ impl Bls12377MapG2 {
 
 impl Precompile for Bls12377MapG2 {
 	/// Implements EIP-2539 Map_FP2_TO_G2 precompile logic.
-	/// > Field-to-curve call expects `128` bytes an an input that is interpreted as a an element of the quadratic extension field.
+	/// > Field-to-curve call expects `128` bytes as an input that is interpreted as an element of the quadratic extension field.
 	/// > Output of this call is `256` bytes and is G2 point following respective encoding rules.
 	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
 		handle.record_cost(Bls12377MapG2::GAS_COST)?;

@@ -498,11 +498,11 @@ where
 
 	async fn fee_history(
 		&self,
-		block_count: U256,
+		block_count: BlockCount,
 		newest_block: BlockNumberOrHash,
 		reward_percentiles: Option<Vec<f64>>,
 	) -> RpcResult<FeeHistory> {
-		self.fee_history(block_count, newest_block, reward_percentiles)
+		self.fee_history(block_count.into(), newest_block, reward_percentiles)
 			.await
 	}
 

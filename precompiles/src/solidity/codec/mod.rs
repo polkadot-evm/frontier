@@ -37,7 +37,7 @@ pub use native::{Address, BoundedVec};
 // derive macro
 pub use precompile_utils_macro::Codec;
 
-/// Data that can be encoded/encoded followiong the Solidity ABI Specification.
+/// Data that can be encoded/encoded following the Solidity ABI Specification.
 pub trait Codec: Sized {
 	fn read(reader: &mut Reader) -> MayRevert<Self>;
 	fn write(writer: &mut Writer, value: Self);
@@ -273,7 +273,7 @@ impl Writer {
 
 			// Override dummy offset to the offset it will be in the final output.
 			U256::from(free_space_offset)
-				.to_big_endian(&mut output[offset_position..offset_position_end]);
+				.write_as_big_endian(&mut output[offset_position..offset_position_end]);
 
 			// Append this data at the end of the current output.
 			output.append(&mut offset_chunk.data);

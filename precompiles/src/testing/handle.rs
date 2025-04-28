@@ -117,7 +117,7 @@ impl PrecompileHandle for MockHandle {
 		if self
 			.record_cost(crate::evm::costs::call_cost(
 				context.apparent_value,
-				&evm::Config::london(),
+				&evm::Config::cancun(),
 			))
 			.is_err()
 		{
@@ -178,17 +178,17 @@ impl PrecompileHandle for MockHandle {
 		Ok(())
 	}
 
-	/// Retreive the code address (what is the address of the precompile being called).
+	/// Retrieve the code address (what is the address of the precompile being called).
 	fn code_address(&self) -> H160 {
 		self.code_address
 	}
 
-	/// Retreive the input data the precompile is called with.
+	/// Retrieve the input data the precompile is called with.
 	fn input(&self) -> &[u8] {
 		&self.input
 	}
 
-	/// Retreive the context in which the precompile is executed.
+	/// Retrieve the context in which the precompile is executed.
 	fn context(&self) -> &Context {
 		&self.context
 	}
@@ -198,7 +198,7 @@ impl PrecompileHandle for MockHandle {
 		self.is_static
 	}
 
-	/// Retreive the gas limit of this call.
+	/// Retrieve the gas limit of this call.
 	fn gas_limit(&self) -> Option<u64> {
 		Some(self.gas_limit)
 	}

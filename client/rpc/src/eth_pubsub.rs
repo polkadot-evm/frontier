@@ -165,7 +165,7 @@ where
 				return future::ready(None);
 			};
 
-			let xts = vec![xt.data().clone()];
+			let xts = vec![xt.data().as_ref().clone()];
 
 			let txs: Option<Vec<EthereumTransaction>> = if api_version > 1 {
 				api.extrinsic_filter(best_block, xts).ok()

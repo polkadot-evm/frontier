@@ -11,11 +11,13 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+environmental = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
 num_enum = { workspace = true, default-features = false }
-scale-codec = { package = "parity-scale-codec", workspace = true }
+scale-codec = { workspace = true }
 scale-info = { workspace = true }
 serde = { workspace = true, optional = true }
+
 # Substrate
 frame-support = { workspace = true }
 sp-core = { workspace = true }
@@ -26,6 +28,7 @@ default = ["std"]
 std = [
 	"evm/std",
 	"evm/with-serde",
+	"environmental/std",
 	"num_enum/std",
 	"serde/std",
 	"scale-codec/std",

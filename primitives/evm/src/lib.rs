@@ -22,6 +22,7 @@ extern crate alloc;
 
 mod account_provider;
 mod precompile;
+mod storage_oog;
 mod validation;
 
 use alloc::{collections::BTreeMap, vec::Vec};
@@ -45,6 +46,7 @@ pub use self::{
 		Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput, PrecompileResult,
 		PrecompileSet, Transfer,
 	},
+	storage_oog::{handle_storage_oog, set_storage_oog},
 	validation::{
 		CheckEvmTransaction, CheckEvmTransactionConfig, CheckEvmTransactionInput,
 		TransactionValidationError,
@@ -63,7 +65,7 @@ pub struct Vicinity {
 
 /// `System::Account` 16(hash) + 20 (key) + 72 (AccountInfo::max_encoded_len)
 pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 108;
-/// `AccountCodesMetadata` read, temptatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
+/// `AccountCodesMetadata` read, temtatively 16 (hash) + 20 (key) + 40 (CodeMetadata).
 pub const ACCOUNT_CODES_METADATA_PROOF_SIZE: u64 = 76;
 /// 16 (hash1) + 20 (key1) + 16 (hash2) + 32 (key2) + 32 (value)
 pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
@@ -71,13 +73,15 @@ pub const ACCOUNT_STORAGE_PROOF_SIZE: u64 = 116;
 pub const WRITE_PROOF_SIZE: u64 = 32;
 /// Account basic proof size + 5 bytes max of `decode_len` call.
 pub const IS_EMPTY_CHECK_PROOF_SIZE: u64 = 93;
+/// `AccountCodes` key size. 16 (hash) + 20 (key)
+pub const ACCOUNT_CODES_KEY_SIZE: u64 = 36;
 
 pub enum AccessedStorage {
 	AccountCodes(H160),
 	AccountStorages((H160, H256)),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
+#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, Default, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
 	pub ref_time_limit: Option<u64>,
@@ -116,6 +120,7 @@ impl WeightInfo {
 	fn try_consume(&self, cost: u64, limit: u64, usage: u64) -> Result<u64, ExitError> {
 		let usage = usage.checked_add(cost).ok_or(ExitError::OutOfGas)?;
 		if usage > limit {
+			storage_oog::set_storage_oog();
 			return Err(ExitError::OutOfGas);
 		}
 		Ok(usage)
@@ -126,9 +131,6 @@ impl WeightInfo {
 			(self.ref_time_usage, self.ref_time_limit)
 		{
 			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
-			if ref_time_usage > ref_time_limit {
-				return Err(ExitError::OutOfGas);
-			}
 			self.ref_time_usage = Some(ref_time_usage);
 		}
 		Ok(())
@@ -139,9 +141,6 @@ impl WeightInfo {
 			(self.proof_size_usage, self.proof_size_limit)
 		{
 			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
-			if proof_size_usage > proof_size_limit {
-				return Err(ExitError::OutOfGas);
-			}
 			self.proof_size_usage = Some(proof_size_usage);
 		}
 		Ok(())

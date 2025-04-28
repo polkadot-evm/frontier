@@ -107,6 +107,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxLocks = ();
 	type MaxReserves = ();
 	type MaxFreezes = ();
+	type DoneSlashHandler = ();
 }
 
 #[derive(Debug, Clone)]
@@ -226,7 +227,6 @@ parameter_types! {
 		let block_gas_limit = BlockGasLimit::get().min(u64::MAX.into()).low_u64();
 		block_gas_limit.saturating_div(MAX_POV_SIZE)
 	};
-	pub SuicideQuickClearLimit: u32 = 0;
 }
 
 impl pallet_evm::Config for Runtime {
@@ -249,7 +249,7 @@ impl pallet_evm::Config for Runtime {
 	type OnCreate = ();
 	type FindAuthor = ();
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
-	type SuicideQuickClearLimit = SuicideQuickClearLimit;
+	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
