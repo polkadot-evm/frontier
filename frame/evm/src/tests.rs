@@ -415,7 +415,8 @@ mod proof_size_test {
 			let mut weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Artifically set a lower proof size limit so we OOG this instead gas.
-			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
+			let proof_size_limit = weight_limit.proof_size() / 2;
+			*weight_limit.proof_size_mut() = proof_size_limit;
 
 			// Create proof size test contract
 			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
@@ -442,25 +443,13 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// Find how many random balance reads can we do with the available proof size.
-			let reading_main_contract_len =
-				AccountCodes::<Test>::get(call_contract_address).len() as u64;
-			let overhead = reading_main_contract_len
-				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
-				+ IS_EMPTY_CHECK_PROOF_SIZE;
-			let available_proof_size = weight_limit.proof_size() - overhead;
-			let number_balance_reads =
-				available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
-			// The actual proof size consumed by those balance reads.
-			let expected_proof_size = overhead + (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE);
-
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
 				.proof_size_usage
 				.expect("proof size usage");
 
-			assert_eq!(expected_proof_size, actual_proof_size);
+			assert_eq!(proof_size_limit, actual_proof_size);
 		});
 	}
 
