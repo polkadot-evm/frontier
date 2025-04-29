@@ -130,8 +130,15 @@ impl WeightInfo {
 		if let (Some(ref_time_usage), Some(ref_time_limit)) =
 			(self.ref_time_usage, self.ref_time_limit)
 		{
-			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
-			self.ref_time_usage = Some(ref_time_usage);
+			match self.try_consume(cost, ref_time_limit, ref_time_usage) {
+				Ok(ref_time_usage) => {
+					self.ref_time_usage = Some(ref_time_usage);
+				}
+				Err(e) => {
+					self.ref_time_usage = Some(ref_time_limit);
+					return Err(e);
+				}
+			}
 		}
 		Ok(())
 	}
@@ -140,8 +147,15 @@ impl WeightInfo {
 		if let (Some(proof_size_usage), Some(proof_size_limit)) =
 			(self.proof_size_usage, self.proof_size_limit)
 		{
-			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
-			self.proof_size_usage = Some(proof_size_usage);
+			match self.try_consume(cost, proof_size_limit, proof_size_usage) {
+				Ok(proof_size_usage) => {
+					self.proof_size_usage = Some(proof_size_usage);
+				}
+				Err(e) => {
+					self.proof_size_usage = Some(proof_size_limit);
+					return Err(e);
+				}
+			}
 		}
 		Ok(())
 	}
