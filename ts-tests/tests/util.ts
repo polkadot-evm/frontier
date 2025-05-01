@@ -58,7 +58,10 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	}
 }
 
-export async function startFrontierNode(provider?: string): Promise<{
+export async function startFrontierNode(
+	provider?: string,
+	additionalArgs: string[] = []
+): Promise<{
 	web3: Web3;
 	binary: ChildProcess;
 	ethersjs: ethers.JsonRpcProvider;
@@ -84,6 +87,7 @@ export async function startFrontierNode(provider?: string): Promise<{
 		`--frontier-backend-type=${FRONTIER_BACKEND_TYPE}`,
 		`--tmp`,
 		`--unsafe-force-node-key-generation`,
+		...additionalArgs,
 	];
 	const binary = spawn(cmd, args);
 
@@ -144,7 +148,12 @@ export async function startFrontierNode(provider?: string): Promise<{
 	return { web3, binary, ethersjs };
 }
 
-export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }) => void, provider?: string) {
+export function describeWithFrontier(
+	title: string,
+	cb: (context: { web3: Web3 }) => void,
+	provider?: string,
+	additionalArgs: string[] = []
+) {
 	describe(title, () => {
 		let context: {
 			web3: Web3;
@@ -154,7 +163,7 @@ export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }
 		// Making sure the Frontier node has started
 		before("Starting Frontier Test Node", async function () {
 			this.timeout(SPAWNING_TIME);
-			const init = await startFrontierNode(provider);
+			const init = await startFrontierNode(provider, additionalArgs);
 			context.web3 = init.web3;
 			context.ethersjs = init.ethersjs;
 			binary = init.binary;
@@ -167,6 +176,19 @@ export function describeWithFrontier(title: string, cb: (context: { web3: Web3 }
 
 		cb(context);
 	});
+}
+
+export function describeWithFrontierFaTp(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithFrontier(title, cb, undefined, [`--pool-type=fork-aware`]);
+}
+
+export function describeWithFrontierSsTp(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithFrontier(title, cb, undefined, [`--pool-type=single-state`]);
+}
+
+export function describeWithFrontierAllPools(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithFrontierSsTp(`[SsTp] ${title}`, cb);
+	describeWithFrontierFaTp(`[FaTp] ${title}`, cb);
 }
 
 export function describeWithFrontierWs(title: string, cb: (context: { web3: Web3 }) => void) {

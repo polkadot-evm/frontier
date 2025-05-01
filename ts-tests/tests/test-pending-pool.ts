@@ -1,12 +1,16 @@
 import { expect } from "chai";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithFrontierAllPools } from "./util";
 
-describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
+describeWithFrontierAllPools("Frontier RPC (Pending Pool)", (context) => {
 	// Solidity: contract test { function multiply(uint a) public pure returns(uint d) {return a * 7;}}
 	const TEST_CONTRACT_BYTECODE =
 		"0x6080604052348015600f57600080fd5b5060ae8061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820f06085b229f27f9ad48b2ff3dd9714350c1698a37853a30136fa6c5a7762af7364736f6c63430005110032";
+
+	before("create and finalize block 1", async function () {
+		await createAndFinalizeBlock(context.web3);
+	});
 
 	it("should return a pending transaction", async function () {
 		this.timeout(15000);
@@ -45,8 +49,12 @@ describeWithFrontier("Frontier RPC (Pending Pool)", (context) => {
 	});
 });
 
-describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
+describeWithFrontierAllPools("Frontier RPC (Pending Transaction Count)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
+
+	before("create and finalize block 1", async function () {
+		await createAndFinalizeBlock(context.web3);
+	});
 
 	it("should return pending transaction count", async function () {
 		this.timeout(15000);
@@ -78,7 +86,7 @@ describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
 			expect(pendingTransactionCount).to.eq("0x0");
 		}
 
-		// block 1 should have 1 transaction
+		// block 2 should have 1 transaction
 		await sendTransaction();
 		{
 			const pendingTransactionCount = (
@@ -95,12 +103,12 @@ describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
 			).result;
 			expect(pendingTransactionCount).to.eq("0x0");
 			const processedTransactionCount = (
-				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [1])
+				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [2])
 			).result;
 			expect(processedTransactionCount).to.eq("0x1");
 		}
 
-		// block 2 should have 5 transactions
+		// block 3 should have 5 transactions
 		for (var _ of Array(5)) {
 			await sendTransaction();
 		}
@@ -120,7 +128,7 @@ describeWithFrontier("Frontier RPC (Pending Transaction Count)", (context) => {
 			).result;
 			expect(pendingTransactionCount).to.eq("0x0");
 			const processedTransactionCount = (
-				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [2])
+				await customRequest(context.web3, "eth_getBlockTransactionCountByNumber", [3])
 			).result;
 			expect(processedTransactionCount).to.eq("0x5");
 		}
