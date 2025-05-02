@@ -8,6 +8,9 @@ describeWithFrontierAllPools("Frontier RPC (Pending Pool)", (context) => {
 	const TEST_CONTRACT_BYTECODE =
 		"0x6080604052348015600f57600080fd5b5060ae8061001e6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063c6888fa114602d575b600080fd5b605660048036036020811015604157600080fd5b8101908080359060200190929190505050606c565b6040518082815260200191505060405180910390f35b600060078202905091905056fea265627a7a72315820f06085b229f27f9ad48b2ff3dd9714350c1698a37853a30136fa6c5a7762af7364736f6c63430005110032";
 
+	// This is needed due to behaviour of fatp in manual seal conensus
+	// Before the first block is created, the pool will wrongly report as empty
+	// https://github.com/paritytech/polkadot-sdk/issues/8402
 	before("create and finalize block 1", async function () {
 		await createAndFinalizeBlock(context.web3);
 	});
@@ -52,6 +55,9 @@ describeWithFrontierAllPools("Frontier RPC (Pending Pool)", (context) => {
 describeWithFrontierAllPools("Frontier RPC (Pending Transaction Count)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
+	// This is needed due to behaviour of fatp in manual seal conensus
+	// Before the first block is created, the pool will wrongly report as empty
+	// https://github.com/paritytech/polkadot-sdk/issues/8402
 	before("create and finalize block 1", async function () {
 		await createAndFinalizeBlock(context.web3);
 	});

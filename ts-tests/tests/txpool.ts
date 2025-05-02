@@ -27,6 +27,9 @@ describeWithFrontierAllPools("Frontier RPC (TxPoolApi)", (context) => {
 		return tx;
 	}
 
+	// This is needed due to behaviour of fatp in manual seal conensus
+	// Before the first block is created, the pool will wrongly report as empty
+	// https://github.com/paritytech/polkadot-sdk/issues/8402
 	before("create and finalize a block 1", async function () {
 		await createAndFinalizeBlock(context.web3);
 	});
