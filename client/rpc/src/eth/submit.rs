@@ -194,8 +194,8 @@ where
 		let all_extrinsics = ready
 			.iter()
 			.chain(future.iter())
-			.map(|arc_ext| arc_ext.clone())
-			.collect();
+			.cloned()
+			.collect::<Vec<_>>();
 
 		let best_block = self.client.info().best_hash;
 		let api = self.client.runtime_api();
