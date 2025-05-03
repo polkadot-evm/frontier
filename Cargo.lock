@@ -2780,7 +2780,6 @@ dependencies = [
  "sc-network-sync",
  "sc-rpc",
  "sc-service",
- "sc-transaction-pool",
  "sc-transaction-pool-api",
  "sc-utils",
  "schnellru",

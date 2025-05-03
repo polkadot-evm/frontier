@@ -12,7 +12,7 @@ use sc_executor::HostFunctions as HostFunctionsT;
 use sc_network_sync::strategy::warp::{WarpSyncConfig, WarpSyncProvider};
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
-use sc_transaction_pool::{BasicPool, FullChainApi};
+use sc_transaction_pool::TransactionPoolHandle;
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::{AuthorityId as AuraId, AuthorityPair as AuraPair};
@@ -55,7 +55,6 @@ type FullSelectChain<B> = sc_consensus::LongestChain<FullBackend<B>, B>;
 type GrandpaBlockImport<B, C> =
 	sc_consensus_grandpa::GrandpaBlockImport<FullBackend<B>, B, C, FullSelectChain<B>>;
 type GrandpaLinkHalf<B, C> = sc_consensus_grandpa::LinkHalf<B, C, FullSelectChain<B>>;
-type FullPool<B, RA, HF> = BasicPool<FullChainApi<FullClient<B, RA, HF>, B>, B>;
 
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
@@ -71,7 +70,7 @@ pub fn new_partial<B, RA, HF, BIQ>(
 		FullBackend<B>,
 		FullSelectChain<B>,
 		BasicQueue<B>,
-		FullPool<B, RA, HF>,
+		sc_transaction_pool::TransactionPoolHandle<B, FullClient<B, RA, HF>>,
 		(
 			Option<Telemetry>,
 			BoxBlockImport<B>,
@@ -174,14 +173,16 @@ where
 		grandpa_block_import,
 	)?;
 
-	// FIXME: The `config.transaction_pool.options` field is private, so for now use its default value
-	let transaction_pool = Arc::from(BasicPool::new_full(
-		Default::default(),
-		config.role.is_authority().into(),
-		config.prometheus_registry(),
-		task_manager.spawn_essential_handle(),
-		client.clone(),
-	));
+	let transaction_pool = Arc::from(
+		sc_transaction_pool::Builder::new(
+			task_manager.spawn_essential_handle(),
+			client.clone(),
+			config.role.is_authority().into(),
+		)
+		.with_options(config.transaction_pool.clone())
+		.with_prometheus(config.prometheus_registry())
+		.build(),
+	);
 
 	Ok(PartialComponents {
 		client,
@@ -455,7 +456,7 @@ where
 			let eth_deps = crate::rpc::EthDeps {
 				client: client.clone(),
 				pool: pool.clone(),
-				graph: pool.pool().clone(),
+				graph: pool.clone(),
 				converter: Some(TransactionConverter::<B>::default()),
 				is_authority,
 				enable_dev_signer,
@@ -646,7 +647,7 @@ fn run_manual_seal_authorship<B, RA, HF>(
 	eth_config: &EthConfiguration,
 	sealing: Sealing,
 	client: Arc<FullClient<B, RA, HF>>,
-	transaction_pool: Arc<FullPool<B, RA, HF>>,
+	transaction_pool: Arc<TransactionPoolHandle<B, FullClient<B, RA, HF>>>,
 	select_chain: FullSelectChain<B>,
 	block_import: BoxBlockImport<B>,
 	task_manager: &TaskManager,

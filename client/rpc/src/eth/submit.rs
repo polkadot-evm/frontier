@@ -21,8 +21,7 @@ use futures::future::TryFutureExt;
 use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
-use sc_transaction_pool_api::TransactionPool;
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
@@ -38,16 +37,15 @@ use crate::{
 	internal_err, public_key,
 };
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	P: TransactionPool<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + 'static,
-	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 {
 	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
@@ -182,24 +180,22 @@ where
 	pub async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>> {
 		let ready = self
 			.graph
-			.validated_pool()
 			.ready()
-			.map(|in_pool_tx| in_pool_tx.data.clone())
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect::<Vec<_>>();
 
 		let future = self
 			.graph
-			.validated_pool()
 			.futures()
 			.iter()
-			.map(|(_, extrinsic)| extrinsic.clone())
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect::<Vec<_>>();
 
 		let all_extrinsics = ready
 			.iter()
 			.chain(future.iter())
-			.map(|arc_ext| arc_ext.as_ref().clone())
-			.collect();
+			.cloned()
+			.collect::<Vec<_>>();
 
 		let best_block = self.client.info().best_hash;
 		let api = self.client.runtime_api();

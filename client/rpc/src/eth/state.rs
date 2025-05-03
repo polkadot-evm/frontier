@@ -21,7 +21,6 @@ use jsonrpsee::core::RpcResult;
 use scale_codec::Encode;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
 use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -34,15 +33,14 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{eth::Eth, frontier_backend_client, internal_err};
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	P: TransactionPool<Block = B> + 'static,
-	A: ChainApi<Block = B>,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 {
 	pub async fn balance(
