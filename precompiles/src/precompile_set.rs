@@ -362,20 +362,26 @@ fn common_checks<R: pallet_evm::Config, C: PrecompileChecks>(
 	});
 
 	let caller_address_type = get_address_type::<R>(handle, caller)?;
-
-	// Is this selector callable from a precompile?
-	let callable_by_precompile = C::callable_by_precompile(caller, selector).unwrap_or(false);
-	let is_precompile = caller_address_type == AddressType::Precompile;
-	if !callable_by_precompile && is_precompile {
-		return Err(revert("Function not callable by precompiles"));
-	}
-
-	// Is this selector callable from a smart contract?
-	let callable_by_smart_contract =
-		C::callable_by_smart_contract(caller, selector).unwrap_or(false);
-	let is_smart_contract = caller_address_type == AddressType::Contract;
-	if !callable_by_smart_contract && is_smart_contract {
-		return Err(revert("Function not callable by smart contracts"));
+	match caller_address_type {
+		AddressType::Precompile => {
+			// Is this selector callable from a precompile?
+			let callable_by_precompile =
+				C::callable_by_precompile(caller, selector).unwrap_or(false);
+			if !callable_by_precompile {
+				return Err(revert("Function not callable by precompiles"));
+			}
+		}
+		AddressType::Contract => {
+			// Is this selector callable from a smart contract?
+			let callable_by_smart_contract =
+				C::callable_by_smart_contract(caller, selector).unwrap_or(false);
+			if !callable_by_smart_contract {
+				return Err(revert("Function not callable by smart contracts"));
+			}
+		}
+		AddressType::EOA => {
+			// No check required for EOA
+		}
 	}
 
 	Ok(())
