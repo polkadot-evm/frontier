@@ -21,10 +21,11 @@ use super::*;
 use evm::{ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use frame_support::{
-	dispatch::{DispatchClass, GetDispatchInfo},
+	dispatch::{DispatchClass, GetDispatchInfo, Pays, PostDispatchInfo},
 	weights::Weight,
 };
 use pallet_evm::AddressMapping;
+use sp_runtime::{DispatchError, DispatchErrorWithPostInfo, ModuleError};
 
 fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 	LegacyUnsignedTransaction {
@@ -39,6 +40,21 @@ fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 
 fn legacy_erc20_creation_transaction(account: &AccountInfo) -> Transaction {
 	legacy_erc20_creation_unsigned_transaction().sign(&account.private_key)
+}
+
+fn legacy_foo_bar_contract_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
+	LegacyUnsignedTransaction {
+		nonce: U256::zero(),
+		gas_price: U256::from(1),
+		gas_limit: U256::from(0x100000),
+		action: ethereum::TransactionAction::Create,
+		value: U256::zero(),
+		input: hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+	}
+}
+
+fn legacy_foo_bar_contract_creation_transaction(account: &AccountInfo) -> Transaction {
+	legacy_foo_bar_contract_creation_unsigned_transaction().sign(&account.private_key)
 }
 
 #[test]
@@ -269,6 +285,138 @@ fn transaction_should_generate_correct_gas_used() {
 				assert_eq!(info.used_gas.standard, expected_gas);
 			}
 			CallOrCreateInfo::Call(_) => panic!("expected create info"),
+		}
+	});
+}
+
+#[test]
+fn contract_creation_succeeds_with_allowed_address() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		// Alice can deploy contracts
+		let t = LegacyUnsignedTransaction {
+			nonce: U256::zero(),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Create,
+			value: U256::zero(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
+		}
+		.sign(&alice.private_key);
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+	});
+}
+
+#[test]
+fn contract_creation_fails_with_not_allowed_address() {
+	let (pairs, mut ext) = new_test_ext(2);
+	let bob = &pairs[1];
+
+	ext.execute_with(|| {
+		// Bob can't deploy contracts
+		let t = LegacyUnsignedTransaction {
+			nonce: U256::zero(),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: ethereum::TransactionAction::Create,
+			value: U256::zero(),
+			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
+		}
+		.sign(&bob.private_key);
+
+		let result = Ethereum::execute(bob.address, &t, None);
+		assert!(result.is_err());
+
+		// Note: assert_err! macro doesn't work here because we receive 'None' as
+		// 'actual_weight' using assert_err instead of Some(Weight::default()),
+		// but the error is the same "CreateOriginNotAllowed".
+		assert_eq!(
+			result,
+			Err(DispatchErrorWithPostInfo {
+				post_info: PostDispatchInfo {
+					actual_weight: Some(Weight::default()),
+					pays_fee: Pays::Yes
+				},
+				error: DispatchError::Module(ModuleError {
+					index: 3,
+					error: [13, 0, 0, 0],
+					message: Some("CreateOriginNotAllowed")
+				})
+			})
+		);
+	});
+}
+
+#[test]
+fn inner_contract_creation_succeeds_with_allowed_address() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		let t = legacy_foo_bar_contract_creation_transaction(alice);
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+
+		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let new_bar = hex::decode("2fc11060").unwrap();
+
+		// Alice is allowed to deploy contracts via inner calls.
+		let new_bar_inner_creation_tx = LegacyUnsignedTransaction {
+			nonce: U256::from(1),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(H160::from_slice(&contract_address)),
+			value: U256::zero(),
+			input: new_bar,
+		}
+		.sign(&alice.private_key);
+
+		let (_, _, info) =
+			Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).unwrap();
+
+		assert!(Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).is_ok());
+		match info {
+			CallOrCreateInfo::Call(info) => {
+				assert_eq!(info.exit_reason, ExitReason::Succeed(ExitSucceed::Returned));
+			}
+			CallOrCreateInfo::Create(_) => panic!("expected call info"),
+		}
+	});
+}
+
+#[test]
+fn inner_contract_creation_reverts_with_not_allowed_address() {
+	let (pairs, mut ext) = new_test_ext(2);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	ext.execute_with(|| {
+		let t = legacy_foo_bar_contract_creation_transaction(alice);
+		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+
+		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
+		let new_bar = hex::decode("2fc11060").unwrap();
+
+		// Bob is not allowed to deploy contracts via inner calls.
+		let new_bar_inner_creation_tx = LegacyUnsignedTransaction {
+			nonce: U256::from(1),
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(H160::from_slice(&contract_address)),
+			value: U256::zero(),
+			input: new_bar,
+		}
+		.sign(&bob.private_key);
+
+		let (_, _, info) =
+			Ethereum::execute(bob.address, &new_bar_inner_creation_tx, None).unwrap();
+
+		match info {
+			CallOrCreateInfo::Call(info) => {
+				assert_eq!(info.exit_reason, ExitReason::Revert(ExitRevert::Reverted));
+			}
+			CallOrCreateInfo::Create(_) => panic!("expected call info"),
 		}
 	});
 }
