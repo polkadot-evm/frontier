@@ -111,12 +111,20 @@ impl PrecompileHandle for MockHandle {
 		&self.context
 	}
 
+	fn origin(&self) -> H160 {
+		unimplemented!()
+	}
+
 	fn is_static(&self) -> bool {
 		self.is_static
 	}
 
 	fn gas_limit(&self) -> Option<u64> {
 		self.gas_limit
+	}
+
+	fn is_contract_being_constructed(&self, _address: H160) -> bool {
+		unimplemented!()
 	}
 }
 
