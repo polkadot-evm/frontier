@@ -950,7 +950,8 @@ impl<T: Config> Pallet<T> {
 		let nonce = frame_system::Pallet::<T>::account_nonce(&account_id);
 		let balance =
 			T::Currency::reducible_balance(&account_id, Preservation::Preserve, Fortitude::Polite);
-		let balance_sub = SubstrateBalance::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance));
+		let balance_sub =
+			SubstrateBalance::from(UniqueSaturatedInto::<u128>::unique_saturated_into(balance));
 		let balance_eth =
 			T::BalanceConverter::into_evm_balance(balance_sub).unwrap_or(EvmBalance::from(0u64));
 
@@ -1051,8 +1052,8 @@ where
 			let account_id = T::AddressMapping::into_account_id(*who);
 
 			// Convert corrected fee into substrate balance
-			let corrected_fee_sub =
-				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(SubstrateBalance::from(0u64));
+			let corrected_fee_sub = T::BalanceConverter::into_substrate_balance(corrected_fee)
+				.unwrap_or(SubstrateBalance::from(0u64));
 
 			// Calculate how much refund we should return
 			let refund_amount = paid
@@ -1090,8 +1091,8 @@ where
 				.unwrap_or_else(|_| C::NegativeImbalance::zero());
 
 			// Convert base fee into substrate balance
-			let base_fee_sub =
-				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(SubstrateBalance::from(0u64));
+			let base_fee_sub = T::BalanceConverter::into_substrate_balance(base_fee)
+				.unwrap_or(SubstrateBalance::from(0u64));
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.0.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
@@ -1159,8 +1160,8 @@ where
 			let account_id = T::AddressMapping::into_account_id(*who);
 
 			// Convert corrected fee into substrate balance
-			let corrected_fee_sub =
-				T::BalanceConverter::into_substrate_balance(corrected_fee).unwrap_or(SubstrateBalance::from(0u64));
+			let corrected_fee_sub = T::BalanceConverter::into_substrate_balance(corrected_fee)
+				.unwrap_or(SubstrateBalance::from(0u64));
 
 			// Calculate how much refund we should return
 			let refund_amount = paid
@@ -1177,8 +1178,8 @@ where
 				.unwrap_or_else(|_| Credit::<T::AccountId, F>::zero());
 
 			// Convert base fee into substrate balance
-			let base_fee_sub =
-				T::BalanceConverter::into_substrate_balance(base_fee).unwrap_or(SubstrateBalance::from(0u64));
+			let base_fee_sub = T::BalanceConverter::into_substrate_balance(base_fee)
+				.unwrap_or(SubstrateBalance::from(0u64));
 
 			let (base_fee, tip) = adjusted_paid.split(base_fee_sub.0.unique_saturated_into());
 			// Handle base fee. Can be either burned, rationed, etc ...
@@ -1250,7 +1251,7 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct SubstrateBalance(U256);
 
 impl SubstrateBalance {
@@ -1289,7 +1290,7 @@ impl From<SubstrateBalance> for U256 {
 	}
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct EvmBalance(U256);
 
 impl EvmBalance {
