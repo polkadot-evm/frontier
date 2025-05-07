@@ -1251,7 +1251,7 @@ impl<T> OnCreate<T> for Tuple {
 	}
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct SubstrateBalance(U256);
 
 impl SubstrateBalance {
@@ -1290,7 +1290,7 @@ impl From<SubstrateBalance> for U256 {
 	}
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
 pub struct EvmBalance(U256);
 
 impl EvmBalance {
