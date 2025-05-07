@@ -19,6 +19,7 @@ members = [
 	"frame/evm-chain-id",
 	"frame/hotfix-sufficients",
 	"client/api",
+	"client/aura",
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
@@ -169,6 +170,7 @@ ark-std = { version = "0.4.0", default-features = false }
 
 # Frontier Client
 fc-api = { path = "client/api" }
+fc-aura = { path = "client/aura" }
 fc-cli = { path = "client/cli", default-features = false }
 fc-consensus = { path = "client/consensus" }
 fc-db = { path = "client/db", default-features = false }

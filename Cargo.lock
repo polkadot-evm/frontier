@@ -2237,6 +2237,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-aura"
+version = "1.0.0-dev"
+dependencies = [
+ "fc-rpc",
+ "fp-storage",
+ "sc-client-api",
+ "sc-consensus-aura",
+ "sp-api",
+ "sp-consensus-aura",
+ "sp-inherents",
+ "sp-runtime",
+ "sp-timestamp",
+]
+
+[[package]]
 name = "fc-cli"
 version = "1.0.0-dev"
 dependencies = [
@@ -2969,6 +2984,7 @@ dependencies = [
  "async-trait",
  "clap",
  "fc-api",
+ "fc-aura",
  "fc-cli",
  "fc-consensus",
  "fc-db",

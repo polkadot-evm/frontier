@@ -1,0 +1,24 @@
+[package]
+name = "fc-aura"
+version = "1.0.0-dev"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Frontier Aura Consensus Data Provider"
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+# Substrate
+sc-client-api = { workspace = true }
+sc-consensus-aura = { workspace = true }
+sp-api = { workspace = true, features = ["default"] }
+sp-consensus-aura = { workspace = true, features = ["default"] }
+sp-inherents = { workspace = true, features = ["default"] }
+sp-runtime = { workspace = true, features = ["default"] }
+sp-timestamp = { workspace = true, features = ["default"] }
+# Frontier
+fc-rpc = { workspace = true }
+fp-storage = { workspace = true, features = ["default"] }
