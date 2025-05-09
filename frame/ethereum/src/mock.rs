@@ -21,17 +21,20 @@ use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
 use frame_support::{derive_impl, parameter_types, traits::FindAuthor, ConsensusEngineId};
+use frame_system::{CheckSpecVersion, CheckWeight};
 use sp_core::{hashing::keccak_256, H160, H256, U256};
-use sp_runtime::{
-	traits::{Dispatchable, IdentityLookup},
-	AccountId32, BuildStorage,
-};
+use sp_runtime::generic::{CheckedExtrinsic, ExtrinsicFormat};
+use sp_runtime::{traits::IdentityLookup, AccountId32, BuildStorage};
 // Frontier
+use super::*;
+use crate::extension::EthereumExtension;
 use pallet_evm::{config_preludes::ChainId, AddressMapping};
 
-use super::*;
-
-pub type SignedExtra = (frame_system::CheckSpecVersion<Test>,);
+pub type SignedExtra = (
+	frame_system::CheckSpecVersion<Test>,
+	frame_system::CheckWeight<Test>,
+	crate::extension::EthereumExtension<Test>,
+);
 
 frame_support::construct_runtime! {
 	pub enum Test {
@@ -104,62 +107,14 @@ impl pallet_evm::Config for Test {
 #[derive_impl(crate::config_preludes::TestDefaultConfig)]
 impl Config for Test {}
 
-impl fp_self_contained::SelfContainedCall for RuntimeCall {
-	type SignedInfo = H160;
-
-	fn is_self_contained(&self) -> bool {
+impl crate::extension::EthereumTransactionHook<Test> for RuntimeCall {
+	fn maybe_ethereum_call(&self) -> Option<&Call<Test>> {
 		match self {
-			RuntimeCall::Ethereum(call) => call.is_self_contained(),
-			_ => false,
-		}
-	}
-
-	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
-		match self {
-			RuntimeCall::Ethereum(call) => call.check_self_contained(),
-			_ => None,
-		}
-	}
-
-	fn validate_self_contained(
-		&self,
-		info: &Self::SignedInfo,
-		dispatch_info: &DispatchInfoOf<RuntimeCall>,
-		len: usize,
-	) -> Option<TransactionValidity> {
-		match self {
-			RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
-			_ => None,
-		}
-	}
-
-	fn pre_dispatch_self_contained(
-		&self,
-		info: &Self::SignedInfo,
-		dispatch_info: &DispatchInfoOf<RuntimeCall>,
-		len: usize,
-	) -> Option<Result<(), TransactionValidityError>> {
-		match self {
-			RuntimeCall::Ethereum(call) => {
-				call.pre_dispatch_self_contained(info, dispatch_info, len)
-			}
-			_ => None,
-		}
-	}
-
-	fn apply_self_contained(
-		self,
-		info: Self::SignedInfo,
-	) -> Option<sp_runtime::DispatchResultWithInfo<sp_runtime::traits::PostDispatchInfoOf<Self>>> {
-		match self {
-			call @ RuntimeCall::Ethereum(crate::Call::transact { .. }) => {
-				Some(call.dispatch(RuntimeOrigin::from(RawOrigin::EthereumTransaction(info))))
-			}
+			RuntimeCall::Ethereum(call) => Some(call),
 			_ => None,
 		}
 	}
 }
-
 pub struct AccountInfo {
 	pub address: H160,
 	pub account_id: AccountId32,
@@ -400,5 +355,68 @@ impl EIP1559UnsignedTransaction {
 			r,
 			s,
 		})
+	}
+}
+
+pub(crate) fn create_checked_extrinsic(
+	call: crate::Call<Test>,
+) -> CheckedExtrinsic<AccountId32, RuntimeCall, SignedExtra> {
+	CheckedExtrinsic::<_, _, SignedExtra> {
+		format: ExtrinsicFormat::General(
+			0,
+			(
+				CheckSpecVersion::<Test>::new(),
+				CheckWeight::<Test>::new(),
+				EthereumExtension::<Test>::new(),
+			),
+		),
+		function: RuntimeCall::Ethereum(call),
+	}
+}
+
+impl<T> Call<T>
+where
+	OriginFor<T>: Into<Result<RawOrigin, OriginFor<T>>>,
+	T: Send + Sync + Config,
+{
+	pub fn check_ethereum_call(&self) -> Option<Result<H160, TransactionValidityError>> {
+		if let Call::transact { transaction } = self {
+			let check = || {
+				let origin = Pallet::<T>::recover_signer(transaction).ok_or(
+					InvalidTransaction::Custom(TransactionValidationError::InvalidSignature as u8),
+				)?;
+
+				Ok(origin)
+			};
+
+			Some(check())
+		} else {
+			None
+		}
+	}
+
+	pub fn pre_dispatch_ethereum_call(
+		&self,
+		origin: &H160,
+	) -> Option<Result<(), TransactionValidityError>> {
+		if let Call::transact { transaction } = self {
+			Some(Pallet::<T>::validate_transaction_in_block(
+				*origin,
+				transaction,
+			))
+		} else {
+			None
+		}
+	}
+
+	pub fn validate_ethereum_call(&self, origin: &H160) -> Option<TransactionValidity> {
+		if let Call::transact { transaction } = self {
+			Some(Pallet::<T>::validate_transaction_in_pool(
+				*origin,
+				transaction,
+			))
+		} else {
+			None
+		}
 	}
 }

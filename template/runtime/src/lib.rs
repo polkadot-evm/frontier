@@ -25,10 +25,10 @@ use sp_core::{
 use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
-		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get, IdentifyAccount,
-		IdentityLookup, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+		BlakeTwo256, Block as BlockT, Get, IdentifyAccount, IdentityLookup, NumberFor, One,
+		UniqueSaturatedInto, Verify,
 	},
-	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
+	transaction_validity::{TransactionSource, TransactionValidity},
 	ApplyExtrinsicResult, ConsensusEngineId, ExtrinsicInclusionMode, Perbill, Permill,
 };
 use sp_version::RuntimeVersion;
@@ -119,15 +119,15 @@ pub type SignedExtra = (
 	frame_system::CheckWeight<Runtime>,
 	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
 	cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim<Runtime>,
+	pallet_ethereum::extension::EthereumExtension<Runtime>,
 );
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
-	fp_self_contained::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
+	generic::UncheckedExtrinsic<Address, RuntimeCall, Signature, SignedExtra>;
 
 /// Extrinsic type that has already been checked.
-pub type CheckedExtrinsic =
-	fp_self_contained::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra, H160>;
+pub type CheckedExtrinsic = generic::CheckedExtrinsic<AccountId, RuntimeCall, SignedExtra>;
 
 /// The payload being signed in transactions.
 pub type SignedPayload = generic::SignedPayload<RuntimeCall, SignedExtra>;
@@ -516,71 +516,44 @@ impl<B: BlockT> fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> for Transac
 		&self,
 		transaction: pallet_ethereum::Transaction,
 	) -> <B as BlockT>::Extrinsic {
-		let extrinsic = UncheckedExtrinsic::new_bare(
+		let extrinsic = create_unsigned_general_extrinsic(
 			pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 		);
+
 		let encoded = extrinsic.encode();
 		<B as BlockT>::Extrinsic::decode(&mut &encoded[..])
 			.expect("Encoded extrinsic is always valid")
 	}
 }
 
-impl fp_self_contained::SelfContainedCall for RuntimeCall {
-	type SignedInfo = H160;
-
-	fn is_self_contained(&self) -> bool {
+impl pallet_ethereum::extension::EthereumTransactionHook<Runtime> for RuntimeCall {
+	fn maybe_ethereum_call(&self) -> Option<&pallet_ethereum::Call<Runtime>> {
 		match self {
-			RuntimeCall::Ethereum(call) => call.is_self_contained(),
-			_ => false,
-		}
-	}
-
-	fn check_self_contained(&self) -> Option<Result<Self::SignedInfo, TransactionValidityError>> {
-		match self {
-			RuntimeCall::Ethereum(call) => call.check_self_contained(),
+			RuntimeCall::Ethereum(call) => Some(call),
 			_ => None,
 		}
 	}
+}
 
-	fn validate_self_contained(
-		&self,
-		info: &Self::SignedInfo,
-		dispatch_info: &DispatchInfoOf<RuntimeCall>,
-		len: usize,
-	) -> Option<TransactionValidity> {
-		match self {
-			RuntimeCall::Ethereum(call) => call.validate_self_contained(info, dispatch_info, len),
-			_ => None,
-		}
-	}
+fn create_unsigned_general_extrinsic(call: RuntimeCall) -> UncheckedExtrinsic {
+	let extra: SignedExtra = (
+		frame_system::CheckNonZeroSender::<Runtime>::new(),
+		frame_system::CheckSpecVersion::<Runtime>::new(),
+		frame_system::CheckTxVersion::<Runtime>::new(),
+		frame_system::CheckGenesis::<Runtime>::new(),
+		frame_system::CheckMortality::<Runtime>::from(generic::Era::Immortal),
+		// for unsigned extrinsic, nonce check will be skipped
+		// so set a default value
+		frame_system::CheckNonce::<Runtime>::from(0u32),
+		frame_system::CheckWeight::<Runtime>::new(),
+		// for unsigned extrinsic, transaction fee check will be skipped
+		// so set a default value
+		pallet_transaction_payment::ChargeTransactionPayment::<Runtime>::from(0u128),
+		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<Runtime>::new(),
+		pallet_ethereum::extension::EthereumExtension::<Runtime>::new(),
+	);
 
-	fn pre_dispatch_self_contained(
-		&self,
-		info: &Self::SignedInfo,
-		dispatch_info: &DispatchInfoOf<RuntimeCall>,
-		len: usize,
-	) -> Option<Result<(), TransactionValidityError>> {
-		match self {
-			RuntimeCall::Ethereum(call) => {
-				call.pre_dispatch_self_contained(info, dispatch_info, len)
-			}
-			_ => None,
-		}
-	}
-
-	fn apply_self_contained(
-		self,
-		info: Self::SignedInfo,
-	) -> Option<sp_runtime::DispatchResultWithInfo<PostDispatchInfoOf<Self>>> {
-		match self {
-			call @ RuntimeCall::Ethereum(pallet_ethereum::Call::transact { .. }) => {
-				Some(call.dispatch(RuntimeOrigin::from(
-					pallet_ethereum::RawOrigin::EthereumTransaction(info),
-				)))
-			}
-			_ => None,
-		}
-	}
+	UncheckedExtrinsic::new_transaction(call, extra)
 }
 
 #[cfg(feature = "runtime-benchmarks")]
@@ -972,7 +945,7 @@ impl_runtime_apis! {
 		fn extrinsic_filter(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
 		) -> Vec<EthereumTransaction> {
-			xts.into_iter().filter_map(|xt| match xt.0.function {
+			xts.into_iter().filter_map(|xt| match xt.function {
 				RuntimeCall::Ethereum(transact { transaction }) => Some(transaction),
 				_ => None
 			}).collect::<Vec<EthereumTransaction>>()
@@ -1006,7 +979,7 @@ impl_runtime_apis! {
 
 	impl fp_rpc::ConvertTransactionRuntimeApi<Block> for Runtime {
 		fn convert_transaction(transaction: EthereumTransaction) -> <Block as BlockT>::Extrinsic {
-			UncheckedExtrinsic::new_bare(
+			create_unsigned_general_extrinsic(
 				pallet_ethereum::Call::<Runtime>::transact { transaction }.into(),
 			)
 		}

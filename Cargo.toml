@@ -32,7 +32,6 @@ members = [
 	"primitives/dynamic-fee",
 	"primitives/evm",
 	"primitives/rpc",
-	"primitives/self-contained",
 	"template/node",
 	"template/runtime",
 	"precompiles",
@@ -190,7 +189,6 @@ fp-dynamic-fee = { path = "primitives/dynamic-fee", default-features = false }
 fp-ethereum = { path = "primitives/ethereum", default-features = false }
 fp-evm = { path = "primitives/evm", default-features = false }
 fp-rpc = { path = "primitives/rpc", default-features = false }
-fp-self-contained = { path = "primitives/self-contained", default-features = false }
 fp-storage = { path = "primitives/storage", default-features = false }
 # Frontier FRAME
 pallet-base-fee = { path = "frame/base-fee", default-features = false }

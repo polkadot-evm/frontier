@@ -27,7 +27,6 @@ use std::str::FromStr;
 use crate::{
 	mock::*, CallOrCreateInfo, Event, RawOrigin, Transaction, TransactionAction, H160, H256, U256,
 };
-use fp_self_contained::CheckedExtrinsic;
 
 mod eip1559;
 mod eip2930;
