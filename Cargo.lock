@@ -3113,17 +3113,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fp-self-contained"
-version = "1.0.0-dev"
-dependencies = [
- "frame-support",
- "parity-scale-codec",
- "scale-info",
- "serde",
- "sp-runtime",
-]
-
-[[package]]
 name = "fp-storage"
 version = "2.0.0"
 dependencies = [
@@ -3461,6 +3450,7 @@ dependencies = [
  "hex-literal",
  "jsonrpsee 0.24.9",
  "log",
+ "pallet-ethereum",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc",
  "pallet-transaction-payment-rpc-runtime-api",
@@ -3509,7 +3499,6 @@ dependencies = [
  "fp-account",
  "fp-evm",
  "fp-rpc",
- "fp-self-contained",
  "frame-benchmarking",
  "frame-executive",
  "frame-support",
@@ -6873,7 +6862,6 @@ dependencies = [
  "fp-ethereum",
  "fp-evm",
  "fp-rpc",
- "fp-self-contained",
  "fp-storage",
  "frame-support",
  "frame-system",

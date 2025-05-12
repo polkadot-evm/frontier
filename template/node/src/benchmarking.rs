@@ -134,6 +134,7 @@ pub fn create_benchmark_extrinsic(
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
 		cumulus_primitives_storage_weight_reclaim::StorageWeightReclaim::<runtime::Runtime>::new(),
+		pallet_ethereum::extension::EthereumExtension::<runtime::Runtime>::new(),
 	);
 
 	let raw_payload = runtime::SignedPayload::from_raw(
@@ -145,6 +146,7 @@ pub fn create_benchmark_extrinsic(
 			runtime::VERSION.transaction_version,
 			genesis_hash,
 			best_hash,
+			(),
 			(),
 			(),
 			(),

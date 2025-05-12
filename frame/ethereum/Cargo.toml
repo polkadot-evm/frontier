@@ -38,8 +38,6 @@ rlp = { workspace = true }
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
-# Frontier
-fp-self-contained = { workspace = true, features = ["default"] }
 
 [features]
 default = ["std"]
