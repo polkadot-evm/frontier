@@ -10,7 +10,6 @@ use sc_client_api::{
 use sc_network::service::traits::NetworkService;
 use sc_network_sync::SyncingService;
 use sc_rpc::SubscriptionTaskExecutor;
-use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -26,13 +25,13 @@ use fc_storage::StorageOverride;
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 /// Extra dependencies for Ethereum compatibility.
-pub struct EthDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
+pub struct EthDeps<B: BlockT, C, P, CT, CIDP> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
 	pub pool: Arc<P>,
 	/// Graph pool instance.
-	pub graph: Arc<Pool<A>>,
+	pub graph: Arc<P>,
 	/// Ethereum transaction converter.
 	pub converter: Option<CT>,
 	/// The Node authority flag
@@ -67,9 +66,9 @@ pub struct EthDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
 }
 
 /// Instantiate Ethereum-compatible RPC extensions.
-pub fn create_eth<B, C, BE, P, A, CT, CIDP, EC>(
+pub fn create_eth<B, C, BE, P, CT, CIDP, EC>(
 	mut io: RpcModule<()>,
-	deps: EthDeps<B, C, P, A, CT, CIDP>,
+	deps: EthDeps<B, C, P, CT, CIDP>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 	pubsub_notification_sinks: Arc<
 		fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -87,8 +86,7 @@ where
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError>,
 	C: BlockchainEvents<B> + AuxStore + UsageProvider<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	P: TransactionPool<Block = B> + 'static,
-	A: ChainApi<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 	EC: EthConfig<B, C>,
@@ -128,7 +126,7 @@ where
 	}
 
 	io.merge(
-		Eth::<B, C, P, CT, BE, A, CIDP, EC>::new(
+		Eth::<B, C, P, CT, BE, CIDP, EC>::new(
 			client.clone(),
 			pool.clone(),
 			graph.clone(),

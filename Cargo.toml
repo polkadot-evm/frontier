@@ -62,11 +62,11 @@ hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
 hex-literal = "0.4.1"
 impl-serde = { version = "0.5.0", default-features = false }
 impl-trait-for-tuples = "0.2.3"
-jsonrpsee = { version = "0.24.8" }
-jsonrpsee-core = { version = "0.24.4" }
+jsonrpsee = { version = "0.24.9" }
+jsonrpsee-core = { version = "0.24.9" }
 kvdb-rocksdb = "0.19.0"
-libsecp256k1 = { version = "0.7.1", default-features = false }
-log = { version = "0.4.22", default-features = false }
+libsecp256k1 = { version = "0.7.2", default-features = false }
+log = { version = "0.4.27", default-features = false }
 num_enum = { version = "0.7.3", default-features = false }
 parity-db = "0.4.13"
 parking_lot = "0.12.3"
@@ -76,10 +76,10 @@ scale-codec = { package = "parity-scale-codec", version = "3.6.12", default-feat
 scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
-similar-asserts = "1.6.1"
+similar-asserts = "1.7.0"
 sqlx = { version = "0.7.4", default-features = false, features = ["macros"] }
 thiserror = "2.0"
-tokio = "1.43.0"
+tokio = "1.45.0"
 
 # Substrate Client
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2412" }

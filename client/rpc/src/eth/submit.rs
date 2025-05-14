@@ -21,11 +21,11 @@ use futures::future::TryFutureExt;
 use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
-use sc_transaction_pool_api::TransactionPool;
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
+use sp_core::H160;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::{traits::Block as BlockT, transaction_validity::TransactionSource};
 // Frontier
@@ -34,19 +34,18 @@ use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRP
 
 use crate::{
 	eth::{format, Eth},
-	internal_err,
+	internal_err, public_key,
 };
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	P: TransactionPool<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + 'static,
-	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 {
 	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
@@ -176,6 +175,63 @@ where
 			.map_ok(move |_| transaction_hash)
 			.map_err(|err| internal_err(format::Geth::pool_error(err)))
 			.await
+	}
+
+	pub async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>> {
+		let ready = self
+			.graph
+			.ready()
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
+			.collect::<Vec<_>>();
+
+		let future = self
+			.graph
+			.futures()
+			.iter()
+			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
+			.collect::<Vec<_>>();
+
+		let all_extrinsics = ready
+			.iter()
+			.chain(future.iter())
+			.cloned()
+			.collect::<Vec<_>>();
+
+		let best_block = self.client.info().best_hash;
+		let api = self.client.runtime_api();
+
+		let api_version = api
+			.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_block)
+			.map_err(|err| internal_err(format!("Failed to get API version: {}", err)))?
+			.ok_or_else(|| internal_err("Failed to get API version"))?;
+
+		let ethereum_txs = if api_version > 1 {
+			api.extrinsic_filter(best_block, all_extrinsics)
+				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?
+		} else {
+			#[allow(deprecated)]
+			let legacy = api
+				.extrinsic_filter_before_version_2(best_block, all_extrinsics)
+				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?;
+			legacy.into_iter().map(|tx| tx.into()).collect()
+		};
+
+		let transactions = ethereum_txs
+			.into_iter()
+			.filter_map(|tx| {
+				let pubkey = match public_key(&tx) {
+					Ok(pk) => H160::from(H256::from(sp_core::hashing::keccak_256(&pk))),
+					Err(_err) => {
+						// Skip transactions with invalid public keys
+						return None;
+					}
+				};
+
+				Some(Transaction::build_from(pubkey, &tx))
+			})
+			.collect();
+
+		Ok(transactions)
 	}
 
 	fn convert_transaction(

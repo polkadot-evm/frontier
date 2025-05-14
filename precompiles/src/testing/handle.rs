@@ -22,6 +22,8 @@ use evm::{ExitRevert, ExitSucceed};
 use fp_evm::{Context, ExitError, ExitReason, Log, PrecompileHandle, Transfer};
 use sp_core::{H160, H256};
 
+use super::Alice;
+
 #[derive(Debug, Clone)]
 pub struct Subcall {
 	pub address: H160,
@@ -213,4 +215,12 @@ impl PrecompileHandle for MockHandle {
 	}
 
 	fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
+
+	fn origin(&self) -> H160 {
+		Alice.into()
+	}
+
+	fn is_contract_being_constructed(&self, _address: H160) -> bool {
+		false
+	}
 }

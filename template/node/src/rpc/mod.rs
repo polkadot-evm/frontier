@@ -13,7 +13,6 @@ use sc_client_api::{
 use sc_consensus_manual_seal::rpc::EngineCommand;
 use sc_rpc::SubscriptionTaskExecutor;
 use sc_service::TransactionPool;
-use sc_transaction_pool::ChainApi;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_blockchain::{Error as BlockChainError, HeaderBackend, HeaderMetadata};
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -26,7 +25,7 @@ mod eth;
 pub use self::eth::{create_eth, EthDeps};
 
 /// Full client dependencies.
-pub struct FullDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
+pub struct FullDeps<B: BlockT, C, P, CT, CIDP> {
 	/// The client instance to use.
 	pub client: Arc<C>,
 	/// Transaction pool instance.
@@ -34,7 +33,7 @@ pub struct FullDeps<B: BlockT, C, P, A: ChainApi, CT, CIDP> {
 	/// Manual seal command sink
 	pub command_sink: Option<mpsc::Sender<EngineCommand<Hash>>>,
 	/// Ethereum-compatibility specific dependencies.
-	pub eth: EthDeps<B, C, P, A, CT, CIDP>,
+	pub eth: EthDeps<B, C, P, CT, CIDP>,
 }
 
 pub struct DefaultEthConfig<C, BE>(std::marker::PhantomData<(C, BE)>);
@@ -51,8 +50,8 @@ where
 }
 
 /// Instantiate all Full RPC extensions.
-pub fn create_full<B, C, P, BE, A, CT, CIDP>(
-	deps: FullDeps<B, C, P, A, CT, CIDP>,
+pub fn create_full<B, C, P, BE, CT, CIDP>(
+	deps: FullDeps<B, C, P, CT, CIDP>,
 	subscription_task_executor: SubscriptionTaskExecutor,
 	pubsub_notification_sinks: Arc<
 		fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -72,8 +71,7 @@ where
 	C: HeaderBackend<B> + HeaderMetadata<B, Error = BlockChainError> + 'static,
 	C: BlockchainEvents<B> + AuxStore + UsageProvider<B> + StorageProvider<B, BE>,
 	BE: Backend<B> + 'static,
-	P: TransactionPool<Block = B> + 'static,
-	A: ChainApi<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 	CT: fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
 {
@@ -101,7 +99,7 @@ where
 	}
 
 	// Ethereum compatibility RPCs
-	let io = create_eth::<_, _, _, _, _, _, _, DefaultEthConfig<C, BE>>(
+	let io = create_eth::<_, _, _, _, _, _, DefaultEthConfig<C, BE>>(
 		io,
 		eth,
 		subscription_task_executor,
