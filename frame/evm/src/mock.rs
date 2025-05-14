@@ -21,8 +21,8 @@ use frame_support::{derive_impl, parameter_types, weights::Weight};
 use sp_core::{H160, U256};
 
 use crate::{
-	FeeCalculator, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
-	PrecompileSet,
+	EnsureAddressNever, EnsureAddressRoot, EnsureAllowedCreateAddress, FeeCalculator,
+	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
 frame_support::construct_runtime! {
@@ -62,6 +62,9 @@ impl pallet_timestamp::Config for Test {}
 
 parameter_types! {
 	pub MockPrecompiles: MockPrecompileSet = MockPrecompileSet;
+	pub SuicideQuickClearLimit: u32 = 0;
+	pub AllowedAddressesCreate: Vec<H160> = vec![H160::default(), H160::from([4u8;20])];
+	pub AllowedAddressesCreateInner: Vec<H160> = vec![H160::from([4u8;20]), H160::from([5u8;20])];
 }
 
 #[derive_impl(crate::config_preludes::TestDefaultConfig)]
@@ -69,6 +72,10 @@ impl crate::Config for Test {
 	type AccountProvider = crate::FrameSystemAccountProvider<Self>;
 	type FeeCalculator = FixedGasPrice;
 	type BlockHashMapping = crate::SubstrateBlockHashMapping<Self>;
+	type CallOrigin = EnsureAddressRoot<Self::AccountId>;
+	type CreateOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
+	type CreateInnerOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
+	type WithdrawOrigin = EnsureAddressNever<Self::AccountId>;
 	type Currency = Balances;
 	type PrecompilesType = MockPrecompileSet;
 	type PrecompilesValue = MockPrecompiles;

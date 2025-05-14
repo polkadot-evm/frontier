@@ -17,6 +17,7 @@
 
 //! Test utilities
 
+use core::str::FromStr;
 use ethereum::{TransactionAction, TransactionSignature};
 use rlp::RlpStream;
 // Substrate
@@ -27,7 +28,7 @@ use sp_runtime::{
 	AccountId32, BuildStorage,
 };
 // Frontier
-use pallet_evm::{config_preludes::ChainId, AddressMapping};
+use pallet_evm::{config_preludes::ChainId, AddressMapping, EnsureAllowedCreateAddress};
 
 use super::*;
 
@@ -86,12 +87,17 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const GasLimitStorageGrowthRatio: u64 = 0;
+	// Alice is allowed to create contracts via CREATE and CALL(CREATE)
+	pub AllowedAddressesCreate: Vec<H160> = vec![H160::from_str("0x1a642f0e3c3af545e7acbd38b07251b3990914f1").expect("alice address")];
+	pub AllowedAddressesCreateInner: Vec<H160> = vec![H160::from_str("0x1a642f0e3c3af545e7acbd38b07251b3990914f1").expect("alice address")];
 }
 
 #[derive_impl(pallet_evm::config_preludes::TestDefaultConfig)]
 impl pallet_evm::Config for Test {
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
+	type CreateOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
+	type CreateInnerOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
 	type Currency = Balances;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();

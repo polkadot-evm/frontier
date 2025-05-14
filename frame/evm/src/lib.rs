@@ -67,7 +67,7 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
-use alloc::{collections::btree_map::BTreeMap, vec::Vec};
+use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec::Vec};
 use core::cmp::min;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -146,6 +146,14 @@ pub mod pallet {
 		/// Allow the origin to call on behalf of given address.
 		#[pallet::no_default_bounds]
 		type CallOrigin: EnsureAddressOrigin<Self::RuntimeOrigin>;
+
+		/// Allow the source address to deploy contracts directly via CREATE calls.
+		#[pallet::no_default_bounds]
+		type CreateOriginFilter: EnsureCreateOrigin<Self>;
+
+		/// Allow the source address to deploy contracts via CALL(CREATE) calls.
+		#[pallet::no_default_bounds]
+		type CreateInnerOriginFilter: EnsureCreateOrigin<Self>;
 
 		/// Allow the origin to withdraw on behalf of given address.
 		#[pallet::no_default_bounds]
@@ -254,6 +262,8 @@ pub mod pallet {
 			type FindAuthor = FindAuthorTruncated;
 			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 			type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
+			type CreateOriginFilter = ();
+			type CreateInnerOriginFilter = ();
 			type WeightInfo = ();
 		}
 
@@ -599,6 +609,8 @@ pub mod pallet {
 		TransactionMustComeFromEOA,
 		/// Undefined error.
 		Undefined,
+		/// Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
+		CreateOriginNotAllowed,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
@@ -652,7 +664,7 @@ pub mod pallet {
 					account.balance.unique_saturated_into(),
 				);
 
-				Pallet::<T>::create_account(*address, account.code.clone());
+				let _ = Pallet::<T>::create_account(*address, account.code.clone(), None);
 
 				for (index, value) in &account.storage {
 					<AccountStorages<T>>::insert(address, index, value);
@@ -810,6 +822,30 @@ where
 	}
 }
 
+pub trait EnsureCreateOrigin<T> {
+	fn check_create_origin(address: &H160) -> Result<(), Error<T>>;
+}
+
+pub struct EnsureAllowedCreateAddress<AddressGetter>(core::marker::PhantomData<AddressGetter>);
+
+impl<AddressGetter, T: Config> EnsureCreateOrigin<T> for EnsureAllowedCreateAddress<AddressGetter>
+where
+	AddressGetter: Get<Vec<H160>>,
+{
+	fn check_create_origin(address: &H160) -> Result<(), Error<T>> {
+		if !AddressGetter::get().contains(address) {
+			return Err(Error::<T>::CreateOriginNotAllowed);
+		}
+		Ok(())
+	}
+}
+
+impl<T> EnsureCreateOrigin<T> for () {
+	fn check_create_origin(_address: &H160) -> Result<(), Error<T>> {
+		Ok(())
+	}
+}
+
 /// Trait to be implemented for evm address mapping.
 pub trait AddressMapping<A> {
 	fn into_account_id(address: H160) -> A;
@@ -933,9 +969,20 @@ impl<T: Config> Pallet<T> {
 	}
 
 	/// Create an account.
-	pub fn create_account(address: H160, code: Vec<u8>) {
+	pub fn create_account(
+		address: H160,
+		code: Vec<u8>,
+		caller: Option<H160>,
+	) -> Result<(), ExitError> {
+		if let Some(caller_address) = caller {
+			T::CreateInnerOriginFilter::check_create_origin(&caller_address).map_err(|e| {
+				let error: &'static str = e.into();
+				ExitError::Other(Cow::Borrowed(error))
+			})?;
+		}
+
 		if code.is_empty() {
-			return;
+			return Ok(());
 		}
 
 		if !<AccountCodes<T>>::contains_key(address) {
@@ -948,6 +995,7 @@ impl<T: Config> Pallet<T> {
 		<AccountCodesMetadata<T>>::insert(address, meta);
 
 		<AccountCodes<T>>::insert(address, code);
+		Ok(())
 	}
 
 	/// Get the account metadata (hash and size) from storage if it exists,
