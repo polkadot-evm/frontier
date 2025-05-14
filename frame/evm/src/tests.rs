@@ -15,13 +15,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![cfg(test)]
-
 use super::*;
 use crate::mock::*;
 
 use evm::ExitReason;
-use fp_evm::ExecutionInfoV2;
 use frame_support::{
 	assert_ok,
 	traits::{LockIdentifier, LockableCurrency, WithdrawReasons},
@@ -971,7 +968,7 @@ fn test_contract_deploy_succeeds_if_address_is_allowed() {
 		let gas_limit: u64 = 1_000_000;
 		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
-		<Test as Config>::Runner::create(
+		assert!(<Test as Config>::Runner::create(
 			// Alith is allowed to deploy contracts
 			H160::from([4u8; 20]),
 			hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
@@ -987,7 +984,7 @@ fn test_contract_deploy_succeeds_if_address_is_allowed() {
 			Some(0),
 			&<Test as Config>::config().clone(),
 		)
-		.is_ok();
+		.is_ok());
 	});
 }
 
@@ -1440,7 +1437,7 @@ fn handle_sufficient_reference() {
 		assert_eq!(account.sufficients, 0);
 
 		// Using the create / remove account functions is the correct way to handle it.
-		EVM::create_account(addr_2, vec![1, 2, 3], None);
+		assert!(EVM::create_account(addr_2, vec![1, 2, 3], None).is_ok());
 		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2.clone());
 		// We increased the sufficient reference by 1.
 		assert_eq!(account_2.sufficients, 1);
@@ -1638,7 +1635,7 @@ fn metadata_code_gets_cached() {
 	new_test_ext().execute_with(|| {
 		let address = H160::repeat_byte(0xaa);
 
-		crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec(), None);
+		assert!(crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec(), None).is_ok());
 
 		let metadata = crate::Pallet::<Test>::account_code_metadata(address);
 		assert_eq!(metadata.size, 7);

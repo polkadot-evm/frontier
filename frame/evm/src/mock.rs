@@ -22,8 +22,7 @@ use sp_core::{H160, U256};
 
 use crate::{
 	EnsureAddressNever, EnsureAddressRoot, EnsureAllowedCreateAddress, FeeCalculator,
-	IdentityAddressMapping, IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult,
-	PrecompileSet,
+	IsPrecompileResult, Precompile, PrecompileHandle, PrecompileResult, PrecompileSet,
 };
 
 frame_support::construct_runtime! {
