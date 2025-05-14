@@ -1907,6 +1907,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "cumulus-pallet-weight-reclaim"
+version = "0.2.0"
+source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#0548e837980715584bfdea1fb907c9a6b3186bc2"
+dependencies = [
+ "cumulus-primitives-storage-weight-reclaim",
+ "derive-where",
+ "docify",
+ "frame-benchmarking",
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-io",
+ "sp-runtime",
+ "sp-trie",
+]
+
+[[package]]
 name = "cumulus-primitives-core"
 version = "0.18.1"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#0548e837980715584bfdea1fb907c9a6b3186bc2"
@@ -3599,8 +3618,8 @@ version = "0.0.0"
 dependencies = [
  "async-trait",
  "clap",
+ "cumulus-pallet-weight-reclaim",
  "cumulus-primitives-proof-size-hostfunction",
- "cumulus-primitives-storage-weight-reclaim",
  "fc-api",
  "fc-cli",
  "fc-consensus",
@@ -3666,7 +3685,7 @@ dependencies = [
 name = "frontier-template-runtime"
 version = "0.0.0"
 dependencies = [
- "cumulus-primitives-storage-weight-reclaim",
+ "cumulus-pallet-weight-reclaim",
  "fp-account",
  "fp-evm",
  "fp-rpc",

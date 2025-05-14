@@ -902,6 +902,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			<Test as Config>::AddressMapping::into_account_id(author),
 			12345,
 		)],
+		dev_accounts: None,
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
