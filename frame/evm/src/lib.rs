@@ -67,7 +67,8 @@ pub mod runner;
 mod tests;
 pub mod weights;
 
-use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec::Vec};
+use crate::alloc::string::ToString;
+use alloc::{collections::btree_map::BTreeMap, vec::Vec};
 use core::cmp::min;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
@@ -977,7 +978,7 @@ impl<T: Config> Pallet<T> {
 		if let Some(caller_address) = caller {
 			T::CreateInnerOriginFilter::check_create_origin(&caller_address).map_err(|e| {
 				let error: &'static str = e.into();
-				ExitError::Other(Cow::Borrowed(error))
+				ExitError::Other(error.to_string())
 			})?;
 		}
 
