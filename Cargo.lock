@@ -2268,7 +2268,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d162beedaa69905488a8da94f5ac3edb4dd4788b732fadb7bd120b2625c1976"
 dependencies = [
  "data-encoding",
- "syn 2.0.101",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2780,7 +2780,7 @@ dependencies = [
  "hash-db",
  "hash256-std-hasher",
  "parity-scale-codec",
- "rlp 0.6.1",
+ "rlp",
  "scale-info",
  "serde",
  "sha3",
@@ -2854,7 +2854,7 @@ dependencies = [
  "log",
  "parity-scale-codec",
  "primitive-types 0.13.1",
- "rlp 0.6.1",
+ "rlp",
  "scale-info",
  "serde",
  "sha3",
@@ -3119,7 +3119,7 @@ dependencies = [
  "parity-scale-codec",
  "prometheus",
  "rand",
- "rlp 0.5.2",
+ "rlp",
  "sc-block-builder",
  "sc-client-api",
  "sc-client-db",
@@ -3157,7 +3157,7 @@ dependencies = [
  "ethereum",
  "ethereum-types",
  "jsonrpsee 0.24.9",
- "rlp 0.5.2",
+ "rlp",
  "rustc-hex",
  "serde",
  "serde_json",
@@ -4897,7 +4897,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54ed8ad1f3877f7e775b8cbf30ed1bd3209a95401817f19a0eb4402d13f8cf90"
 dependencies = [
- "rlp 0.6.1",
+ "rlp",
 ]
 
 [[package]]
@@ -7222,7 +7222,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "rlp 0.5.2",
+ "rlp",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -9007,16 +9007,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd124222d17ad93a644ed9d011a40f4fb64aa54275c08cc216524a9ea82fb09f"
 dependencies = [
  "digest 0.10.7",
-]
-
-[[package]]
-name = "rlp"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
-dependencies = [
- "bytes",
- "rustc-hex",
 ]
 
 [[package]]
