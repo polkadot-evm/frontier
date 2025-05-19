@@ -208,7 +208,7 @@ pub fn test_precompile_failure_test_vectors<P: Precompile>(filepath: &str) -> Re
 			}
 			Err(err) => {
 				let expected_err = PrecompileFailure::Error {
-					exit_status: ExitError::Other(test.expected_error),
+					exit_status: ExitError::Other(test.expected_error.into()),
 				};
 				assert_eq!(
 					expected_err, err,

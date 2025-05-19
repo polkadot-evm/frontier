@@ -118,10 +118,9 @@ where
 				})
 			}
 			Err(e) => Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other(format!(
-					"dispatch execution failed: {}",
-					<&'static str>::from(e)
-				)),
+				exit_status: ExitError::Other(
+					format!("dispatch execution failed: {}", <&'static str>::from(e)).into(),
+				),
 			}),
 		}
 	}
