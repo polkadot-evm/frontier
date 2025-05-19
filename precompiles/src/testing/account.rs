@@ -19,7 +19,7 @@
 use pallet_evm::AddressMapping;
 use scale_info::TypeInfo;
 use serde::{Deserialize, Serialize};
-use sp_core::{keccak_256, Decode, Encode, DecodeWithMemTracking, MaxEncodedLen, H160, H256};
+use sp_core::{keccak_256, Decode, DecodeWithMemTracking, Encode, MaxEncodedLen, H160, H256};
 
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Debug)]
 #[derive(Serialize, Deserialize, derive_more::Display)]
