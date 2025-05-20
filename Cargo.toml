@@ -72,7 +72,7 @@ parity-db = "0.4.13"
 parking_lot = "0.12.3"
 quote = "1.0.38"
 rlp = { version = "0.6", default-features = false }
-scale-codec = { package = "parity-scale-codec", version = "3.7.4", default-features = false, features = ["derive"] }
+scale-codec = { package = "parity-scale-codec", version = "3.7.5", default-features = false, features = ["derive"] }
 scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
@@ -220,9 +220,3 @@ inherits = "release"
 lto = true
 # https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 codegen-units = 1
-
-# --- Patch to force use the correct parity-scale-codec version ---
-[patch.crates-io]
-parity-scale-codec = { git = "https://github.com/paritytech/parity-scale-codec", rev = "334b99c9cc8def7408bcd91d1ff7bfd79f7e2915", default-features = false, features = [
-	"derive",
-] }
