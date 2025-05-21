@@ -2711,7 +2711,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.42.0"
-source = "git+https://github.com/dimartiro/evm?branch=v0.x#051f5b3bed6189eeb9b7184321503f85ee22bd90"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2731,7 +2731,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.42.0"
-source = "git+https://github.com/dimartiro/evm?branch=v0.x#051f5b3bed6189eeb9b7184321503f85ee22bd90"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2742,7 +2742,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.42.0"
-source = "git+https://github.com/dimartiro/evm?branch=v0.x#051f5b3bed6189eeb9b7184321503f85ee22bd90"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2753,7 +2753,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.42.0"
-source = "git+https://github.com/dimartiro/evm?branch=v0.x#051f5b3bed6189eeb9b7184321503f85ee22bd90"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
 dependencies = [
  "auto_impl",
  "environmental",
