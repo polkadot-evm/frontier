@@ -40,7 +40,7 @@ pub use ethereum::{
 };
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
-use scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
@@ -72,7 +72,7 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
-#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }
