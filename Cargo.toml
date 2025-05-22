@@ -37,7 +37,8 @@ members = [
 	"template/runtime",
 	"precompiles",
 	"precompiles/macro",
-	"precompiles/tests-external",
+	"precompiles/tests-external", 
+	"template/fuzz",
 ]
 resolver = "2"
 
