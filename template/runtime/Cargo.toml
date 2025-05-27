@@ -58,6 +58,9 @@ pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 
+# Polkadot
+polkadot-runtime-common = { workspace = true }
+
 # Cumulus primitives
 cumulus-pallet-weight-reclaim = { workspace = true }
 
@@ -113,6 +116,8 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",
+	# Polkadot
+	"polkadot-runtime-common/std",
 	# Cumulus primitives
 	"cumulus-pallet-weight-reclaim/std",
 ]
@@ -126,4 +131,5 @@ runtime-benchmarks = [
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
+	"polkadot-runtime-common/runtime-benchmarks",
 ]
