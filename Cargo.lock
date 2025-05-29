@@ -3001,7 +3001,7 @@ dependencies = [
  "log",
  "pallet-evm",
  "parity-scale-codec",
- "prometheus",
+ "prometheus 0.14.0",
  "rand 0.9.1",
  "rlp",
  "sc-block-builder",
@@ -8453,6 +8453,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "prometheus"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3ca5326d8d0b950a9acd87e6a3f94745394f62e4dae1b1ee22b2bc0c394af43a"
+dependencies = [
+ "cfg-if",
+ "fnv",
+ "lazy_static",
+ "memchr",
+ "parking_lot 0.12.3",
+ "thiserror 2.0.12",
+]
+
+[[package]]
 name = "prometheus-client"
 version = "0.22.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -10385,7 +10399,7 @@ dependencies = [
  "futures-timer",
  "log",
  "parking_lot 0.12.3",
- "prometheus",
+ "prometheus 0.13.4",
  "sp-arithmetic",
 ]
 
@@ -12234,7 +12248,7 @@ dependencies = [
  "hyper 1.5.2",
  "hyper-util",
  "log",
- "prometheus",
+ "prometheus 0.13.4",
  "thiserror 1.0.69",
  "tokio",
 ]
