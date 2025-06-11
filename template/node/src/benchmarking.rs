@@ -121,19 +121,7 @@ pub fn create_benchmark_extrinsic(
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
-	let extra: runtime::SignedExtra = cumulus_pallet_weight_reclaim::StorageWeightReclaim::<
-		runtime::Runtime,
-		(
-			frame_system::CheckNonZeroSender<runtime::Runtime>,
-			frame_system::CheckSpecVersion<runtime::Runtime>,
-			frame_system::CheckTxVersion<runtime::Runtime>,
-			frame_system::CheckGenesis<runtime::Runtime>,
-			frame_system::CheckMortality<runtime::Runtime>,
-			frame_system::CheckNonce<runtime::Runtime>,
-			frame_system::CheckWeight<runtime::Runtime>,
-			pallet_transaction_payment::ChargeTransactionPayment<runtime::Runtime>,
-		),
-	>::new((
+	let extra = runtime::SignedExtra::new((
 		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
 		frame_system::CheckTxVersion::<runtime::Runtime>::new(),
