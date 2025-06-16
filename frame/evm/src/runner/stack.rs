@@ -20,7 +20,7 @@
 use alloc::{
 	boxed::Box,
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-	vec::Vec,
+	vec, vec::Vec,
 };
 use core::{marker::PhantomData, mem};
 use evm::{
@@ -494,6 +494,7 @@ where
 				max_priority_fee_per_gas,
 				value,
 				access_list,
+				authorization_list: vec![], // No authorizations for direct EVM calls
 			},
 			weight_limit,
 			proof_size_base_cost,

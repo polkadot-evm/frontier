@@ -36,7 +36,7 @@ use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 pub use ethereum::{
 	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
-	TransactionAction, TransactionV2 as Transaction,
+	TransactionAction, TransactionV3 as Transaction,
 };
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -432,6 +432,14 @@ impl<T: Config> Pallet<T> {
 					&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..],
 				);
 			}
+			Transaction::EIP7702(t) => {
+				sig[0..32].copy_from_slice(&t.r[..]);
+				sig[32..64].copy_from_slice(&t.s[..]);
+				sig[64] = t.odd_y_parity as u8;
+				msg.copy_from_slice(
+					&ethereum::EIP7702TransactionMessage::from(t.clone()).hash()[..],
+				);
+			}
 		}
 		let pubkey = sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg).ok()?;
 		Some(H160::from(H256::from(sp_io::hashing::keccak_256(&pubkey))))
@@ -710,6 +718,12 @@ impl<T: Config> Pallet<T> {
 					logs_bloom,
 					logs,
 				}),
+				Transaction::EIP7702(_) => Receipt::EIP7702(ethereum::EIP7702ReceiptData {
+					status_code,
+					used_gas: cumulative_gas_used,
+					logs_bloom,
+					logs,
+				}),
 			}
 		};
 
@@ -819,8 +833,62 @@ impl<T: Config> Pallet<T> {
 						access_list,
 					)
 				}
+				Transaction::EIP7702(t) => {
+					let access_list: Vec<(H160, Vec<H256>)> = t
+						.access_list
+						.iter()
+						.map(|item| (item.address, item.storage_keys.clone()))
+						.collect();
+					(
+						t.data.clone(),
+						t.value,
+						t.gas_limit,
+						Some(t.max_fee_per_gas),
+						Some(t.max_priority_fee_per_gas),
+						Some(t.nonce),
+						t.destination,
+						access_list,
+					)
+				}
 			}
 		};
+
+		// Process EIP-7702 authorizations before execution
+		if let Transaction::EIP7702(ref eip7702_tx) = transaction {
+			// Convert authorization list to our format
+			let authorizations: Vec<fp_ethereum::Authorization> = eip7702_tx
+				.authorization_list
+				.iter()
+				.map(|item| fp_ethereum::Authorization::from(item.clone()))
+				.collect();
+
+			// Apply authorizations to EVM state
+			let current_chain_id = T::ChainId::get();
+			fp_ethereum::Authorization::apply_authorization_list(
+				&authorizations,
+				current_chain_id,
+				|address, code| {
+					// Set the delegation designator code directly in EVM storage
+					pallet_evm::AccountCodes::<T>::insert(address, &code);
+					
+					// Update code metadata for the new code (create manually since from_code is private)
+					let code_metadata = pallet_evm::CodeMetadata {
+						size: code.len() as u64,
+						hash: H256::from(sp_io::hashing::keccak_256(&code)),
+					};
+					pallet_evm::AccountCodesMetadata::<T>::insert(address, code_metadata);
+					
+					Ok(())
+				},
+			)
+			.map_err(|e| DispatchErrorWithPostInfo {
+				post_info: PostDispatchInfo {
+					actual_weight: None,
+					pays_fee: Pays::Yes,
+				},
+				error: sp_runtime::DispatchError::Other(e),
+			})?;
+		}
 
 		match action {
 			ethereum::TransactionAction::Call(target) => {

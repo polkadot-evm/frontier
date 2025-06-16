@@ -126,7 +126,8 @@ impl PubSubResult {
 			let receipt_logs = match receipt {
 				EthereumReceipt::Legacy(d)
 				| EthereumReceipt::EIP2930(d)
-				| EthereumReceipt::EIP1559(d) => d.logs,
+				| EthereumReceipt::EIP1559(d)
+				| EthereumReceipt::EIP7702(d) => d.logs,
 			};
 
 			let transaction_hash: Option<H256> = if !receipt_logs.is_empty() {
