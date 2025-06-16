@@ -2651,6 +2651,23 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.15.0"
+source = "git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702#6ad6cd39bee3beb10a850422e2c5230ffcbfaaba"
+dependencies = [
+ "bytes",
+ "ethereum-types",
+ "hash-db",
+ "hash256-std-hasher",
+ "parity-scale-codec",
+ "rlp",
+ "scale-info",
+ "serde",
+ "sha3",
+ "trie-root",
+]
+
+[[package]]
+name = "ethereum"
+version = "0.15.0"
 source = "git+https://github.com/rust-ethereum/ethereum?rev=bbb544622208ef6e9890a2dbc224248f6dd13318#bbb544622208ef6e9890a2dbc224248f6dd13318"
 dependencies = [
  "bytes",
@@ -2715,7 +2732,7 @@ source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f486
 dependencies = [
  "auto_impl",
  "environmental",
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum?rev=bbb544622208ef6e9890a2dbc224248f6dd13318)",
  "evm-core",
  "evm-gasometer",
  "evm-runtime",
@@ -2886,7 +2903,7 @@ name = "fc-db"
 version = "2.0.0-dev"
 dependencies = [
  "async-trait",
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "fc-api",
  "fc-storage",
  "fp-consensus",
@@ -2919,7 +2936,7 @@ dependencies = [
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fc-db",
  "fc-storage",
@@ -2952,7 +2969,7 @@ dependencies = [
 name = "fc-rpc"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "evm",
  "fc-api",
@@ -3010,7 +3027,7 @@ dependencies = [
 name = "fc-rpc-core"
 version = "1.1.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "jsonrpsee",
  "rlp",
@@ -3047,7 +3064,7 @@ dependencies = [
 name = "fc-storage"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fp-rpc",
  "fp-storage",
@@ -3238,7 +3255,7 @@ dependencies = [
 name = "fp-consensus"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "parity-scale-codec",
  "sp-core",
  "sp-runtime",
@@ -3257,11 +3274,13 @@ dependencies = [
 name = "fp-ethereum"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fp-evm",
  "frame-support",
  "parity-scale-codec",
+ "rlp",
+ "sp-io",
 ]
 
 [[package]]
@@ -3283,7 +3302,7 @@ dependencies = [
 name = "fp-rpc"
 version = "3.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fp-evm",
  "parity-scale-codec",
@@ -6811,7 +6830,7 @@ dependencies = [
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "evm",
  "fp-consensus",

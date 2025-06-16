@@ -53,7 +53,7 @@ clap = { version = "4.5", features = ["derive", "deprecated"] }
 const-hex = { version = "1.14", default-features = false, features = ["alloc"] }
 derive_more = "1.0"
 environmental = { version = "1.1.4", default-features = false }
-ethereum = { git = "https://github.com/rust-ethereum/ethereum", rev = "bbb544622208ef6e9890a2dbc224248f6dd13318", default-features = false }
+ethereum = { git = "https://github.com/manuelmauro/ethereum", branch = "add-support-for-eip7702", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
 evm = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
 futures = "0.3.31"
