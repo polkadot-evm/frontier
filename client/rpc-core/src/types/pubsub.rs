@@ -21,7 +21,7 @@
 use std::collections::BTreeMap;
 
 use ethereum::{
-	BlockV2 as EthereumBlock, ReceiptV3 as EthereumReceipt, TransactionV2 as EthereumTransaction,
+	BlockV3 as EthereumBlock, ReceiptV3 as EthereumReceipt, TransactionV3 as EthereumTransaction,
 };
 use ethereum_types::{H256, U256};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};

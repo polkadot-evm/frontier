@@ -18,7 +18,7 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
-use ethereum::TransactionV2 as EthereumTransaction;
+use ethereum::TransactionV3 as EthereumTransaction;
 use futures::{future, FutureExt as _, StreamExt as _};
 use jsonrpsee::{core::traits::IdProvider, server::PendingSubscriptionSink};
 // Substrate

@@ -58,7 +58,7 @@ pub trait StorageOverride<Block: BlockT>: Send + Sync {
 	fn account_storage_at(&self, at: Block::Hash, address: Address, index: U256) -> Option<H256>;
 
 	/// Return the current ethereum block.
-	fn current_block(&self, at: Block::Hash) -> Option<ethereum::BlockV2>;
+	fn current_block(&self, at: Block::Hash) -> Option<ethereum::BlockV3>;
 	/// Return the current ethereum transaction receipt.
 	fn current_receipts(&self, at: Block::Hash) -> Option<Vec<ethereum::ReceiptV3>>;
 	/// Return the current ethereum transaction status.

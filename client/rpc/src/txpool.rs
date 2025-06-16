@@ -18,7 +18,7 @@
 
 use std::{marker::PhantomData, sync::Arc};
 
-use ethereum::TransactionV2 as EthereumTransaction;
+use ethereum::TransactionV3 as EthereumTransaction;
 use ethereum_types::{H160, H256, U256};
 use jsonrpsee::core::RpcResult;
 use serde::Serialize;
@@ -88,6 +88,7 @@ where
 				EthereumTransaction::Legacy(t) => t.nonce,
 				EthereumTransaction::EIP2930(t) => t.nonce,
 				EthereumTransaction::EIP1559(t) => t.nonce,
+				EthereumTransaction::EIP7702(t) => t.nonce,
 			};
 			let from = match public_key(txn) {
 				Ok(pk) => H160::from(H256::from(keccak_256(&pk))),

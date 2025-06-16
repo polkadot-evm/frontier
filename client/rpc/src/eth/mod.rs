@@ -30,7 +30,7 @@ mod transaction;
 
 use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
-use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
+use ethereum::{BlockV3 as EthereumBlock, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate

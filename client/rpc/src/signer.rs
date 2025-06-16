@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum::TransactionV2 as EthereumTransaction;
+use ethereum::TransactionV3 as EthereumTransaction;
 use ethereum_types::{H160, H256};
 use jsonrpsee::types::ErrorObjectOwned;
 // Substrate

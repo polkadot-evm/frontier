@@ -57,7 +57,7 @@ pub mod v1 {
 			SchemaStorageOverrideRef::new(&self.querier).account_storage_at(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
@@ -103,7 +103,7 @@ pub mod v1 {
 			self.querier.account_storage(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			self.querier
 				.current_block::<ethereum::BlockV0>(at)
 				.map(Into::into)
@@ -171,7 +171,7 @@ pub mod v2 {
 			SchemaStorageOverrideRef::new(&self.querier).account_storage_at(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
@@ -217,7 +217,7 @@ pub mod v2 {
 			self.querier.account_storage(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			self.querier.current_block(at)
 		}
 
@@ -283,7 +283,7 @@ pub mod v3 {
 			SchemaStorageOverrideRef::new(&self.querier).account_storage_at(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
@@ -329,7 +329,7 @@ pub mod v3 {
 			self.querier.account_storage(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			self.querier.current_block(at)
 		}
 

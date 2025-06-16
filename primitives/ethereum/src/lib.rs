@@ -55,7 +55,7 @@ impl Authorization {
 		current_chain_id: u64,
 	) -> Vec<(H160, H160)> {
 		let mut processed = Vec::new();
-		
+
 		for auth in authorizations {
 			if let Ok(signer) = auth.recover_signer(current_chain_id) {
 				// Only add valid authorizations
@@ -64,7 +64,7 @@ impl Authorization {
 			}
 			// Invalid authorizations are silently ignored per EIP-7702
 		}
-		
+
 		processed
 	}
 
@@ -86,15 +86,15 @@ impl Authorization {
 		F: FnMut(H160, Vec<u8>) -> Result<(), &'static str>,
 	{
 		let processed = Self::process_authorization_list(authorizations, current_chain_id);
-		
+
 		for (signer_address, authorized_address) in processed {
 			// Create delegation designator code
 			let delegation_code = Self::create_delegation_designator(authorized_address);
-			
+
 			// Set the signer's account code to the delegation designator
 			set_code_fn(signer_address, delegation_code)?;
 		}
-		
+
 		Ok(())
 	}
 
@@ -156,7 +156,8 @@ impl Authorization {
 	fn authorization_message_hash(&self, current_chain_id: u64) -> H256 {
 		// EIP-7702 authorization message format:
 		// MAGIC || rlp([chain_id, address, nonce])
-		let mut message = alloc::vec![ethereum::AUTHORIZATION_MAGIC];
+		// EIP-7702 authorization magic is 0x05
+		let mut message = alloc::vec![0x05];
 
 		// Use current chain ID if authorization chain ID is 0
 		let effective_chain_id = if self.chain_id == U256::zero() {
@@ -416,7 +417,9 @@ impl From<TransactionData> for CheckEvmTransactionInput {
 			value: t.value,
 			access_list: t.access_list,
 			// Convert authorization list to simplified format for gas calculation
-			authorization_list: t.authorization_list.iter()
+			authorization_list: t
+				.authorization_list
+				.iter()
 				.map(|auth| (auth.address, vec![])) // Address and empty storage keys for gas calc
 				.collect(),
 		}
