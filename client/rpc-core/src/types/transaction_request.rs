@@ -17,7 +17,7 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum::{
-	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
+	AccessListItem, AuthorizationListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, EIP7702TransactionMessage, LegacyTransactionMessage,
 	TransactionAction,
 };
 use ethereum_types::{H160, U256, U64};
@@ -55,6 +55,9 @@ pub struct TransactionRequest {
 	/// EIP-2930 access list
 	#[serde(with = "access_list_item_camelcase", default)]
 	pub access_list: Option<Vec<AccessListItem>>,
+	/// EIP-7702 authorization list
+	#[serde(with = "authorization_list_item_camelcase", default)]
+	pub authorization_list: Option<Vec<AuthorizationListItem>>,
 	/// Chain ID that this transaction is valid on
 	pub chain_id: Option<U64>,
 
@@ -89,6 +92,46 @@ mod access_list_item_camelcase {
 				.map(|access_item_def| AccessListItem {
 					address: access_item_def.address,
 					storage_keys: access_item_def.storage_keys,
+				})
+				.collect()
+		}))
+	}
+}
+
+/// Serde support for AuthorizationListItem with camelCase field names
+mod authorization_list_item_camelcase {
+	use ethereum::AuthorizationListItem;
+	use ethereum_types::{Address, H256};
+	use serde::{Deserialize, Deserializer};
+
+	#[derive(Deserialize)]
+	struct AuthorizationListItemDef {
+		#[serde(rename = "chainId")]
+		chain_id: u64,
+		address: Address,
+		nonce: ethereum_types::U256,
+		#[serde(rename = "yParity")]
+		y_parity: bool,
+		r: H256,
+		s: H256,
+	}
+
+	pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<AuthorizationListItem>>, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		let auth_item_defs_opt: Option<Vec<AuthorizationListItemDef>> =
+			Option::deserialize(deserializer)?;
+		Ok(auth_item_defs_opt.map(|auth_item_defs| {
+			auth_item_defs
+				.into_iter()
+				.map(|auth_item_def| AuthorizationListItem {
+					chain_id: auth_item_def.chain_id,
+					address: auth_item_def.address,
+					nonce: auth_item_def.nonce,
+					y_parity: auth_item_def.y_parity,
+					r: auth_item_def.r,
+					s: auth_item_def.s,
 				})
 				.collect()
 		}))
@@ -167,10 +210,34 @@ pub enum TransactionMessage {
 	Legacy(LegacyTransactionMessage),
 	EIP2930(EIP2930TransactionMessage),
 	EIP1559(EIP1559TransactionMessage),
+	EIP7702(EIP7702TransactionMessage),
 }
 
 impl From<TransactionRequest> for Option<TransactionMessage> {
 	fn from(req: TransactionRequest) -> Self {
+		// EIP7702 takes priority if authorization_list is present
+		if req.authorization_list.is_some() {
+			return Some(TransactionMessage::EIP7702(EIP7702TransactionMessage {
+				destination: match req.to {
+					Some(to) => TransactionAction::Call(to),
+					None => TransactionAction::Create,
+				},
+				nonce: req.nonce.unwrap_or_default(),
+				max_priority_fee_per_gas: req.max_priority_fee_per_gas.unwrap_or_default(),
+				max_fee_per_gas: req.max_fee_per_gas.unwrap_or_default(),
+				gas_limit: req.gas.unwrap_or_default(),
+				value: req.value.unwrap_or_default(),
+				data: req
+					.data
+					.into_bytes()
+					.map(|bytes| bytes.into_vec())
+					.unwrap_or_default(),
+				access_list: req.access_list.unwrap_or_default(),
+				authorization_list: req.authorization_list.unwrap_or_default(),
+				chain_id: req.chain_id.map(|id| id.as_u64()).unwrap_or_default(),
+			}));
+		}
+
 		match (req.max_fee_per_gas, &req.access_list, req.gas_price) {
 			// EIP1559
 			// Empty fields fall back to the canonical transaction schema.
