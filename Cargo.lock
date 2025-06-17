@@ -2171,7 +2171,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1145d32e826a7748b69ee8fc62d3e6355ff7f1051df53141e7048162fc90481b"
 dependencies = [
  "data-encoding",
- "syn 2.0.101",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2651,7 +2651,7 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.15.0"
-source = "git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702#6ad6cd39bee3beb10a850422e2c5230ffcbfaaba"
+source = "git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702#6bb925d0afa5519533fd4745d40c66122012a712"
 dependencies = [
  "bytes",
  "ethereum-types",
@@ -2711,7 +2711,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.41.1"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#e04c664b993f0e55521f4d5e27c3899d2cbaeb46"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2731,7 +2731,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.41.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#e04c664b993f0e55521f4d5e27c3899d2cbaeb46"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2742,7 +2742,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.41.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#e04c664b993f0e55521f4d5e27c3899d2cbaeb46"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2753,7 +2753,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.41.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#e04c664b993f0e55521f4d5e27c3899d2cbaeb46"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -6558,7 +6558,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
 dependencies = [
- "proc-macro-crate 3.2.0",
+ "proc-macro-crate 1.1.3",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
