@@ -2658,7 +2658,24 @@ dependencies = [
  "hash-db",
  "hash256-std-hasher",
  "parity-scale-codec",
- "rlp 0.6.1",
+ "rlp",
+ "scale-info",
+ "serde",
+ "sha3",
+ "trie-root",
+]
+
+[[package]]
+name = "ethereum"
+version = "0.15.0"
+source = "git+https://github.com/rust-ethereum/ethereum.git?rev=44c02824d22072ab74fd5e284aa2bcc790f45d7d#44c02824d22072ab74fd5e284aa2bcc790f45d7d"
+dependencies = [
+ "bytes",
+ "ethereum-types",
+ "hash-db",
+ "hash256-std-hasher",
+ "parity-scale-codec",
+ "rlp",
  "scale-info",
  "serde",
  "sha3",
@@ -2710,19 +2727,19 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.41.1"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
+version = "0.42.0"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#0dbf3eb5d24a1e60239f79386710e16928985b5f"
 dependencies = [
  "auto_impl",
  "environmental",
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/rust-ethereum/ethereum.git?rev=44c02824d22072ab74fd5e284aa2bcc790f45d7d)",
  "evm-core",
  "evm-gasometer",
  "evm-runtime",
  "log",
  "parity-scale-codec",
  "primitive-types",
- "rlp 0.5.2",
+ "rlp",
  "scale-info",
  "serde",
  "sha3",
@@ -2730,8 +2747,8 @@ dependencies = [
 
 [[package]]
 name = "evm-core"
-version = "0.41.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
+version = "0.42.0"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#0dbf3eb5d24a1e60239f79386710e16928985b5f"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2741,8 +2758,8 @@ dependencies = [
 
 [[package]]
 name = "evm-gasometer"
-version = "0.41.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
+version = "0.42.0"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#0dbf3eb5d24a1e60239f79386710e16928985b5f"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2752,8 +2769,8 @@ dependencies = [
 
 [[package]]
 name = "evm-runtime"
-version = "0.41.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-eip-7702#2148854acb57203628de0812af5fa1739e2f11cd"
+version = "0.42.0"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#0dbf3eb5d24a1e60239f79386710e16928985b5f"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2886,7 +2903,7 @@ name = "fc-db"
 version = "2.0.0-dev"
 dependencies = [
  "async-trait",
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "fc-api",
  "fc-storage",
  "fp-consensus",
@@ -2919,7 +2936,7 @@ dependencies = [
 name = "fc-mapping-sync"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fc-db",
  "fc-storage",
@@ -2952,7 +2969,7 @@ dependencies = [
 name = "fc-rpc"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "evm",
  "fc-api",
@@ -2972,7 +2989,7 @@ dependencies = [
  "parity-scale-codec",
  "prometheus",
  "rand 0.9.1",
- "rlp 0.6.1",
+ "rlp",
  "sc-block-builder",
  "sc-client-api",
  "sc-client-db",
@@ -3010,10 +3027,10 @@ dependencies = [
 name = "fc-rpc-core"
 version = "1.1.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "jsonrpsee",
- "rlp 0.6.1",
+ "rlp",
  "rustc-hex",
  "serde",
  "serde_json",
@@ -3047,7 +3064,7 @@ dependencies = [
 name = "fc-storage"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fp-rpc",
  "fp-storage",
@@ -3238,7 +3255,7 @@ dependencies = [
 name = "fp-consensus"
 version = "2.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "parity-scale-codec",
  "sp-core",
  "sp-runtime",
@@ -3257,12 +3274,12 @@ dependencies = [
 name = "fp-ethereum"
 version = "1.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fp-evm",
  "frame-support",
  "parity-scale-codec",
- "rlp 0.6.1",
+ "rlp",
  "sp-io",
 ]
 
@@ -3285,7 +3302,7 @@ dependencies = [
 name = "fp-rpc"
 version = "3.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "fp-evm",
  "parity-scale-codec",
@@ -4709,7 +4726,7 @@ version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54ed8ad1f3877f7e775b8cbf30ed1bd3209a95401817f19a0eb4402d13f8cf90"
 dependencies = [
- "rlp 0.6.1",
+ "rlp",
 ]
 
 [[package]]
@@ -6813,7 +6830,7 @@ dependencies = [
 name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
- "ethereum",
+ "ethereum 0.15.0 (git+https://github.com/manuelmauro/ethereum?branch=add-support-for-eip7702)",
  "ethereum-types",
  "evm",
  "fp-consensus",
@@ -6830,7 +6847,7 @@ dependencies = [
  "pallet-evm",
  "pallet-timestamp",
  "parity-scale-codec",
- "rlp 0.6.1",
+ "rlp",
  "scale-info",
  "sp-core",
  "sp-io",
@@ -8558,16 +8575,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd124222d17ad93a644ed9d011a40f4fb64aa54275c08cc216524a9ea82fb09f"
 dependencies = [
  "digest 0.10.7",
-]
-
-[[package]]
-name = "rlp"
-version = "0.5.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb919243f34364b6bd2fc10ef797edbfa75f33c252e7998527479c6d6b47e1ec"
-dependencies = [
- "bytes",
- "rustc-hex",
 ]
 
 [[package]]
