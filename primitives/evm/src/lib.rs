@@ -174,12 +174,11 @@ impl WeightInfo {
 		}
 	}
 	pub fn remaining_proof_size(&self) -> Option<u64> {
-		if let (Some(proof_size_usage), Some(proof_size_limit)) =
-			(self.proof_size_usage, self.proof_size_limit)
-		{
-			return Some(proof_size_limit.saturating_sub(proof_size_usage));
+		if let Some(proof_size_limit) = self.proof_size_limit {
+			Some(proof_size_limit.saturating_sub(self.proof_size_usage.unwrap_or_default()))
+		} else {
+			None
 		}
-		None
 	}
 
 	pub fn remaining_ref_time(&self) -> Option<u64> {

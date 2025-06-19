@@ -702,6 +702,7 @@ type NegativeImbalanceOf<C, T> = <C as Currency<AccountIdOf<T>>>::NegativeImbala
 	PartialEq,
 	Encode,
 	Decode,
+	Default,
 	TypeInfo,
 	MaxEncodedLen
 )]
@@ -940,7 +941,9 @@ impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.
 	pub fn is_account_empty(address: &H160) -> bool {
 		let (account, _) = Self::account_basic(address);
-		let code_len = <AccountCodes<T>>::decode_len(address).unwrap_or(0);
+		let code_len = <AccountCodesMetadata<T>>::get(address)
+			.unwrap_or_default()
+			.size;
 
 		account.nonce == U256::zero() && account.balance == U256::zero() && code_len == 0
 	}
@@ -1001,28 +1004,17 @@ impl<T: Config> Pallet<T> {
 	/// Get the account metadata (hash and size) from storage if it exists,
 	/// or compute it from code and store it if it doesn't exist.
 	pub fn account_code_metadata(address: H160) -> CodeMetadata {
-		if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
-			return meta;
-		}
-
-		let code = <AccountCodes<T>>::get(address);
-
-		// If code is empty we return precomputed hash for empty code.
-		// We don't store it as this address could get code deployed in the future.
-		if code.is_empty() {
+		<AccountCodesMetadata<T>>::get(address).unwrap_or_else(|| {
+			// If there is no codeMetadata, we assume that the code is empty,
+			// we then return precomputed hash for empty code.
 			const EMPTY_CODE_HASH: [u8; 32] = hex_literal::hex!(
 				"c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
 			);
-			return CodeMetadata {
+			CodeMetadata {
 				size: 0,
 				hash: EMPTY_CODE_HASH.into(),
-			};
-		}
-
-		let meta = CodeMetadata::from_code(&code);
-
-		<AccountCodesMetadata<T>>::insert(address, meta);
-		meta
+			}
+		})
 	}
 
 	/// Get the account basic in EVM format.
