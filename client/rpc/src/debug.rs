@@ -59,7 +59,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		}
 	}
 
-	async fn block_by(&self, number: BlockNumberOrHash) -> RpcResult<Option<ethereum::BlockV2>>
+	async fn block_by(&self, number: BlockNumberOrHash) -> RpcResult<Option<ethereum::BlockV3>>
 	where
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
@@ -86,7 +86,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 	async fn transaction_by(
 		&self,
 		transaction_hash: H256,
-	) -> RpcResult<Option<ethereum::TransactionV2>>
+	) -> RpcResult<Option<ethereum::TransactionV3>>
 	where
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,

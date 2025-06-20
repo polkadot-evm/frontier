@@ -34,6 +34,7 @@ pub struct CheckEvmTransactionInput {
 	pub max_priority_fee_per_gas: Option<U256>,
 	pub value: U256,
 	pub access_list: Vec<(H160, Vec<H256>)>,
+	pub authorization_list: Vec<(U256, H160, U256, H160)>,
 }
 
 #[derive(Debug)]
@@ -222,11 +223,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 				evm::gasometer::call_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			} else {
 				evm::gasometer::create_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			};
 
@@ -354,6 +357,7 @@ mod tests {
 				max_priority_fee_per_gas,
 				value,
 				access_list: vec![],
+				authorization_list: vec![],
 			},
 			weight_limit,
 			proof_size_base_cost,

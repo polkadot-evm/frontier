@@ -82,7 +82,7 @@ where
 			.ok()
 	}
 
-	fn current_block(&self, block_hash: B::Hash) -> Option<ethereum::BlockV2> {
+	fn current_block(&self, block_hash: B::Hash) -> Option<ethereum::BlockV3> {
 		let api = self.client.runtime_api();
 
 		let api_version = Self::api_version(&api, block_hash)?;

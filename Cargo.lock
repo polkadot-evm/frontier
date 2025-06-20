@@ -2162,7 +2162,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1145d32e826a7748b69ee8fc62d3e6355ff7f1051df53141e7048162fc90481b"
 dependencies = [
  "data-encoding",
- "syn 2.0.101",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2673,12 +2673,13 @@ dependencies = [
 [[package]]
 name = "ethereum"
 version = "0.15.0"
-source = "git+https://github.com/rust-ethereum/ethereum?rev=bbb544622208ef6e9890a2dbc224248f6dd13318#bbb544622208ef6e9890a2dbc224248f6dd13318"
+source = "git+https://github.com/manuelmauro/ethereum.git?rev=5d5834a5f762fd87e87ba2f345b9ff90d3144ee4#5d5834a5f762fd87e87ba2f345b9ff90d3144ee4"
 dependencies = [
  "bytes",
  "ethereum-types",
  "hash-db",
  "hash256-std-hasher",
+ "k256",
  "parity-scale-codec",
  "rlp",
  "scale-info",
@@ -2733,7 +2734,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.42.0"
-source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2753,7 +2754,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.42.0"
-source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2764,7 +2765,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.42.0"
-source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2775,7 +2776,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.42.0"
-source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#6ca5a72bc8942f4860137155dd9033526fd362a5"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -3284,6 +3285,8 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "parity-scale-codec",
+ "rlp",
+ "sp-io",
 ]
 
 [[package]]
@@ -6606,7 +6609,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
 dependencies = [
- "proc-macro-crate 3.2.0",
+ "proc-macro-crate 1.1.3",
  "proc-macro2",
  "quote",
  "syn 2.0.101",

@@ -84,7 +84,7 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
-	#[api_version(5)]
+	#[api_version(6)]
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
@@ -141,6 +141,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
+		#[changed_in(6)]
 		fn call(
 			from: Address,
 			to: Address,
@@ -152,6 +153,19 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
+		fn call(
+			from: Address,
+			to: Address,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
+			authorization_list: Option<Vec<(U256, Address, U256, Address)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
 
 		/// Returns a frame_ethereum::create response.
@@ -188,6 +202,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfo::<Address>, sp_runtime::DispatchError>;
+		#[changed_in(6)]
 		fn create(
 			from: Address,
 			data: Vec<u8>,
@@ -199,12 +214,24 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
+		fn create(
+			from: Address,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
+			authorization_list: Option<Vec<(U256, Address, U256, Address)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
 
 		/// Return the current block. Legacy.
 		#[changed_in(2)]
 		fn current_block() -> Option<ethereum::BlockV0>;
 		/// Return the current block.
-		fn current_block() -> Option<ethereum::BlockV2>;
+		fn current_block() -> Option<ethereum::BlockV3>;
 
 		/// Return the current receipt.
 		#[changed_in(4)]
@@ -225,12 +252,12 @@ sp_api::decl_runtime_apis! {
 		/// Return all the current data for a block in a single runtime call.
 		#[changed_in(4)]
 		fn current_all() -> (
-			Option<ethereum::BlockV2>,
+			Option<ethereum::BlockV3>,
 			Option<Vec<ethereum::ReceiptV0>>,
 			Option<Vec<TransactionStatus>>
 		);
 		fn current_all() -> (
-			Option<ethereum::BlockV2>,
+			Option<ethereum::BlockV3>,
 			Option<Vec<ethereum::ReceiptV3>>,
 			Option<Vec<TransactionStatus>>
 		);
@@ -243,7 +270,7 @@ sp_api::decl_runtime_apis! {
 		/// Receives a `Vec<OpaqueExtrinsic>` and filters all the ethereum transactions.
 		fn extrinsic_filter(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
-		) -> Vec<ethereum::TransactionV2>;
+		) -> Vec<ethereum::TransactionV3>;
 
 		/// Return the elasticity multiplier.
 		fn elasticity() -> Option<Permill>;
@@ -255,7 +282,7 @@ sp_api::decl_runtime_apis! {
 		/// Return the pending block.
 		fn pending_block(
 			xts: Vec<<Block as BlockT>::Extrinsic>,
-		) -> (Option<ethereum::BlockV2>, Option<Vec<TransactionStatus>>);
+		) -> (Option<ethereum::BlockV3>, Option<Vec<TransactionStatus>>);
 		/// Initialize the pending block.
 		/// The behavior should be the same as the runtime api Core_initialize_block but
 		/// for a "pending" block.
@@ -266,7 +293,7 @@ sp_api::decl_runtime_apis! {
 
 	#[api_version(2)]
 	pub trait ConvertTransactionRuntimeApi {
-		fn convert_transaction(transaction: ethereum::TransactionV2) -> <Block as BlockT>::Extrinsic;
+		fn convert_transaction(transaction: ethereum::TransactionV3) -> <Block as BlockT>::Extrinsic;
 		#[changed_in(2)]
 		fn convert_transaction(transaction: ethereum::TransactionV0) -> <Block as BlockT>::Extrinsic;
 	}
@@ -275,7 +302,7 @@ sp_api::decl_runtime_apis! {
 /// Fallback transaction converter when the `ConvertTransactionRuntimeApi` is not available. For almost all
 /// non-legacy cases, you can instantiate this type as `NoTransactionConverter`.
 pub trait ConvertTransaction<E> {
-	fn convert_transaction(&self, transaction: ethereum::TransactionV2) -> E;
+	fn convert_transaction(&self, transaction: ethereum::TransactionV3) -> E;
 }
 
 /// No fallback transaction converter is available.
@@ -285,7 +312,7 @@ pub enum NoTransactionConverter {}
 impl<E> ConvertTransaction<E> for NoTransactionConverter {
 	// `convert_transaction` is a method taking `&self` as a parameter, so it can only be called via an instance of type Self,
 	// so we are guaranteed at compile time that this method can never be called.
-	fn convert_transaction(&self, _transaction: ethereum::TransactionV2) -> E {
+	fn convert_transaction(&self, _transaction: ethereum::TransactionV3) -> E {
 		match *self {}
 	}
 }

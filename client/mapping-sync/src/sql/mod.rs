@@ -525,7 +525,7 @@ mod test {
 			mix_hash: H256::default(),
 			nonce: ethereum_types::H64::default(),
 		};
-		let ethereum_transactions: Vec<ethereum::TransactionV2> = vec![];
+		let ethereum_transactions: Vec<ethereum::TransactionV3> = vec![];
 		let ethereum_block = ethereum::Block::new(partial_header, ethereum_transactions, vec![]);
 		DigestItem::Consensus(
 			fp_consensus::FRONTIER_ENGINE_ID,
