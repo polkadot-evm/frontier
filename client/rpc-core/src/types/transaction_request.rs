@@ -17,8 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum::{
-	AccessListItem, AuthorizationListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, EIP7702TransactionMessage, LegacyTransactionMessage,
-	TransactionAction,
+	AccessListItem, AuthorizationListItem, EIP1559TransactionMessage, EIP2930TransactionMessage,
+	EIP7702TransactionMessage, LegacyTransactionMessage, TransactionAction,
 };
 use ethereum_types::{H160, U256, U64};
 use serde::{Deserialize, Deserializer};
@@ -116,7 +116,9 @@ mod authorization_list_item_camelcase {
 		s: H256,
 	}
 
-	pub fn deserialize<'de, D>(deserializer: D) -> Result<Option<Vec<AuthorizationListItem>>, D::Error>
+	pub fn deserialize<'de, D>(
+		deserializer: D,
+	) -> Result<Option<Vec<AuthorizationListItem>>, D::Error>
 	where
 		D: Deserializer<'de>,
 	{

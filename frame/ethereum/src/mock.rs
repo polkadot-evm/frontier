@@ -469,4 +469,3 @@ impl EIP7702UnsignedTransaction {
 		})
 	}
 }
-
