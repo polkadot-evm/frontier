@@ -856,43 +856,6 @@ impl<T: Config> Pallet<T> {
 			}
 		};
 
-		// Process EIP-7702 authorizations before execution
-		if let Transaction::EIP7702(ref eip7702_tx) = transaction {
-			// Convert authorization list to our format
-			let authorizations: Vec<fp_ethereum::Authorization> = eip7702_tx
-				.authorization_list
-				.iter()
-				.map(|item| fp_ethereum::Authorization::from(item.clone()))
-				.collect();
-
-			// Apply authorizations to EVM state
-			let current_chain_id = T::ChainId::get();
-			fp_ethereum::Authorization::apply_authorization_list(
-				&authorizations,
-				current_chain_id,
-				|address, code| {
-					// Set the delegation designator code directly in EVM storage
-					pallet_evm::AccountCodes::<T>::insert(address, &code);
-					
-					// Update code metadata for the new code (create manually since from_code is private)
-					let code_metadata = pallet_evm::CodeMetadata {
-						size: code.len() as u64,
-						hash: H256::from(sp_io::hashing::keccak_256(&code)),
-					};
-					pallet_evm::AccountCodesMetadata::<T>::insert(address, code_metadata);
-					
-					Ok(())
-				},
-			)
-			.map_err(|e| DispatchErrorWithPostInfo {
-				post_info: PostDispatchInfo {
-					actual_weight: None,
-					pays_fee: Pays::Yes,
-				},
-				error: sp_runtime::DispatchError::Other(e),
-			})?;
-		}
-
 		match action {
 			ethereum::TransactionAction::Call(target) => {
 				let res = match T::Runner::call(

@@ -34,7 +34,7 @@ pub struct CheckEvmTransactionInput {
 	pub max_priority_fee_per_gas: Option<U256>,
 	pub value: U256,
 	pub access_list: Vec<(H160, Vec<H256>)>,
-	pub authorization_list: Vec<(H160, Vec<H256>)>, // Simplified for gas calculation
+	pub authorization_list: Vec<(U256, H160, U256, H160)>,
 }
 
 #[derive(Debug)]
@@ -232,12 +232,6 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			};
 
 			if gasometer.record_transaction(transaction_cost).is_err() {
-				return Err(TransactionValidationError::GasLimitTooLow.into());
-			}
-
-			// Add EIP-7702 authorization costs: 25,000 gas per authorization
-			let authorization_cost = self.transaction.authorization_list.len() as u64 * 25_000;
-			if gasometer.record_cost(authorization_cost).is_err() {
 				return Err(TransactionValidationError::GasLimitTooLow.into());
 			}
 

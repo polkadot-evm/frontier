@@ -519,8 +519,8 @@ where
 			let receipt_logs = match receipt {
 				ethereum::ReceiptV3::Legacy(d)
 				| ethereum::ReceiptV3::EIP2930(d)
-				| ethereum::ReceiptV3::EIP1559(d) => &d.logs,
-				ethereum::ReceiptV3::EIP7702(d) => &d.logs,
+				| ethereum::ReceiptV3::EIP1559(d)
+				| ethereum::ReceiptV3::EIP7702(d) => &d.logs,
 			};
 			let transaction_index = transaction_index as i32;
 			log_count += receipt_logs.len();
