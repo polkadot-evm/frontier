@@ -416,12 +416,7 @@ impl From<TransactionData> for CheckEvmTransactionInput {
 			max_priority_fee_per_gas: t.max_priority_fee_per_gas,
 			value: t.value,
 			access_list: t.access_list,
-			// Convert authorization list to simplified format for gas calculation
-			authorization_list: t
-				.authorization_list
-				.iter()
-				.map(|auth| (auth.address, vec![])) // Address and empty storage keys for gas calc
-				.collect(),
+			authorization_list: t.authorization_list,
 		}
 	}
 }
@@ -491,7 +486,11 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
-				authorization_list: t.authorization_list.clone(),
+				authorization_list: t
+					.authorization_list
+					.iter()
+					.map(|d| (d.chain_id, d.address, d.nonce, d.authorizing_address()))
+					.collect(),
 			},
 		}
 	}
