@@ -93,6 +93,7 @@ where
 			data,
 			nonce,
 			access_list,
+			authorization_list,
 			..
 		} = request;
 
@@ -388,6 +389,37 @@ where
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
 					let info = api
+						.create_before_version_6(
+							substrate_hash,
+							from.unwrap_or_default(),
+							data,
+							value.unwrap_or_default(),
+							gas_limit,
+							max_fee_per_gas,
+							max_priority_fee_per_gas,
+							nonce,
+							false,
+							Some(
+								access_list
+									.into_iter()
+									.map(|item| (item.address, item.storage_keys))
+									.collect(),
+							),
+						)
+						.map_err(|err| internal_err(format!("runtime error: {err}")))?
+						.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+					error_on_execution_failure(&info.exit_reason, &[])?;
+
+					let code = api
+						.account_code_at(substrate_hash, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {err}")))?;
+					Ok(Bytes(code))
+				} else if api_version == 6 {
+					// Pectra EIP-7702 support
+					let access_list = access_list.unwrap_or_default();
+					let authorization_list = authorization_list.unwrap_or_default();
+					let info = api
 						.create(
 							substrate_hash,
 							from.unwrap_or_default(),
@@ -402,6 +434,19 @@ where
 								access_list
 									.into_iter()
 									.map(|item| (item.address, item.storage_keys))
+									.collect(),
+							),
+							Some(
+								authorization_list
+									.iter()
+									.map(|d| {
+										(
+											U256::from(d.chain_id),
+											d.address,
+											d.nonce,
+											d.authorizing_address(),
+										)
+									})
 									.collect(),
 							),
 						)

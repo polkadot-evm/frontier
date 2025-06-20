@@ -804,6 +804,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			authorization_list: Option<Vec<(U256, H160, U256, H160)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -835,6 +836,10 @@ impl_runtime_apis! {
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
+			if authorization_list.is_some() {
+				// TODO this is most likely wrong
+				estimated_transaction_len += authorization_list.encoded_size();
+			}
 
 
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
@@ -865,6 +870,7 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				authorization_list.unwrap_or_default(),
 				false,
 				true,
 				weight_limit,
@@ -883,6 +889,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			authorization_list: Option<Vec<(U256, H160, U256, H160)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -914,6 +921,11 @@ impl_runtime_apis! {
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
+			if authorization_list.is_some()	{
+				// TODO this is most likely wrong
+				estimated_transaction_len += authorization_list.encoded_size()
+			}
+
 
 
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
@@ -943,6 +955,7 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				authorization_list.unwrap_or_default(),
 				false,
 				true,
 				weight_limit,

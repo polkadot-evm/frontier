@@ -84,7 +84,7 @@ impl<B: BlockT, C> RuntimeStorageOverride<B, C> for () {
 
 sp_api::decl_runtime_apis! {
 	/// API necessary for Ethereum-compatibility layer.
-	#[api_version(5)]
+	#[api_version(6)]
 	pub trait EthereumRuntimeRPCApi {
 		/// Returns runtime defined pallet_evm::ChainId.
 		fn chain_id() -> u64;
@@ -141,6 +141,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfo::<Vec<u8>>, sp_runtime::DispatchError>;
+		#[changed_in(6)]
 		fn call(
 			from: Address,
 			to: Address,
@@ -152,6 +153,19 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
+		fn call(
+			from: Address,
+			to: Address,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
+			authorization_list: Option<Vec<(U256, Address, U256, Address)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
 
 		/// Returns a frame_ethereum::create response.
@@ -188,6 +202,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfo::<Address>, sp_runtime::DispatchError>;
+		#[changed_in(6)]
 		fn create(
 			from: Address,
 			data: Vec<u8>,
@@ -198,6 +213,18 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
+		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
+		fn create(
+			from: Address,
+			data: Vec<u8>,
+			value: U256,
+			gas_limit: U256,
+			max_fee_per_gas: Option<U256>,
+			max_priority_fee_per_gas: Option<U256>,
+			nonce: Option<U256>,
+			estimate: bool,
+			access_list: Option<Vec<(Address, Vec<H256>)>>,
+			authorization_list: Option<Vec<(U256, Address, U256, Address)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
 
 		/// Return the current block. Legacy.

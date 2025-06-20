@@ -461,9 +461,7 @@ impl<T: Config> Pallet<T> {
 					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
 						(d.logs.clone(), d.used_gas)
 					}
-					Receipt::EIP7702(d) => {
-						(d.logs.clone(), d.used_gas)
-					}
+					Receipt::EIP7702(d) => (d.logs.clone(), d.used_gas),
 				};
 				cumulative_gas_used = used_gas;
 				Self::logs_bloom(logs, &mut logs_bloom);
@@ -695,9 +693,10 @@ impl<T: Config> Pallet<T> {
 				Pending::<T>::get(transaction_index.saturating_sub(1))
 			{
 				match receipt {
-					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
-						d.used_gas.saturating_add(used_gas.effective)
-					}
+					Receipt::Legacy(d)
+					| Receipt::EIP2930(d)
+					| Receipt::EIP1559(d)
+					| Receipt::EIP7702(d) => d.used_gas.saturating_add(used_gas.effective),
 				}
 			} else {
 				used_gas.effective
@@ -788,6 +787,7 @@ impl<T: Config> Pallet<T> {
 			nonce,
 			action,
 			access_list,
+			authorization_list,
 		) = {
 			match transaction {
 				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
@@ -800,6 +800,7 @@ impl<T: Config> Pallet<T> {
 					Some(t.gas_price),
 					Some(t.nonce),
 					t.action,
+					Vec::new(),
 					Vec::new(),
 				),
 				Transaction::EIP2930(t) => {
@@ -817,6 +818,7 @@ impl<T: Config> Pallet<T> {
 						Some(t.nonce),
 						t.action,
 						access_list,
+						Vec::new(),
 					)
 				}
 				Transaction::EIP1559(t) => {
@@ -834,6 +836,7 @@ impl<T: Config> Pallet<T> {
 						Some(t.nonce),
 						t.action,
 						access_list,
+						Vec::new(),
 					)
 				}
 				Transaction::EIP7702(t) => {
@@ -841,6 +844,18 @@ impl<T: Config> Pallet<T> {
 						.access_list
 						.iter()
 						.map(|item| (item.address, item.storage_keys.clone()))
+						.collect();
+					let authorization_list: Vec<(U256, H160, U256, H160)> = t
+						.authorization_list
+						.iter()
+						.map(|d| {
+							(
+								U256::from(d.chain_id),
+								d.address,
+								d.nonce,
+								d.authorizing_address(),
+							)
+						})
 						.collect();
 					(
 						t.data.clone(),
@@ -851,6 +866,7 @@ impl<T: Config> Pallet<T> {
 						Some(t.nonce),
 						t.destination,
 						access_list,
+						authorization_list,
 					)
 				}
 			}
@@ -868,6 +884,7 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					authorization_list,
 					is_transactional,
 					validate,
 					weight_limit,
@@ -898,6 +915,7 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					authorization_list,
 					is_transactional,
 					validate,
 					weight_limit,

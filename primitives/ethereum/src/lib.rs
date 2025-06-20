@@ -113,7 +113,18 @@ impl From<TransactionData> for CheckEvmTransactionInput {
 			max_priority_fee_per_gas: t.max_priority_fee_per_gas,
 			value: t.value,
 			access_list: t.access_list,
-			authorization_list: t.authorization_list,
+			authorization_list: t
+				.authorization_list
+				.iter()
+				.map(|d| {
+					(
+						d.chain_id.into(),
+						d.address,
+						d.nonce,
+						d.authorizing_address(),
+					)
+				})
+				.collect(),
 		}
 	}
 }
@@ -183,11 +194,7 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
-				authorization_list: t
-					.authorization_list
-					.iter()
-					.map(|d| (d.chain_id, d.address, d.nonce, d.authorizing_address()))
-					.collect(),
+				authorization_list: t.authorization_list.clone(),
 			},
 		}
 	}

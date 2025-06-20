@@ -223,11 +223,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 				evm::gasometer::call_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			} else {
 				evm::gasometer::create_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			};
 
