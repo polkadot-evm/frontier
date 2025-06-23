@@ -212,7 +212,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&CANCUN_CONFIG
+			&PECTRA_CONFIG
 		}
 	}
 
@@ -940,7 +940,7 @@ where
 	}
 }
 
-static CANCUN_CONFIG: EvmConfig = EvmConfig::cancun();
+static PECTRA_CONFIG: EvmConfig = EvmConfig::pectra();
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.

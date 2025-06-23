@@ -266,7 +266,7 @@ mod tests {
 		UnknownError,
 	}
 
-	static CANCUN_CONFIG: evm::Config = evm::Config::cancun();
+	static PECTRA_CONFIG: evm::Config = evm::Config::pectra();
 
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
@@ -340,7 +340,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &CANCUN_CONFIG,
+				evm_config: &PECTRA_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
