@@ -388,6 +388,7 @@ where
 				} else if api_version == 5 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
+					#[allow(deprecated)]
 					let info = api
 						.create_before_version_6(
 							substrate_hash,
