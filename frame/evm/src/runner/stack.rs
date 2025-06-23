@@ -20,7 +20,6 @@
 use alloc::{
 	boxed::Box,
 	collections::{btree_map::BTreeMap, btree_set::BTreeSet},
-	vec,
 	vec::Vec,
 };
 use core::{marker::PhantomData, mem};

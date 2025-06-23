@@ -20,7 +20,7 @@
 
 extern crate alloc;
 
-use alloc::{vec, vec::Vec};
+use alloc::vec::Vec;
 pub use ethereum::{
 	AccessListItem, AuthorizationList, AuthorizationListItem, BlockV3 as Block,
 	LegacyTransactionMessage, Log, ReceiptV3 as Receipt, TransactionAction,
