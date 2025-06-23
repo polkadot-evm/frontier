@@ -3263,8 +3263,6 @@ dependencies = [
  "fp-evm",
  "frame-support",
  "parity-scale-codec",
- "rlp",
- "sp-io",
 ]
 
 [[package]]

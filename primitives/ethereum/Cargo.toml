@@ -13,11 +13,9 @@ targets = ["x86_64-unknown-linux-gnu"]
 [dependencies]
 ethereum = { workspace = true, features = ["with-scale"] }
 ethereum-types = { workspace = true }
-rlp = { workspace = true }
 scale-codec = { workspace = true }
 # Substrate
 frame-support = { workspace = true }
-sp-io = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
 
@@ -26,11 +24,9 @@ default = ["std"]
 std = [
 	"ethereum/std",
 	"ethereum-types/std",
-	"rlp/std",
 	"scale-codec/std",
 	# Substrate
 	"frame-support/std",
-	"sp-io/std",
 	# Frontier
 	"fp-evm/std",
 ]
