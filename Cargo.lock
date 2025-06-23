@@ -2712,7 +2712,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2732,7 +2732,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2743,7 +2743,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2754,7 +2754,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#a8177af7ca8559de93813c226cf92fb74e1ca95a"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
 dependencies = [
  "auto_impl",
  "environmental",
