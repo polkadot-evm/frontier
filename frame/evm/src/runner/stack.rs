@@ -1097,6 +1097,19 @@ where
 		// subtle issues in EIP-161.
 	}
 
+	fn shield(&mut self, _source: H160, _value: U256, _note: H256) -> Result<(), ExitError> {
+		// Transfer value to shielded pool
+		let source = T::AddressMapping::into_account_id(_source);
+		T::Currency::transfer(
+			&source,
+			&T::AddressMapping::into_account_id(H160::zero()), // Send to zero address as shielded pool
+			_value.try_into().map_err(|_| ExitError::OutOfFund)?,
+			ExistenceRequirement::AllowDeath,
+		).map_err(|_| ExitError::OutOfFund)?;
+
+		Ok(())
+	}
+
 	fn is_cold(&self, address: H160) -> bool {
 		self.substate
 			.recursive_is_cold(&|a| a.accessed_addresses.contains(&address))
