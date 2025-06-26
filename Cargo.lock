@@ -2669,6 +2669,7 @@ dependencies = [
 [[package]]
 name = "ethereum-ext"
 version = "0.1.0"
+source = "git+https://github.com/manuelmauro/ethereum-ext#f545342f47115e2511f629df56ca6b7a21ad66de"
 dependencies = [
  "ethereum",
  "ethereum-types",
@@ -2724,7 +2725,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#4d7b194dece53df3b69c83b8ae4c738d60a32d68"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2744,7 +2745,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#4d7b194dece53df3b69c83b8ae4c738d60a32d68"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2755,7 +2756,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#4d7b194dece53df3b69c83b8ae4c738d60a32d68"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2766,7 +2767,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
+source = "git+https://github.com/rust-ethereum/evm?branch=v0.x#4d7b194dece53df3b69c83b8ae4c738d60a32d68"
 dependencies = [
  "auto_impl",
  "environmental",

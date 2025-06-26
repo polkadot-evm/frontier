@@ -55,9 +55,9 @@ derive_more = "1.0"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.16.0", default-features = false }
 # TODO remove dependency when/if https://github.com/rust-ethereum/ethereum/pull/64 is merged
-ethereum-ext = { path = "https://github.com/manuelmauro/ethereum-ext", default-features = false }
+ethereum-ext = { git = "https://github.com/manuelmauro/ethereum-ext", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
-evm = { git = "https://github.com/moonbeam-foundation/evm", branch = "manuel/better-eip7702-ux", default-features = false }
+evm = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
 futures = "0.3.31"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
