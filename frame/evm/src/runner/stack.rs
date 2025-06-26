@@ -466,6 +466,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		is_transactional: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
@@ -494,6 +495,7 @@ where
 				max_priority_fee_per_gas,
 				value,
 				access_list,
+				authorization_list,
 			},
 			weight_limit,
 			proof_size_base_cost,
@@ -515,6 +517,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -533,6 +536,7 @@ where
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.clone(),
+				authorization_list.clone(),
 				is_transactional,
 				weight_limit,
 				proof_size_base_cost,
@@ -552,7 +556,17 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
-			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
+			|executor| {
+				executor.transact_call(
+					source,
+					target,
+					value,
+					input,
+					gas_limit,
+					access_list,
+					authorization_list,
+				)
+			},
 		)
 	}
 
@@ -565,6 +579,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -588,6 +603,7 @@ where
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.clone(),
+				authorization_list.clone(),
 				is_transactional,
 				weight_limit,
 				proof_size_base_cost,
@@ -610,8 +626,14 @@ where
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
-				let (reason, _) =
-					executor.transact_create(source, value, init, gas_limit, access_list);
+				let (reason, _) = executor.transact_create(
+					source,
+					value,
+					init,
+					gas_limit,
+					access_list,
+					authorization_list,
+				);
 				(reason, address)
 			},
 		)
@@ -627,6 +649,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -650,6 +673,7 @@ where
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.clone(),
+				authorization_list.clone(),
 				is_transactional,
 				weight_limit,
 				proof_size_base_cost,
@@ -677,8 +701,15 @@ where
 					salt,
 				});
 				T::OnCreate::on_create(source, address);
-				let (reason, _) =
-					executor.transact_create2(source, value, init, salt, gas_limit, access_list);
+				let (reason, _) = executor.transact_create2(
+					source,
+					value,
+					init,
+					salt,
+					gas_limit,
+					access_list,
+					authorization_list,
+				);
 				(reason, address)
 			},
 		)
@@ -1178,6 +1209,7 @@ where
 							.map_err(|_| ExitError::OutOfGas)?;
 					}
 				}
+				ExternalOperation::DelegationResolution(_) => todo!(),
 			};
 		}
 		Ok(())

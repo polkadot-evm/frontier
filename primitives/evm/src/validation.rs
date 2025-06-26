@@ -34,6 +34,7 @@ pub struct CheckEvmTransactionInput {
 	pub max_priority_fee_per_gas: Option<U256>,
 	pub value: U256,
 	pub access_list: Vec<(H160, Vec<H256>)>,
+	pub authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 }
 
 #[derive(Debug)]
@@ -222,11 +223,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 				evm::gasometer::call_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			} else {
 				evm::gasometer::create_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			};
 
@@ -263,7 +266,7 @@ mod tests {
 		UnknownError,
 	}
 
-	static CANCUN_CONFIG: evm::Config = evm::Config::cancun();
+	static PECTRA_CONFIG: evm::Config = evm::Config::pectra();
 
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
@@ -337,7 +340,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &CANCUN_CONFIG,
+				evm_config: &PECTRA_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
@@ -354,6 +357,7 @@ mod tests {
 				max_priority_fee_per_gas,
 				value,
 				access_list: vec![],
+				authorization_list: vec![],
 			},
 			weight_limit,
 			proof_size_base_cost,
