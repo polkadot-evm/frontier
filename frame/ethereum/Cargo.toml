@@ -46,6 +46,7 @@ fp-self-contained = { workspace = true, features = ["default"] }
 default = ["std"]
 std = [
 	"ethereum/std",
+	"ethereum-ext/std",
 	"evm/std",
 	"ethereum-types/std",
 	"rlp/std",

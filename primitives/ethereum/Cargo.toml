@@ -24,6 +24,7 @@ fp-evm = { workspace = true }
 default = ["std"]
 std = [
 	"ethereum/std",
+	"ethereum-ext/std",
 	"ethereum-types/std",
 	"scale-codec/std",
 	# Substrate
