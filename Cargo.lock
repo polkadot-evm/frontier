@@ -2171,7 +2171,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1145d32e826a7748b69ee8fc62d3e6355ff7f1051df53141e7048162fc90481b"
 dependencies = [
  "data-encoding",
- "syn 1.0.109",
+ "syn 2.0.101",
 ]
 
 [[package]]
@@ -2650,20 +2650,32 @@ dependencies = [
 
 [[package]]
 name = "ethereum"
-version = "0.15.0"
-source = "git+https://github.com/manuelmauro/ethereum.git?rev=5d5834a5f762fd87e87ba2f345b9ff90d3144ee4#5d5834a5f762fd87e87ba2f345b9ff90d3144ee4"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a5bc37772fe62193ded333d915d5aeb5bf4798cf0652dc50fbd46fc33d56ac51"
 dependencies = [
  "bytes",
  "ethereum-types",
  "hash-db",
  "hash256-std-hasher",
- "k256",
  "parity-scale-codec",
  "rlp",
  "scale-info",
  "serde",
  "sha3",
  "trie-root",
+]
+
+[[package]]
+name = "ethereum-ext"
+version = "0.1.0"
+dependencies = [
+ "ethereum",
+ "ethereum-types",
+ "getrandom 0.2.15",
+ "k256",
+ "rlp",
+ "sha3",
 ]
 
 [[package]]
@@ -2712,7 +2724,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2732,7 +2744,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2743,7 +2755,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2754,7 +2766,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.42.0"
-source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/add-support-for-eip7702#78ef1ffb5fb86ae30a49d725868f244c7ec41af2"
+source = "git+https://github.com/moonbeam-foundation/evm?branch=manuel/better-eip7702-ux#65055cb5c65214707df1eddb7ce68761b38879c1"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2954,6 +2966,7 @@ name = "fc-rpc"
 version = "2.0.0-dev"
 dependencies = [
  "ethereum",
+ "ethereum-ext",
  "ethereum-types",
  "evm",
  "fc-api",
@@ -3259,6 +3272,7 @@ name = "fp-ethereum"
 version = "1.0.0-dev"
 dependencies = [
  "ethereum",
+ "ethereum-ext",
  "ethereum-types",
  "fp-evm",
  "frame-support",
@@ -6557,7 +6571,7 @@ version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "af1844ef2428cc3e1cb900be36181049ef3d3193c63e43026cfe202983b27a56"
 dependencies = [
- "proc-macro-crate 1.1.3",
+ "proc-macro-crate 3.2.0",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
@@ -6813,6 +6827,7 @@ name = "pallet-ethereum"
 version = "4.0.0-dev"
 dependencies = [
  "ethereum",
+ "ethereum-ext",
  "ethereum-types",
  "evm",
  "fp-consensus",

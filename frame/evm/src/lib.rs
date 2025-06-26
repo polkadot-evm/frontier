@@ -331,7 +331,7 @@ pub mod pallet {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			access_list: Vec<(H160, Vec<H256>)>,
-			authorization_list: Vec<(U256, H160, U256, H160)>,
+			authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -409,7 +409,7 @@ pub mod pallet {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			access_list: Vec<(H160, Vec<H256>)>,
-			authorization_list: Vec<(U256, H160, U256, H160)>,
+			authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
@@ -498,7 +498,7 @@ pub mod pallet {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			access_list: Vec<(H160, Vec<H256>)>,
-			authorization_list: Vec<(U256, H160, U256, H160)>,
+			authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 

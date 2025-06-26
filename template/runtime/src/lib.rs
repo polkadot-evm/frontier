@@ -804,7 +804,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
-			authorization_list: Option<Vec<(U256, H160, U256, H160)>>,
+			authorization_list: Option<Vec<(U256, H160, U256, Option<H160>)>>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -889,7 +889,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
-			authorization_list: Option<Vec<(U256, H160, U256, H160)>>,
+			authorization_list: Option<Vec<(U256, H160, U256, Option<H160>)>>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 

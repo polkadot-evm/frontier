@@ -18,6 +18,7 @@
 
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
+use ethereum_ext::Authorizer;
 use ethereum_types::{H160, H256, U256};
 use evm::{ExitError, ExitReason};
 use jsonrpsee::{core::RpcResult, types::error::CALL_EXECUTION_FAILED_CODE};
@@ -321,10 +322,10 @@ where
 								U256::from(d.chain_id),
 								d.address,
 								d.nonce,
-								d.authorizing_address(),
+								d.authorizing_address().ok(),
 							)
 						})
-						.collect::<Vec<(U256, sp_core::H160, U256, sp_core::H160)>>();
+						.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 					let encoded_params = Encode::encode(&(
 						&from.unwrap_or_default(),
@@ -519,10 +520,11 @@ where
 											U256::from(d.chain_id),
 											d.address,
 											d.nonce,
-											d.authorizing_address(),
+											d.authorizing_address().ok(),
 										)
 									})
-									.collect(),
+									.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>(
+									),
 							),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?
@@ -838,10 +840,10 @@ where
 										U256::from(d.chain_id),
 										d.address,
 										d.nonce,
-										d.authorizing_address(),
+										d.authorizing_address().ok(),
 									)
 								})
-								.collect::<Vec<(U256, H160, U256, H160)>>();
+								.collect::<Vec<(U256, H160, U256, Option<H160>)>>();
 
 							let encoded_params = Encode::encode(&(
 								&from.unwrap_or_default(),
@@ -1022,14 +1024,14 @@ where
 								.unwrap_or_default()
 								.iter()
 								.map(|d| {
-								(
-									U256::from(d.chain_id),
-									d.address,
-									d.nonce,
-									d.authorizing_address(),
-								)
+									(
+										U256::from(d.chain_id),
+										d.address,
+										d.nonce,
+										d.authorizing_address().ok(),
+									)
 								})
-								.collect::<Vec<(U256, H160, U256, H160)>>();
+								.collect::<Vec<(U256, H160, U256, Option<H160>)>>();
 
 							let encoded_params = Encode::encode(&(
 								&from.unwrap_or_default(),

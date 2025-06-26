@@ -165,7 +165,7 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
-			authorization_list: Option<Vec<(U256, Address, U256, Address)>>,
+			authorization_list: Option<Vec<(U256, Address, U256, Option<Address>)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
 
 		/// Returns a frame_ethereum::create response.
@@ -224,7 +224,7 @@ sp_api::decl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
-			authorization_list: Option<Vec<(U256, Address, U256, Address)>>,
+			authorization_list: Option<Vec<(U256, Address, U256, Option<Address>)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
 
 		/// Return the current block. Legacy.

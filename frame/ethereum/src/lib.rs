@@ -38,6 +38,7 @@ pub use ethereum::{
 	AccessListItem, BlockV3 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV3 as Transaction,
 };
+use ethereum_ext::Authorizer;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
@@ -845,7 +846,7 @@ impl<T: Config> Pallet<T> {
 						.iter()
 						.map(|item| (item.address, item.storage_keys.clone()))
 						.collect();
-					let authorization_list: Vec<(U256, H160, U256, H160)> = t
+					let authorization_list: Vec<(U256, H160, U256, Option<H160>)> = t
 						.authorization_list
 						.iter()
 						.map(|d| {
@@ -853,7 +854,7 @@ impl<T: Config> Pallet<T> {
 								U256::from(d.chain_id),
 								d.address,
 								d.nonce,
-								d.authorizing_address(),
+								d.authorizing_address().ok(),
 							)
 						})
 						.collect();
