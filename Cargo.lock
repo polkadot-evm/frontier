@@ -7024,6 +7024,44 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-evm-polkavm"
+version = "6.0.0-dev"
+dependencies = [
+ "fp-evm",
+ "frame-support",
+ "frame-system",
+ "log",
+ "pallet-evm",
+ "pallet-evm-polkavm-proc-macro",
+ "pallet-evm-polkavm-uapi",
+ "parity-scale-codec",
+ "polkavm 0.25.0",
+ "scale-info",
+ "sp-core",
+ "sp-runtime",
+]
+
+[[package]]
+name = "pallet-evm-polkavm-proc-macro"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "pallet-evm-polkavm-uapi"
+version = "0.1.0"
+dependencies = [
+ "bitflags 1.3.2",
+ "pallet-evm-polkavm-proc-macro",
+ "parity-scale-codec",
+ "polkavm-derive 0.25.0",
+ "scale-info",
+]
+
+[[package]]
 name = "pallet-evm-precompile-blake2"
 version = "2.0.0-dev"
 dependencies = [
@@ -8075,9 +8113,22 @@ checksum = "dd044ab1d3b11567ab6b98ca71259a992b4034220d5972988a0e96518e5d343d"
 dependencies = [
  "libc",
  "log",
- "polkavm-assembler",
- "polkavm-common",
- "polkavm-linux-raw",
+ "polkavm-assembler 0.18.0",
+ "polkavm-common 0.18.0",
+ "polkavm-linux-raw 0.18.0",
+]
+
+[[package]]
+name = "polkavm"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "643c98b9cb27449cffe54c2b500fe8d55d7aa7f29acdd90c56e5cd196fe3d728"
+dependencies = [
+ "libc",
+ "log",
+ "polkavm-assembler 0.25.0",
+ "polkavm-common 0.25.0",
+ "polkavm-linux-raw 0.25.0",
 ]
 
 [[package]]
@@ -8090,13 +8141,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "polkavm-assembler"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51fcf86a40f3d2191cc2b65357e774eda67875cbc31843f505a69b70f8679922"
+dependencies = [
+ "log",
+]
+
+[[package]]
 name = "polkavm-common"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "31ff33982a807d8567645d4784b9b5d7ab87bcb494f534a57cadd9012688e102"
 dependencies = [
  "log",
- "polkavm-assembler",
+ "polkavm-assembler 0.18.0",
+]
+
+[[package]]
+name = "polkavm-common"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28732f89f1e730d908fd816db50ee2afcb8368345ded9f9bc78fbd710db7a4be"
+dependencies = [
+ "log",
+ "polkavm-assembler 0.25.0",
 ]
 
 [[package]]
@@ -8105,7 +8175,16 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c2eb703f3b6404c13228402e98a5eae063fd16b8f58afe334073ec105ee4117e"
 dependencies = [
- "polkavm-derive-impl-macro",
+ "polkavm-derive-impl-macro 0.18.0",
+]
+
+[[package]]
+name = "polkavm-derive"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b5de33a198ef311b3ceb8de476515fbb92b4d2ed56feb23499b0875d0e6a8ce6"
+dependencies = [
+ "polkavm-derive-impl-macro 0.25.0",
 ]
 
 [[package]]
@@ -8114,7 +8193,19 @@ version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2f2116a92e6e96220a398930f4c8a6cda1264206f3e2034fc9982bfd93f261f7"
 dependencies = [
- "polkavm-common",
+ "polkavm-common 0.18.0",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "polkavm-derive-impl"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dff180bfd5add755ae54197babc79cd6efc3c3d01a5ded643b1ab37a9932deb2"
+dependencies = [
+ "polkavm-common 0.25.0",
  "proc-macro2",
  "quote",
  "syn 2.0.101",
@@ -8126,7 +8217,17 @@ version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "48c16669ddc7433e34c1007d31080b80901e3e8e523cb9d4b441c3910cf9294b"
 dependencies = [
- "polkavm-derive-impl",
+ "polkavm-derive-impl 0.18.1",
+ "syn 2.0.101",
+]
+
+[[package]]
+name = "polkavm-derive-impl-macro"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0105f050c7bce74fa4327a3e8e5c8a6368e39a7c93c5e8e99b33df90c097c859"
+dependencies = [
+ "polkavm-derive-impl 0.25.0",
  "syn 2.0.101",
 ]
 
@@ -8141,7 +8242,7 @@ dependencies = [
  "hashbrown 0.14.5",
  "log",
  "object 0.36.7",
- "polkavm-common",
+ "polkavm-common 0.18.0",
  "regalloc2 0.9.3",
  "rustc-demangle",
 ]
@@ -8151,6 +8252,12 @@ name = "polkavm-linux-raw"
 version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "23eff02c070c70f31878a3d915e88a914ecf3e153741e2fb572dde28cce20fde"
+
+[[package]]
+name = "polkavm-linux-raw"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "30993b46019e02b9d3de07e09d84f5b4474244ec966028fa95a38547076ffd93"
 
 [[package]]
 name = "polling"
@@ -9732,7 +9839,7 @@ name = "sc-executor-common"
 version = "0.38.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#f4dba53bfac614b054735aa725d2b0c44efda414"
 dependencies = [
- "polkavm",
+ "polkavm 0.18.0",
  "sc-allocator",
  "sp-maybe-compressed-blob",
  "sp-wasm-interface",
@@ -9746,7 +9853,7 @@ version = "0.35.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2503#f4dba53bfac614b054735aa725d2b0c44efda414"
 dependencies = [
  "log",
- "polkavm",
+ "polkavm 0.18.0",
  "sc-executor-common",
  "sp-wasm-interface",
 ]
@@ -11438,7 +11545,7 @@ dependencies = [
  "libsecp256k1",
  "log",
  "parity-scale-codec",
- "polkavm-derive",
+ "polkavm-derive 0.18.0",
  "rustversion",
  "secp256k1 0.28.2",
  "sp-core",
@@ -11600,7 +11707,7 @@ dependencies = [
  "bytes",
  "impl-trait-for-tuples",
  "parity-scale-codec",
- "polkavm-derive",
+ "polkavm-derive 0.18.0",
  "primitive-types",
  "sp-externalities",
  "sp-runtime-interface-proc-macro",

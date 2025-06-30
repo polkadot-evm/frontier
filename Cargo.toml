@@ -16,6 +16,9 @@ members = [
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
 	"frame/evm-chain-id",
+	"frame/evm-polkavm",
+	"frame/evm-polkavm/proc-macro",
+	"frame/evm-polkavm/uapi",
 	"frame/hotfix-sufficients",
 	"client/api",
 	"client/consensus",
@@ -48,6 +51,7 @@ repository = "https://github.com/polkadot-evm/frontier/"
 
 [workspace.dependencies]
 async-trait = "0.1"
+bitflags = "1.3.2"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.5", features = ["derive", "deprecated"] }
 const-hex = { version = "1.14", default-features = false, features = ["alloc"] }
@@ -70,6 +74,7 @@ log = { version = "0.4.27", default-features = false }
 num_enum = { version = "0.7.3", default-features = false }
 parity-db = "0.4.13"
 parking_lot = "0.12.3"
+proc-macro2 = "1.0.86"
 quote = "1.0.38"
 rlp = { version = "0.6", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.7.5", default-features = false, features = ["derive"] }
@@ -78,6 +83,7 @@ serde = { version = "1.0", default-features = false, features = ["derive", "allo
 serde_json = "1.0"
 similar-asserts = "1.7.0"
 sqlx = { version = "0.7.4", default-features = false, features = ["macros"] }
+syn = "2.0.87"
 thiserror = "2.0"
 tokio = "1.45.0"
 
@@ -206,6 +212,9 @@ pallet-evm-precompile-modexp = { path = "frame/evm/precompile/modexp", default-f
 pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
+pallet-evm-polkavm = { path = "frame/evm-polkavm", default-features = false }
+pallet-evm-polkavm-proc-macro = { path = "frame/evm-polkavm/proc-macro" }
+pallet-evm-polkavm-uapi = { path = "frame/evm-polkavm/uapi", default-features = false }
 pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Utility
 precompile-utils = { path = "precompiles", default-features = false }
