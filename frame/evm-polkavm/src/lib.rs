@@ -23,7 +23,7 @@
 
 extern crate alloc;
 
-mod vm;
+pub mod vm;
 mod weights;
 
 pub use self::{pallet::*, weights::WeightInfo};

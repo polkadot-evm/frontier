@@ -422,7 +422,7 @@ fn expand_functions(def: &EnvDef) -> TokenStream2 {
 			quote! {
 				// wrap body in closure to make sure the tracing is always executed
 				let result = (|| #body)();
-				::log::trace!(target: "runtime::evm::polkavm::strace", #trace_fmt_str, #( #trace_fmt_args, )* result);
+				::log::trace!(target: LOG_TARGET, #trace_fmt_str, #( #trace_fmt_args, )* result);
 				result
 			}
 		};
@@ -440,7 +440,7 @@ fn expand_functions(def: &EnvDef) -> TokenStream2 {
 	});
 
 	quote! {
-		self.charge_polkavm_gas(self.last_gas - memory.gas());
+		self.charge_polkavm_gas(self.last_gas - memory.gas())?;
 		self.last_gas = memory.gas();
 
 		// This is the overhead to call an empty syscall that always needs to be charged.

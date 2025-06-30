@@ -19,11 +19,11 @@
 //! Environment definition of the vm smart-contract runtime.
 
 use alloc::{vec, vec::Vec};
-use core::{fmt, marker::PhantomData, mem};
+use core::{fmt, marker::PhantomData};
 use fp_evm::PrecompileHandle;
-use frame_support::{ensure, traits::Get, weights::Weight};
+use frame_support::weights::Weight;
 use pallet_evm_polkavm_proc_macro::define_env;
-use pallet_evm_polkavm_uapi::{CallFlags, ReturnErrorCode, ReturnFlags, StorageFlags};
+use pallet_evm_polkavm_uapi::{ReturnErrorCode, ReturnFlags};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
@@ -335,11 +335,6 @@ fn already_charged(_: u32) -> Option<RuntimeCosts> {
 	None
 }
 
-/// Helper to extract two `u32` values from a given `u64` register.
-fn extract_hi_lo(reg: u64) -> (u32, u32) {
-	((reg >> 32) as u32, reg as u32)
-}
-
 /// Can only be used for one call.
 pub struct Runtime<'a, T, H, M: ?Sized> {
 	handle: &'a mut H,
@@ -523,7 +518,7 @@ pub mod env {
 	}
 
 	/// Returns the total size of the contract call input data.
-	/// See [`pallet_revive_uapi::HostFn::call_data_size `].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::call_data_size `].
 	#[stable]
 	fn call_data_size(&mut self, memory: &mut M) -> Result<u64, TrapReason> {
 		self.charge_gas(RuntimeCosts::CallDataSize)?;
@@ -535,7 +530,7 @@ pub mod env {
 	}
 
 	/// Stores the input passed by the caller into the supplied buffer.
-	/// See [`pallet_revive_uapi::HostFn::call_data_copy`].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::call_data_copy`].
 	#[stable]
 	fn call_data_copy(
 		&mut self,
@@ -569,7 +564,7 @@ pub mod env {
 	}
 
 	/// Stores the U256 value at given call input `offset` into the supplied buffer.
-	/// See [`pallet_revive_uapi::HostFn::call_data_load`].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::call_data_load`].
 	#[stable]
 	fn call_data_load(
 		&mut self,
@@ -600,7 +595,7 @@ pub mod env {
 	}
 
 	/// Cease contract execution and save a data buffer as a result of the execution.
-	/// See [`pallet_revive_uapi::HostFn::return_value`].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::return_value`].
 	#[stable]
 	fn seal_return(
 		&mut self,
@@ -617,7 +612,7 @@ pub mod env {
 	}
 
 	/// Stores the address of the caller into the supplied buffer.
-	/// See [`pallet_revive_uapi::HostFn::caller`].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::caller`].
 	#[stable]
 	fn caller(&mut self, memory: &mut M, out_ptr: u32) -> Result<(), TrapReason> {
 		self.charge_gas(RuntimeCosts::Caller)?;
@@ -632,7 +627,7 @@ pub mod env {
 	}
 
 	/// Stores the address of the call stack origin into the supplied buffer.
-	/// See [`pallet_revive_uapi::HostFn::origin`].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::origin`].
 	#[stable]
 	fn origin(&mut self, memory: &mut M, out_ptr: u32) -> Result<(), TrapReason> {
 		self.charge_gas(RuntimeCosts::Origin)?;
@@ -647,7 +642,7 @@ pub mod env {
 	}
 
 	/// Stores the address of the current contract into the supplied buffer.
-	/// See [`pallet_revive_uapi::HostFn::address`].
+	/// See [`pallet_evm_polkavm_uapi::HostFn::address`].
 	#[stable]
 	fn address(&mut self, memory: &mut M, out_ptr: u32) -> Result<(), TrapReason> {
 		self.charge_gas(RuntimeCosts::Address)?;

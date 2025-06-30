@@ -11,8 +11,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-use crate::{CallFlags, Result, ReturnFlags, StorageFlags};
-use pallet_evm_polkavm_proc_macro::unstable_hostfn;
+use crate::ReturnFlags;
 
 #[cfg(target_arch = "riscv64")]
 mod riscv64;
