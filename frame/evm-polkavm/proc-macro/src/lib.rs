@@ -440,8 +440,7 @@ fn expand_functions(def: &EnvDef) -> TokenStream2 {
 	});
 
 	quote! {
-		self.charge_polkavm_gas(self.last_gas - memory.gas())?;
-		self.last_gas = memory.gas();
+		self.charge_polkavm_gas(memory)?;
 
 		// This is the overhead to call an empty syscall that always needs to be charged.
 		self.charge_gas(crate::vm::RuntimeCosts::HostFn).map_err(TrapReason::from)?;

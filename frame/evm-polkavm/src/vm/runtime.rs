@@ -256,9 +256,6 @@ pub enum TrapReason {
 	SupervisorError(SupervisorError),
 	/// Signals that trap was generated in response to call `seal_return` host function.
 	Return(ReturnData),
-	/// Signals that a trap was generated in response to a successful call to the
-	/// `seal_terminate` host function.
-	Termination,
 }
 
 impl From<SupervisorError> for TrapReason {
@@ -392,7 +389,6 @@ impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M
 							Some(flags) => Some(Ok(ExecReturnValue { flags, data })),
 						}
 					}
-					Err(TrapReason::Termination) => Some(Ok(Default::default())),
 					Err(TrapReason::SupervisorError(error)) => Some(Err(error.into())),
 				}
 			}
@@ -400,7 +396,7 @@ impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M
 	}
 }
 
-impl<'a, T: Config, H: PrecompileHandle, M: ?Sized + Memory> Runtime<'a, T, H, M> {
+impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M> {
 	pub fn new(handle: &'a mut H, input_data: Vec<u8>, gas_limit: polkavm::Gas) -> Self {
 		Self {
 			handle,
@@ -413,7 +409,7 @@ impl<'a, T: Config, H: PrecompileHandle, M: ?Sized + Memory> Runtime<'a, T, H, M
 	/// Charge the gas meter with the specified token.
 	///
 	/// Returns `Err(HostError)` if there is not enough gas.
-	fn charge_gas(&mut self, costs: RuntimeCosts) -> Result<(), SupervisorError> {
+	pub(crate) fn charge_gas(&mut self, costs: RuntimeCosts) -> Result<(), SupervisorError> {
 		let weight = costs.weight::<T>();
 		self.handle
 			.record_external_cost(Some(weight.ref_time()), Some(weight.proof_size()), None)
@@ -422,13 +418,17 @@ impl<'a, T: Config, H: PrecompileHandle, M: ?Sized + Memory> Runtime<'a, T, H, M
 		Ok(())
 	}
 
-	fn charge_polkavm_gas(&mut self, gas: polkavm::Gas) -> Result<(), SupervisorError> {
+	pub(crate) fn charge_polkavm_gas(&mut self, memory: &mut M) -> Result<(), SupervisorError> {
+		let gas = self.last_gas - memory.gas();
 		if gas < 0 {
 			return Err(SupervisorError::OutOfGas);
 		}
+
 		self.handle
 			.record_cost(gas as u64)
 			.map_err(|_| SupervisorError::OutOfGas)?;
+
+		self.last_gas = memory.gas();
 		Ok(())
 	}
 
