@@ -17,7 +17,7 @@
 
 mod runtime;
 
-use crate::{Config, WeightInfo, ConvertPolkaVmGas};
+use crate::{Config, ConvertPolkaVmGas, WeightInfo};
 use fp_evm::PrecompileHandle;
 use sp_runtime::Weight;
 
@@ -46,7 +46,13 @@ impl<'a, T: Config, H: PrecompileHandle> PreparedCall<'a, T, H> {
 			return Err(SupervisorError::NotPolkaVm);
 		}
 		let code_load_weight = code_load_weight::<T>(code.len() as u32);
-		handle.record_external_cost(Some(code_load_weight.ref_time()), Some(code_load_weight.proof_size()), None).map_err(|_| SupervisorError::OutOfGas)?;
+		handle
+			.record_external_cost(
+				Some(code_load_weight.ref_time()),
+				Some(code_load_weight.proof_size()),
+				None,
+			)
+			.map_err(|_| SupervisorError::OutOfGas)?;
 
 		let polkavm_code = &code[8..];
 
@@ -63,11 +69,11 @@ impl<'a, T: Config, H: PrecompileHandle> PreparedCall<'a, T, H> {
 		module_config.set_page_size(PAGE_SIZE);
 		module_config.set_gas_metering(Some(polkavm::GasMeteringKind::Sync));
 		module_config.set_allow_sbrk(false);
-		let module = polkavm::Module::new(&engine, &module_config, polkavm_code.into())
-			.map_err(|err| {
-			log::debug!(target: LOG_TARGET, "failed to create polkavm module: {err:?}");
-			SupervisorError::CodeRejected
-		})?;
+		let module =
+			polkavm::Module::new(&engine, &module_config, polkavm_code.into()).map_err(|err| {
+				log::debug!(target: LOG_TARGET, "failed to create polkavm module: {err:?}");
+				SupervisorError::CodeRejected
+			})?;
 
 		let entry_program_counter = module
 			.exports()
@@ -75,8 +81,11 @@ impl<'a, T: Config, H: PrecompileHandle> PreparedCall<'a, T, H> {
 			.ok_or_else(|| SupervisorError::CodeRejected)?
 			.program_counter();
 		let input_data = handle.input().to_vec();
-		let gas_limit_polkavm = T::ConvertPolkaVmGas::evm_gas_to_polkavm_gas(handle.gas_limit().ok_or(SupervisorError::OutOfGas)?);
-		let runtime: Runtime<'_, T, _, polkavm::RawInstance> = Runtime::new(handle, input_data, gas_limit_polkavm);
+		let gas_limit_polkavm = T::ConvertPolkaVmGas::evm_gas_to_polkavm_gas(
+			handle.gas_limit().ok_or(SupervisorError::OutOfGas)?,
+		);
+		let runtime: Runtime<'_, T, _, polkavm::RawInstance> =
+			Runtime::new(handle, input_data, gas_limit_polkavm);
 
 		let mut instance = module.instantiate().map_err(|err| {
 			log::debug!(target: LOG_TARGET, "failed to instantiate polkavm module: {err:?}");

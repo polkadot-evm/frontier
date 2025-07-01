@@ -26,9 +26,12 @@ extern crate alloc;
 pub mod vm;
 mod weights;
 
-use sp_core::H160;
-use fp_evm::{ExitSucceed, ExitRevert, ExitError, PrecompileSet, IsPrecompileResult, PrecompileFailure, PrecompileOutput, PrecompileHandle};
 use core::marker::PhantomData;
+use fp_evm::{
+	ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, PrecompileFailure, PrecompileHandle,
+	PrecompileOutput, PrecompileSet,
+};
+use sp_core::H160;
 
 pub use self::{pallet::*, weights::WeightInfo};
 
@@ -46,7 +49,10 @@ impl<Inner, T> PolkaVmSet<Inner, T> {
 }
 
 impl<Inner: PrecompileSet, T: Config> PrecompileSet for PolkaVmSet<Inner, T> {
-	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<Result<PrecompileOutput, PrecompileFailure>> {
+	fn execute(
+		&self,
+		handle: &mut impl PrecompileHandle,
+	) -> Option<Result<PrecompileOutput, PrecompileFailure>> {
 		let code_address = handle.code_address();
 		let code = pallet_evm::AccountCodes::<T>::get(code_address);
 		if code[0..8] == vm::PREFIX {
@@ -60,20 +66,18 @@ impl<Inner: PrecompileSet, T: Config> PrecompileSet for PolkaVmSet<Inner, T> {
 					if val.did_revert() {
 						Some(Err(PrecompileFailure::Revert {
 							exit_status: ExitRevert::Reverted,
-							output: val.data
+							output: val.data,
 						}))
 					} else {
 						Some(Ok(PrecompileOutput {
 							exit_status: ExitSucceed::Returned,
-							output: val.data
+							output: val.data,
 						}))
 					}
-				},
-				Err(_) => {
-					Some(Err(PrecompileFailure::Error {
-						exit_status: ExitError::Other("polkavm failure".into()),
-					}))
-				},
+				}
+				Err(_) => Some(Err(PrecompileFailure::Error {
+					exit_status: ExitError::Other("polkavm failure".into()),
+				})),
 			}
 		} else {
 			self.0.execute(handle)

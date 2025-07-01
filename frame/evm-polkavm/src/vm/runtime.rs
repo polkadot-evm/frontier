@@ -29,8 +29,8 @@ use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
 use sp_runtime::RuntimeDebug;
 
-use crate::{Config, WeightInfo, ConvertPolkaVmGas};
-use super::{SENTINEL, LOG_TARGET};
+use super::{LOG_TARGET, SENTINEL};
+use crate::{Config, ConvertPolkaVmGas, WeightInfo};
 
 /// Output of a contract call or instantiation which ran to completion.
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, Default)]
