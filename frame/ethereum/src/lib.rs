@@ -417,7 +417,7 @@ impl<T: Config> Pallet<T> {
 			Transaction::EIP2930(t) => t.s,
 			Transaction::EIP1559(t) => t.s,
 		};
-			
+
 		if s_value > SECP256K1N_HALF {
 			return None;
 		}
