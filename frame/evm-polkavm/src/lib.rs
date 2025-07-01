@@ -26,11 +26,76 @@ extern crate alloc;
 pub mod vm;
 mod weights;
 
+use sp_core::H160;
+use fp_evm::{ExitSucceed, ExitRevert, ExitError, PrecompileSet, IsPrecompileResult, PrecompileFailure, PrecompileOutput, PrecompileHandle};
+use core::marker::PhantomData;
+
 pub use self::{pallet::*, weights::WeightInfo};
+
+pub trait ConvertPolkaVmGas {
+	fn polkavm_gas_to_evm_gas(gas: polkavm::Gas) -> u64;
+	fn evm_gas_to_polkavm_gas(gas: u64) -> polkavm::Gas;
+}
+
+pub struct PolkaVmSet<Inner, T>(pub Inner, PhantomData<T>);
+
+impl<Inner, T> PolkaVmSet<Inner, T> {
+	pub fn new(inner: Inner) -> Self {
+		Self(inner, PhantomData)
+	}
+}
+
+impl<Inner: PrecompileSet, T: Config> PrecompileSet for PolkaVmSet<Inner, T> {
+	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<Result<PrecompileOutput, PrecompileFailure>> {
+		let code_address = handle.code_address();
+		let code = pallet_evm::AccountCodes::<T>::get(code_address);
+		if code[0..8] == vm::PREFIX {
+			let mut run = || {
+				let prepared_call: vm::PreparedCall<'_, T, _> = vm::PreparedCall::load(handle)?;
+				prepared_call.call()
+			};
+
+			match run() {
+				Ok(val) => {
+					if val.did_revert() {
+						Some(Err(PrecompileFailure::Revert {
+							exit_status: ExitRevert::Reverted,
+							output: val.data
+						}))
+					} else {
+						Some(Ok(PrecompileOutput {
+							exit_status: ExitSucceed::Returned,
+							output: val.data
+						}))
+					}
+				},
+				Err(_) => {
+					Some(Err(PrecompileFailure::Error {
+						exit_status: ExitError::Other("polkavm failure".into()),
+					}))
+				},
+			}
+		} else {
+			self.0.execute(handle)
+		}
+	}
+
+	fn is_precompile(&self, address: H160, remaining_gas: u64) -> IsPrecompileResult {
+		let code = pallet_evm::AccountCodes::<T>::get(address);
+		if code[0..8] == vm::PREFIX {
+			IsPrecompileResult::Answer {
+				is_precompile: true,
+				extra_cost: 0,
+			}
+		} else {
+			self.0.is_precompile(address, remaining_gas)
+		}
+	}
+}
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::WeightInfo;
+	use super::{ConvertPolkaVmGas, WeightInfo};
 	use frame_support::pallet_prelude::*;
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
@@ -41,6 +106,7 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_evm::Config {
+		type ConvertPolkaVmGas: ConvertPolkaVmGas;
 		type WeightInfo: WeightInfo;
 	}
 

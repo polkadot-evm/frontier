@@ -29,10 +29,8 @@ use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
 use sp_runtime::RuntimeDebug;
 
-use crate::{Config, WeightInfo};
-
-const SENTINEL: u32 = u32::MAX;
-const LOG_TARGET: &str = "runtime::evm::polkavm";
+use crate::{Config, WeightInfo, ConvertPolkaVmGas};
+use super::{SENTINEL, LOG_TARGET};
 
 /// Output of a contract call or instantiation which ran to completion.
 #[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, Default)]
@@ -241,6 +239,8 @@ pub enum SupervisorError {
 	InvalidCallFlags,
 	StateChangeDenied,
 	InputForwarded,
+	NotPolkaVm,
+	CodeRejected,
 }
 
 /// Enumerates all possible reasons why a trap was generated.
@@ -425,7 +425,7 @@ impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M
 		}
 
 		self.handle
-			.record_cost(gas as u64)
+			.record_cost(T::ConvertPolkaVmGas::polkavm_gas_to_evm_gas(gas))
 			.map_err(|_| SupervisorError::OutOfGas)?;
 
 		self.last_gas = memory.gas();
