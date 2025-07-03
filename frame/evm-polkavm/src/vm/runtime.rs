@@ -147,7 +147,7 @@ impl Memory for [u8] {
 		let ptr = ptr as usize;
 		let bound_checked = self
 			.get(ptr..ptr + buf.len())
-			.ok_or_else(|| SupervisorError::OutOfBounds)?;
+			.ok_or(SupervisorError::OutOfBounds)?;
 		buf.copy_from_slice(bound_checked);
 		Ok(())
 	}
@@ -156,7 +156,7 @@ impl Memory for [u8] {
 		let ptr = ptr as usize;
 		let bound_checked = self
 			.get_mut(ptr..ptr + buf.len())
-			.ok_or_else(|| SupervisorError::OutOfBounds)?;
+			.ok_or(SupervisorError::OutOfBounds)?;
 		bound_checked.copy_from_slice(buf);
 		Ok(())
 	}
