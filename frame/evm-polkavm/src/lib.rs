@@ -141,7 +141,7 @@ pub mod pallet {
 		/// Deploy a new PolkaVM contract into the Frontier state.
 		///
 		/// A PolkaVM contract is simply a contract in the Frontier state prefixed
-		/// by `0xef polkavm`. EIP-3541 ensures that no EVM contract will starts with
+		/// by `0xef polkavm`. EIP-3541 ensures that no EVM contract starts with
 		/// the prefix.
 		#[pallet::call_index(0)]
 		#[pallet::weight(<T as Config>::WeightInfo::create_polkavm(code.len() as u32))]
