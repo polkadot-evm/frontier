@@ -13,8 +13,8 @@ targets = ["riscv64imac-unknown-none-elf"]
 
 [dependencies]
 bitflags = { workspace = true }
-scale-codec = { features = ["derive", "max-encoded-len"], optional = true, workspace = true }
 pallet-evm-polkavm-proc-macro = { workspace = true }
+scale-codec = { features = ["derive", "max-encoded-len"], optional = true, workspace = true }
 scale-info = { features = ["derive"], optional = true, workspace = true }
 
 [target.'cfg(target_arch = "riscv64")'.dependencies]

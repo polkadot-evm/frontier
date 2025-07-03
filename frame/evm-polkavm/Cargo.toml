@@ -16,17 +16,17 @@ log = { workspace = true }
 scale-codec = { workspace = true }
 scale-info = { workspace = true }
 # Substrate
-sp-core = { workspace = true }
-sp-runtime = { workspace = true }
 frame-support = { workspace = true }
 frame-system = { workspace = true }
+sp-core = { workspace = true }
+sp-runtime = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 # PolkaVM executor
-polkavm = { version = "0.25.0", default-features = false }
 pallet-evm-polkavm-proc-macro = { workspace = true }
 pallet-evm-polkavm-uapi = { workspace = true, features = ["scale"] }
+polkavm = { version = "0.25.0", default-features = false }
 
 [features]
 default = ["std"]

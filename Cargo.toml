@@ -208,13 +208,13 @@ pallet-dynamic-fee = { path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { path = "frame/ethereum", default-features = false }
 pallet-evm = { path = "frame/evm", default-features = false }
 pallet-evm-chain-id = { path = "frame/evm-chain-id", default-features = false }
+pallet-evm-polkavm = { path = "frame/evm-polkavm", default-features = false }
+pallet-evm-polkavm-proc-macro = { path = "frame/evm-polkavm/proc-macro" }
+pallet-evm-polkavm-uapi = { path = "frame/evm-polkavm/uapi", default-features = false }
 pallet-evm-precompile-modexp = { path = "frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
-pallet-evm-polkavm = { path = "frame/evm-polkavm", default-features = false }
-pallet-evm-polkavm-proc-macro = { path = "frame/evm-polkavm/proc-macro" }
-pallet-evm-polkavm-uapi = { path = "frame/evm-polkavm/uapi", default-features = false }
 pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
 # Frontier Utility
 precompile-utils = { path = "precompiles", default-features = false }
