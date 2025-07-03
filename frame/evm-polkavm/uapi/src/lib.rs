@@ -43,38 +43,38 @@ pub const fn u256_bytes(value: u64) -> [u8; 32] {
 }
 
 macro_rules! define_error_codes {
-    (
-        $(
-            $( #[$attr:meta] )*
-            $name:ident = $discr:literal,
-        )*
-    ) => {
-        /// Every error that can be returned to a contract when it calls any of the host functions.
-        #[derive(Debug, PartialEq, Eq)]
-        #[repr(u32)]
-        pub enum ReturnErrorCode {
-            /// API call successful.
-            Success = 0,
-            $(
-                $( #[$attr] )*
-                $name = $discr,
-            )*
-            /// Returns if an unknown error was received from the host module.
-            Unknown,
-        }
+	(
+		$(
+			$( #[$attr:meta] )*
+			$name:ident = $discr:literal,
+		)*
+	) => {
+		/// Every error that can be returned to a contract when it calls any of the host functions.
+		#[derive(Debug, PartialEq, Eq)]
+		#[repr(u32)]
+		pub enum ReturnErrorCode {
+			/// API call successful.
+			Success = 0,
+			$(
+				$( #[$attr] )*
+				$name = $discr,
+			)*
+			/// Returns if an unknown error was received from the host module.
+			Unknown,
+		}
 
-        impl From<ReturnCode> for Result {
-            fn from(return_code: ReturnCode) -> Self {
-                match return_code.0 {
-                    0 => Ok(()),
-                    $(
-                        $discr => Err(ReturnErrorCode::$name),
-                    )*
-                    _ => Err(ReturnErrorCode::Unknown),
-                }
-            }
-        }
-    };
+		impl From<ReturnCode> for Result {
+			fn from(return_code: ReturnCode) -> Self {
+				match return_code.0 {
+					0 => Ok(()),
+					$(
+						$discr => Err(ReturnErrorCode::$name),
+					)*
+					_ => Err(ReturnErrorCode::Unknown),
+				}
+			}
+		}
+	};
 }
 
 impl From<ReturnErrorCode> for u32 {

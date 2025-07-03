@@ -50,7 +50,7 @@ pub fn unstable_hostfn(_attr: TokenStream, item: TokenStream) -> TokenStream {
 pub fn define_env(attr: TokenStream, item: TokenStream) -> TokenStream {
 	if !attr.is_empty() {
 		let msg = r#"Invalid `define_env` attribute macro: expected no attributes:
-					 - `#[define_env]`"#;
+					- `#[define_env]`"#;
 		let span = TokenStream2::from(attr).span();
 		return syn::Error::new(span, msg).to_compile_error().into()
 	}
