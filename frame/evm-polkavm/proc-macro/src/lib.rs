@@ -357,7 +357,7 @@ fn expand_env(def: &EnvDef) -> TokenStream2 {
 		}
 
 		#[cfg(feature = "runtime-benchmarks")]
-		impl<'a, T: Config, H: PrecompileHandle, M: ?Sized + Memory> Runtime<'a, T, H, M> {
+		impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M> {
 			#bench_impls
 		}
 
