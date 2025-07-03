@@ -302,8 +302,6 @@ pub enum RuntimeCosts {
 	Origin,
 	/// Weight of calling `seal_address`.
 	Address,
-	/// Weight of calling `seal_deposit_event` with the given number of topics and event size.
-	DepositEvent { num_topic: u32, len: u32 },
 }
 
 impl RuntimeCosts {
@@ -318,9 +316,6 @@ impl RuntimeCosts {
 			Caller => <T as Config>::WeightInfo::seal_caller(),
 			Origin => <T as Config>::WeightInfo::seal_origin(),
 			Address => <T as Config>::WeightInfo::seal_address(),
-			DepositEvent { num_topic, len } => {
-				<T as Config>::WeightInfo::seal_deposit_event(num_topic, len)
-			}
 		}
 	}
 }
