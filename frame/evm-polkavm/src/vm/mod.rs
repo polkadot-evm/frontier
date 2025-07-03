@@ -78,7 +78,7 @@ impl<'a, T: Config, H: PrecompileHandle> PreparedCall<'a, T, H> {
 		let entry_program_counter = module
 			.exports()
 			.find(|export| export.symbol().as_bytes() == CALL_IDENTIFIER.as_bytes())
-			.ok_or_else(|| SupervisorError::CodeRejected)?
+			.ok_or(SupervisorError::CodeRejected)?
 			.program_counter();
 		let input_data = handle.input().to_vec();
 		let gas_limit_polkavm = T::ConvertPolkaVmGas::evm_gas_to_polkavm_gas(

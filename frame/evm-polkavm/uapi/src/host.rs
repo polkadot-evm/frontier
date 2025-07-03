@@ -34,7 +34,7 @@ pub trait HostFn: private::Sealed {
 	/// # Note
 	/// - If `offset` is out of bounds, a value of zero will be returned.
 	/// - If `offset` is in bounds but there is not enough call data, the available data
-	/// is right-padded in order to fill a whole U256 value.
+	///   is right-padded in order to fill a whole U256 value.
 	/// - The data written to `output` is a little endian U256 integer value.
 	///
 	/// # Parameters

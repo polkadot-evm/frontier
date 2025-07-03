@@ -170,17 +170,17 @@ impl Memory for polkavm::RawInstance {
 	fn read_into_buf(&self, ptr: u32, buf: &mut [u8]) -> Result<(), SupervisorError> {
 		self.read_memory_into(ptr, buf)
 			.map(|_| ())
-			.map_err(|_| SupervisorError::OutOfBounds.into())
+			.map_err(|_| SupervisorError::OutOfBounds)
 	}
 
 	fn write(&mut self, ptr: u32, buf: &[u8]) -> Result<(), SupervisorError> {
 		self.write_memory(ptr, buf)
-			.map_err(|_| SupervisorError::OutOfBounds.into())
+			.map_err(|_| SupervisorError::OutOfBounds)
 	}
 
 	fn zero(&mut self, ptr: u32, len: u32) -> Result<(), SupervisorError> {
 		self.zero_memory(ptr, len)
-			.map_err(|_| SupervisorError::OutOfBounds.into())
+			.map_err(|_| SupervisorError::OutOfBounds)
 	}
 }
 
@@ -348,15 +348,15 @@ impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M
 			Err(error) => {
 				// in contrast to the other returns this "should" not happen: log level error
 				log::error!(target: LOG_TARGET, "polkavm execution error: {error}");
-				Some(Err(SupervisorError::ExecutionFailed.into()))
+				Some(Err(SupervisorError::ExecutionFailed))
 			}
 			Ok(Finished) => Some(Ok(ExecReturnValue {
 				flags: ReturnFlags::empty(),
 				data: Vec::new(),
 			})),
-			Ok(Trap) => Some(Err(SupervisorError::ContractTrapped.into())),
-			Ok(Segfault(_)) => Some(Err(SupervisorError::ExecutionFailed.into())),
-			Ok(NotEnoughGas) => Some(Err(SupervisorError::OutOfGas.into())),
+			Ok(Trap) => Some(Err(SupervisorError::ContractTrapped)),
+			Ok(Segfault(_)) => Some(Err(SupervisorError::ExecutionFailed)),
+			Ok(NotEnoughGas) => Some(Err(SupervisorError::OutOfGas)),
 			Ok(Step) => None,
 			Ok(Ecalli(idx)) => {
 				// This is a special hard coded syscall index which is used by benchmarks
@@ -370,7 +370,7 @@ impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M
 					}));
 				}
 				let Some(syscall_symbol) = module.imports().get(idx) else {
-					return Some(Err(SupervisorError::InvalidSyscall.into()));
+					return Some(Err(SupervisorError::InvalidSyscall));
 				};
 				match self.handle_ecall(instance, syscall_symbol.as_bytes()) {
 					Ok(None) => None,
@@ -380,11 +380,11 @@ impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M
 					}
 					Err(TrapReason::Return(ReturnData { flags, data })) => {
 						match ReturnFlags::from_bits(flags) {
-							None => Some(Err(SupervisorError::InvalidCallFlags.into())),
+							None => Some(Err(SupervisorError::InvalidCallFlags)),
 							Some(flags) => Some(Ok(ExecReturnValue { flags, data })),
 						}
 					}
-					Err(TrapReason::SupervisorError(error)) => Some(Err(error.into())),
+					Err(TrapReason::SupervisorError(error)) => Some(Err(error)),
 				}
 			}
 		}
