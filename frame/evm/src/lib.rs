@@ -711,7 +711,7 @@ pub struct CodeMetadata {
 }
 
 impl CodeMetadata {
-	fn from_code(code: &[u8]) -> Self {
+	pub fn from_code(code: &[u8]) -> Self {
 		let size = code.len() as u64;
 		let hash = H256::from(sp_io::hashing::keccak_256(code));
 
