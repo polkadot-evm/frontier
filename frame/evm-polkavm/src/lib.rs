@@ -31,9 +31,13 @@ use fp_evm::{
 	ExitError, ExitRevert, ExitSucceed, IsPrecompileResult, PrecompileFailure, PrecompileHandle,
 	PrecompileOutput, PrecompileSet,
 };
-use sp_core::H160;
+use sp_core::{H160, H256};
 
 pub use self::{pallet::*, weights::WeightInfo};
+
+pub trait CreateAddressScheme<AccountId> {
+	fn create_address_scheme(caller: AccountId, code: &[u8], salt: H256) -> H160;
+}
 
 pub trait ConvertPolkaVmGas {
 	fn polkavm_gas_to_evm_gas(gas: polkavm::Gas) -> u64;
@@ -99,8 +103,14 @@ impl<Inner: PrecompileSet, T: Config> PrecompileSet for PolkaVmSet<Inner, T> {
 
 #[frame_support::pallet]
 pub mod pallet {
-	use super::{ConvertPolkaVmGas, WeightInfo};
+	use super::{ConvertPolkaVmGas, CreateAddressScheme, WeightInfo};
+	use fp_evm::AccountProvider;
 	use frame_support::pallet_prelude::*;
+	use frame_system::pallet_prelude::*;
+	use pallet_evm::{
+		AccountCodes, AccountCodesMetadata, AddressMapping, CodeMetadata, Config as EConfig,
+	};
+	use sp_core::H256;
 
 	const STORAGE_VERSION: StorageVersion = StorageVersion::new(0);
 
@@ -110,32 +120,56 @@ pub mod pallet {
 
 	#[pallet::config]
 	pub trait Config: frame_system::Config + pallet_evm::Config {
+		type CreateAddressScheme: CreateAddressScheme<<Self as frame_system::Config>::AccountId>;
 		type ConvertPolkaVmGas: ConvertPolkaVmGas;
+		type MaxCodeSize: Get<u32>;
 		type WeightInfo: WeightInfo;
 	}
 
-	impl<T: Config> Get<u64> for Pallet<T> {
-		fn get() -> u64 {
-			<ChainId<T>>::get()
-		}
+	#[pallet::error]
+	pub enum Error<T> {
+		/// Maximum code length exceeded.
+		MaxCodeSizeExceeded,
+		/// Not deploying PolkaVM contract.
+		NotPolkaVmContract,
+		/// Contract already exist in state.
+		AlreadyExist,
 	}
 
-	/// The EVM chain ID.
-	#[pallet::storage]
-	pub type ChainId<T> = StorageValue<_, u64, ValueQuery>;
+	#[pallet::call]
+	impl<T: Config> Pallet<T> {
+		/// Deploy a new PolkaVM contract into the Frontier state.
+		///
+		/// A PolkaVM contract is simply a contract in the Frontier state prefixed
+		/// by `0xef polkavm`. EIP-3541 ensures that no EVM contract will starts with
+		/// the prefix.
+		#[pallet::call_index(0)]
+		#[pallet::weight(<T as Config>::WeightInfo::create_polkavm(code.len() as u32))]
+		pub fn create_polkavm(origin: OriginFor<T>, code: Vec<u8>, salt: H256) -> DispatchResult {
+			if code.len() as u32 >= <T as Config>::MaxCodeSize::get() {
+				return Err(Error::<T>::MaxCodeSizeExceeded.into());
+			}
 
-	#[pallet::genesis_config]
-	#[derive(frame_support::DefaultNoBound)]
-	pub struct GenesisConfig<T> {
-		pub chain_id: u64,
-		#[serde(skip)]
-		pub _marker: PhantomData<T>,
-	}
+			if code[0..8] != crate::vm::PREFIX {
+				return Err(Error::<T>::NotPolkaVmContract.into());
+			}
 
-	#[pallet::genesis_build]
-	impl<T: Config> BuildGenesisConfig for GenesisConfig<T> {
-		fn build(&self) {
-			ChainId::<T>::put(self.chain_id);
+			let caller = ensure_signed(origin)?;
+			let address =
+				<T as Config>::CreateAddressScheme::create_address_scheme(caller, &code[..], salt);
+
+			if <AccountCodes<T>>::contains_key(address) {
+				return Err(Error::<T>::AlreadyExist.into());
+			}
+
+			let account_id = <T as EConfig>::AddressMapping::into_account_id(address);
+			<T as EConfig>::AccountProvider::create_account(&account_id);
+
+			let meta = CodeMetadata::from_code(&code);
+			<AccountCodesMetadata<T>>::insert(address, meta);
+			<AccountCodes<T>>::insert(address, code);
+
+			Ok(())
 		}
 	}
 }

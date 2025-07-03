@@ -27,4 +27,5 @@ pub trait WeightInfo {
 	fn seal_call_data_load() -> Weight;
 	fn seal_call_data_copy(n: u32) -> Weight;
 	fn seal_return(n: u32) -> Weight;
+	fn create_polkavm(l: u32) -> Weight;
 }
