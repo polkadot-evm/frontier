@@ -52,7 +52,7 @@ pub fn define_env(attr: TokenStream, item: TokenStream) -> TokenStream {
 		let msg = r#"Invalid `define_env` attribute macro: expected no attributes:
 					- `#[define_env]`"#;
 		let span = TokenStream2::from(attr).span();
-		return syn::Error::new(span, msg).to_compile_error().into()
+		return syn::Error::new(span, msg).to_compile_error().into();
 	}
 
 	let item = syn::parse_macro_input!(item as syn::ItemMod);
@@ -109,7 +109,9 @@ impl EnvDef {
 		let items = &item
 			.content
 			.as_ref()
-			.ok_or(err("Invalid environment definition, expected `mod` to be inlined."))?
+			.ok_or(err(
+				"Invalid environment definition, expected `mod` to be inlined.",
+			))?
 			.1;
 
 		let extract_fn = |i: &syn::Item| match i {
@@ -147,22 +149,22 @@ impl HostFn {
 			match ident.as_str() {
 				"stable" => {
 					if is_stable {
-						return Err(err(span, "#[stable] can only be specified once"))
+						return Err(err(span, "#[stable] can only be specified once"));
 					}
 					is_stable = true;
-				},
+				}
 				"mutating" => {
 					if mutating {
-						return Err(err(span, "#[mutating] can only be specified once"))
+						return Err(err(span, "#[mutating] can only be specified once"));
 					}
 					mutating = true;
-				},
+				}
 				"cfg" => {
 					if cfg.is_some() {
-						return Err(err(span, "#[cfg] can only be specified once"))
+						return Err(err(span, "#[cfg] can only be specified once"));
 					}
 					cfg = Some(attr);
-				},
+				}
 				id => return Err(err(span, &format!("Unsupported attribute \"{id}\". {msg}"))),
 			}
 		}
@@ -187,7 +189,7 @@ impl HostFn {
 			.fold(0u32, |acc, valid| if valid { acc + 1 } else { acc });
 
 		if special_args != 2 {
-			return Err(err(span, msg))
+			return Err(err(span, msg));
 		}
 
 		// process return type
@@ -204,12 +206,14 @@ impl HostFn {
 			syn::Type::Path(tp) => {
 				let result = &tp.path.segments.last().ok_or(err(span, &msg))?;
 				let (id, span) = (result.ident.to_string(), result.ident.span());
-				id.eq(&"Result".to_string()).then_some(()).ok_or(err(span, &msg))?;
+				id.eq(&"Result".to_string())
+					.then_some(())
+					.ok_or(err(span, &msg))?;
 
 				match &result.arguments {
 					syn::PathArguments::AngleBracketed(group) => {
 						if group.args.len() != 2 {
-							return Err(err(span, &msg))
+							return Err(err(span, &msg));
 						};
 
 						let arg2 = group.args.last().ok_or(err(span, &msg))?;
@@ -248,10 +252,10 @@ impl HostFn {
 								.to_string()),
 							syn::Type::Tuple(tt) => {
 								if !tt.elems.is_empty() {
-									return Err(err(arg1.span(), &msg))
+									return Err(err(arg1.span(), &msg));
 								};
 								Ok("()".to_string())
-							},
+							}
 							_ => Err(err(ok_ty.span(), &msg)),
 						}?;
 						let returns = match ok_ty_str.as_str() {
@@ -262,11 +266,17 @@ impl HostFn {
 							_ => Err(err(arg1.span(), &msg)),
 						}?;
 
-						Ok(Self { item, is_stable, name, returns, cfg })
-					},
+						Ok(Self {
+							item,
+							is_stable,
+							name,
+							returns,
+							cfg,
+						})
+					}
 					_ => Err(err(span, &msg)),
 				}
-			},
+			}
 			_ => Err(err(span, &msg)),
 		}
 	}
@@ -276,13 +286,16 @@ fn is_valid_special_arg(idx: usize, arg: &FnArg) -> bool {
 	match (idx, arg) {
 		(0, FnArg::Receiver(rec)) => rec.reference.is_some() && rec.mutability.is_some(),
 		(1, FnArg::Typed(pat)) => {
-			let ident =
-				if let syn::Pat::Ident(ref ident) = *pat.pat { &ident.ident } else { return false };
+			let ident = if let syn::Pat::Ident(ref ident) = *pat.pat {
+				&ident.ident
+			} else {
+				return false;
+			};
 			if !(ident == "memory" || ident == "_memory") {
-				return false
+				return false;
 			}
 			matches!(*pat.ty, syn::Type::Reference(_))
-		},
+		}
 		_ => false,
 	}
 }
@@ -314,12 +327,15 @@ where
 	}
 
 	// one argument per register
-	let bindings = param_names.zip(param_types).enumerate().map(|(idx, (name, ty))| {
-		let reg = quote::format_ident!("__a{}__", idx);
-		quote! {
-			let #name = #reg as #ty;
-		}
-	});
+	let bindings = param_names
+		.zip(param_types)
+		.enumerate()
+		.map(|(idx, (name, ty))| {
+			let reg = quote::format_ident!("__a{}__", idx);
+			quote! {
+				let #name = #reg as #ty;
+			}
+		});
 	quote! {
 		#( #bindings )*
 	}
@@ -497,10 +513,15 @@ fn expand_func_doc(def: &EnvDef) -> TokenStream2 {
 		};
 		let func_doc = {
 			let func_docs = {
-				let docs = func.item.attrs.iter().filter(|a| a.path().is_ident("doc")).map(|d| {
-					let docs = d.to_token_stream();
-					quote! { #docs }
-				});
+				let docs = func
+					.item
+					.attrs
+					.iter()
+					.filter(|a| a.path().is_ident("doc"))
+					.map(|d| {
+						let docs = d.to_token_stream();
+						quote! { #docs }
+					});
 				quote! { #( #docs )* }
 			};
 			let availability = if func.is_stable {
@@ -528,12 +549,16 @@ fn expand_func_doc(def: &EnvDef) -> TokenStream2 {
 }
 
 fn expand_func_list(def: &EnvDef, include_unstable: bool) -> TokenStream2 {
-	let docs = def.host_funcs.iter().filter(|f| include_unstable || f.is_stable).map(|f| {
-		let name = Literal::byte_string(f.name.as_bytes());
-		quote! {
-			#name.as_slice()
-		}
-	});
+	let docs = def
+		.host_funcs
+		.iter()
+		.filter(|f| include_unstable || f.is_stable)
+		.map(|f| {
+			let name = Literal::byte_string(f.name.as_bytes());
+			quote! {
+				#name.as_slice()
+			}
+		});
 	let len = docs.clone().count();
 
 	quote! {

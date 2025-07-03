@@ -104,7 +104,13 @@ impl HostFn for HostFnImpl {
 	}
 
 	fn return_value(flags: ReturnFlags, return_value: &[u8]) -> ! {
-		unsafe { sys::seal_return(flags.bits(), return_value.as_ptr(), return_value.len() as u32) }
+		unsafe {
+			sys::seal_return(
+				flags.bits(),
+				return_value.as_ptr(),
+				return_value.len() as u32,
+			)
+		}
 		panic!("seal_return does not return");
 	}
 
