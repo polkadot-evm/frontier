@@ -22,5 +22,8 @@ polkadot.*
 # Added by cargo
 /target
 
+# Vitepress
+/docs/.vitepress/cache
+
 # NixOS development environment
 .envrc
