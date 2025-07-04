@@ -154,6 +154,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Vec<u8>>, sp_runtime::DispatchError>;
+		#[allow(clippy::type_complexity)]
 		fn call(
 			from: Address,
 			to: Address,
@@ -214,6 +215,7 @@ sp_api::decl_runtime_apis! {
 			estimate: bool,
 			access_list: Option<Vec<(Address, Vec<H256>)>>,
 		) -> Result<fp_evm::ExecutionInfoV2::<Address>, sp_runtime::DispatchError>;
+		#[allow(clippy::type_complexity)]
 		fn create(
 			from: Address,
 			data: Vec<u8>,
