@@ -37,6 +37,9 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
       - name: Build website
         run: |
           cd docs
@@ -53,8 +56,6 @@ jobs:
         run: |
           cp -r ./target/doc docs/.vitepress/dist/rustdocs
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v5
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
