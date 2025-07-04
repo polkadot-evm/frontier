@@ -51,13 +51,13 @@ jobs:
 
       - name: Copy rustdocs
         run: |
-          cp -r ./target/doc docs/.vuepress/dist/rustdocs
+          cp -r ./target/doc docs/.vitepress/dist/rustdocs
 
       - name: Deploy documentation
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
           publish_branch: gh-pages
-          publish_dir: ./docs/.vuepress/dist
+          publish_dir: ./docs/.vitepress/dist
           keep_files: true
 
