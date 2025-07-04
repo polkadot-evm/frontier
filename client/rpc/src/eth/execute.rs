@@ -18,7 +18,6 @@
 
 use std::{cell::RefCell, collections::BTreeMap, sync::Arc};
 
-use ethereum_ext::Authorizer;
 use ethereum_types::{H160, H256, U256};
 use evm::{ExitError, ExitReason};
 use jsonrpsee::{core::RpcResult, types::error::CALL_EXECUTION_FAILED_CODE};

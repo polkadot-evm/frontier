@@ -53,9 +53,7 @@ clap = { version = "4.5", features = ["derive", "deprecated"] }
 const-hex = { version = "1.14", default-features = false, features = ["alloc"] }
 derive_more = "1.0"
 environmental = { version = "1.1.4", default-features = false }
-ethereum = { version = "0.16.0", default-features = false }
-# TODO remove dependency when/if https://github.com/rust-ethereum/ethereum/pull/64 is merged
-ethereum-ext = { git = "https://github.com/manuelmauro/ethereum-ext", default-features = false }
+ethereum = { version = "0.17.0", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
 evm = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
 futures = "0.3.31"

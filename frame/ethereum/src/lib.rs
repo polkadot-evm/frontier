@@ -38,7 +38,6 @@ pub use ethereum::{
 	AccessListItem, BlockV3 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
 	TransactionAction, TransactionV3 as Transaction,
 };
-use ethereum_ext::Authorizer;
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
 use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};

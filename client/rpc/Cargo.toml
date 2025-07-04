@@ -12,7 +12,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { workspace = true, features = ["with-scale"] }
-ethereum-ext = { workspace = true }
 ethereum-types = { workspace = true }
 evm = { workspace = true }
 futures = { workspace = true }

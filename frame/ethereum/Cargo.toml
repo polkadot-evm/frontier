@@ -12,7 +12,6 @@ targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
 ethereum = { workspace = true, features = ["with-scale"] }
-ethereum-ext = { workspace = true }
 ethereum-types = { workspace = true }
 evm = { workspace = true, features = ["with-codec"] }
 scale-codec = { workspace = true }
@@ -46,7 +45,6 @@ fp-self-contained = { workspace = true, features = ["default"] }
 default = ["std"]
 std = [
 	"ethereum/std",
-	"ethereum-ext/std",
 	"evm/std",
 	"ethereum-types/std",
 	"rlp/std",

@@ -26,7 +26,6 @@ pub use ethereum::{
 	LegacyTransactionMessage, Log, ReceiptV3 as Receipt, TransactionAction,
 	TransactionV3 as Transaction,
 };
-use ethereum_ext::Authorizer;
 use ethereum_types::{H160, H256, U256};
 use fp_evm::{CallOrCreateInfo, CheckEvmTransactionInput};
 use frame_support::dispatch::{DispatchErrorWithPostInfo, PostDispatchInfo};
