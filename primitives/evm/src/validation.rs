@@ -79,6 +79,8 @@ pub enum TransactionValidationError {
 	InvalidChainId,
 	/// The transaction signature is invalid
 	InvalidSignature,
+	/// EIP-7702 transaction has empty authorization list
+	EmptyAuthorizationList,
 	/// Unknown error
 	#[num_enum(default)]
 	UnknownError,
@@ -245,6 +247,16 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 
 		Ok(self)
 	}
+
+	pub fn with_eip7702_authorization_list(&self, is_eip7702: bool) -> Result<&Self, E> {
+		// EIP-7702 validation: Check if authorization list is empty for EIP-7702 transactions
+		// According to EIP-7702 specification: "The transaction is also considered invalid when the length of authorization_list is zero."
+		if is_eip7702 && self.transaction.authorization_list.is_empty() {
+			return Err(TransactionValidationError::EmptyAuthorizationList.into());
+		}
+		
+		Ok(self)
+	}
 }
 
 #[cfg(test)]
@@ -263,6 +275,7 @@ mod tests {
 		InvalidFeeInput,
 		InvalidChainId,
 		InvalidSignature,
+		EmptyAuthorizationList,
 		UnknownError,
 	}
 
@@ -281,6 +294,7 @@ mod tests {
 				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
+				TransactionValidationError::EmptyAuthorizationList => TestError::EmptyAuthorizationList,
 				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
 		}

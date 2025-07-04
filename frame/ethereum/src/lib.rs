@@ -539,6 +539,9 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
+		// Check if this is an EIP-7702 transaction
+		let is_eip7702 = matches!(transaction, Transaction::EIP7702(_));
+
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -555,6 +558,7 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&who))
+		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| e.0)?;
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
@@ -952,6 +956,9 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
+		// Check if this is an EIP-7702 transaction
+		let is_eip7702 = matches!(transaction, Transaction::EIP7702(_));
+
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -968,6 +975,7 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&who))
+		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		Ok(())
@@ -1105,6 +1113,9 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 			),
 			TransactionValidationError::GasPriceTooLow => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::GasPriceTooLow as u8),
+			),
+			TransactionValidationError::EmptyAuthorizationList => InvalidTransactionWrapper(
+				InvalidTransaction::Custom(TransactionValidationError::EmptyAuthorizationList as u8),
 			),
 			TransactionValidationError::UnknownError => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::UnknownError as u8),

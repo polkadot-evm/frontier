@@ -18,7 +18,7 @@
 //! Test utilities
 
 use core::str::FromStr;
-use ethereum::{TransactionAction, TransactionSignature};
+use ethereum::{TransactionAction, legacy::TransactionSignature as LegacyTransactionSignature, eip2930::TransactionSignature as EIP2930TransactionSignature};
 use rlp::RlpStream;
 // Substrate
 use frame_support::{derive_impl, parameter_types, traits::FindAuthor, ConsensusEngineId};
@@ -295,7 +295,7 @@ impl LegacyUnsignedTransaction {
 		);
 		let sig = s.0.serialize();
 
-		let sig = TransactionSignature::new(
+		let sig = LegacyTransactionSignature::new(
 			s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
@@ -356,9 +356,11 @@ impl EIP2930UnsignedTransaction {
 			value: msg.value,
 			input: msg.input.clone(),
 			access_list: msg.access_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-			s,
+			signature: EIP2930TransactionSignature::new(
+				recid.serialize() != 0,
+				r,
+				s,
+			).unwrap(),
 		})
 	}
 }
@@ -408,9 +410,11 @@ impl EIP1559UnsignedTransaction {
 			value: msg.value,
 			input: msg.input.clone(),
 			access_list: msg.access_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-			s,
+			signature: EIP2930TransactionSignature::new(
+				recid.serialize() != 0,
+				r,
+				s,
+			).unwrap(),
 		})
 	}
 }
@@ -463,9 +467,11 @@ impl EIP7702UnsignedTransaction {
 			data: msg.data.clone(),
 			access_list: msg.access_list,
 			authorization_list: msg.authorization_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-			s,
+			signature: EIP2930TransactionSignature::new(
+				recid.serialize() != 0,
+				r,
+				s,
+			).unwrap(),
 		})
 	}
 }

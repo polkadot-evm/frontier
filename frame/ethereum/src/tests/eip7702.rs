@@ -71,9 +71,11 @@ fn create_authorization_tuple(
 		chain_id,
 		address,
 		nonce: U256::from(nonce),
-		y_parity: recid.serialize() != 0,
-		r,
-		s,
+		signature: ethereum::eip2930::MalleableTransactionSignature {
+			odd_y_parity: recid.serialize() != 0,
+			r,
+			s,
+		},
 	}
 }
 
@@ -129,28 +131,18 @@ fn eip7702_transaction_with_empty_authorization_list_fails() {
 		let call = crate::Call::<Test>::transact { transaction };
 
 		// Transaction with empty authorization list should fail validation
-		// The exact behavior depends on the implementation
 		let check_result = call.check_self_contained();
 
-		// For now, we just verify that the transaction structure is rejected
-		// In a full implementation, this would check specific validation logic
-		match check_result {
-			Some(Ok(_)) => {
-				// If the transaction is initially valid, it should fail later validation
-				let source = check_result.unwrap().unwrap();
-				let validation_result =
-					call.validate_self_contained(&source, &call.get_dispatch_info(), 0);
-				// The transaction might be rejected during validation
-				// This test documents the expected behavior
-			}
-			Some(Err(_)) => {
-				// Transaction rejected at parse level - this is acceptable
-			}
-			None => {
-				// Transaction not recognized as self-contained - this would indicate a problem
-				panic!("EIP-7702 transaction should be recognized as self-contained");
-			}
-		}
+		// The transaction should be recognized as self-contained (signature should be valid)
+		let source = check_result.expect("EIP-7702 transaction should be recognized as self-contained")
+			.expect("EIP-7702 transaction signature should be valid");
+
+		// But validation should fail due to empty authorization list
+		let validation_result = call.validate_self_contained(&source, &call.get_dispatch_info(), 0)
+			.expect("Validation should return a result");
+
+		// Assert that validation fails
+		assert!(validation_result.is_err(), "EIP-7702 transaction with empty authorization list should fail validation");
 	});
 }
 
@@ -225,7 +217,7 @@ fn authorization_with_wrong_chain_id() {
 
 		// Transaction should be structurally valid but authorization should be invalid
 		if let Some(Ok(source)) = check_result {
-			let validation_result =
+			let _validation_result =
 				call.validate_self_contained(&source, &call.get_dispatch_info(), 0);
 			// The transaction might still pass validation but the authorization would be skipped during execution
 			// This documents the expected behavior for invalid chain IDs
