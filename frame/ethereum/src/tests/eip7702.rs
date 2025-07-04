@@ -17,9 +17,11 @@
 
 //! EIP-7702 Set Code Authorization transaction tests
 
+use std::panic;
+
 use super::*;
 use ethereum::{AuthorizationListItem, TransactionAction};
-use pallet_evm::config_preludes::ChainId;
+use pallet_evm::{config_preludes::ChainId, AddressMapping};
 use sp_core::{H160, H256, U256};
 
 /// Helper function to create an EIP-7702 transaction for testing
@@ -170,23 +172,100 @@ fn eip7702_transaction_execution() {
 		)
 		.sign(&alice.private_key, Some(ChainId::get()));
 
+		// Store initial account state for comparison
+		let substrate_alice =
+			<Test as pallet_evm::Config>::AddressMapping::into_account_id(alice.address);
+		let substrate_bob =
+			<Test as pallet_evm::Config>::AddressMapping::into_account_id(bob.address);
+		let initial_alice_nonce = System::account_nonce(&substrate_alice);
+		let initial_alice_balance = Balances::free_balance(&substrate_alice);
+		let initial_bob_balance = Balances::free_balance(&substrate_bob);
+
 		// Execute the transaction using the Ethereum pallet
 		let result = Ethereum::execute(alice.address, &transaction, None);
 
-		// The transaction should execute successfully or fail gracefully
-		// The exact result depends on the EIP-7702 implementation state
-		match result {
-			Ok(_) => {
-				// Transaction executed successfully
-				// In a full implementation, we would verify:
-				// 1. Alice's account has delegation indicator set
-				// 2. Nonce was incremented
-				// 3. Gas was consumed correctly
+		// Verify transaction execution and state changes
+		let Ok(execution_info) = result else {
+			panic!("Transaction execution failed")
+		};
+
+		// Transaction executed successfully - verify expected state changes
+
+		// 1. Verify nonce was incremented
+		let final_alice_nonce = System::account_nonce(&substrate_alice);
+		assert_eq!(
+			final_alice_nonce,
+			initial_alice_nonce + 1,
+			"Alice's nonce should be incremented after successful transaction"
+		);
+
+		// 2. Verify gas was consumed (execution_info contains gas usage)
+		let (_, _, call_info) = execution_info;
+		match call_info {
+			CallOrCreateInfo::Call(call_info) => {
+				assert!(
+					call_info.used_gas.standard > U256::from(21000),
+					"Gas usage should be at least the base transaction cost (21000)"
+				);
 			}
-			Err(_) => {
-				// Transaction failed - this might be expected if EIP-7702 is not fully implemented
-				// This test documents the current behavior
+			CallOrCreateInfo::Create(create_info) => {
+				assert!(
+					create_info.used_gas.standard > U256::from(21000),
+					"Gas usage should be at least the base transaction cost (21000)"
+				);
 			}
+		}
+
+		// 3. Verify value transfer occurred (1000 wei from Alice to Bob)
+		let final_alice_balance = Balances::free_balance(&substrate_alice);
+		let final_bob_balance = Balances::free_balance(&substrate_bob);
+
+		// Alice should have paid the transaction value plus gas costs
+		assert!(
+			final_alice_balance < initial_alice_balance,
+			"Alice's balance should decrease after paying for transaction"
+		);
+
+		// Bob should have received the transaction value
+		assert_eq!(
+			final_bob_balance,
+			initial_bob_balance + 1000u64,
+			"Bob should receive the transaction value (1000 wei)"
+		);
+
+		// 4. Verify authorization list was processed
+		// Check if Alice's account now has the delegated code from the authorization
+		let alice_code = pallet_evm::AccountCodes::<Test>::get(alice.address);
+		let contract_code = pallet_evm::AccountCodes::<Test>::get(contract_address);
+
+		// Debug information for understanding the current state
+		println!("Alice's code length: {}", alice_code.len());
+		println!("Contract address code length: {}", contract_code.len());
+		println!("Alice's code: {:?}", alice_code);
+
+		// According to EIP-7702, after processing an authorization, the authorizing account
+		// should have code set to 0xef0100 || address (delegation designator)
+		if !alice_code.is_empty() {
+			// Check if this is a proper EIP-7702 delegation designator
+			if alice_code.len() >= 22 && alice_code[0] == 0xef && alice_code[1] == 0x01 && alice_code[2] == 0x00 {
+				// Extract the delegated address from the designation
+				let delegated_address: H160 = H160::from_slice(&alice_code[3..23]);
+				assert_eq!(
+					delegated_address,
+					contract_address,
+					"Alice's account should delegate to the authorized contract address"
+				);
+				println!("✓ EIP-7702 delegation properly set up");
+			} else {
+				println!("Alice's code is not a proper EIP-7702 delegation designator");
+				panic!("EIP-7702 authorization verification failed");
+			}
+		} else {
+			// If no code is set, this might indicate the authorization wasn't processed
+			// or the EIP-7702 implementation is not complete
+			println!("⚠ Alice's account has no code after EIP-7702 authorization");
+			println!("This may indicate the authorization wasn't processed or EIP-7702 is not fully implemented");
+			panic!("EIP-7702 authorization verification failed");
 		}
 	});
 }
