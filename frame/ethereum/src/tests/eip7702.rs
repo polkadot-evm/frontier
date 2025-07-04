@@ -134,15 +134,20 @@ fn eip7702_transaction_with_empty_authorization_list_fails() {
 		let check_result = call.check_self_contained();
 
 		// The transaction should be recognized as self-contained (signature should be valid)
-		let source = check_result.expect("EIP-7702 transaction should be recognized as self-contained")
+		let source = check_result
+			.expect("EIP-7702 transaction should be recognized as self-contained")
 			.expect("EIP-7702 transaction signature should be valid");
 
 		// But validation should fail due to empty authorization list
-		let validation_result = call.validate_self_contained(&source, &call.get_dispatch_info(), 0)
+		let validation_result = call
+			.validate_self_contained(&source, &call.get_dispatch_info(), 0)
 			.expect("Validation should return a result");
 
 		// Assert that validation fails
-		assert!(validation_result.is_err(), "EIP-7702 transaction with empty authorization list should fail validation");
+		assert!(
+			validation_result.is_err(),
+			"EIP-7702 transaction with empty authorization list should fail validation"
+		);
 	});
 }
 

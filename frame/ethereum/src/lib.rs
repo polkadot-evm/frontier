@@ -1114,9 +1114,11 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 			TransactionValidationError::GasPriceTooLow => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::GasPriceTooLow as u8),
 			),
-			TransactionValidationError::EmptyAuthorizationList => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::EmptyAuthorizationList as u8),
-			),
+			TransactionValidationError::EmptyAuthorizationList => {
+				InvalidTransactionWrapper(InvalidTransaction::Custom(
+					TransactionValidationError::EmptyAuthorizationList as u8,
+				))
+			}
 			TransactionValidationError::UnknownError => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::UnknownError as u8),
 			),

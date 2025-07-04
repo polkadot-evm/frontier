@@ -254,7 +254,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		if is_eip7702 && self.transaction.authorization_list.is_empty() {
 			return Err(TransactionValidationError::EmptyAuthorizationList.into());
 		}
-		
+
 		Ok(self)
 	}
 }
@@ -294,7 +294,9 @@ mod tests {
 				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
-				TransactionValidationError::EmptyAuthorizationList => TestError::EmptyAuthorizationList,
+				TransactionValidationError::EmptyAuthorizationList => {
+					TestError::EmptyAuthorizationList
+				}
 				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
 		}

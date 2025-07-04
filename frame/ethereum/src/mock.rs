@@ -18,7 +18,10 @@
 //! Test utilities
 
 use core::str::FromStr;
-use ethereum::{TransactionAction, legacy::TransactionSignature as LegacyTransactionSignature, eip2930::TransactionSignature as EIP2930TransactionSignature};
+use ethereum::{
+	eip2930::TransactionSignature as EIP2930TransactionSignature,
+	legacy::TransactionSignature as LegacyTransactionSignature, TransactionAction,
+};
 use rlp::RlpStream;
 // Substrate
 use frame_support::{derive_impl, parameter_types, traits::FindAuthor, ConsensusEngineId};
@@ -356,11 +359,7 @@ impl EIP2930UnsignedTransaction {
 			value: msg.value,
 			input: msg.input.clone(),
 			access_list: msg.access_list,
-			signature: EIP2930TransactionSignature::new(
-				recid.serialize() != 0,
-				r,
-				s,
-			).unwrap(),
+			signature: EIP2930TransactionSignature::new(recid.serialize() != 0, r, s).unwrap(),
 		})
 	}
 }
@@ -410,11 +409,7 @@ impl EIP1559UnsignedTransaction {
 			value: msg.value,
 			input: msg.input.clone(),
 			access_list: msg.access_list,
-			signature: EIP2930TransactionSignature::new(
-				recid.serialize() != 0,
-				r,
-				s,
-			).unwrap(),
+			signature: EIP2930TransactionSignature::new(recid.serialize() != 0, r, s).unwrap(),
 		})
 	}
 }
@@ -467,11 +462,7 @@ impl EIP7702UnsignedTransaction {
 			data: msg.data.clone(),
 			access_list: msg.access_list,
 			authorization_list: msg.authorization_list,
-			signature: EIP2930TransactionSignature::new(
-				recid.serialize() != 0,
-				r,
-				s,
-			).unwrap(),
+			signature: EIP2930TransactionSignature::new(recid.serialize() != 0, r, s).unwrap(),
 		})
 	}
 }
