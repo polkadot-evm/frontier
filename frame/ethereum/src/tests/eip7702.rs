@@ -52,15 +52,27 @@ fn create_authorization_tuple(
 	nonce: u64,
 	private_key: &H256,
 ) -> AuthorizationListItem {
+	use rlp::RlpStream;
+	
 	let secret = {
 		let mut sk: [u8; 32] = [0u8; 32];
 		sk.copy_from_slice(&private_key[0..]);
 		libsecp256k1::SecretKey::parse(&sk).unwrap()
 	};
 
-	// Create a mock signature for testing
-	let msg = [0u8; 32]; // Mock message
-	let signing_message = libsecp256k1::Message::parse_slice(&msg[..]).unwrap();
+	// Create the proper EIP-7702 authorization message
+	// msg = keccak(MAGIC || rlp([chain_id, address, nonce]))
+	let magic: u8 = 0x05;
+	let mut stream = RlpStream::new_list(3);
+	stream.append(&chain_id);
+	stream.append(&address);
+	stream.append(&nonce);
+	
+	let mut msg_data = vec![magic];
+	msg_data.extend_from_slice(&stream.out());
+	
+	let msg_hash = sp_io::hashing::keccak_256(&msg_data);
+	let signing_message = libsecp256k1::Message::parse_slice(&msg_hash).unwrap();
 	let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
 	let rs = signature.serialize();
 	let r = H256::from_slice(&rs[0..32]);
@@ -191,12 +203,12 @@ fn eip7702_transaction_execution() {
 
 		// Transaction executed successfully - verify expected state changes
 
-		// 1. Verify nonce was incremented
+		// 1. Verify nonce was incremented (EIP-7702 authorization + transaction)
 		let final_alice_nonce = System::account_nonce(&substrate_alice);
 		assert_eq!(
 			final_alice_nonce,
-			initial_alice_nonce + 1,
-			"Alice's nonce should be incremented after successful transaction"
+			initial_alice_nonce + 2,
+			"Alice's nonce should be incremented by 2: +1 for EIP-7702 authorization, +1 for transaction"
 		);
 
 		// 2. Verify gas was consumed (execution_info contains gas usage)
