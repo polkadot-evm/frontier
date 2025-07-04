@@ -45,7 +45,7 @@ members = [
 resolver = "2"
 
 [workspace.package]
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ["Frontier developers <legal@bitarray.dev>"]
 edition = "2021"
 repository = "https://github.com/polkadot-evm/frontier/"
 
