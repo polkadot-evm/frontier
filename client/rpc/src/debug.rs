@@ -125,7 +125,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 	async fn receipts_by(
 		&self,
 		number: BlockNumberOrHash,
-	) -> RpcResult<Option<Vec<ethereum::ReceiptV3>>>
+	) -> RpcResult<Option<Vec<ethereum::ReceiptV4>>>
 	where
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,

@@ -222,12 +222,12 @@ where
 					if !block_info.is_eip1559 {
 						// Pre-london frontier update stored receipts require cumulative gas calculation.
 						match receipt {
-							ethereum::ReceiptV3::Legacy(ref d) => {
+							ethereum::ReceiptV4::Legacy(ref d) => {
 								let index = core::cmp::min(receipts.len(), index + 1);
 								let cumulative_gas: u32 = receipts[..index]
 									.iter()
 									.map(|r| match r {
-										ethereum::ReceiptV3::Legacy(d) => Ok(d.used_gas.as_u32()),
+										ethereum::ReceiptV4::Legacy(d) => Ok(d.used_gas.as_u32()),
 										_ => Err(internal_err(format!(
 											"Unknown receipt for request {}",
 											hash
@@ -251,18 +251,18 @@ where
 						}
 					} else {
 						match receipt {
-							ethereum::ReceiptV3::Legacy(ref d)
-							| ethereum::ReceiptV3::EIP2930(ref d)
-							| ethereum::ReceiptV3::EIP1559(ref d)
-							| ethereum::ReceiptV3::EIP7702(ref d) => {
+							ethereum::ReceiptV4::Legacy(ref d)
+							| ethereum::ReceiptV4::EIP2930(ref d)
+							| ethereum::ReceiptV4::EIP1559(ref d)
+							| ethereum::ReceiptV4::EIP7702(ref d) => {
 								let cumulative_gas = d.used_gas;
 								let gas_used = if index > 0 {
 									let previous_receipt = receipts[index - 1].clone();
 									let previous_gas_used = match previous_receipt {
-										ethereum::ReceiptV3::Legacy(d)
-										| ethereum::ReceiptV3::EIP2930(d)
-										| ethereum::ReceiptV3::EIP1559(d)
-										| ethereum::ReceiptV3::EIP7702(d) => d.used_gas,
+										ethereum::ReceiptV4::Legacy(d)
+										| ethereum::ReceiptV4::EIP2930(d)
+										| ethereum::ReceiptV4::EIP1559(d)
+										| ethereum::ReceiptV4::EIP7702(d) => d.used_gas,
 									};
 									cumulative_gas.saturating_sub(previous_gas_used)
 								} else {
@@ -356,10 +356,10 @@ where
 								cumulative_receipts
 									.iter()
 									.map(|r| match r {
-										ethereum::ReceiptV3::Legacy(d)
-										| ethereum::ReceiptV3::EIP2930(d)
-										| ethereum::ReceiptV3::EIP1559(d)
-										| ethereum::ReceiptV3::EIP7702(d) => d.logs.len() as u32,
+										ethereum::ReceiptV4::Legacy(d)
+										| ethereum::ReceiptV4::EIP2930(d)
+										| ethereum::ReceiptV4::EIP1559(d)
+										| ethereum::ReceiptV4::EIP7702(d) => d.logs.len() as u32,
 									})
 									.sum::<u32>(),
 							);
@@ -387,10 +387,10 @@ where
 					state_root: None,
 					effective_gas_price,
 					transaction_type: match receipt {
-						ethereum::ReceiptV3::Legacy(_) => U256::from(0),
-						ethereum::ReceiptV3::EIP2930(_) => U256::from(1),
-						ethereum::ReceiptV3::EIP1559(_) => U256::from(2),
-						ethereum::ReceiptV3::EIP7702(_) => U256::from(4),
+						ethereum::ReceiptV4::Legacy(_) => U256::from(0),
+						ethereum::ReceiptV4::EIP2930(_) => U256::from(1),
+						ethereum::ReceiptV4::EIP1559(_) => U256::from(2),
+						ethereum::ReceiptV4::EIP7702(_) => U256::from(4),
 					},
 				}));
 			}

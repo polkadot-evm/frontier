@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum::TransactionV3 as EthereumTransaction;
+use ethereum::{eip2930, legacy, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256};
 use jsonrpsee::types::ErrorObjectOwned;
 // Substrate
@@ -102,10 +102,9 @@ impl EthSigner for EthDevSigner {
 								action: m.action,
 								value: m.value,
 								input: m.input,
-								signature: ethereum::TransactionSignature::new(v, r, s)
-									.ok_or_else(|| {
-										internal_err("signer generated invalid signature")
-									})?,
+								signature: legacy::TransactionSignature::new(v, r, s).ok_or_else(
+									|| internal_err("signer generated invalid signature"),
+								)?,
 							}));
 					}
 					TransactionMessage::EIP2930(m) => {
@@ -125,9 +124,12 @@ impl EthSigner for EthDevSigner {
 								value: m.value,
 								input: m.input.clone(),
 								access_list: m.access_list,
-								odd_y_parity: recid.serialize() != 0,
-								r,
-								s,
+								signature: eip2930::TransactionSignature::new(
+									recid.serialize() != 0,
+									r,
+									s,
+								)
+								.ok_or(internal_err("Invalid transaction signature format"))?,
 							}));
 					}
 					TransactionMessage::EIP1559(m) => {
@@ -148,9 +150,12 @@ impl EthSigner for EthDevSigner {
 								value: m.value,
 								input: m.input.clone(),
 								access_list: m.access_list,
-								odd_y_parity: recid.serialize() != 0,
-								r,
-								s,
+								signature: eip2930::TransactionSignature::new(
+									recid.serialize() != 0,
+									r,
+									s,
+								)
+								.ok_or(internal_err("Invalid transaction signature format"))?,
 							}));
 					}
 					TransactionMessage::EIP7702(m) => {
@@ -172,9 +177,12 @@ impl EthSigner for EthDevSigner {
 								data: m.data.clone(),
 								access_list: m.access_list,
 								authorization_list: m.authorization_list,
-								odd_y_parity: recid.serialize() != 0,
-								r,
-								s,
+								signature: eip2930::TransactionSignature::new(
+									recid.serialize() != 0,
+									r,
+									s,
+								)
+								.ok_or(internal_err("Invalid transaction signature format"))?,
 							}));
 					}
 				}

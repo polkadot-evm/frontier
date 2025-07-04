@@ -239,7 +239,7 @@ sp_api::decl_runtime_apis! {
 		#[changed_in(4)]
 		fn current_receipts() -> Option<Vec<ethereum::ReceiptV0>>;
 		/// Return the current receipt.
-		fn current_receipts() -> Option<Vec<ethereum::ReceiptV3>>;
+		fn current_receipts() -> Option<Vec<ethereum::ReceiptV4>>;
 
 		/// Return the current transaction status.
 		fn current_transaction_statuses() -> Option<Vec<TransactionStatus>>;
@@ -260,7 +260,7 @@ sp_api::decl_runtime_apis! {
 		);
 		fn current_all() -> (
 			Option<ethereum::BlockV3>,
-			Option<Vec<ethereum::ReceiptV3>>,
+			Option<Vec<ethereum::ReceiptV4>>,
 			Option<Vec<TransactionStatus>>
 		);
 

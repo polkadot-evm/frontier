@@ -596,7 +596,7 @@ mod test {
 			let topics_2_4 = H256::repeat_byte(0x06);
 
 			let receipts = Encode::encode(&vec![
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),
@@ -606,7 +606,7 @@ mod test {
 						data: vec![],
 					}],
 				}),
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),
@@ -829,7 +829,7 @@ mod test {
 			let topics_2_4 = H256::random();
 
 			let receipts = Encode::encode(&vec![
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),
@@ -839,7 +839,7 @@ mod test {
 						data: vec![],
 					}],
 				}),
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),

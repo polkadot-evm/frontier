@@ -23,7 +23,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 pub use ethereum::{
 	AccessListItem, AuthorizationList, AuthorizationListItem, BlockV3 as Block,
-	LegacyTransactionMessage, Log, ReceiptV3 as Receipt, TransactionAction,
+	LegacyTransactionMessage, Log, ReceiptV4 as Receipt, TransactionAction,
 	TransactionV3 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};

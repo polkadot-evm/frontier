@@ -334,7 +334,7 @@ where
 					.enumerate()
 					.map(|(i, receipt)| TransactionHelper {
 						gas_used: match receipt {
-							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) | ethereum::ReceiptV3::EIP7702(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+							ethereum::ReceiptV4::Legacy(d) | ethereum::ReceiptV4::EIP2930(d) | ethereum::ReceiptV4::EIP1559(d) | ethereum::ReceiptV4::EIP7702(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
 						},
 						effective_reward: match block.transactions.get(i) {
 							Some(ethereum::TransactionV3::Legacy(t)) => {

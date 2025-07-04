@@ -61,7 +61,7 @@ pub mod v1 {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			SchemaStorageOverrideRef::new(&self.querier).current_receipts(at)
 		}
 
@@ -109,14 +109,14 @@ pub mod v1 {
 				.map(Into::into)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			self.querier
 				.current_receipts::<ethereum::ReceiptV0>(at)
 				.map(|receipts| {
 					receipts
 						.into_iter()
 						.map(|r| {
-							ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+							ethereum::ReceiptV4::Legacy(ethereum::EIP658ReceiptData {
 								status_code: r.state_root.to_low_u64_be() as u8,
 								used_gas: r.used_gas,
 								logs_bloom: r.logs_bloom,
@@ -175,7 +175,7 @@ pub mod v2 {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			SchemaStorageOverrideRef::new(&self.querier).current_receipts(at)
 		}
 
@@ -221,14 +221,14 @@ pub mod v2 {
 			self.querier.current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			self.querier
 				.current_receipts::<ethereum::ReceiptV0>(at)
 				.map(|receipts| {
 					receipts
 						.into_iter()
 						.map(|r| {
-							ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+							ethereum::ReceiptV4::Legacy(ethereum::EIP658ReceiptData {
 								status_code: r.state_root.to_low_u64_be() as u8,
 								used_gas: r.used_gas,
 								logs_bloom: r.logs_bloom,
@@ -287,7 +287,7 @@ pub mod v3 {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			SchemaStorageOverrideRef::new(&self.querier).current_receipts(at)
 		}
 
@@ -333,8 +333,8 @@ pub mod v3 {
 			self.querier.current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
-			self.querier.current_receipts::<ethereum::ReceiptV3>(at)
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
+			self.querier.current_receipts::<ethereum::ReceiptV4>(at)
 		}
 
 		fn current_transaction_statuses(&self, at: B::Hash) -> Option<Vec<TransactionStatus>> {

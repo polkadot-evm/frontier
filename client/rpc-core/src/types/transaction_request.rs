@@ -100,7 +100,7 @@ mod access_list_item_camelcase {
 
 /// Serde support for AuthorizationListItem with camelCase field names
 mod authorization_list_item_camelcase {
-	use ethereum::AuthorizationListItem;
+	use ethereum::{eip2930::MalleableTransactionSignature, AuthorizationListItem};
 	use ethereum_types::{Address, H256};
 	use serde::{Deserialize, Deserializer};
 
@@ -131,9 +131,11 @@ mod authorization_list_item_camelcase {
 					chain_id: auth_item_def.chain_id,
 					address: auth_item_def.address,
 					nonce: auth_item_def.nonce,
-					y_parity: auth_item_def.y_parity,
-					r: auth_item_def.r,
-					s: auth_item_def.s,
+					signature: MalleableTransactionSignature {
+						odd_y_parity: auth_item_def.y_parity,
+						r: auth_item_def.r,
+						s: auth_item_def.s,
+					},
 				})
 				.collect()
 		}))

@@ -35,7 +35,7 @@ mod tests;
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 pub use ethereum::{
-	AccessListItem, BlockV3 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
+	AccessListItem, BlockV3 as Block, LegacyTransactionMessage, Log, ReceiptV4 as Receipt,
 	TransactionAction, TransactionV3 as Transaction,
 };
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
@@ -417,25 +417,25 @@ impl<T: Config> Pallet<T> {
 				);
 			}
 			Transaction::EIP2930(t) => {
-				sig[0..32].copy_from_slice(&t.r[..]);
-				sig[32..64].copy_from_slice(&t.s[..]);
-				sig[64] = t.odd_y_parity as u8;
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.odd_y_parity() as u8;
 				msg.copy_from_slice(
 					&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..],
 				);
 			}
 			Transaction::EIP1559(t) => {
-				sig[0..32].copy_from_slice(&t.r[..]);
-				sig[32..64].copy_from_slice(&t.s[..]);
-				sig[64] = t.odd_y_parity as u8;
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.odd_y_parity() as u8;
 				msg.copy_from_slice(
 					&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..],
 				);
 			}
 			Transaction::EIP7702(t) => {
-				sig[0..32].copy_from_slice(&t.r[..]);
-				sig[32..64].copy_from_slice(&t.s[..]);
-				sig[64] = t.odd_y_parity as u8;
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.odd_y_parity() as u8;
 				msg.copy_from_slice(
 					&ethereum::EIP7702TransactionMessage::from(t.clone()).hash()[..],
 				);
