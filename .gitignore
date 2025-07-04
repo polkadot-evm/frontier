@@ -24,6 +24,7 @@ polkadot.*
 
 # Vitepress
 /docs/.vitepress/cache
+/docs/.vitepress/dist
 
 # NixOS development environment
 .envrc

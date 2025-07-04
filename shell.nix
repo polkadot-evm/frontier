@@ -19,6 +19,7 @@ with nixpkgs; pkgs.mkShell {
     rocksdb
     pkg-config
     openssl.dev
+    nodejs
   ] ++ lib.optionals stdenv.isDarwin [
     darwin.apple_sdk.frameworks.Security
   ];
