@@ -20,10 +20,10 @@ jobs:
             ~/.cargo/bin/
             ~/.cargo/registry/
             ~/.cargo/git/db/
-          key: ${{ runner.os }}-cargo-unittest-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-docs-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: |
-            ${{ runner.os }}-cargo-unittest-${{ hashFiles('**/Cargo.lock') }}
-            ${{ runner.os }}-cargo-unittest-
+            ${{ runner.os }}-cargo-docs-${{ hashFiles('**/Cargo.lock') }}
+            ${{ runner.os }}-cargo-docs-
             ${{ runner.os }}-cargo-
 
       - name: Run sccache
