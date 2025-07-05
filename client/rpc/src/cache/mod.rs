@@ -24,7 +24,7 @@ use std::{
 	sync::{Arc, Mutex},
 };
 
-use ethereum::BlockV2 as EthereumBlock;
+use ethereum::BlockV3 as EthereumBlock;
 use ethereum_types::U256;
 use futures::StreamExt;
 use tokio::sync::{mpsc, oneshot};
@@ -334,16 +334,21 @@ where
 					.enumerate()
 					.map(|(i, receipt)| TransactionHelper {
 						gas_used: match receipt {
-							ethereum::ReceiptV3::Legacy(d) | ethereum::ReceiptV3::EIP2930(d) | ethereum::ReceiptV3::EIP1559(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
+							ethereum::ReceiptV4::Legacy(d) | ethereum::ReceiptV4::EIP2930(d) | ethereum::ReceiptV4::EIP1559(d) | ethereum::ReceiptV4::EIP7702(d) => used_gas(d.used_gas, &mut previous_cumulative_gas),
 						},
 						effective_reward: match block.transactions.get(i) {
-							Some(ethereum::TransactionV2::Legacy(t)) => {
+							Some(ethereum::TransactionV3::Legacy(t)) => {
 								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(ethereum::TransactionV2::EIP2930(t)) => {
+							Some(ethereum::TransactionV3::EIP2930(t)) => {
 								UniqueSaturatedInto::<u64>::unique_saturated_into(t.gas_price.saturating_sub(base_fee))
 							}
-							Some(ethereum::TransactionV2::EIP1559(t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
+							Some(ethereum::TransactionV3::EIP1559(t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
+									t
+										.max_priority_fee_per_gas
+										.min(t.max_fee_per_gas.saturating_sub(base_fee))
+							),
+							Some(ethereum::TransactionV3::EIP7702(t)) => UniqueSaturatedInto::<u64>::unique_saturated_into(
 									t
 										.max_priority_fee_per_gas
 										.min(t.max_fee_per_gas.saturating_sub(base_fee))

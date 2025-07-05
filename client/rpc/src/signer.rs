@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use ethereum::TransactionV2 as EthereumTransaction;
+use ethereum::{eip2930, legacy, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256};
 use jsonrpsee::types::ErrorObjectOwned;
 // Substrate
@@ -102,10 +102,9 @@ impl EthSigner for EthDevSigner {
 								action: m.action,
 								value: m.value,
 								input: m.input,
-								signature: ethereum::TransactionSignature::new(v, r, s)
-									.ok_or_else(|| {
-										internal_err("signer generated invalid signature")
-									})?,
+								signature: legacy::TransactionSignature::new(v, r, s).ok_or_else(
+									|| internal_err("signer generated invalid signature"),
+								)?,
 							}));
 					}
 					TransactionMessage::EIP2930(m) => {
@@ -125,9 +124,12 @@ impl EthSigner for EthDevSigner {
 								value: m.value,
 								input: m.input.clone(),
 								access_list: m.access_list,
-								odd_y_parity: recid.serialize() != 0,
-								r,
-								s,
+								signature: eip2930::TransactionSignature::new(
+									recid.serialize() != 0,
+									r,
+									s,
+								)
+								.ok_or(internal_err("Invalid transaction signature format"))?,
 							}));
 					}
 					TransactionMessage::EIP1559(m) => {
@@ -148,9 +150,39 @@ impl EthSigner for EthDevSigner {
 								value: m.value,
 								input: m.input.clone(),
 								access_list: m.access_list,
-								odd_y_parity: recid.serialize() != 0,
-								r,
-								s,
+								signature: eip2930::TransactionSignature::new(
+									recid.serialize() != 0,
+									r,
+									s,
+								)
+								.ok_or(internal_err("Invalid transaction signature format"))?,
+							}));
+					}
+					TransactionMessage::EIP7702(m) => {
+						let signing_message = libsecp256k1::Message::parse_slice(&m.hash()[..])
+							.map_err(|_| internal_err("invalid signing message"))?;
+						let (signature, recid) = libsecp256k1::sign(&signing_message, secret);
+						let rs = signature.serialize();
+						let r = H256::from_slice(&rs[0..32]);
+						let s = H256::from_slice(&rs[32..64]);
+						transaction =
+							Some(EthereumTransaction::EIP7702(ethereum::EIP7702Transaction {
+								chain_id: m.chain_id,
+								nonce: m.nonce,
+								max_priority_fee_per_gas: m.max_priority_fee_per_gas,
+								max_fee_per_gas: m.max_fee_per_gas,
+								gas_limit: m.gas_limit,
+								destination: m.destination,
+								value: m.value,
+								data: m.data.clone(),
+								access_list: m.access_list,
+								authorization_list: m.authorization_list,
+								signature: eip2930::TransactionSignature::new(
+									recid.serialize() != 0,
+									r,
+									s,
+								)
+								.ok_or(internal_err("Invalid transaction signature format"))?,
 							}));
 					}
 				}

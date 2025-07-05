@@ -34,6 +34,7 @@ pub struct CheckEvmTransactionInput {
 	pub max_priority_fee_per_gas: Option<U256>,
 	pub value: U256,
 	pub access_list: Vec<(H160, Vec<H256>)>,
+	pub authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 }
 
 #[derive(Debug)]
@@ -78,6 +79,8 @@ pub enum TransactionValidationError {
 	InvalidChainId,
 	/// The transaction signature is invalid
 	InvalidSignature,
+	/// EIP-7702 transaction has empty authorization list
+	EmptyAuthorizationList,
 	/// Unknown error
 	#[num_enum(default)]
 	UnknownError,
@@ -222,11 +225,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 				evm::gasometer::call_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			} else {
 				evm::gasometer::create_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			};
 
@@ -238,6 +243,16 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			if self.transaction.gas_limit > self.config.block_gas_limit {
 				return Err(TransactionValidationError::GasLimitTooHigh.into());
 			}
+		}
+
+		Ok(self)
+	}
+
+	pub fn with_eip7702_authorization_list(&self, is_eip7702: bool) -> Result<&Self, E> {
+		// EIP-7702 validation: Check if authorization list is empty for EIP-7702 transactions
+		// According to EIP-7702 specification: "The transaction is also considered invalid when the length of authorization_list is zero."
+		if is_eip7702 && self.transaction.authorization_list.is_empty() {
+			return Err(TransactionValidationError::EmptyAuthorizationList.into());
 		}
 
 		Ok(self)
@@ -260,10 +275,11 @@ mod tests {
 		InvalidFeeInput,
 		InvalidChainId,
 		InvalidSignature,
+		EmptyAuthorizationList,
 		UnknownError,
 	}
 
-	static CANCUN_CONFIG: evm::Config = evm::Config::cancun();
+	static PECTRA_CONFIG: evm::Config = evm::Config::pectra();
 
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
@@ -278,6 +294,9 @@ mod tests {
 				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
+				TransactionValidationError::EmptyAuthorizationList => {
+					TestError::EmptyAuthorizationList
+				}
 				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
 		}
@@ -337,7 +356,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &CANCUN_CONFIG,
+				evm_config: &PECTRA_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
@@ -354,6 +373,7 @@ mod tests {
 				max_priority_fee_per_gas,
 				value,
 				access_list: vec![],
+				authorization_list: vec![],
 			},
 			weight_limit,
 			proof_size_base_cost,

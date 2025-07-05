@@ -40,7 +40,7 @@ pub enum Log {
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
 pub enum PreLog {
 	#[codec(index = 3)]
-	Block(ethereum::BlockV2),
+	Block(ethereum::BlockV3),
 }
 
 #[derive(Decode, Encode, Clone, PartialEq, Eq)]
@@ -50,7 +50,7 @@ pub enum PostLog {
 	Hashes(Hashes),
 	/// Ethereum block.
 	#[codec(index = 2)]
-	Block(ethereum::BlockV2),
+	Block(ethereum::BlockV3),
 	/// Ethereum block hash.
 	#[codec(index = 3)]
 	BlockHash(H256),
@@ -65,7 +65,7 @@ pub struct Hashes {
 }
 
 impl Hashes {
-	pub fn from_block(block: ethereum::BlockV2) -> Self {
+	pub fn from_block(block: ethereum::BlockV3) -> Self {
 		Hashes {
 			block_hash: block.header.hash(),
 			transaction_hashes: block

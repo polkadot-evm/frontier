@@ -22,8 +22,9 @@ extern crate alloc;
 
 use alloc::vec::Vec;
 pub use ethereum::{
-	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
-	TransactionAction, TransactionV2 as Transaction,
+	AccessListItem, AuthorizationList, AuthorizationListItem, BlockV3 as Block,
+	LegacyTransactionMessage, Log, ReceiptV4 as Receipt, TransactionAction,
+	TransactionV3 as Transaction,
 };
 use ethereum_types::{H160, H256, U256};
 use fp_evm::{CallOrCreateInfo, CheckEvmTransactionInput};
@@ -49,6 +50,7 @@ pub struct TransactionData {
 	pub value: U256,
 	pub chain_id: Option<u64>,
 	pub access_list: Vec<(H160, Vec<H256>)>,
+	pub authorization_list: AuthorizationList,
 }
 
 impl TransactionData {
@@ -64,6 +66,7 @@ impl TransactionData {
 		value: U256,
 		chain_id: Option<u64>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: AuthorizationList,
 	) -> Self {
 		Self {
 			action,
@@ -76,6 +79,7 @@ impl TransactionData {
 			value,
 			chain_id,
 			access_list,
+			authorization_list,
 		}
 	}
 
@@ -109,6 +113,18 @@ impl From<TransactionData> for CheckEvmTransactionInput {
 			max_priority_fee_per_gas: t.max_priority_fee_per_gas,
 			value: t.value,
 			access_list: t.access_list,
+			authorization_list: t
+				.authorization_list
+				.iter()
+				.map(|d| {
+					(
+						d.chain_id.into(),
+						d.address,
+						d.nonce,
+						d.authorizing_address().ok(),
+					)
+				})
+				.collect(),
 		}
 	}
 }
@@ -127,6 +143,7 @@ impl From<&Transaction> for TransactionData {
 				value: t.value,
 				chain_id: t.signature.chain_id(),
 				access_list: Vec::new(),
+				authorization_list: Vec::new(),
 			},
 			Transaction::EIP2930(t) => TransactionData {
 				action: t.action,
@@ -143,6 +160,7 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
+				authorization_list: Vec::new(),
 			},
 			Transaction::EIP1559(t) => TransactionData {
 				action: t.action,
@@ -159,6 +177,24 @@ impl From<&Transaction> for TransactionData {
 					.iter()
 					.map(|d| (d.address, d.storage_keys.clone()))
 					.collect(),
+				authorization_list: Vec::new(),
+			},
+			Transaction::EIP7702(t) => TransactionData {
+				action: t.destination,
+				input: t.data.clone(),
+				nonce: t.nonce,
+				gas_limit: t.gas_limit,
+				gas_price: None,
+				max_fee_per_gas: Some(t.max_fee_per_gas),
+				max_priority_fee_per_gas: Some(t.max_priority_fee_per_gas),
+				value: t.value,
+				chain_id: Some(t.chain_id),
+				access_list: t
+					.access_list
+					.iter()
+					.map(|d| (d.address, d.storage_keys.clone()))
+					.collect(),
+				authorization_list: t.authorization_list.clone(),
 			},
 		}
 	}
