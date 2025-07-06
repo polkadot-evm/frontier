@@ -5,6 +5,7 @@
     "preview": "vitepress preview"
   },
   "dependencies": {
+    "@mdit/plugin-footnote": "^0.22.2",
     "vitepress": "^1.6.3"
   }
 }

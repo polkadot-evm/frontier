@@ -1,4 +1,5 @@
 import { defineConfig } from 'vitepress'
+import { footnote } from "@mdit/plugin-footnote";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
@@ -23,6 +24,13 @@ export default defineConfig({
           { text: 'Overview', link: '/overview' },
           { text: 'Accounts', link: '/accounts' }
         ]
+      },
+      {
+        text: 'Guides',
+        items: [
+          { text: 'Optimization', link: '/optimization' },
+          { text: 'Development workflow', link: '/development-workflow' },
+        ]
       }
     ],
 
@@ -33,6 +41,13 @@ export default defineConfig({
     footer: {
       message: '<a href="https://bitarray.dev/#legal-notice">Legal notice</a>',
       copyright: 'Copyright © 2018-present, Frontier developers'
+    },
+  },
+
+  markdown: {
+    toc: { level: [1, 2] },
+    config: (md) => {
+      md.use(footnote);
     },
   }
 })
