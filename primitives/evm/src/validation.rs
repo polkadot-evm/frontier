@@ -80,10 +80,23 @@ pub enum TransactionValidationError {
 	/// The transaction signature is invalid
 	InvalidSignature,
 	/// EIP-7702 transaction has empty authorization list
+	/// 
+	/// According to EIP-7702 specification, transactions with empty authorization lists are invalid.
+	/// This validates the fundamental requirement that EIP-7702 transactions must include at least
+	/// one authorization to be valid.
 	EmptyAuthorizationList,
 	/// EIP-7702 authorization has invalid chain ID
+	/// 
+	/// Each authorization in an EIP-7702 transaction must have a chain ID that is either:
+	/// - 0 (indicating universal/cross-chain authorization)
+	/// - Matches the transaction's chain ID
+	/// This prevents authorization replay attacks across different chains.
 	InvalidAuthorizationChainId,
 	/// EIP-7702 authorization list exceeds maximum size
+	/// 
+	/// To prevent DoS attacks, authorization lists are limited to a maximum of 255 items.
+	/// This provides reasonable authorization functionality while preventing excessive
+	/// resource consumption during validation and processing.
 	AuthorizationListTooLarge,
 	/// Unknown error
 	#[num_enum(default)]
@@ -252,6 +265,43 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		Ok(self)
 	}
 
+	/// Validates EIP-7702 authorization list requirements at the Substrate level.
+	///
+	/// This function performs Substrate-specific validation for EIP-7702 authorization lists,
+	/// which complements the EVM-level validation performed by the EVM crate.
+	///
+	/// # EIP-7702 Validation Rules
+	///
+	/// ## Authorization List Requirements (when `is_eip7702` is true):
+	/// 1. **Non-empty**: Authorization list cannot be empty (per EIP-7702 spec)
+	/// 2. **Size limit**: Maximum 255 authorizations (DoS protection)
+	/// 3. **Chain ID validation**: Each authorization's chain ID must be either:
+	///    - `0` (universal/cross-chain authorization)
+	///    - Match the transaction's chain ID
+	///
+	/// ## EVM-level Validation (handled by EVM crate):
+	/// - Authorization signature verification
+	/// - Nonce validation against authority accounts
+	/// - Delegation designator creation and management
+	/// - Gas cost calculation for authorizations
+	///
+	/// # Parameters
+	/// - `is_eip7702`: Whether this is an EIP-7702 transaction requiring authorization validation
+	///
+	/// # Returns
+	/// - `Ok(&Self)`: Validation passed
+	/// - `Err(E)`: Validation failed with specific error type
+	///
+	/// # Errors
+	/// - `EmptyAuthorizationList`: EIP-7702 transaction has empty authorization list
+	/// - `AuthorizationListTooLarge`: Authorization list exceeds maximum size (255 items)
+	/// - `InvalidAuthorizationChainId`: Authorization chain ID invalid (not 0 or transaction chain ID)
+	///
+	/// # Example
+	/// ```ignore
+	/// let validator = CheckEvmTransaction::new(config, transaction, None, None);
+	/// validator.with_eip7702_authorization_list(true)?; // Validate EIP-7702 requirements
+	/// ```
 	pub fn with_eip7702_authorization_list(&self, is_eip7702: bool) -> Result<&Self, E> {
 		if is_eip7702 {
 			// EIP-7702 validation: Check if authorization list is empty
