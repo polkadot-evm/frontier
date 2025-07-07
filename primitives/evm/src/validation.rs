@@ -268,32 +268,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	/// ## Authorization List Requirements (when `is_eip7702` is true):
 	/// 1. **Non-empty**: Authorization list cannot be empty (per EIP-7702 spec)
 	/// 2. **Size limit**: Maximum 255 authorizations (DoS protection)
-	/// 3. **Chain ID validation**: Each authorization's chain ID must be either:
-	///    - `0` (universal/cross-chain authorization)
-	///    - Match the transaction's chain ID
 	///
-	/// ## EVM-level Validation (handled by EVM crate):
+	/// ## EVM-level Validation (handled by `evm`/`ethereum` crates):
 	/// - Authorization signature verification
 	/// - Nonce validation against authority accounts
 	/// - Delegation designator creation and management
 	/// - Gas cost calculation for authorizations
 	///
-	/// # Parameters
-	/// - `is_eip7702`: Whether this is an EIP-7702 transaction requiring authorization validation
-	///
-	/// # Returns
-	/// - `Ok(&Self)`: Validation passed
-	/// - `Err(E)`: Validation failed with specific error type
-	///
-	/// # Errors
-	/// - `EmptyAuthorizationList`: EIP-7702 transaction has empty authorization list
-	/// - `AuthorizationListTooLarge`: Authorization list exceeds maximum size (255 items)
-	///
-	/// # Example
-	/// ```ignore
-	/// let validator = CheckEvmTransaction::new(config, transaction, None, None);
-	/// validator.with_eip7702_authorization_list(true)?; // Validate EIP-7702 requirements
-	/// ```
 	pub fn with_eip7702_authorization_list(&self, is_eip7702: bool) -> Result<&Self, E> {
 		if is_eip7702 {
 			// EIP-7702 validation: Check if authorization list is empty
