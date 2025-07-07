@@ -19,8 +19,11 @@ function createAuthorizationTuple(chainId: number, address: string, nonce: numbe
 	// In a real implementation, this would require proper EIP-7702 signature creation
 	const wallet = new ethers.Wallet(privateKey);
 
-	// Create message to sign (simplified for testing)
-	const message = ethers.solidityPackedKeccak256(["uint256", "address", "uint256"], [chainId, address, nonce]);
+	// Create message to sign according to EIP-7702 specification
+	// Message = keccak(MAGIC || rlp([chain_id, address, nonce])) where MAGIC = 0x05
+	const MAGIC = "0x05";
+	const rlpEncoded = ethers.encodeRlp([ethers.toBeHex(chainId), address, ethers.toBeHex(nonce)]);
+	const message = ethers.keccak256(MAGIC + rlpEncoded.slice(2)); // Remove 0x prefix from RLP
 
 	const signature = wallet.signingKey.sign(message);
 
