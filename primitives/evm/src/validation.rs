@@ -80,20 +80,13 @@ pub enum TransactionValidationError {
 	/// The transaction signature is invalid
 	InvalidSignature,
 	/// EIP-7702 transaction has empty authorization list
-	/// 
+	///
 	/// According to EIP-7702 specification, transactions with empty authorization lists are invalid.
 	/// This validates the fundamental requirement that EIP-7702 transactions must include at least
 	/// one authorization to be valid.
 	EmptyAuthorizationList,
-	/// EIP-7702 authorization has invalid chain ID
-	/// 
-	/// Each authorization in an EIP-7702 transaction must have a chain ID that is either:
-	/// - 0 (indicating universal/cross-chain authorization)
-	/// - Matches the transaction's chain ID
-	/// This prevents authorization replay attacks across different chains.
-	InvalidAuthorizationChainId,
 	/// EIP-7702 authorization list exceeds maximum size
-	/// 
+	///
 	/// To prevent DoS attacks, authorization lists are limited to a maximum of 255 items.
 	/// This provides reasonable authorization functionality while preventing excessive
 	/// resource consumption during validation and processing.
@@ -295,7 +288,6 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	/// # Errors
 	/// - `EmptyAuthorizationList`: EIP-7702 transaction has empty authorization list
 	/// - `AuthorizationListTooLarge`: Authorization list exceeds maximum size (255 items)
-	/// - `InvalidAuthorizationChainId`: Authorization chain ID invalid (not 0 or transaction chain ID)
 	///
 	/// # Example
 	/// ```ignore
@@ -314,14 +306,6 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			const MAX_AUTHORIZATION_LIST_SIZE: usize = 255;
 			if self.transaction.authorization_list.len() > MAX_AUTHORIZATION_LIST_SIZE {
 				return Err(TransactionValidationError::AuthorizationListTooLarge.into());
-			}
-
-			// EIP-7702 validation: Check chain ID for each authorization
-			for (chain_id, _address, _nonce, _recovery_id) in &self.transaction.authorization_list {
-				// Chain ID must be 0 (cross-chain) or match transaction chain ID
-				if *chain_id != U256::zero() && *chain_id != U256::from(self.config.chain_id) {
-					return Err(TransactionValidationError::InvalidAuthorizationChainId.into());
-				}
 			}
 		}
 
@@ -346,7 +330,6 @@ mod tests {
 		InvalidChainId,
 		InvalidSignature,
 		EmptyAuthorizationList,
-		InvalidAuthorizationChainId,
 		AuthorizationListTooLarge,
 		UnknownError,
 	}
@@ -368,9 +351,6 @@ mod tests {
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
 				TransactionValidationError::EmptyAuthorizationList => {
 					TestError::EmptyAuthorizationList
-				}
-				TransactionValidationError::InvalidAuthorizationChainId => {
-					TestError::InvalidAuthorizationChainId
 				}
 				TransactionValidationError::AuthorizationListTooLarge => {
 					TestError::AuthorizationListTooLarge
@@ -1015,45 +995,6 @@ mod tests {
 		let res = validator.with_eip7702_authorization_list(true);
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::AuthorizationListTooLarge);
-	}
-
-	#[test]
-	fn validate_eip7702_invalid_chain_id_fails() {
-		let authorization_list = vec![(
-			U256::from(999u64), // Wrong chain ID
-			H160::default(),
-			U256::zero(),
-			None,
-		)];
-
-		let validator = CheckEvmTransaction::<TestError>::new(
-			CheckEvmTransactionConfig {
-				evm_config: &PECTRA_CONFIG,
-				block_gas_limit: U256::from(1_000_000u64),
-				base_fee: U256::from(1_000_000_000u128),
-				chain_id: 42u64,
-				is_transactional: true,
-			},
-			CheckEvmTransactionInput {
-				chain_id: Some(42u64),
-				to: Some(H160::default()),
-				input: vec![],
-				nonce: U256::zero(),
-				gas_limit: U256::from(21_000u64),
-				gas_price: None,
-				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
-				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
-				value: U256::zero(),
-				access_list: vec![],
-				authorization_list,
-			},
-			None,
-			None,
-		);
-
-		let res = validator.with_eip7702_authorization_list(true);
-		assert!(res.is_err());
-		assert_eq!(res.unwrap_err(), TestError::InvalidAuthorizationChainId);
 	}
 
 	#[test]
