@@ -81,8 +81,6 @@ pub enum TransactionValidationError {
 	InvalidSignature,
 	/// EIP-7702 transaction has empty authorization list
 	EmptyAuthorizationList,
-	/// EIP-7702 authorization has invalid chain ID
-	InvalidAuthorizationChainId,
 	/// EIP-7702 authorization list exceeds maximum size
 	AuthorizationListTooLarge,
 	/// Unknown error

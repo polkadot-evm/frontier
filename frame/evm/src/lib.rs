@@ -633,7 +633,6 @@ pub mod pallet {
 				TransactionValidationError::InvalidChainId => Error::<T>::InvalidChainId,
 				TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
 				TransactionValidationError::EmptyAuthorizationList => Error::<T>::Undefined,
-				TransactionValidationError::InvalidAuthorizationChainId => Error::<T>::InvalidChainId,
 				TransactionValidationError::AuthorizationListTooLarge => Error::<T>::Undefined,
 				TransactionValidationError::UnknownError => Error::<T>::Undefined,
 			}

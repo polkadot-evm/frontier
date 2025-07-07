@@ -1119,6 +1119,11 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 					TransactionValidationError::EmptyAuthorizationList as u8,
 				))
 			}
+			TransactionValidationError::AuthorizationListTooLarge => {
+				InvalidTransactionWrapper(InvalidTransaction::Custom(
+					TransactionValidationError::AuthorizationListTooLarge as u8,
+				))
+			}
 			TransactionValidationError::UnknownError => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::UnknownError as u8),
 			),
