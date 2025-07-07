@@ -286,6 +286,7 @@ mod tests {
 		InvalidChainId,
 		InvalidSignature,
 		EmptyAuthorizationList,
+		AuthorizationListTooLarge,
 		UnknownError,
 	}
 
@@ -306,6 +307,9 @@ mod tests {
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
 				TransactionValidationError::EmptyAuthorizationList => {
 					TestError::EmptyAuthorizationList
+				}
+				TransactionValidationError::AuthorizationListTooLarge => {
+					TestError::AuthorizationListTooLarge
 				}
 				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
