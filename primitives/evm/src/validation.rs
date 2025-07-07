@@ -81,6 +81,10 @@ pub enum TransactionValidationError {
 	InvalidSignature,
 	/// EIP-7702 transaction has empty authorization list
 	EmptyAuthorizationList,
+	/// EIP-7702 authorization has invalid chain ID
+	InvalidAuthorizationChainId,
+	/// EIP-7702 authorization list exceeds maximum size
+	AuthorizationListTooLarge,
 	/// Unknown error
 	#[num_enum(default)]
 	UnknownError,
@@ -249,10 +253,18 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	}
 
 	pub fn with_eip7702_authorization_list(&self, is_eip7702: bool) -> Result<&Self, E> {
-		// EIP-7702 validation: Check if authorization list is empty for EIP-7702 transactions
-		// According to EIP-7702 specification: "The transaction is also considered invalid when the length of authorization_list is zero."
-		if is_eip7702 && self.transaction.authorization_list.is_empty() {
-			return Err(TransactionValidationError::EmptyAuthorizationList.into());
+		if is_eip7702 {
+			// EIP-7702 validation: Check if authorization list is empty
+			// According to EIP-7702 specification: "The transaction is also considered invalid when the length of authorization_list is zero."
+			if self.transaction.authorization_list.is_empty() {
+				return Err(TransactionValidationError::EmptyAuthorizationList.into());
+			}
+
+			// EIP-7702 validation: Check authorization list size (DoS protection)
+			const MAX_AUTHORIZATION_LIST_SIZE: usize = 255;
+			if self.transaction.authorization_list.len() > MAX_AUTHORIZATION_LIST_SIZE {
+				return Err(TransactionValidationError::AuthorizationListTooLarge.into());
+			}
 		}
 
 		Ok(self)
