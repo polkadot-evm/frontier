@@ -1209,7 +1209,70 @@ where
 							.map_err(|_| ExitError::OutOfGas)?;
 					}
 				}
-				ExternalOperation::DelegationResolution(_) => todo!(),
+				ExternalOperation::DelegationResolution(address) => {
+					// EIP-7702: Record proof size for delegation resolution
+					// This involves reading the delegation designator and potentially the target code
+
+					// First, record the account code read for the delegating address
+					if !recorded.account_codes.contains(&address) {
+						weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
+						weight_info
+							.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+
+						if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
+							weight_info.try_record_proof_size_or_fail(meta.size)?;
+						} else if let Some(remaining_proof_size) =
+							weight_info.remaining_proof_size()
+						{
+							let pre_size = remaining_proof_size.min(size_limit);
+							weight_info.try_record_proof_size_or_fail(pre_size)?;
+
+							let actual_size = Pallet::<T>::account_code_metadata(address).size;
+							if actual_size > pre_size {
+								fp_evm::set_storage_oog();
+								return Err(ExitError::OutOfGas);
+							}
+							weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
+						}
+						recorded.account_codes.push(address);
+					}
+
+					// If this is a delegation designator, we may also need to read the target code
+					let delegation_code = <AccountCodes<T>>::get(address);
+					if delegation_code.len() >= 23
+						&& delegation_code[0] == 0xef
+						&& delegation_code[1] == 0x01
+						&& delegation_code[2] == 0x00
+					{
+						// Extract target address from delegation designator
+						let target_address = H160::from_slice(&delegation_code[3..23]);
+
+						// Record proof size for target code read if not already recorded
+						if !recorded.account_codes.contains(&target_address) {
+							weight_info.try_record_proof_size_or_fail(IS_EMPTY_CHECK_PROOF_SIZE)?;
+							weight_info
+								.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
+
+							if let Some(meta) = <AccountCodesMetadata<T>>::get(target_address) {
+								weight_info.try_record_proof_size_or_fail(meta.size)?;
+							} else if let Some(remaining_proof_size) =
+								weight_info.remaining_proof_size()
+							{
+								let pre_size = remaining_proof_size.min(size_limit);
+								weight_info.try_record_proof_size_or_fail(pre_size)?;
+
+								let actual_size =
+									Pallet::<T>::account_code_metadata(target_address).size;
+								if actual_size > pre_size {
+									fp_evm::set_storage_oog();
+									return Err(ExitError::OutOfGas);
+								}
+								weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
+							}
+							recorded.account_codes.push(target_address);
+						}
+					}
+				}
 			};
 		}
 		Ok(())
