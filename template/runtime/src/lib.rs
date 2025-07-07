@@ -837,7 +837,6 @@ impl_runtime_apis! {
 				estimated_transaction_len += access_list.encoded_size();
 			}
 			if authorization_list.is_some() {
-				// TODO this is most likely wrong
 				estimated_transaction_len += authorization_list.encoded_size();
 			}
 
@@ -922,7 +921,6 @@ impl_runtime_apis! {
 				estimated_transaction_len += access_list.encoded_size();
 			}
 			if authorization_list.is_some()	{
-				// TODO this is most likely wrong
 				estimated_transaction_len += authorization_list.encoded_size()
 			}
 
