@@ -920,8 +920,8 @@ impl_runtime_apis! {
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
-			if authorization_list.is_some()	{
-				estimated_transaction_len += authorization_list.encoded_size()
+			if authorization_list.is_some() {
+				estimated_transaction_len += authorization_list.encoded_size();
 			}
 
 
