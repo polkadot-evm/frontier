@@ -46,9 +46,13 @@ We therefore recommend that optimization is focused on **storage IO**, rather th
 
 It's also important to check whether one's blockchain is really already performance-bottlenecked, or it is simply certain parameters set incorrectly. For example, in certain situations, simply raise the block gas limit may be sufficient to increase the throughput.
 
-## Not make things worse
+## Notes on PolkaVM
 
-In Polkadot parachains, the performance is bottlenecked by Proof-of-Validity (PoV) size limit. If the smart contract size becomes larger due to VM execution optimization, then this will actually result in worse performance, because now, within the PoV size limit, less contracts can fit. As PolkaVM contracts are usually 10x (sometimes even 80x or more) larger than the equivalent EVM contracts, we recommend that PolkaVM contracts are used only for specifically compute-heavy workload and all other contracts to be deployed in EVM bytecode. 
+The Frontier project provides optional support of PolkaVM through the `pallet-evm-polkavm` pallet.
+
+However, in Polkadot parachains, the performance is [bottlenecked by Proof-of-Validity (PoV) size limit](https://github.com/paritytech/substrate/issues/9354). If the smart contract size becomes larger due to VM execution optimization, then this will result in worse throughput regardless of VM performance -- within the PoV size limit, less contracts can fit.
+
+At this moment, PolkaVM contracts are usually 10x (sometimes even 80x or more) larger than the equivalent EVM contracts, which means a chain deployed with PolkaVM contracts will have (counterintuitively) less throughput than equivalent EVM contracts. We therefore recommend that PolkaVM contracts are used only for specifically compute-heavy workload and all other contracts to be deployed in EVM bytecode.
 
 [^knuth]: Donald Knuth, *The Art of Computer Programming*
 [^zhang]: Hongbo Zhang (Cornell), [*What makes EVM slow?*](https://www.youtube.com/watch?v=2_GX8iCVNrA)
