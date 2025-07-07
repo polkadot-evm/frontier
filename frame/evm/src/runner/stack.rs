@@ -24,7 +24,7 @@ use alloc::{
 };
 use core::{marker::PhantomData, mem};
 use evm::{
-	backend::Backend as BackendT,
+	backend::{Backend as BackendT},
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
 	gasometer::{GasCost, StorageTarget},
 	ExitError, ExitReason, ExternalOperation, Opcode, Transfer,
@@ -53,7 +53,7 @@ use super::meter::StorageMeter;
 use crate::{
 	runner::Runner as RunnerT, AccountCodes, AccountCodesMetadata, AccountProvider,
 	AccountStorages, AddressMapping, BalanceOf, BlockHashMapping, Config, EnsureCreateOrigin,
-	Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
+	Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate, OnShield, Pallet, RunnerError,
 };
 
 #[cfg(feature = "forbid-evm-reentrancy")]
@@ -552,7 +552,30 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
-			|executor| executor.transact_call(source, target, value, input, gas_limit, access_list),
+			|executor| {
+				// Check if this is a shielding transaction
+				if target == config.shielding_pool_address {
+					// Validate shielding transaction parameters
+					if input.len() != 32 {
+						return (ExitReason::Error(ExitError::InvalidShieldingNote), Vec::new());
+					}
+					if value != config.shielding_unit_amount {
+						return (ExitReason::Error(ExitError::InvalidShieldingNote), Vec::new());
+					}
+					
+					// Extract the note from the input
+					let note = H256::from_slice(&input);
+					
+					// Call the shield function on the state instead of regular transfer
+					match executor.state_mut().shield(source, value, note) {
+						Ok(()) => (ExitReason::Succeed(evm::ExitSucceed::Stopped), Vec::new()),
+						Err(e) => (ExitReason::Error(e), Vec::new()),
+					}
+				} else {
+					// Regular call
+					executor.transact_call(source, target, value, input, gas_limit, access_list)
+				}
+			},
 		)
 	}
 
@@ -1097,7 +1120,7 @@ where
 		// subtle issues in EIP-161.
 	}
 
-	fn shield(&mut self, _source: H160, _value: U256, _note: H256) -> Result<(), ExitError> {
+	fn shield(&mut self, _source: H160, _value: U256, note: H256) -> Result<(), ExitError> {
 		// Transfer value to shielded pool
 		let source = T::AddressMapping::into_account_id(_source);
 		T::Currency::transfer(
@@ -1106,6 +1129,10 @@ where
 			_value.try_into().map_err(|_| ExitError::OutOfFund)?,
 			ExistenceRequirement::AllowDeath,
 		).map_err(|_| ExitError::OutOfFund)?;
+
+		// Call the OnShield hook to integrate with the shielding pallet
+		T::OnShield::on_shield(_source, _value, note)
+			.map_err(|_| ExitError::Other("Shielding pallet integration failed".into()))?;
 
 		Ok(())
 	}

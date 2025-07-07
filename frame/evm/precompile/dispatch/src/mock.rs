@@ -156,6 +156,7 @@ impl pallet_evm::Config for Test {
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
 	type OnCreate = ();
+	type OnShield = ();
 	type FindAuthor = FindAuthorTruncated;
 	type GasLimitPovSizeRatio = ();
 	type GasLimitStorageGrowthRatio = ();

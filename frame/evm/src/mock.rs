@@ -81,6 +81,7 @@ impl crate::Config for Test {
 	type PrecompilesValue = MockPrecompiles;
 	type Runner = crate::runner::stack::Runner<Self>;
 	type Timestamp = Timestamp;
+	type OnShield = ();
 }
 
 pub struct FixedGasPrice;

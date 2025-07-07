@@ -96,7 +96,7 @@ use frame_system::RawOrigin;
 use sp_core::{H160, H256, U256};
 use sp_runtime::{
 	traits::{BadOrigin, NumberFor, Saturating, UniqueSaturatedInto, Zero},
-	AccountId32, DispatchErrorWithPostInfo,
+	AccountId32, DispatchError, DispatchErrorWithPostInfo,
 };
 // Frontier
 use fp_account::AccountId20;
@@ -210,6 +210,11 @@ pub mod pallet {
 		/// Weight information for extrinsics in this pallet.
 		type WeightInfo: WeightInfo;
 
+		/// Hook to handle shielding operations.
+		/// This allows the runtime to integrate with the shielding pallet.
+		#[pallet::no_default_bounds]
+		type OnShield: OnShield<Self>;
+
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
 			&CANCUN_CONFIG
@@ -259,6 +264,7 @@ pub mod pallet {
 			type BlockGasLimit = BlockGasLimit;
 			type OnChargeTransaction = ();
 			type OnCreate = ();
+			type OnShield = ();
 			type FindAuthor = FindAuthorTruncated;
 			type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 			type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
@@ -1297,7 +1303,6 @@ impl<T> OnCreate<T> for Tuple {
 ///
 /// Uses standard Substrate accounts system to hold EVM accounts.
 pub struct FrameSystemAccountProvider<T>(core::marker::PhantomData<T>);
-
 impl<T: frame_system::Config> AccountProvider for FrameSystemAccountProvider<T> {
 	type AccountId = T::AccountId;
 	type Nonce = T::Nonce;
@@ -1317,4 +1322,16 @@ impl<T: frame_system::Config> AccountProvider for FrameSystemAccountProvider<T> 
 	fn remove_account(who: &Self::AccountId) {
 		let _ = frame_system::Pallet::<T>::dec_sufficients(who);
 	}
+}
+
+pub trait OnShield<T: Config> {
+    /// Called when a note is shielded.
+    /// This allows the runtime to add the note to the shielding pallet's Merkle tree.
+    fn on_shield(source: H160, value: U256, note: H256) -> Result<(), DispatchError>;
+}
+
+impl<T: Config> OnShield<T> for () {
+    fn on_shield(_source: H160, _value: U256, _note: H256) -> Result<(), DispatchError> {
+        Ok(())
+    }
 }

@@ -41,6 +41,7 @@ frame_support::construct_runtime! {
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage},
 		EVM: pallet_evm::{Pallet, Call, Storage, Config<T>, Event<T>},
 		Ethereum: crate::{Pallet, Call, Storage, Event, Origin},
+		Shielding: shielding::{Pallet, Call, Storage, Event<T>},
 	}
 }
 
@@ -74,6 +75,15 @@ impl pallet_balances::Config for Test {
 #[derive_impl(pallet_timestamp::config_preludes::TestDefaultConfig)]
 impl pallet_timestamp::Config for Test {}
 
+parameter_types! {
+	pub const MaxTreeDepth: u32 = 16;
+}
+
+impl shielding::Config for Test {
+	type RuntimeEvent = RuntimeEvent;
+	type MaxTreeDepth = MaxTreeDepth;
+}
+
 pub struct FindAuthorTruncated;
 impl FindAuthor<H160> for FindAuthorTruncated {
 	fn find_author<'a, I>(_digests: I) -> Option<H160>
@@ -98,13 +108,14 @@ impl pallet_evm::Config for Test {
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
 	type CreateOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
 	type CreateInnerOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
-	type Currency = Balances;
+	type Currency = pallet_balances::Pallet<Self>;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type FindAuthor = FindAuthorTruncated;
 	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
 	type Timestamp = Timestamp;
+	type OnShield = ShieldingOnShield;
 }
 
 #[derive_impl(crate::config_preludes::TestDefaultConfig)]
@@ -225,9 +236,13 @@ pub fn new_test_ext_with_initial_balance(
 		.map(|i| address_build(i as u8))
 		.collect::<Vec<_>>();
 
-	let balances: Vec<_> = (0..accounts_len)
+	let mut balances: Vec<_> = (0..accounts_len)
 		.map(|i| (pairs[i].account_id.clone(), initial_balance))
 		.collect();
+
+	// Also initialize the zero address (shielding pool) with some balance
+	let shielding_pool_account_id = <Test as pallet_evm::Config>::AddressMapping::into_account_id(H160::zero());
+	balances.push((shielding_pool_account_id, 1_000_000)); // Give some initial balance to the shielding pool
 
 	pallet_balances::GenesisConfig::<Test> {
 		balances,
@@ -412,5 +427,14 @@ impl EIP1559UnsignedTransaction {
 			r,
 			s,
 		})
+	}
+}
+
+pub struct ShieldingOnShield;
+impl pallet_evm::OnShield<Test> for ShieldingOnShield {
+	fn on_shield(_source: sp_core::H160, _value: sp_core::U256, note: sp_core::H256) -> Result<(), sp_runtime::DispatchError> {
+		println!("🔒 OnShield called with note: {:?}", note);
+		// Extract the note from the transaction input and add it to the shielding pallet
+		::shielding::Pallet::<Test>::add_note_internal(note)
 	}
 }

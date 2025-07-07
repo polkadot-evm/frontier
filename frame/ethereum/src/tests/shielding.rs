@@ -15,18 +15,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//! Consensus extension module tests for BABE consensus.
+//! Shielding integration tests
 
 use super::*;
-use fp_ethereum::{ValidatedTransaction};
+use fp_ethereum::ValidatedTransaction;
 use pallet_evm::AddressMapping;
-
-
-
+use crate::mock;
 
 #[test]
 fn shielding_with_designated_address_works() {
-	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 2_000_000);
+	let initial_balance = 20_000_000;
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, initial_balance);
 	let alice = &pairs[0];
 	let _bob = &pairs[1];
 	let substrate_alice =
@@ -36,13 +35,16 @@ fn shielding_with_designated_address_works() {
 
 	ext.execute_with(|| {
 		let config = evm::Config::frontier();
-		let transaction = LegacyUnsignedTransaction {
+		let note = H256::from_slice(&[1u8; 32]);
+		
+		// Then simulate the EVM transaction that would transfer funds
+		let transaction = mock::LegacyUnsignedTransaction {
 			nonce: U256::zero(),
 			gas_price: U256::zero(),
-			gas_limit: U256::from(210_000),
+			gas_limit: U256::from(900_000),
 			action: ethereum::TransactionAction::Call(config.shielding_pool_address),
 			value: config.shielding_unit_amount,
-			input: vec![1u8; 32],
+			input: note.as_bytes().to_vec(),
 		}
 		.sign(&alice.private_key);
 
@@ -50,10 +52,9 @@ fn shielding_with_designated_address_works() {
 			alice.address,
 			transaction
 		));
-		// Alice didn't pay fees, transfer 100 to Bob.
-		assert_eq!(Balances::free_balance(&substrate_alice), 2_000_000 - config.shielding_unit_amount.as_u64());
 
-
-
+		assert_eq!(pallet_balances::Pallet::<Test>::free_balance(&substrate_alice), initial_balance - config.shielding_unit_amount.as_u64());
+		
+		assert_eq!(::shielding::Pallet::<Test>::notes(0), Some(note));
 	});
 }

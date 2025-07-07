@@ -374,6 +374,7 @@ impl pallet_evm::Config for Runtime {
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
 	type OnCreate = ();
+	type OnShield = ShieldingHook;
 	type FindAuthor = FindAuthorTruncated<Aura>;
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
@@ -454,6 +455,24 @@ pub mod pallet_manual_seal {
 
 impl pallet_manual_seal::Config for Runtime {}
 
+/// Hook to integrate EVM shielding with the shielding pallet
+pub struct ShieldingHook;
+
+impl pallet_evm::OnShield<Runtime> for ShieldingHook {
+	fn on_shield(_source: H160, _value: U256, note: H256) -> Result<(), sp_runtime::DispatchError> {
+		// Add the note to the shielding pallet's Merkle tree
+		shielding::Pallet::<Runtime>::add_note(
+			frame_system::RawOrigin::None.into(),
+			note,
+		)
+	}
+}
+
+impl shielding::Config for Runtime {
+	type MaxTreeDepth = ConstU32<20>; // 2^20 = 1,048,576 notes
+	type RuntimeEvent = RuntimeEvent;
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
 #[frame_support::runtime]
 mod runtime {
@@ -506,6 +525,9 @@ mod runtime {
 
 	#[runtime::pallet_index(11)]
 	pub type ManualSeal = pallet_manual_seal;
+
+	#[runtime::pallet_index(12)]
+	pub type Shielding = shielding;
 }
 
 #[derive(Clone)]
