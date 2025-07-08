@@ -301,7 +301,10 @@ where
 						error_on_execution_failure(&info.exit_reason, &info.value)?;
 						info.value
 					} else {
-						unreachable!("invalid version");
+						return Err(internal_err(format!(
+							"Unsupported EthereumRuntimeRPCApi version: {}",
+							api_version
+						)));
 					};
 
 					Ok(Bytes(value))
@@ -894,7 +897,7 @@ where
 
 							(info.exit_reason, info.value, info.used_gas.effective)
 						} else {
-							unreachable!("invalid version");
+							return Err(internal_err(format!("Unsupported EthereumRuntimeRPCApi version: {}", api_version)));
 						}
 					}
 					None => {
@@ -1081,7 +1084,7 @@ where
 
 							(info.exit_reason, Vec::new(), info.used_gas.effective)
 						} else {
-							unreachable!("invalid version");
+							return Err(internal_err(format!("Unsupported EthereumRuntimeRPCApi version: {}", api_version)));
 						}
 					}
 				};
