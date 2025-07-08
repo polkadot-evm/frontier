@@ -90,6 +90,13 @@ pub enum TransactionValidationError {
 	/// To prevent DoS attacks, authorization lists are limited to a maximum of 255 items.
 	/// This provides reasonable authorization functionality while preventing excessive
 	/// resource consumption during validation and processing.
+	///
+	/// Rationale
+	/// - **Geth**: No explicit limit, relies on 32KB transaction size limit (~160 authorizations practical maximum)
+	/// - **EIP-7702 Spec**: No defined limit, left to implementations
+	///
+	/// This explicit limit is more predictable than implicit limits based on transaction size,
+	/// providing developers with clear boundaries and better DoS protection.
 	AuthorizationListTooLarge,
 	/// Unknown error
 	#[num_enum(default)]
