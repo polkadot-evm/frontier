@@ -248,28 +248,31 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 		let action = req.to_action();
 		let chain_id = req.chain_id_u64();
 		let data_bytes = req.data_to_bytes();
-		
+
 		// Determine transaction type based on presence of fields
 		let has_authorization_list = req.authorization_list.is_some();
 		let has_access_list = req.access_list.is_some();
 		let access_list = req.access_list.unwrap_or_default();
-		
-		match (req.max_fee_per_gas, has_access_list, req.gas_price, has_authorization_list) {
+
+		match (
+			req.max_fee_per_gas,
+			has_access_list,
+			req.gas_price,
+			has_authorization_list,
+		) {
 			// EIP7702: Has authorization_list (takes priority)
-			(_, _, _, true) => {
-				Some(TransactionMessage::EIP7702(EIP7702TransactionMessage {
-					destination: action,
-					nonce,
-					max_priority_fee_per_gas: req.max_priority_fee_per_gas.unwrap_or_default(),
-					max_fee_per_gas: req.max_fee_per_gas.unwrap_or_default(),
-					gas_limit,
-					value,
-					data: data_bytes,
-					access_list,
-					authorization_list: req.authorization_list.unwrap(),
-					chain_id,
-				}))
-			}
+			(_, _, _, true) => Some(TransactionMessage::EIP7702(EIP7702TransactionMessage {
+				destination: action,
+				nonce,
+				max_priority_fee_per_gas: req.max_priority_fee_per_gas.unwrap_or_default(),
+				max_fee_per_gas: req.max_fee_per_gas.unwrap_or_default(),
+				gas_limit,
+				value,
+				data: data_bytes,
+				access_list,
+				authorization_list: req.authorization_list.unwrap(),
+				chain_id,
+			})),
 			// EIP1559: Has max_fee_per_gas but no gas_price, or all fee fields are None
 			(Some(_), _, None, false) | (None, false, None, false) => {
 				Some(TransactionMessage::EIP1559(EIP1559TransactionMessage {
@@ -285,16 +288,18 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 				}))
 			}
 			// EIP2930: Has access_list but no max_fee_per_gas
-			(None, true, _, false) => Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
-				action,
-				nonce,
-				gas_price: req.gas_price.unwrap_or_default(),
-				gas_limit,
-				value,
-				input: data_bytes,
-				access_list,
-				chain_id,
-			})),
+			(None, true, _, false) => {
+				Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
+					action,
+					nonce,
+					gas_price: req.gas_price.unwrap_or_default(),
+					gas_limit,
+					value,
+					input: data_bytes,
+					access_list,
+					chain_id,
+				}))
+			}
 			// Legacy: Has gas_price but no access_list or max_fee_per_gas
 			(None, false, Some(gas_price), false) => {
 				Some(TransactionMessage::Legacy(LegacyTransactionMessage {
