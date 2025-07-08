@@ -14,27 +14,69 @@ const DELEGATE_TEST_CONTRACT_BYTECODE =
 const EIP7702_DELEGATION_PREFIX = "0xef0100";
 
 // Helper function to create EIP-7702 authorization tuple
-function createAuthorizationTuple(chainId: number, address: string, nonce: number, privateKey: string): any {
-	// For testing purposes, we'll create a simplified authorization
-	// In a real implementation, this would require proper EIP-7702 signature creation
-	const wallet = new ethers.Wallet(privateKey);
+function createAuthorizationObject(chainId: number, address: string, nonce: number, privateKey: string): any {
+	// Validate inputs
+	if (typeof chainId !== "number" || chainId < 0) {
+		throw new Error(`Invalid chainId: ${chainId}`);
+	}
+	if (!address || typeof address !== "string" || !address.match(/^0x[a-fA-F0-9]{40}$/)) {
+		throw new Error(`Invalid address: ${address}`);
+	}
+	if (typeof nonce !== "number" || nonce < 0) {
+		throw new Error(`Invalid nonce: ${nonce}`);
+	}
+	if (!privateKey || typeof privateKey !== "string") {
+		throw new Error(`Invalid privateKey: ${privateKey}`);
+	}
 
-	// Create message to sign according to EIP-7702 specification
-	// Message = keccak(MAGIC || rlp([chain_id, address, nonce])) where MAGIC = 0x05
-	const MAGIC = "0x05";
-	const rlpEncoded = ethers.encodeRlp([ethers.toBeHex(chainId), address, ethers.toBeHex(nonce)]);
-	const message = ethers.keccak256(MAGIC + rlpEncoded.slice(2)); // Remove 0x prefix from RLP
+	try {
+		const wallet = new ethers.Wallet(privateKey);
 
-	const signature = wallet.signingKey.sign(message);
+		// Create message to sign according to EIP-7702 specification
+		// authority = ecrecover(keccak(0x05 || rlp([chain_id, address, nonce])), y_parity, r, s)
+		const MAGIC = "0x05";
 
-	return {
-		chainId: chainId,
-		address: address,
-		nonce: nonce,
-		yParity: signature.v - 27,
-		r: signature.r,
-		s: signature.s,
-	};
+		// Convert values to proper format for RLP encoding
+		// ethers.encodeRlp expects hex strings for numbers
+		const chainIdHex = ethers.toBeHex(chainId);
+		const nonceHex = ethers.toBeHex(nonce);
+
+		// RLP encode the authorization tuple [chain_id, address, nonce]
+		const rlpEncoded = ethers.encodeRlp([chainIdHex, address, nonceHex]);
+
+		// Create the message hash: keccak(0x05 || rlp([chain_id, address, nonce]))
+		const messageBytes = ethers.concat([MAGIC, rlpEncoded]);
+		const messageHash = ethers.keccak256(messageBytes);
+
+		// Sign the message hash
+		const signature = wallet.signingKey.sign(messageHash);
+
+		// Create authorization object with proper format
+		const authorization = {
+			chainId: chainId,
+			address: address,
+			nonce: nonce,
+			yParity: signature.v - 27, // Convert v to yParity (0 or 1)
+			r: signature.r,
+			s: signature.s,
+		};
+
+		// Verify the signature can be recovered correctly
+		const recoveredAddress = ethers.recoverAddress(messageHash, {
+			v: signature.v,
+			r: signature.r,
+			s: signature.s,
+		});
+
+		// Ensure signature verification is successful
+		if (recoveredAddress.toLowerCase() !== wallet.address.toLowerCase()) {
+			throw new Error(`Signature verification failed: expected ${wallet.address}, got ${recoveredAddress}`);
+		}
+
+		return authorization;
+	} catch (error) {
+		throw new Error(`Failed to create authorization object: ${error.message}`);
+	}
 }
 
 // Helper function to check if code is a delegation indicator
@@ -63,9 +105,18 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 
 		await createAndFinalizeBlock(context.web3);
 		const receipt = await context.ethersjs.getTransactionReceipt(tx.hash);
+
+		// Add detailed validation
 		contractAddress = receipt.contractAddress;
 
+		if (!contractAddress) {
+			throw new Error("Contract deployment failed: contractAddress is null or undefined");
+		}
+
 		expect(contractAddress).to.not.be.null;
+		expect(contractAddress).to.not.be.undefined;
+		expect(contractAddress).to.be.a("string");
+		expect(contractAddress).to.match(/^0x[a-fA-F0-9]{40}$/);
 
 		// Verify contract is deployed
 		const code = await context.web3.eth.getCode(contractAddress);
@@ -75,380 +126,312 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	step("should handle EIP-7702 transaction type 4 structure", async function () {
 		this.timeout(15000);
 
-		// Create a simple authorization for testing
-		const authorization = createAuthorizationTuple(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+		// NOTE: This test validates the complete EIP-7702 functionality including:
+		// - Authorization creation with proper EIP-7702 signature format
+		// - Transaction type 4 creation and sending
+		// - Transaction execution and receipt validation
 
-		try {
-			// Attempt to create an EIP-7702 transaction
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001", // Some destination
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4, // EIP-7702 transaction type
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [authorization],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
-
-			// This test verifies that EIP-7702 transaction structure is recognized
-			// The actual behavior depends on frontier's EIP-7702 implementation state
-			const signedTx = await signer.sendTransaction(tx);
-			expect(signedTx.hash).to.be.a("string");
-
-			await createAndFinalizeBlock(context.web3);
-
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
-			expect(receipt).to.not.be.null;
-		} catch (error) {
-			// If EIP-7702 is not fully implemented, we expect specific error messages
-			const errorMessage = error.message.toLowerCase();
-
-			// Document expected behavior for different implementation states
-			if (
-				errorMessage.includes("unsupported") ||
-				errorMessage.includes("invalid transaction type") ||
-				errorMessage.includes("unknown transaction type")
-			) {
-				console.log("EIP-7702 not yet fully supported - this is expected");
-				expect(true).to.be.true; // Test passes - documents current state
-			} else {
-				// Re-throw unexpected errors
-				throw error;
-			}
+		// Validate prerequisites
+		if (!contractAddress) {
+			throw new Error("Contract address is required but not set from previous step");
 		}
+
+		// Create a simple authorization for testing
+		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+
+		// Get current nonce
+		const currentNonce = await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT);
+
+		// Attempt to create an EIP-7702 transaction
+		const tx = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001", // Some destination
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4, // EIP-7702 transaction type
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [authorization],
+			nonce: currentNonce,
+		};
+
+		// This test verifies that EIP-7702 transaction structure is recognized and working
+		const signedTx = await signer.sendTransaction(tx);
+		expect(signedTx.hash).to.be.a("string");
+
+		await createAndFinalizeBlock(context.web3);
+
+		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
+		expect(receipt).to.not.be.null;
+
+		// Verify transaction was executed successfully
+		expect(receipt.status).to.equal(1);
 	});
 
-	step("should validate authorization list requirements", async function () {
+	step("should reject empty authorization list", async function () {
 		this.timeout(15000);
 
-		try {
-			// Test with empty authorization list
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [], // Empty authorization list
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		// Test with empty authorization list - should be rejected by Frontier
+		const tx = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [], // Empty authorization list
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(tx);
+		const signedTx = await signer.sendTransaction(tx);
+		await createAndFinalizeBlock(context.web3);
 
-			// According to EIP-7702, empty authorization list should be invalid
-			// The exact validation behavior depends on implementation
-			await createAndFinalizeBlock(context.web3);
+		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
 
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
-
-			// If the transaction was included, check if it failed
-			if (receipt.status === "0x0") {
-				expect(true).to.be.true; // Transaction failed as expected
-			} else {
-				console.log("Empty authorization list was accepted - implementation specific");
-			}
-		} catch (error) {
-			// Expected error for empty authorization list
-			const errorMessage = error.message.toLowerCase();
-			if (
-				errorMessage.includes("authorization") ||
-				errorMessage.includes("invalid") ||
-				errorMessage.includes("empty")
-			) {
-				expect(true).to.be.true; // Expected validation error
-			} else {
-				console.log("EIP-7702 validation error:", error.message);
-			}
-		}
+		// Frontier implementation should reject empty authorization lists
+		// Transaction should fail with status 0
+		expect(receipt.status).to.equal(0);
 	});
 
 	step("should handle authorization with different chain IDs", async function () {
 		this.timeout(15000);
 
-		// Test authorization with wrong chain ID
-		const wrongChainAuth = createAuthorizationTuple(
+		// Test authorization with wrong chain ID - should be skipped by Frontier
+		const wrongChainAuth = createAuthorizationObject(
 			999, // Wrong chain ID
 			contractAddress,
 			0,
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		try {
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [wrongChainAuth],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		const tx1 = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [wrongChainAuth],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(tx);
-			await createAndFinalizeBlock(context.web3);
+		const signedTx1 = await signer.sendTransaction(tx1);
+		await createAndFinalizeBlock(context.web3);
 
-			// According to EIP-7702, wrong chain ID should cause authorization to be skipped
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
-			expect(receipt).to.not.be.null;
-		} catch (error) {
-			console.log("Chain ID validation:", error.message);
-		}
+		// Transaction should succeed but authorization should be skipped
+		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
+		expect(receipt1.status).to.equal(1);
 
-		// Test authorization with chain ID = 0 (should be universally valid)
-		const universalAuth = createAuthorizationTuple(
+		// Test authorization with chain ID = 0 (universally valid)
+		const universalAuth = createAuthorizationObject(
 			0, // Universal chain ID
 			contractAddress,
 			0,
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		try {
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [universalAuth],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		const tx2 = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [universalAuth],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(tx);
-			await createAndFinalizeBlock(context.web3);
+		const signedTx2 = await signer.sendTransaction(tx2);
+		await createAndFinalizeBlock(context.web3);
 
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
-			expect(receipt).to.not.be.null;
-		} catch (error) {
-			console.log("Universal chain ID test:", error.message);
-		}
+		// Transaction with universal chain ID should succeed
+		const receipt2 = await context.ethersjs.getTransactionReceipt(signedTx2.hash);
+		expect(receipt2.status).to.equal(1);
 	});
 
 	step("should handle multiple authorizations", async function () {
 		this.timeout(15000);
 
 		// Create multiple authorizations for the same authority
-		const auth1 = createAuthorizationTuple(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+		const auth1 = createAuthorizationObject(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
 
-		const auth2 = createAuthorizationTuple(
+		const auth2 = createAuthorizationObject(
 			CHAIN_ID,
 			"0x2000000000000000000000000000000000000002",
 			0,
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		try {
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x200000", // Higher gas for multiple authorizations
-				chainId: CHAIN_ID,
-				authorizationList: [auth1, auth2],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		const tx = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x200000", // Higher gas for multiple authorizations
+			chainId: CHAIN_ID,
+			authorizationList: [auth1, auth2],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(tx);
-			await createAndFinalizeBlock(context.web3);
+		const signedTx = await signer.sendTransaction(tx);
+		await createAndFinalizeBlock(context.web3);
 
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
-			expect(receipt).to.not.be.null;
+		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
+		expect(receipt.status).to.equal(1);
 
-			// According to EIP-7702, the last valid authorization should win
-			console.log("Multiple authorizations processed");
-		} catch (error) {
-			console.log("Multiple authorizations test:", error.message);
-		}
+		// In Frontier's EIP-7702 implementation, the last valid authorization should take effect
+		expect(receipt).to.not.be.null;
 	});
 
 	step("should verify gas cost calculation includes authorization costs", async function () {
 		this.timeout(15000);
 
-		const authorization = createAuthorizationTuple(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
 
-		try {
-			// First get gas estimate for regular transaction
-			const regularTx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x100", // Some value
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 2, // EIP-1559 transaction
-				gasLimit: "0x5208", // 21000 gas
-				chainId: CHAIN_ID,
-			};
+		// Get gas estimate for regular transaction
+		const regularTx = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x100", // Some value
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 2, // EIP-1559 transaction
+			gasLimit: "0x5208", // 21000 gas
+			chainId: CHAIN_ID,
+		};
 
-			const regularGasEstimate = await context.ethersjs.estimateGas(regularTx);
+		const regularGasEstimate = await context.ethersjs.estimateGas(regularTx);
 
-			// Now estimate gas for EIP-7702 transaction
-			const eip7702Tx = {
-				...regularTx,
-				type: 4,
-				authorizationList: [authorization],
-				gasLimit: "0x100000",
-			};
+		// Get gas estimate for EIP-7702 transaction
+		const eip7702Tx = {
+			...regularTx,
+			type: 4,
+			authorizationList: [authorization],
+			gasLimit: "0x100000",
+		};
 
-			try {
-				const eip7702GasEstimate = await context.ethersjs.estimateGas(eip7702Tx);
+		const eip7702GasEstimate = await context.ethersjs.estimateGas(eip7702Tx);
 
-				// EIP-7702 transaction should cost more due to:
-				// - PER_AUTH_BASE_COST (12,500 gas per authorization)
-				// - PER_EMPTY_ACCOUNT_COST (25,000 gas per authorization if authority is empty)
-				expect(Number(eip7702GasEstimate)).to.be.greaterThan(Number(regularGasEstimate));
-
-				console.log(`Regular gas: ${regularGasEstimate}, EIP-7702 gas: ${eip7702GasEstimate}`);
-			} catch (gasError) {
-				console.log("EIP-7702 gas estimation:", gasError.message);
-			}
-		} catch (error) {
-			console.log("Gas cost calculation test:", error.message);
-		}
+		// EIP-7702 transaction should cost more due to authorization processing
+		expect(Number(eip7702GasEstimate)).to.be.greaterThan(Number(regularGasEstimate));
 	});
 
-	step("should test delegation behavior (when implemented)", async function () {
+	step("should test delegation behavior", async function () {
 		this.timeout(15000);
 
-		// This test documents expected delegation behavior
-		// The actual behavior depends on EIP-7702 implementation status in frontier
-
 		const newAccount = ethers.Wallet.createRandom();
-		const authorization = createAuthorizationTuple(CHAIN_ID, contractAddress, 0, newAccount.privateKey);
+		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, newAccount.privateKey);
 
-		try {
-			// Set up delegation
-			const delegationTx = {
-				from: GENESIS_ACCOUNT,
-				to: newAccount.address,
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [authorization],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		// Set up delegation
+		const delegationTx = {
+			from: GENESIS_ACCOUNT,
+			to: newAccount.address,
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [authorization],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(delegationTx);
-			await createAndFinalizeBlock(context.web3);
+		const signedTx = await signer.sendTransaction(delegationTx);
+		await createAndFinalizeBlock(context.web3);
 
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
+		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
+		expect(receipt.status).to.equal(1);
 
-			if (receipt.status === "0x1") {
-				// Check if delegation indicator was set
-				const accountCode = await context.web3.eth.getCode(newAccount.address);
-				const delegationCheck = isDelegationIndicator(accountCode);
+		// Check if delegation indicator was set in Frontier
+		const accountCode = await context.web3.eth.getCode(newAccount.address);
+		const delegationCheck = isDelegationIndicator(accountCode);
 
-				if (delegationCheck.isDelegation) {
-					console.log(
-						`Delegation set! Account ${newAccount.address} delegates to ${delegationCheck.address}`
-					);
+		if (delegationCheck.isDelegation) {
+			// Delegation was set successfully - test calling the delegated function
+			const result = await customRequest(context.web3, "eth_call", [
+				{
+					to: newAccount.address,
+					data: "0x620f42c0", // getMagicNumber() function selector
+				},
+				"latest",
+			]);
 
-					// Test calling the delegated function
-					try {
-						const result = await customRequest(context.web3, "eth_call", [
-							{
-								to: newAccount.address,
-								data: "0x620f42c0", // getMagicNumber() function selector
-							},
-							"latest",
-						]);
-
-						if (result.result) {
-							const decodedResult = parseInt(result.result, 16);
-							expect(decodedResult).to.equal(42); // Magic number from contract
-							console.log("Delegation call successful!");
-						}
-					} catch (callError) {
-						console.log("Delegation call test:", callError.message);
-					}
-				} else {
-					console.log("Delegation indicator not set or not recognized");
-				}
+			if (result.result) {
+				const decodedResult = parseInt(result.result, 16);
+				expect(decodedResult).to.equal(42); // Magic number from contract
 			}
-		} catch (error) {
-			console.log("Delegation behavior test:", error.message);
+		} else {
+			// No delegation indicator - this test documents current Frontier behavior
+			expect(accountCode).to.equal("0x");
 		}
 	});
 
 	step("should handle delegation edge cases", async function () {
 		this.timeout(15000);
 
-		// Test self-delegation (should be prevented)
-		const selfDelegationAuth = createAuthorizationTuple(
+		// Test self-delegation (should be prevented by Frontier)
+		const selfDelegationAuth = createAuthorizationObject(
 			CHAIN_ID,
 			GENESIS_ACCOUNT, // Self-delegation
 			0,
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		try {
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [selfDelegationAuth],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		const tx1 = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [selfDelegationAuth],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(tx);
-			await createAndFinalizeBlock(context.web3);
+		const signedTx1 = await signer.sendTransaction(tx1);
+		await createAndFinalizeBlock(context.web3);
 
-			// Self-delegation should be handled gracefully (prevented or cause specific behavior)
-			const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
-			console.log("Self-delegation test completed");
-		} catch (error) {
-			console.log("Self-delegation test:", error.message);
-		}
+		// Self-delegation should be handled gracefully by Frontier
+		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
+		expect(receipt1.status).to.equal(1);
 
-		// Test delegation to non-existent address
-		const nonExistentAuth = createAuthorizationTuple(
+		// Test delegation to zero address
+		const zeroAddressAuth = createAuthorizationObject(
 			CHAIN_ID,
 			"0x0000000000000000000000000000000000000000",
 			0,
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
 
-		try {
-			const tx = {
-				from: GENESIS_ACCOUNT,
-				to: "0x1000000000000000000000000000000000000001",
-				value: "0x00",
-				maxFeePerGas: "0x3B9ACA00",
-				maxPriorityFeePerGas: "0x01",
-				type: 4,
-				gasLimit: "0x100000",
-				chainId: CHAIN_ID,
-				authorizationList: [nonExistentAuth],
-				nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
-			};
+		const tx2 = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [zeroAddressAuth],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
 
-			const signedTx = await signer.sendTransaction(tx);
-			await createAndFinalizeBlock(context.web3);
+		const signedTx2 = await signer.sendTransaction(tx2);
+		await createAndFinalizeBlock(context.web3);
 
-			console.log("Non-existent address delegation test completed");
-		} catch (error) {
-			console.log("Non-existent address delegation test:", error.message);
-		}
+		// Zero address delegation should be handled by Frontier
+		const receipt2 = await context.ethersjs.getTransactionReceipt(signedTx2.hash);
+		expect(receipt2.status).to.equal(1);
 	});
 });
