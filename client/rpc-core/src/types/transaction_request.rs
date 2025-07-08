@@ -105,12 +105,11 @@ mod authorization_list_item_camelcase {
 	use serde::{Deserialize, Deserializer};
 
 	#[derive(Deserialize)]
+	#[serde(rename_all = "camelCase")]
 	struct AuthorizationListItemDef {
-		#[serde(rename = "chainId")]
 		chain_id: u64,
 		address: Address,
 		nonce: ethereum_types::U256,
-		#[serde(rename = "yParity")]
 		y_parity: bool,
 		r: H256,
 		s: H256,
