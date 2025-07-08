@@ -259,7 +259,7 @@ fn eip7702_transaction_execution() {
 		// should have code set to 0xef0100 || address (delegation designator)
 		if !alice_code.is_empty() {
 			// Check if this is a proper EIP-7702 delegation designator
-			if alice_code.len() >= 22 && alice_code[0] == 0xef && alice_code[1] == 0x01 && alice_code[2] == 0x00 {
+			if alice_code.len() >= 23 && alice_code[0] == 0xef && alice_code[1] == 0x01 && alice_code[2] == 0x00 {
 				// Extract the delegated address from the designation
 				let delegated_address: H160 = H160::from_slice(&alice_code[3..23]);
 				assert_eq!(
