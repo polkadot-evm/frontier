@@ -171,8 +171,9 @@ fn eip7702_transaction_execution() {
 	ext.execute_with(|| {
 		let contract_address =
 			H160::from_str("0x1000000000000000000000000000000000000001").unwrap();
+		// The nonce = 1 accounts for the increment of Alice's nonce due to submitting the transaction
 		let authorization =
-			create_authorization_tuple(ChainId::get(), contract_address, 0, &alice.private_key);
+			create_authorization_tuple(ChainId::get(), contract_address, 1, &alice.private_key);
 
 		let transaction = eip7702_transaction_unsigned(
 			U256::zero(),
