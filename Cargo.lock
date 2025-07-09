@@ -2712,9 +2712,9 @@ dependencies = [
 
 [[package]]
 name = "evm"
-version = "0.43.2"
+version = "0.43.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "73dda10125fcf8d1fbb0ec8cb9b162b918238f86de4ad8278386374db2343863"
+checksum = "b54f188e7563c1702ecefdef92c8b2c4be8941b84a50684907a747f87121aace"
 dependencies = [
  "auto_impl",
  "environmental",
