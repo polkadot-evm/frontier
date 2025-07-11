@@ -35,8 +35,9 @@ mod tests;
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 pub use ethereum::{
-	AccessListItem, BlockV2 as Block, LegacyTransactionMessage, Log, ReceiptV3 as Receipt,
-	TransactionAction, TransactionV2 as Transaction,
+	AccessListItem, BlockV2, BlockV3, BlockV3 as Block, LegacyTransactionMessage, Log,
+	ReceiptV4 as Receipt, TransactionAction, TransactionV2, TransactionV3,
+	TransactionV3 as Transaction,
 };
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -47,7 +48,7 @@ use frame_support::{
 	dispatch::{
 		DispatchErrorWithPostInfo, DispatchInfo, DispatchResultWithPostInfo, Pays, PostDispatchInfo,
 	},
-	traits::{EnsureOrigin, Get, PalletInfoAccess, Time},
+	traits::{EnsureOrigin, Get, Time},
 	weights::Weight,
 };
 use frame_system::{pallet_prelude::OriginFor, CheckWeight, WeightInfo};
@@ -69,6 +70,7 @@ use fp_evm::{
 };
 pub use fp_rpc::TransactionStatus;
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
+use frame_support::traits::PalletInfoAccess;
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
@@ -179,6 +181,56 @@ pub enum PostLogContent {
 	#[default]
 	BlockAndTxnHashes,
 	OnlyBlockHash,
+}
+
+/// A wrapper around ethereum blocks that can decode both BlockV2 and BlockV3 formats.
+/// This is needed for smooth runtime upgrades where the storage might contain BlockV2
+/// at the moment of upgrade, but new blocks will be BlockV3.
+#[derive(Clone, PartialEq, Eq, Encode, TypeInfo, Debug)]
+pub struct EthereumBlockWrapper(pub ethereum::BlockV3);
+
+impl Decode for EthereumBlockWrapper {
+	fn decode<I: scale_codec::Input>(input: &mut I) -> Result<Self, scale_codec::Error> {
+		// Read input into a buffer for multiple decode attempts
+		let mut bytes = Vec::new();
+		while let Ok(byte) = input.read_byte() {
+			bytes.push(byte);
+		}
+
+		// Try current version first, then fall back to legacy version
+		Self::from_v3_bytes(&bytes)
+			.or_else(|| Self::from_v2_bytes(&bytes))
+			.ok_or_else(|| scale_codec::Error::from("Failed to decode as BlockV3 or BlockV2"))
+	}
+}
+
+impl EthereumBlockWrapper {
+	/// Create a new wrapper from a BlockV3
+	pub fn new(block: ethereum::BlockV3) -> Self {
+		Self(block)
+	}
+
+	/// Get the inner BlockV3
+	pub fn into_inner(self) -> ethereum::BlockV3 {
+		self.0
+	}
+
+	/// Get a reference to the inner BlockV3
+	pub fn get_ref(&self) -> &ethereum::BlockV3 {
+		&self.0
+	}
+
+	/// Create wrapper from V3 encoded bytes
+	fn from_v3_bytes(bytes: &[u8]) -> Option<Self> {
+		ethereum::BlockV3::decode(&mut &bytes[..]).ok().map(Self)
+	}
+
+	/// Create wrapper from V2 encoded bytes (converts to V3)
+	fn from_v2_bytes(bytes: &[u8]) -> Option<Self> {
+		ethereum::BlockV2::decode(&mut &bytes[..])
+			.ok()
+			.map(|v2| Self(v2.into()))
+	}
 }
 
 pub use self::pallet::*;
@@ -357,7 +409,7 @@ pub mod pallet {
 
 	/// The current Ethereum block.
 	#[pallet::storage]
-	pub type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV2>;
+	pub type CurrentBlock<T: Config> = StorageValue<_, EthereumBlockWrapper>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
@@ -417,19 +469,27 @@ impl<T: Config> Pallet<T> {
 				);
 			}
 			Transaction::EIP2930(t) => {
-				sig[0..32].copy_from_slice(&t.r[..]);
-				sig[32..64].copy_from_slice(&t.s[..]);
-				sig[64] = t.odd_y_parity as u8;
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.odd_y_parity() as u8;
 				msg.copy_from_slice(
 					&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..],
 				);
 			}
 			Transaction::EIP1559(t) => {
-				sig[0..32].copy_from_slice(&t.r[..]);
-				sig[32..64].copy_from_slice(&t.s[..]);
-				sig[64] = t.odd_y_parity as u8;
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.odd_y_parity() as u8;
 				msg.copy_from_slice(
 					&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..],
+				);
+			}
+			Transaction::EIP7702(t) => {
+				sig[0..32].copy_from_slice(&t.signature.r()[..]);
+				sig[32..64].copy_from_slice(&t.signature.s()[..]);
+				sig[64] = t.signature.odd_y_parity() as u8;
+				msg.copy_from_slice(
+					&ethereum::EIP7702TransactionMessage::from(t.clone()).hash()[..],
 				);
 			}
 		}
@@ -453,6 +513,7 @@ impl<T: Config> Pallet<T> {
 					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
 						(d.logs.clone(), d.used_gas)
 					}
+					Receipt::EIP7702(d) => (d.logs.clone(), d.used_gas),
 				};
 				cumulative_gas_used = used_gas;
 				Self::logs_bloom(logs, &mut logs_bloom);
@@ -484,7 +545,7 @@ impl<T: Config> Pallet<T> {
 		};
 		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
-		CurrentBlock::<T>::put(block.clone());
+		CurrentBlock::<T>::put(EthereumBlockWrapper::new(block.clone()));
 		CurrentReceipts::<T>::put(receipts.clone());
 		CurrentTransactionStatuses::<T>::put(statuses.clone());
 		BlockHash::<T>::insert(block_number, block.header.hash());
@@ -530,6 +591,9 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
+		// Check if this is an EIP-7702 transaction
+		let is_eip7702 = matches!(transaction, Transaction::EIP7702(_));
+
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -546,6 +610,7 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&who))
+		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| e.0)?;
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
@@ -684,9 +749,10 @@ impl<T: Config> Pallet<T> {
 				Pending::<T>::get(transaction_index.saturating_sub(1))
 			{
 				match receipt {
-					Receipt::Legacy(d) | Receipt::EIP2930(d) | Receipt::EIP1559(d) => {
-						d.used_gas.saturating_add(used_gas.effective)
-					}
+					Receipt::Legacy(d)
+					| Receipt::EIP2930(d)
+					| Receipt::EIP1559(d)
+					| Receipt::EIP7702(d) => d.used_gas.saturating_add(used_gas.effective),
 				}
 			} else {
 				used_gas.effective
@@ -705,6 +771,12 @@ impl<T: Config> Pallet<T> {
 					logs,
 				}),
 				Transaction::EIP1559(_) => Receipt::EIP1559(ethereum::EIP2930ReceiptData {
+					status_code,
+					used_gas: cumulative_gas_used,
+					logs_bloom,
+					logs,
+				}),
+				Transaction::EIP7702(_) => Receipt::EIP7702(ethereum::EIP7702ReceiptData {
 					status_code,
 					used_gas: cumulative_gas_used,
 					logs_bloom,
@@ -748,7 +820,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
-		<CurrentBlock<T>>::get().map(|block| block.header.hash())
+		<CurrentBlock<T>>::get().map(|block| block.get_ref().header.hash())
 	}
 
 	/// Execute an Ethereum transaction.
@@ -771,6 +843,7 @@ impl<T: Config> Pallet<T> {
 			nonce,
 			action,
 			access_list,
+			authorization_list,
 		) = {
 			match transaction {
 				// max_fee_per_gas and max_priority_fee_per_gas in legacy and 2930 transactions is
@@ -783,6 +856,7 @@ impl<T: Config> Pallet<T> {
 					Some(t.gas_price),
 					Some(t.nonce),
 					t.action,
+					Vec::new(),
 					Vec::new(),
 				),
 				Transaction::EIP2930(t) => {
@@ -800,6 +874,7 @@ impl<T: Config> Pallet<T> {
 						Some(t.nonce),
 						t.action,
 						access_list,
+						Vec::new(),
 					)
 				}
 				Transaction::EIP1559(t) => {
@@ -817,6 +892,37 @@ impl<T: Config> Pallet<T> {
 						Some(t.nonce),
 						t.action,
 						access_list,
+						Vec::new(),
+					)
+				}
+				Transaction::EIP7702(t) => {
+					let access_list: Vec<(H160, Vec<H256>)> = t
+						.access_list
+						.iter()
+						.map(|item| (item.address, item.storage_keys.clone()))
+						.collect();
+					let authorization_list: Vec<(U256, H160, U256, Option<H160>)> = t
+						.authorization_list
+						.iter()
+						.map(|d| {
+							(
+								U256::from(d.chain_id),
+								d.address,
+								d.nonce,
+								d.authorizing_address().ok(),
+							)
+						})
+						.collect();
+					(
+						t.data.clone(),
+						t.value,
+						t.gas_limit,
+						Some(t.max_fee_per_gas),
+						Some(t.max_priority_fee_per_gas),
+						Some(t.nonce),
+						t.destination,
+						access_list,
+						authorization_list,
 					)
 				}
 			}
@@ -834,6 +940,7 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					authorization_list,
 					is_transactional,
 					validate,
 					weight_limit,
@@ -864,6 +971,7 @@ impl<T: Config> Pallet<T> {
 					max_priority_fee_per_gas,
 					nonce,
 					access_list,
+					authorization_list,
 					is_transactional,
 					validate,
 					weight_limit,
@@ -900,6 +1008,9 @@ impl<T: Config> Pallet<T> {
 		let (base_fee, _) = T::FeeCalculator::min_gas_price();
 		let (who, _) = pallet_evm::Pallet::<T>::account_basic(&origin);
 
+		// Check if this is an EIP-7702 transaction
+		let is_eip7702 = matches!(transaction, Transaction::EIP7702(_));
+
 		let _ = CheckEvmTransaction::<InvalidTransactionWrapper>::new(
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
@@ -916,6 +1027,7 @@ impl<T: Config> Pallet<T> {
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
 		.and_then(|v| v.with_balance_for(&who))
+		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
 
 		Ok(())
@@ -1054,6 +1166,16 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 			TransactionValidationError::GasPriceTooLow => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::GasPriceTooLow as u8),
 			),
+			TransactionValidationError::EmptyAuthorizationList => {
+				InvalidTransactionWrapper(InvalidTransaction::Custom(
+					TransactionValidationError::EmptyAuthorizationList as u8,
+				))
+			}
+			TransactionValidationError::AuthorizationListTooLarge => {
+				InvalidTransactionWrapper(InvalidTransaction::Custom(
+					TransactionValidationError::AuthorizationListTooLarge as u8,
+				))
+			}
 			TransactionValidationError::UnknownError => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::UnknownError as u8),
 			),

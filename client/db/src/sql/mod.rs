@@ -517,9 +517,10 @@ where
 		transaction_count += receipts.len();
 		for (transaction_index, receipt) in receipts.iter().enumerate() {
 			let receipt_logs = match receipt {
-				ethereum::ReceiptV3::Legacy(d)
-				| ethereum::ReceiptV3::EIP2930(d)
-				| ethereum::ReceiptV3::EIP1559(d) => &d.logs,
+				ethereum::ReceiptV4::Legacy(d)
+				| ethereum::ReceiptV4::EIP2930(d)
+				| ethereum::ReceiptV4::EIP1559(d)
+				| ethereum::ReceiptV4::EIP7702(d) => &d.logs,
 			};
 			let transaction_index = transaction_index as i32;
 			log_count += receipt_logs.len();
