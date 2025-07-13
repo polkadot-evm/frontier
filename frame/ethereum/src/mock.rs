@@ -433,7 +433,6 @@ impl EIP1559UnsignedTransaction {
 pub struct ShieldingOnShield;
 impl pallet_evm::OnShield<Test> for ShieldingOnShield {
 	fn on_shield(_source: sp_core::H160, _value: sp_core::U256, note: sp_core::H256) -> Result<(), sp_runtime::DispatchError> {
-		println!("🔒 OnShield called with note: {:?}", note);
 		// Extract the note from the transaction input and add it to the shielding pallet
 		::shielding::Pallet::<Test>::add_note_internal(note)
 	}
