@@ -193,8 +193,11 @@ impl Decode for EthereumBlockWrapper {
 	fn decode<I: scale_codec::Input>(input: &mut I) -> Result<Self, scale_codec::Error> {
 		// First, read all available data from input
 		let mut bytes = Vec::new();
-		while let Ok(byte) = input.read_byte() {
-			bytes.push(byte);
+		loop {
+			match input.read_byte() {
+				Ok(byte) => bytes.push(byte),
+				Err(_) => break,
+			}
 		}
 
 		// Try to decode as BlockV3 first (the current version)
