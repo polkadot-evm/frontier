@@ -191,16 +191,33 @@ pub struct EthereumBlockWrapper(pub ethereum::BlockV3);
 
 impl Decode for EthereumBlockWrapper {
 	fn decode<I: scale_codec::Input>(input: &mut I) -> Result<Self, scale_codec::Error> {
-		// Read input into a buffer for multiple decode attempts
+		// First, read all available data from input
 		let mut bytes = Vec::new();
 		while let Ok(byte) = input.read_byte() {
 			bytes.push(byte);
 		}
 
-		// Try current version first, then fall back to legacy version
-		Self::from_v3_bytes(&bytes)
-			.or_else(|| Self::from_v2_bytes(&bytes))
-			.ok_or_else(|| scale_codec::Error::from("Failed to decode as BlockV3 or BlockV2"))
+		// Try to decode as BlockV3 first (the current version)
+		let mut v3_input = &bytes[..];
+		if let Ok(block) = ethereum::BlockV3::decode(&mut v3_input) {
+			return Ok(EthereumBlockWrapper(block));
+		}
+
+		// If BlockV3 decoding fails, try BlockV2 (for backward compatibility)
+		let mut v2_input = &bytes[..];
+		match ethereum::BlockV2::decode(&mut v2_input) {
+			Ok(block_v2) => {
+				// Convert BlockV2 to BlockV3
+				let block_v3: BlockV3 = block_v2.into();
+				Ok(EthereumBlockWrapper(block_v3))
+			}
+			Err(_) => {
+				// Neither V3 nor V2 decoding worked
+				Err(scale_codec::Error::from(
+					"Failed to decode as either BlockV3 or BlockV2",
+				))
+			}
+		}
 	}
 }
 
@@ -218,18 +235,6 @@ impl EthereumBlockWrapper {
 	/// Get a reference to the inner BlockV3
 	pub fn get_ref(&self) -> &ethereum::BlockV3 {
 		&self.0
-	}
-
-	/// Create wrapper from V3 encoded bytes
-	fn from_v3_bytes(bytes: &[u8]) -> Option<Self> {
-		ethereum::BlockV3::decode(&mut &bytes[..]).ok().map(Self)
-	}
-
-	/// Create wrapper from V2 encoded bytes (converts to V3)
-	fn from_v2_bytes(bytes: &[u8]) -> Option<Self> {
-		ethereum::BlockV2::decode(&mut &bytes[..])
-			.ok()
-			.map(|v2| Self(v2.into()))
 	}
 }
 
