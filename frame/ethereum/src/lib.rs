@@ -35,9 +35,8 @@ mod tests;
 use alloc::{vec, vec::Vec};
 use core::marker::PhantomData;
 pub use ethereum::{
-	AccessListItem, BlockV2, BlockV3, BlockV3 as Block, LegacyTransactionMessage, Log,
-	ReceiptV4 as Receipt, TransactionAction, TransactionV2, TransactionV3,
-	TransactionV3 as Transaction,
+	AccessListItem, BlockV3 as Block, LegacyTransactionMessage, Log, ReceiptV4 as Receipt,
+	TransactionAction, TransactionV3 as Transaction,
 };
 use ethereum_types::{Bloom, BloomInput, H160, H256, H64, U256};
 use evm::ExitReason;
@@ -181,64 +180,6 @@ pub enum PostLogContent {
 	#[default]
 	BlockAndTxnHashes,
 	OnlyBlockHash,
-}
-
-/// A wrapper around ethereum blocks that can decode both BlockV2 and BlockV3 formats.
-/// This is needed for smooth runtime upgrades where the storage might contain BlockV2
-/// at the moment of upgrade, but new blocks will be BlockV3.
-#[derive(Clone, PartialEq, Eq, Encode, TypeInfo, Debug)]
-pub struct EthereumBlockWrapper(pub ethereum::BlockV3);
-
-impl Decode for EthereumBlockWrapper {
-	fn decode<I: scale_codec::Input>(input: &mut I) -> Result<Self, scale_codec::Error> {
-		// First, read all available data from input
-		let mut bytes = Vec::new();
-		loop {
-			match input.read_byte() {
-				Ok(byte) => bytes.push(byte),
-				Err(_) => break,
-			}
-		}
-
-		// Try to decode as BlockV3 first (the current version)
-		let mut v3_input = &bytes[..];
-		if let Ok(block) = ethereum::BlockV3::decode(&mut v3_input) {
-			return Ok(EthereumBlockWrapper(block));
-		}
-
-		// If BlockV3 decoding fails, try BlockV2 (for backward compatibility)
-		let mut v2_input = &bytes[..];
-		match ethereum::BlockV2::decode(&mut v2_input) {
-			Ok(block_v2) => {
-				// Convert BlockV2 to BlockV3
-				let block_v3: BlockV3 = block_v2.into();
-				Ok(EthereumBlockWrapper(block_v3))
-			}
-			Err(_) => {
-				// Neither V3 nor V2 decoding worked
-				Err(scale_codec::Error::from(
-					"Failed to decode as either BlockV3 or BlockV2",
-				))
-			}
-		}
-	}
-}
-
-impl EthereumBlockWrapper {
-	/// Create a new wrapper from a BlockV3
-	pub fn new(block: ethereum::BlockV3) -> Self {
-		Self(block)
-	}
-
-	/// Get the inner BlockV3
-	pub fn into_inner(self) -> ethereum::BlockV3 {
-		self.0
-	}
-
-	/// Get a reference to the inner BlockV3
-	pub fn get_ref(&self) -> &ethereum::BlockV3 {
-		&self.0
-	}
 }
 
 pub use self::pallet::*;
@@ -417,7 +358,7 @@ pub mod pallet {
 
 	/// The current Ethereum block.
 	#[pallet::storage]
-	pub type CurrentBlock<T: Config> = StorageValue<_, EthereumBlockWrapper>;
+	pub type CurrentBlock<T: Config> = StorageValue<_, ethereum::BlockV3>;
 
 	/// The current Ethereum receipts.
 	#[pallet::storage]
@@ -553,7 +494,7 @@ impl<T: Config> Pallet<T> {
 		};
 		let block = ethereum::Block::new(partial_header, transactions.clone(), ommers);
 
-		CurrentBlock::<T>::put(EthereumBlockWrapper::new(block.clone()));
+		CurrentBlock::<T>::put(block.clone());
 		CurrentReceipts::<T>::put(receipts.clone());
 		CurrentTransactionStatuses::<T>::put(statuses.clone());
 		BlockHash::<T>::insert(block_number, block.header.hash());
@@ -828,7 +769,7 @@ impl<T: Config> Pallet<T> {
 
 	/// Get current block hash
 	pub fn current_block_hash() -> Option<H256> {
-		<CurrentBlock<T>>::get().map(|block| block.get_ref().header.hash())
+		<CurrentBlock<T>>::get().map(|block| block.header.hash())
 	}
 
 	/// Execute an Ethereum transaction.

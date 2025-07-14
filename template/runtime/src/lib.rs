@@ -966,7 +966,6 @@ impl_runtime_apis! {
 
 		fn current_block() -> Option<pallet_ethereum::Block> {
 			pallet_ethereum::CurrentBlock::<Runtime>::get()
-				.map(|wrapper| wrapper.into_inner())
 		}
 
 		fn current_receipts() -> Option<Vec<pallet_ethereum::Receipt>> {
@@ -979,8 +978,7 @@ impl_runtime_apis! {
 			Option<Vec<TransactionStatus>>
 		) {
 			(
-				pallet_ethereum::CurrentBlock::<Runtime>::get()
-					.map(|wrapper| wrapper.into_inner()),
+				pallet_ethereum::CurrentBlock::<Runtime>::get(),
 				pallet_ethereum::CurrentReceipts::<Runtime>::get(),
 				pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
 			)
@@ -1011,8 +1009,7 @@ impl_runtime_apis! {
 			Ethereum::on_finalize(System::block_number() + 1);
 
 			(
-				pallet_ethereum::CurrentBlock::<Runtime>::get()
-					.map(|wrapper| wrapper.into_inner()),
+				pallet_ethereum::CurrentBlock::<Runtime>::get(),
 				pallet_ethereum::CurrentTransactionStatuses::<Runtime>::get()
 			)
 		}
