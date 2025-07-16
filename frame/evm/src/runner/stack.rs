@@ -892,7 +892,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		address: H160,
 		weight_info: &mut WeightInfo,
 		recorded: &mut Recorded,
-		size_limit: u64,
+		create_contract_limit: u64,
 	) -> Result<(), ExitError> {
 		let maybe_record = !recorded.account_codes.contains(&address);
 		// Skip if the address has been already recorded this block
@@ -908,17 +908,16 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			weight_info.try_record_proof_size_or_fail(ACCOUNT_CODES_METADATA_PROOF_SIZE)?;
 			if let Some(meta) = <AccountCodesMetadata<T>>::get(address) {
 				weight_info.try_record_proof_size_or_fail(meta.size)?;
-			} else if let Some(remaining_proof_size) = weight_info.remaining_proof_size() {
-				let pre_size = remaining_proof_size.min(size_limit);
-				weight_info.try_record_proof_size_or_fail(pre_size)?;
+			} else {
+				weight_info.try_record_proof_size_or_fail(create_contract_limit)?;
 
 				let actual_size = Pallet::<T>::account_code_metadata(address).size;
-				if actual_size > pre_size {
+				if actual_size > create_contract_limit {
 					fp_evm::set_storage_oog();
 					return Err(ExitError::OutOfGas);
 				}
 				// Refund unused proof size
-				weight_info.refund_proof_size(pre_size.saturating_sub(actual_size));
+				weight_info.refund_proof_size(create_contract_limit.saturating_sub(actual_size));
 			}
 			recorded.account_codes.push(address);
 		}
