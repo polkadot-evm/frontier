@@ -3692,6 +3692,7 @@ name = "frontier-template-runtime"
 version = "0.0.0"
 dependencies = [
  "cumulus-pallet-weight-reclaim",
+ "ethereum",
  "fp-account",
  "fp-evm",
  "fp-rpc",

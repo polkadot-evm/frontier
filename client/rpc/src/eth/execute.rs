@@ -514,20 +514,7 @@ where
 									.map(|item| (item.address, item.storage_keys))
 									.collect(),
 							),
-							Some(
-								authorization_list
-									.iter()
-									.map(|d| {
-										(
-											U256::from(d.chain_id),
-											d.address,
-											d.nonce,
-											d.authorizing_address().ok(),
-										)
-									})
-									.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>(
-									),
-							),
+							Some(authorization_list),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?
 						.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;

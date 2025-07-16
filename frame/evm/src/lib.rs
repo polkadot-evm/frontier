@@ -336,18 +336,6 @@ pub mod pallet {
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
 
-			let authorization_list = authorization_list
-				.iter()
-				.map(|d| {
-					(
-						U256::from(d.chain_id),
-						d.address,
-						d.nonce,
-						d.authorizing_address().ok(),
-					)
-				})
-				.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
-
 			let is_transactional = true;
 			let validate = true;
 			let info = match T::Runner::call(
@@ -425,18 +413,6 @@ pub mod pallet {
 			authorization_list: AuthorizationList,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
-
-			let authorization_list = authorization_list
-				.iter()
-				.map(|d| {
-					(
-						U256::from(d.chain_id),
-						d.address,
-						d.nonce,
-						d.authorizing_address().ok(),
-					)
-				})
-				.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 			let is_transactional = true;
 			let validate = true;
@@ -526,18 +502,6 @@ pub mod pallet {
 			authorization_list: AuthorizationList,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
-
-			let authorization_list = authorization_list
-				.iter()
-				.map(|d| {
-					(
-						U256::from(d.chain_id),
-						d.address,
-						d.nonce,
-						d.authorizing_address().ok(),
-					)
-				})
-				.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 			let is_transactional = true;
 			let validate = true;

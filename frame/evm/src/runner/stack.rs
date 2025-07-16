@@ -23,6 +23,7 @@ use alloc::{
 	vec::Vec,
 };
 use core::{marker::PhantomData, mem};
+use ethereum::AuthorizationList;
 use evm::{
 	backend::Backend as BackendT,
 	executor::stack::{Accessed, StackExecutor, StackState as StackStateT, StackSubstateMetadata},
@@ -517,7 +518,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
-		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
+		authorization_list: AuthorizationList,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -525,6 +526,19 @@ where
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		let measured_proof_size_before = get_proof_size().unwrap_or_default();
+
+		let authorization_list = authorization_list
+			.iter()
+			.map(|d| {
+				(
+					U256::from(d.chain_id),
+					d.address,
+					d.nonce,
+					d.authorizing_address().ok(),
+				)
+			})
+			.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
+
 		if validate {
 			Self::validate(
 				source,
@@ -543,6 +557,7 @@ where
 				config,
 			)?;
 		}
+
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -579,7 +594,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
-		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
+		authorization_list: AuthorizationList,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -591,6 +606,18 @@ where
 
 		T::CreateOriginFilter::check_create_origin(&source)
 			.map_err(|error| RunnerError { error, weight })?;
+
+		let authorization_list = authorization_list
+			.iter()
+			.map(|d| {
+				(
+					U256::from(d.chain_id),
+					d.address,
+					d.nonce,
+					d.authorizing_address().ok(),
+				)
+			})
+			.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 		if validate {
 			Self::validate(
@@ -610,6 +637,7 @@ where
 				config,
 			)?;
 		}
+
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -649,7 +677,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
-		authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
+		authorization_list: AuthorizationList,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -661,6 +689,18 @@ where
 
 		T::CreateOriginFilter::check_create_origin(&source)
 			.map_err(|error| RunnerError { error, weight })?;
+
+		let authorization_list = authorization_list
+			.iter()
+			.map(|d| {
+				(
+					U256::from(d.chain_id),
+					d.address,
+					d.nonce,
+					d.authorizing_address().ok(),
+				)
+			})
+			.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 		if validate {
 			Self::validate(
@@ -680,6 +720,7 @@ where
 				config,
 			)?;
 		}
+
 		let precompiles = T::PrecompilesValue::get();
 		let code_hash = H256::from(sp_io::hashing::keccak_256(&init));
 		Self::execute(
