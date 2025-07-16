@@ -47,6 +47,7 @@ pallet-timestamp = { workspace = true, features = ["default"] }
 default = ["std"]
 std = [
 	"environmental?/std",
+	"ethereum/std",
 	"evm/std",
 	"evm/serde",
 	"hex/std",
