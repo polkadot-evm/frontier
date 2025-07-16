@@ -69,6 +69,7 @@ pub mod weights;
 
 use alloc::{borrow::Cow, collections::btree_map::BTreeMap, vec::Vec};
 use core::cmp::min;
+use ethereum::AuthorizationList;
 pub use evm::{
 	Config as EvmConfig, Context, ExitError, ExitFatal, ExitReason, ExitRevert, ExitSucceed,
 };
@@ -331,9 +332,21 @@ pub mod pallet {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			access_list: Vec<(H160, Vec<H256>)>,
-			authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
+			authorization_list: AuthorizationList,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
+
+			let authorization_list = authorization_list
+				.iter()
+				.map(|d| {
+					(
+						U256::from(d.chain_id),
+						d.address,
+						d.nonce,
+						d.authorizing_address().ok(),
+					)
+				})
+				.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 			let is_transactional = true;
 			let validate = true;
@@ -409,9 +422,21 @@ pub mod pallet {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			access_list: Vec<(H160, Vec<H256>)>,
-			authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
+			authorization_list: AuthorizationList,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
+
+			let authorization_list = authorization_list
+				.iter()
+				.map(|d| {
+					(
+						U256::from(d.chain_id),
+						d.address,
+						d.nonce,
+						d.authorizing_address().ok(),
+					)
+				})
+				.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 			let is_transactional = true;
 			let validate = true;
@@ -498,9 +523,21 @@ pub mod pallet {
 			max_priority_fee_per_gas: Option<U256>,
 			nonce: Option<U256>,
 			access_list: Vec<(H160, Vec<H256>)>,
-			authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
+			authorization_list: AuthorizationList,
 		) -> DispatchResultWithPostInfo {
 			T::CallOrigin::ensure_address_origin(&source, origin)?;
+
+			let authorization_list = authorization_list
+				.iter()
+				.map(|d| {
+					(
+						U256::from(d.chain_id),
+						d.address,
+						d.nonce,
+						d.authorizing_address().ok(),
+					)
+				})
+				.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
 
 			let is_transactional = true;
 			let validate = true;
