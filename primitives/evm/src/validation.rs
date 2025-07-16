@@ -34,6 +34,7 @@ pub struct CheckEvmTransactionInput {
 	pub max_priority_fee_per_gas: Option<U256>,
 	pub value: U256,
 	pub access_list: Vec<(H160, Vec<H256>)>,
+	pub authorization_list: Vec<(U256, H160, U256, Option<H160>)>,
 }
 
 #[derive(Debug)]
@@ -78,6 +79,25 @@ pub enum TransactionValidationError {
 	InvalidChainId,
 	/// The transaction signature is invalid
 	InvalidSignature,
+	/// EIP-7702 transaction has empty authorization list
+	///
+	/// According to EIP-7702 specification, transactions with empty authorization lists are invalid.
+	/// This validates the fundamental requirement that EIP-7702 transactions must include at least
+	/// one authorization to be valid.
+	EmptyAuthorizationList,
+	/// EIP-7702 authorization list exceeds maximum size
+	///
+	/// To prevent DoS attacks, authorization lists are limited to a maximum of 255 items.
+	/// This provides reasonable authorization functionality while preventing excessive
+	/// resource consumption during validation and processing.
+	///
+	/// Rationale
+	/// - **Geth**: No explicit limit, relies on 32KB transaction size limit (~160 authorizations practical maximum)
+	/// - **EIP-7702 Spec**: No defined limit, left to implementations
+	///
+	/// This explicit limit is more predictable than implicit limits based on transaction size,
+	/// providing developers with clear boundaries and better DoS protection.
+	AuthorizationListTooLarge,
 	/// Unknown error
 	#[num_enum(default)]
 	UnknownError,
@@ -222,11 +242,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 				evm::gasometer::call_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			} else {
 				evm::gasometer::create_transaction_cost(
 					&self.transaction.input,
 					&self.transaction.access_list,
+					&self.transaction.authorization_list,
 				)
 			};
 
@@ -237,6 +259,41 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			// Transaction gas limit is within the upper bound block gas limit.
 			if self.transaction.gas_limit > self.config.block_gas_limit {
 				return Err(TransactionValidationError::GasLimitTooHigh.into());
+			}
+		}
+
+		Ok(self)
+	}
+
+	/// Validates EIP-7702 authorization list requirements at the Substrate level.
+	///
+	/// This function performs Substrate-specific validation for EIP-7702 authorization lists,
+	/// which complements the EVM-level validation performed by the EVM crate.
+	///
+	/// # EIP-7702 Validation Rules
+	///
+	/// ## Authorization List Requirements (when `is_eip7702` is true):
+	/// 1. **Non-empty**: Authorization list cannot be empty (per EIP-7702 spec)
+	/// 2. **Size limit**: Maximum 255 authorizations (DoS protection)
+	///
+	/// ## EVM-level Validation (handled by `evm`/`ethereum` crates):
+	/// - Authorization signature verification
+	/// - Nonce validation against authority accounts
+	/// - Delegation designator creation and management
+	/// - Gas cost calculation for authorizations
+	///
+	pub fn with_eip7702_authorization_list(&self, is_eip7702: bool) -> Result<&Self, E> {
+		if is_eip7702 {
+			// EIP-7702 validation: Check if authorization list is empty
+			// According to EIP-7702 specification: "The transaction is also considered invalid when the length of authorization_list is zero."
+			if self.transaction.authorization_list.is_empty() {
+				return Err(TransactionValidationError::EmptyAuthorizationList.into());
+			}
+
+			// EIP-7702 validation: Check authorization list size (DoS protection)
+			const MAX_AUTHORIZATION_LIST_SIZE: usize = 255;
+			if self.transaction.authorization_list.len() > MAX_AUTHORIZATION_LIST_SIZE {
+				return Err(TransactionValidationError::AuthorizationListTooLarge.into());
 			}
 		}
 
@@ -260,10 +317,12 @@ mod tests {
 		InvalidFeeInput,
 		InvalidChainId,
 		InvalidSignature,
+		EmptyAuthorizationList,
+		AuthorizationListTooLarge,
 		UnknownError,
 	}
 
-	static CANCUN_CONFIG: evm::Config = evm::Config::cancun();
+	static PECTRA_CONFIG: evm::Config = evm::Config::pectra();
 
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
@@ -278,6 +337,12 @@ mod tests {
 				TransactionValidationError::InvalidFeeInput => TestError::InvalidFeeInput,
 				TransactionValidationError::InvalidChainId => TestError::InvalidChainId,
 				TransactionValidationError::InvalidSignature => TestError::InvalidSignature,
+				TransactionValidationError::EmptyAuthorizationList => {
+					TestError::EmptyAuthorizationList
+				}
+				TransactionValidationError::AuthorizationListTooLarge => {
+					TestError::AuthorizationListTooLarge
+				}
 				TransactionValidationError::UnknownError => TestError::UnknownError,
 			}
 		}
@@ -337,7 +402,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &CANCUN_CONFIG,
+				evm_config: &PECTRA_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
@@ -354,6 +419,7 @@ mod tests {
 				max_priority_fee_per_gas,
 				value,
 				access_list: vec![],
+				authorization_list: vec![],
 			},
 			weight_limit,
 			proof_size_base_cost,
@@ -846,6 +912,144 @@ mod tests {
 		let is_transactional = false;
 		let test = invalid_transaction_mixed_fees(is_transactional);
 		let res = test.with_base_fee();
+		assert!(res.is_ok());
+	}
+
+	// EIP-7702 Authorization list validation tests
+	#[test]
+	fn validate_eip7702_empty_authorization_list_fails() {
+		let validator = CheckEvmTransaction::<TestError>::new(
+			CheckEvmTransactionConfig {
+				evm_config: &PECTRA_CONFIG,
+				block_gas_limit: U256::from(1_000_000u64),
+				base_fee: U256::from(1_000_000_000u128),
+				chain_id: 42u64,
+				is_transactional: true,
+			},
+			CheckEvmTransactionInput {
+				chain_id: Some(42u64),
+				to: Some(H160::default()),
+				input: vec![],
+				nonce: U256::zero(),
+				gas_limit: U256::from(21_000u64),
+				gas_price: None,
+				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				value: U256::zero(),
+				access_list: vec![],
+				authorization_list: vec![], // Empty authorization list
+			},
+			None,
+			None,
+		);
+
+		let res = validator.with_eip7702_authorization_list(true);
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::EmptyAuthorizationList);
+	}
+
+	#[test]
+	fn validate_eip7702_authorization_list_too_large_fails() {
+		// Create authorization list with 256 items (exceeds MAX_AUTHORIZATION_LIST_SIZE = 255)
+		let authorization_list: Vec<(U256, H160, U256, Option<H160>)> = (0..256)
+			.map(|i| (U256::from(42u64), H160::default(), U256::from(i), None))
+			.collect();
+
+		let validator = CheckEvmTransaction::<TestError>::new(
+			CheckEvmTransactionConfig {
+				evm_config: &PECTRA_CONFIG,
+				block_gas_limit: U256::from(1_000_000u64),
+				base_fee: U256::from(1_000_000_000u128),
+				chain_id: 42u64,
+				is_transactional: true,
+			},
+			CheckEvmTransactionInput {
+				chain_id: Some(42u64),
+				to: Some(H160::default()),
+				input: vec![],
+				nonce: U256::zero(),
+				gas_limit: U256::from(21_000u64),
+				gas_price: None,
+				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				value: U256::zero(),
+				access_list: vec![],
+				authorization_list,
+			},
+			None,
+			None,
+		);
+
+		let res = validator.with_eip7702_authorization_list(true);
+		assert!(res.is_err());
+		assert_eq!(res.unwrap_err(), TestError::AuthorizationListTooLarge);
+	}
+
+	#[test]
+	fn validate_eip7702_valid_authorization_list_succeeds() {
+		let authorization_list = vec![
+			(U256::from(42u64), H160::default(), U256::zero(), None), // Matching chain ID
+			(U256::zero(), H160::default(), U256::from(1), None),     // Cross-chain (0)
+		];
+
+		let validator = CheckEvmTransaction::<TestError>::new(
+			CheckEvmTransactionConfig {
+				evm_config: &PECTRA_CONFIG,
+				block_gas_limit: U256::from(1_000_000u64),
+				base_fee: U256::from(1_000_000_000u128),
+				chain_id: 42u64,
+				is_transactional: true,
+			},
+			CheckEvmTransactionInput {
+				chain_id: Some(42u64),
+				to: Some(H160::default()),
+				input: vec![],
+				nonce: U256::zero(),
+				gas_limit: U256::from(21_000u64),
+				gas_price: None,
+				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				value: U256::zero(),
+				access_list: vec![],
+				authorization_list,
+			},
+			None,
+			None,
+		);
+
+		let res = validator.with_eip7702_authorization_list(true);
+		assert!(res.is_ok());
+	}
+
+	#[test]
+	fn validate_non_eip7702_transaction_skips_authorization_validation() {
+		// Empty authorization list should be OK for non-EIP-7702 transactions
+		let validator = CheckEvmTransaction::<TestError>::new(
+			CheckEvmTransactionConfig {
+				evm_config: &PECTRA_CONFIG,
+				block_gas_limit: U256::from(1_000_000u64),
+				base_fee: U256::from(1_000_000_000u128),
+				chain_id: 42u64,
+				is_transactional: true,
+			},
+			CheckEvmTransactionInput {
+				chain_id: Some(42u64),
+				to: Some(H160::default()),
+				input: vec![],
+				nonce: U256::zero(),
+				gas_limit: U256::from(21_000u64),
+				gas_price: None,
+				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				value: U256::zero(),
+				access_list: vec![],
+				authorization_list: vec![], // Empty authorization list
+			},
+			None,
+			None,
+		);
+
+		let res = validator.with_eip7702_authorization_list(false); // Not EIP-7702
 		assert!(res.is_ok());
 	}
 }

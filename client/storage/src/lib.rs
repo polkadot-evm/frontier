@@ -22,7 +22,7 @@ pub mod overrides;
 
 use std::sync::Arc;
 
-use ethereum::{BlockV2, ReceiptV3};
+use ethereum::{BlockV3, ReceiptV4};
 use ethereum_types::{Address, H256, U256};
 // Substrate
 use sc_client_api::{backend::Backend, StorageProvider};
@@ -91,7 +91,7 @@ where
 		}
 	}
 
-	fn current_block(&self, at: B::Hash) -> Option<BlockV2> {
+	fn current_block(&self, at: B::Hash) -> Option<BlockV3> {
 		match self.querier.storage_schema(at) {
 			Some(EthereumStorageSchema::V1) => {
 				SchemaV1StorageOverrideRef::new(&self.querier).current_block(at)
@@ -106,7 +106,7 @@ where
 		}
 	}
 
-	fn current_receipts(&self, at: B::Hash) -> Option<Vec<ReceiptV3>> {
+	fn current_receipts(&self, at: B::Hash) -> Option<Vec<ReceiptV4>> {
 		match self.querier.storage_schema(at) {
 			Some(EthereumStorageSchema::V1) => {
 				SchemaV1StorageOverrideRef::new(&self.querier).current_receipts(at)
