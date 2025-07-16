@@ -817,7 +817,7 @@ impl_runtime_apis! {
 			};
 
 			// Estimated encoded transaction size must be based on the heaviest transaction
-			// type (EIP1559Transaction) to be compatible with all transaction types.
+			// type (EIP7702Transaction) to be compatible with all transaction types.
 			let mut estimated_transaction_len = data.len() +
 				// pallet ethereum index: 1
 				// transact call index: 1
@@ -830,8 +830,9 @@ impl_runtime_apis! {
 				// action: 21 (enum varianrt + call address)
 				// value: 32
 				// access_list: 1 (empty vec size)
+				// authorization_list: 1 (empty vec size)
 				// 65 bytes signature
-				258;
+				259;
 
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
