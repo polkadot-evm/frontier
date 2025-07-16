@@ -92,10 +92,7 @@ impl TransactionData {
 			// pallet index
 			.saturating_add(1)
 			// call index
-			.saturating_add(1)
-			// EIP-7702 authorization processing overhead
-			// signature_size - address_size = 65 - 20 = 45
-			.saturating_add(self.authorization_list.len() * 45) as u64
+			.saturating_add(1) as u64
 	}
 }
 
