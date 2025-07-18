@@ -199,6 +199,14 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 		}
 	}
 
+	pub fn max_withdraw_amount(&self) -> Result<U256, E> {
+		Ok(self
+			.transaction_fee_input()?
+			.0 // max_fee_per_gas
+			.saturating_mul(self.transaction.gas_limit)
+			.saturating_add(self.transaction.value))
+	}
+
 	pub fn validate_common(&self) -> Result<&Self, E> {
 		if self.config.is_transactional {
 			// Try to subtract the proof_size_base_cost from the Weight proof_size limit or fail.
