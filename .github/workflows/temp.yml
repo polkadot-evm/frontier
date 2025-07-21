@@ -1,0 +1,13 @@
+name: Benchmarks
+# trigger on commit push, to any branch
+on:
+    push:
+      branches:
+        - '*'
+jobs:
+  benchmarks:
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Install frame-omni bencher tool
+      run: cargo install frame-omni-bencher --profile=production --locked
