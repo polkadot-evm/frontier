@@ -37,6 +37,8 @@ pub enum TxType {
 	EIP2930 = 1u8,
 	/// [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559) transaction
 	EIP1559 = 2u8,
+	/// [EIP-7702](https://eips.ethereum.org/EIPS/eip-7702) transaction
+	EIP7702 = 4u8,
 }
 
 impl TryFrom<u8> for TxType {
@@ -47,6 +49,7 @@ impl TryFrom<u8> for TxType {
 			0u8 => Ok(Self::Legacy),
 			1u8 => Ok(Self::EIP2930),
 			2u8 => Ok(Self::EIP1559),
+			4u8 => Ok(Self::EIP7702),
 			_ => Err("Unsupported transaction type"),
 		}
 	}
@@ -61,6 +64,7 @@ impl serde::Serialize for TxType {
 			Self::Legacy => serializer.serialize_str("0x0"),
 			Self::EIP2930 => serializer.serialize_str("0x1"),
 			Self::EIP1559 => serializer.serialize_str("0x2"),
+			Self::EIP7702 => serializer.serialize_str("0x4"),
 		}
 	}
 }
@@ -75,6 +79,7 @@ impl<'de> serde::Deserialize<'de> for TxType {
 			"0x0" => Ok(Self::Legacy),
 			"0x1" => Ok(Self::EIP2930),
 			"0x2" => Ok(Self::EIP1559),
+			"0x4" => Ok(Self::EIP7702),
 			_ => Err(serde::de::Error::custom("Unsupported transaction type")),
 		}
 	}

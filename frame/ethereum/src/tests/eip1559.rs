@@ -614,6 +614,7 @@ fn proof_size_base_cost_should_keep_the_same_in_execution_and_estimate() {
 			raw_tx.value,
 			Some(100),
 			vec![],
+			vec![],
 		);
 		assert_eq!(
 			estimate_tx_data.proof_size_base_cost(),

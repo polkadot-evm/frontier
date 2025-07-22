@@ -23,7 +23,7 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use ethereum::BlockV2 as EthereumBlock;
+use ethereum::BlockV3 as EthereumBlock;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
