@@ -82,7 +82,7 @@ where
 			.ok()
 	}
 
-	fn current_block(&self, block_hash: B::Hash) -> Option<ethereum::BlockV2> {
+	fn current_block(&self, block_hash: B::Hash) -> Option<ethereum::BlockV3> {
 		let api = self.client.runtime_api();
 
 		let api_version = Self::api_version(&api, block_hash)?;
@@ -95,7 +95,7 @@ where
 		}
 	}
 
-	fn current_receipts(&self, block_hash: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+	fn current_receipts(&self, block_hash: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 		let api = self.client.runtime_api();
 
 		let api_version = Self::api_version(&api, block_hash)?;
@@ -106,7 +106,7 @@ where
 				receipts
 					.into_iter()
 					.map(|r| {
-						ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+						ethereum::ReceiptV4::Legacy(ethereum::EIP658ReceiptData {
 							status_code: r.state_root.to_low_u64_be() as u8,
 							used_gas: r.used_gas,
 							logs_bloom: r.logs_bloom,

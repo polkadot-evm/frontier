@@ -17,7 +17,7 @@ The module, and its EVM execution capabilities, can be added or removed at any m
 With EVM execution only, Substrate uses its account model fully and signs transactions on behalf of EVM accounts.
 
 In this model, however, Ethereum RPCs are not available, and dapps must rewrite their frontend using the Substrate API.
-If this is the intended way of usage, take a look at the [`pallet-evm`](../frame/evm/README.md) documentation.
+If this is the intended way of usage, take a look at the [`pallet-evm`](https://github.com/polkadot-evm/frontier/tree/master/frame/evm) documentation.
 
 ## Post-block generation
 
@@ -25,7 +25,7 @@ On other situations, a full emulation of Ethereum may be desired so that Ethereu
 In this model, a full Ethereum block is emulated within the Substrate runtime, and is generated post-block for the consumption rest of the APIs.
 In addition to Substrate account signing, traditional Ethereum transactions are also processed and validated.
 
-If this is the intended way of usage, take a look at the [`pallet-ethereum`](../frame/ethereum/README.md) documentation.
+If this is the intended way of usage, take a look at the [`pallet-ethereum`](https://github.com/polkadot-evm/frontier/tree/master/frame/ethereum) documentation.
 
 ## Pre-block feeding
 

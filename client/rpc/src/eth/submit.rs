@@ -160,7 +160,7 @@ where
 			return Err(internal_err("transaction data is empty"));
 		}
 
-		let transaction: ethereum::TransactionV2 =
+		let transaction: ethereum::TransactionV3 =
 			match ethereum::EnvelopedDecodable::decode(&bytes) {
 				Ok(transaction) => transaction,
 				Err(_) => return Err(internal_err("decode transaction failed")),
@@ -237,7 +237,7 @@ where
 	fn convert_transaction(
 		&self,
 		block_hash: B::Hash,
-		transaction: ethereum::TransactionV2,
+		transaction: ethereum::TransactionV3,
 	) -> RpcResult<B::Extrinsic> {
 		let api_version = match self
 			.client
@@ -258,7 +258,7 @@ where
 				Err(_) => Err(internal_err("cannot access `ConvertTransactionRuntimeApi`")),
 			},
 			Some(1) => {
-				if let ethereum::TransactionV2::Legacy(legacy_transaction) = transaction {
+				if let ethereum::TransactionV3::Legacy(legacy_transaction) = transaction {
 					// To be compatible with runtimes that do not support transactions v2
 					#[allow(deprecated)]
 					match self

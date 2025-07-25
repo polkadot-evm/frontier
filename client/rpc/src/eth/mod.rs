@@ -30,7 +30,7 @@ mod transaction;
 
 use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
-use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
+use ethereum::{BlockV3 as EthereumBlock, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
@@ -677,7 +677,7 @@ fn transaction_build(
 #[derive(Clone, Default)]
 pub struct BlockInfo<H> {
 	block: Option<EthereumBlock>,
-	receipts: Option<Vec<ethereum::ReceiptV3>>,
+	receipts: Option<Vec<ethereum::ReceiptV4>>,
 	statuses: Option<Vec<TransactionStatus>>,
 	substrate_hash: H,
 	is_eip1559: bool,
@@ -687,7 +687,7 @@ pub struct BlockInfo<H> {
 impl<H> BlockInfo<H> {
 	pub fn new(
 		block: Option<EthereumBlock>,
-		receipts: Option<Vec<ethereum::ReceiptV3>>,
+		receipts: Option<Vec<ethereum::ReceiptV4>>,
 		statuses: Option<Vec<TransactionStatus>>,
 		substrate_hash: H,
 		is_eip1559: bool,

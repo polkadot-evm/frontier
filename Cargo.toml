@@ -16,6 +16,9 @@ members = [
 	"frame/evm/precompile/dispatch",
 	"frame/evm/precompile/curve25519",
 	"frame/evm-chain-id",
+	"frame/evm-polkavm",
+	"frame/evm-polkavm/proc-macro",
+	"frame/evm-polkavm/uapi",
 	"frame/hotfix-sufficients",
 	"client/api",
 	"client/consensus",
@@ -42,20 +45,21 @@ members = [
 resolver = "2"
 
 [workspace.package]
-authors = ["Parity Technologies <admin@parity.io>"]
+authors = ["Frontier developers <legal@bitarray.dev>"]
 edition = "2021"
 repository = "https://github.com/polkadot-evm/frontier/"
 
 [workspace.dependencies]
 async-trait = "0.1"
+bitflags = "1.3.2"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
 clap = { version = "4.5", features = ["derive", "deprecated"] }
 const-hex = { version = "1.14", default-features = false, features = ["alloc"] }
 derive_more = "1.0"
 environmental = { version = "1.1.4", default-features = false }
-ethereum = { git = "https://github.com/rust-ethereum/ethereum", rev = "bbb544622208ef6e9890a2dbc224248f6dd13318", default-features = false }
+ethereum = { version = "0.18.2", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
-evm = { git = "https://github.com/rust-ethereum/evm", branch = "v0.x", default-features = false }
+evm = { version = "0.43.2", default-features = false }
 futures = "0.3.31"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
@@ -70,6 +74,7 @@ log = { version = "0.4.27", default-features = false }
 num_enum = { version = "0.7.3", default-features = false }
 parity-db = "0.4.13"
 parking_lot = "0.12.3"
+proc-macro2 = "1.0.86"
 quote = "1.0.38"
 rlp = { version = "0.6", default-features = false }
 scale-codec = { package = "parity-scale-codec", version = "3.7.5", default-features = false, features = ["derive"] }
@@ -78,6 +83,7 @@ serde = { version = "1.0", default-features = false, features = ["derive", "allo
 serde_json = "1.0"
 similar-asserts = "1.7.0"
 sqlx = { version = "0.7.4", default-features = false, features = ["macros"] }
+syn = "2.0.87"
 thiserror = "2.0"
 tokio = "1.45.0"
 
@@ -156,6 +162,9 @@ substrate-frame-rpc-system = { git = "https://github.com/paritytech/polkadot-sdk
 substrate-test-runtime-client = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
 substrate-wasm-builder = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503" }
 
+# Polkadot
+polkadot-runtime-common = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
+
 # Cumulus primitives
 cumulus-pallet-weight-reclaim = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
 cumulus-primitives-proof-size-hostfunction = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2503", default-features = false }
@@ -199,6 +208,9 @@ pallet-dynamic-fee = { path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { path = "frame/ethereum", default-features = false }
 pallet-evm = { path = "frame/evm", default-features = false }
 pallet-evm-chain-id = { path = "frame/evm-chain-id", default-features = false }
+pallet-evm-polkavm = { path = "frame/evm-polkavm", default-features = false }
+pallet-evm-polkavm-proc-macro = { path = "frame/evm-polkavm/proc-macro" }
+pallet-evm-polkavm-uapi = { path = "frame/evm-polkavm/uapi", default-features = false }
 pallet-evm-precompile-modexp = { path = "frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", default-features = false }
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }

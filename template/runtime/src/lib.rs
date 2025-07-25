@@ -14,6 +14,7 @@ include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use alloc::{borrow::Cow, vec, vec::Vec};
 use core::marker::PhantomData;
+use ethereum::AuthorizationList;
 use scale_codec::{Decode, Encode};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -26,7 +27,7 @@ use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
 		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get, IdentifyAccount,
-		IdentityLookup, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+		IdentityLookup, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, ConsensusEngineId, ExtrinsicInclusionMode, Perbill, Permill,
@@ -44,7 +45,8 @@ use frame_support::{
 	traits::{ConstBool, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
 };
-use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter};
+use pallet_transaction_payment::FungibleAdapter;
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_genesis_builder::PresetId;
 // Frontier
 use fp_account::EthereumSignature;
@@ -59,7 +61,6 @@ use pallet_evm::{
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::Multiplier;
 
 mod precompiles;
 use precompiles::FrontierPrecompiles;
@@ -109,17 +110,19 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
-	frame_system::CheckNonZeroSender<Runtime>,
-	frame_system::CheckSpecVersion<Runtime>,
-	frame_system::CheckTxVersion<Runtime>,
-	frame_system::CheckGenesis<Runtime>,
-	frame_system::CheckEra<Runtime>,
-	frame_system::CheckNonce<Runtime>,
-	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-	cumulus_pallet_weight_reclaim::StorageWeightReclaim<Runtime, ()>,
-);
+pub type SignedExtra = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
+	Runtime,
+	(
+		frame_system::CheckNonZeroSender<Runtime>,
+		frame_system::CheckSpecVersion<Runtime>,
+		frame_system::CheckTxVersion<Runtime>,
+		frame_system::CheckGenesis<Runtime>,
+		frame_system::CheckEra<Runtime>,
+		frame_system::CheckNonce<Runtime>,
+		frame_system::CheckWeight<Runtime>,
+		pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	),
+>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
@@ -306,16 +309,14 @@ impl pallet_balances::Config for Runtime {
 	type DoneSlashHandler = ();
 }
 
-parameter_types! {
-	pub FeeMultiplier: Multiplier = Multiplier::one();
-}
-
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
-	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
+	/// Parameterized slow adjusting fee updated based on
+	/// <https://research.web3.foundation/Polkadot/overview/token-economics#2-slow-adjusting-mechanism>
+	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Runtime>;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
@@ -804,6 +805,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			authorization_list: Option<AuthorizationList>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -816,7 +818,7 @@ impl_runtime_apis! {
 			};
 
 			// Estimated encoded transaction size must be based on the heaviest transaction
-			// type (EIP1559Transaction) to be compatible with all transaction types.
+			// type (EIP7702Transaction) to be compatible with all transaction types.
 			let mut estimated_transaction_len = data.len() +
 				// pallet ethereum index: 1
 				// transact call index: 1
@@ -829,13 +831,17 @@ impl_runtime_apis! {
 				// action: 21 (enum varianrt + call address)
 				// value: 32
 				// access_list: 1 (empty vec size)
+				// authorization_list: 1 (empty vec size)
 				// 65 bytes signature
-				258;
+				259;
 
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
 
+			if authorization_list.is_some() {
+				estimated_transaction_len += authorization_list.encoded_size();
+			}
 
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
@@ -865,6 +871,7 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				authorization_list.unwrap_or_default(),
 				false,
 				true,
 				weight_limit,
@@ -883,6 +890,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			authorization_list: Option<AuthorizationList>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -914,7 +922,9 @@ impl_runtime_apis! {
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
-
+			if authorization_list.is_some() {
+				estimated_transaction_len += authorization_list.encoded_size();
+			}
 
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
@@ -943,6 +953,7 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				authorization_list.unwrap_or_default(),
 				false,
 				true,
 				weight_limit,

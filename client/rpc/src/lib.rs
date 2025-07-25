@@ -47,7 +47,7 @@ pub use self::{
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
-pub use ethereum::TransactionV2 as EthereumTransaction;
+pub use ethereum::TransactionV3 as EthereumTransaction;
 #[cfg(feature = "txpool")]
 pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
@@ -331,16 +331,22 @@ pub fn public_key(transaction: &EthereumTransaction) -> Result<[u8; 64], sp_io::
 			msg.copy_from_slice(&ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..]);
 		}
 		EthereumTransaction::EIP2930(t) => {
-			sig[0..32].copy_from_slice(&t.r[..]);
-			sig[32..64].copy_from_slice(&t.s[..]);
-			sig[64] = t.odd_y_parity as u8;
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.odd_y_parity() as u8;
 			msg.copy_from_slice(&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..]);
 		}
 		EthereumTransaction::EIP1559(t) => {
-			sig[0..32].copy_from_slice(&t.r[..]);
-			sig[32..64].copy_from_slice(&t.s[..]);
-			sig[64] = t.odd_y_parity as u8;
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.odd_y_parity() as u8;
 			msg.copy_from_slice(&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..]);
+		}
+		EthereumTransaction::EIP7702(t) => {
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.odd_y_parity() as u8;
+			msg.copy_from_slice(&ethereum::EIP7702TransactionMessage::from(t.clone()).hash()[..]);
 		}
 	}
 	sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)

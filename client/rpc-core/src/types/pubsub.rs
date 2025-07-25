@@ -21,7 +21,7 @@
 use std::collections::BTreeMap;
 
 use ethereum::{
-	BlockV2 as EthereumBlock, ReceiptV3 as EthereumReceipt, TransactionV2 as EthereumTransaction,
+	BlockV3 as EthereumBlock, ReceiptV4 as EthereumReceipt, TransactionV3 as EthereumTransaction,
 };
 use ethereum_types::{H256, U256};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
@@ -126,7 +126,8 @@ impl PubSubResult {
 			let receipt_logs = match receipt {
 				EthereumReceipt::Legacy(d)
 				| EthereumReceipt::EIP2930(d)
-				| EthereumReceipt::EIP1559(d) => d.logs,
+				| EthereumReceipt::EIP1559(d)
+				| EthereumReceipt::EIP7702(d) => d.logs,
 			};
 
 			let transaction_hash: Option<H256> = if !receipt_logs.is_empty() {
