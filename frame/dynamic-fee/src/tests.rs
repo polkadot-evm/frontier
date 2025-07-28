@@ -19,8 +19,9 @@ use super::*;
 use crate as pallet_dynamic_fee;
 
 use frame_support::{
-	assert_ok, derive_impl, parameter_types,
+	assert_ok, assert_err, derive_impl, parameter_types,
 	traits::{ConstU32, OnFinalize, OnInitialize},
+	pallet_prelude::ProvideInherent,
 	weights::Weight,
 };
 use sp_core::{H256, U256};
@@ -119,5 +120,82 @@ fn double_set_in_a_block_failed() {
 			RuntimeOrigin::none(),
 			U256::zero()
 		));
+	});
+}
+
+#[test]
+fn check_inherent_validates_target_gas_price() {
+	new_test_ext().execute_with(|| {
+		// Set initial gas price
+		MinGasPrice::<Test>::put(U256::from(1000));
+
+		// With BoundDivision = 1024, the bound should be 1000/1024 + 1 = 1
+		// So upper limit = 1000 + 1 = 1001, lower limit = 1000 - 1 = 999
+
+		// Test valid target (within bounds)
+		let valid_target = U256::from(1000); // Current price is valid
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: valid_target };
+		assert_ok!(<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()));
+
+		// Test target too high
+		let too_high_target = U256::from(1002); // Above upper bound of 1001
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: too_high_target };
+		assert_err!(
+			<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()),
+			pallet_dynamic_fee::InherentError::TargetGasPriceTooHigh
+		);
+
+		// Test target too low
+		let too_low_target = U256::from(998); // Below lower bound of 999
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: too_low_target };
+		assert_err!(
+			<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()),
+			pallet_dynamic_fee::InherentError::TargetGasPriceTooLow
+		);
+
+		// Test zero target
+		let zero_target = U256::zero();
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: zero_target };
+		assert_err!(
+			<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()),
+			pallet_dynamic_fee::InherentError::TargetGasPriceZero
+		);
+	});
+}
+
+#[test]
+fn check_inherent_bounds_calculation() {
+	new_test_ext().execute_with(|| {
+		// Set initial gas price
+		MinGasPrice::<Test>::put(U256::from(1000));
+
+		// With BoundDivision = 1024, the bound should be 1000/1024 + 1 = 1
+		// So upper limit = 1000 + 1 = 1001, lower limit = 1000 - 1 = 999
+
+		// Test exact upper bound
+		let upper_bound_target = U256::from(1001);
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: upper_bound_target };
+		assert_ok!(<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()));
+
+		// Test exact lower bound
+		let lower_bound_target = U256::from(999);
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: lower_bound_target };
+		assert_ok!(<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()));
+
+		// Test just above upper bound
+		let just_above_target = U256::from(1002);
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: just_above_target };
+		assert_err!(
+			<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()),
+			pallet_dynamic_fee::InherentError::TargetGasPriceTooHigh
+		);
+
+		// Test just below lower bound
+		let just_below_target = U256::from(998);
+		let call = pallet_dynamic_fee::Call::note_min_gas_price_target { target: just_below_target };
+		assert_err!(
+			<pallet_dynamic_fee::Pallet::<Test> as ProvideInherent>::check_inherent(&call, &sp_inherents::InherentData::new()),
+			pallet_dynamic_fee::InherentError::TargetGasPriceTooLow
+		);
 	});
 }
