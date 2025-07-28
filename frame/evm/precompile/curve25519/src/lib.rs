@@ -60,12 +60,15 @@ impl LinearCostPrecompile for Curve25519Add {
 			temp_buf = &temp_buf[32..];
 		}
 
-		let sum = points
-			.iter()
-			.fold(RistrettoPoint::identity(), |acc, point| {
-				let pt = point.decompress().unwrap_or_else(RistrettoPoint::identity);
-				acc + pt
-			});
+		let sum = points.iter().try_fold(
+			RistrettoPoint::identity(),
+			|acc, point| -> Result<RistrettoPoint, PrecompileFailure> {
+				let pt = point.decompress().ok_or_else(|| PrecompileFailure::Error {
+					exit_status: ExitError::Other("invalid compressed Ristretto point".into()),
+				})?;
+				Ok(acc + pt)
+			},
+		)?;
 
 		Ok((ExitSucceed::Returned, sum.compress().to_bytes().to_vec()))
 	}
@@ -95,9 +98,12 @@ impl LinearCostPrecompile for Curve25519ScalarMul {
 		// second 32 bytes is for the compressed ristretto point bytes
 		let mut pt_buf = [0; 32];
 		pt_buf.copy_from_slice(&input[32..64]);
-		let point = CompressedRistretto(pt_buf)
-			.decompress()
-			.unwrap_or_else(RistrettoPoint::identity);
+		let point =
+			CompressedRistretto(pt_buf)
+				.decompress()
+				.ok_or_else(|| PrecompileFailure::Error {
+					exit_status: ExitError::Other("invalid compressed Ristretto point".into()),
+				})?;
 
 		let scalar_mul = scalar * point;
 		Ok((
@@ -259,6 +265,90 @@ mod tests {
 						exit_status: ExitError::Other(
 							"input cannot be greater than 320 bytes (10 compressed points)".into()
 						)
+					}
+				);
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_point_addition_invalid_point() -> Result<(), PrecompileFailure> {
+		// Create an invalid compressed Ristretto point
+		// Using a pattern that's definitely invalid for Ristretto compression
+		let mut invalid_point = [0u8; 32];
+		invalid_point[31] = 0xFF; // Set the last byte to 0xFF, which is invalid for Ristretto
+		let mut input = vec![];
+		input.extend_from_slice(&invalid_point);
+
+		let cost: u64 = 1;
+
+		match Curve25519Add::execute(&input, cost) {
+			Ok((_, _out)) => {
+				panic!("Test not expected to work with invalid point");
+			}
+			Err(e) => {
+				assert_eq!(
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other("invalid compressed Ristretto point".into())
+					}
+				);
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_scalar_mul_invalid_point() -> Result<(), PrecompileFailure> {
+		// Create an invalid compressed Ristretto point
+		// Using a pattern that's definitely invalid for Ristretto compression
+		let mut invalid_point = [0u8; 32];
+		invalid_point[31] = 0xFF; // Set the last byte to 0xFF, which is invalid for Ristretto
+		let scalar = [1u8; 32];
+		let mut input = vec![];
+		input.extend_from_slice(&scalar);
+		input.extend_from_slice(&invalid_point);
+
+		let cost: u64 = 1;
+
+		match Curve25519ScalarMul::execute(&input, cost) {
+			Ok((_, _out)) => {
+				panic!("Test not expected to work with invalid point");
+			}
+			Err(e) => {
+				assert_eq!(
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other("invalid compressed Ristretto point".into())
+					}
+				);
+				Ok(())
+			}
+		}
+	}
+
+	#[test]
+	fn test_point_addition_mixed_valid_invalid() -> Result<(), PrecompileFailure> {
+		// Create a mix of valid and invalid points
+		let valid_point = constants::RISTRETTO_BASEPOINT_POINT.compress().to_bytes();
+		let mut invalid_point = [0u8; 32];
+		invalid_point[31] = 0xFF; // Set the last byte to 0xFF, which is invalid for Ristretto
+		let mut input = vec![];
+		input.extend_from_slice(&valid_point);
+		input.extend_from_slice(&invalid_point);
+
+		let cost: u64 = 1;
+
+		match Curve25519Add::execute(&input, cost) {
+			Ok((_, _out)) => {
+				panic!("Test not expected to work with invalid point");
+			}
+			Err(e) => {
+				assert_eq!(
+					e,
+					PrecompileFailure::Error {
+						exit_status: ExitError::Other("invalid compressed Ristretto point".into())
 					}
 				);
 				Ok(())
