@@ -85,7 +85,8 @@ pub struct Header {
 	#[serde(skip_serializing_if = "Option::is_none")]
 	pub total_difficulty: Option<U256>,
 	/// Mix hash.
-	pub mix_hash: H256,
+	#[serde(default, skip_serializing_if = "Option::is_none")]
+	pub mix_hash: Option<H256>,
 
 	/// Base fee per unit of gas, which is added by [EIP-1559](https://eips.ethereum.org/EIPS/eip-1559).
 	#[serde(default, skip_serializing_if = "Option::is_none")]
