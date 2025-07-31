@@ -221,11 +221,23 @@ where
 		//
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
-		if is_transactional && !<AccountCodes<T>>::get(source).is_empty() {
-			return Err(RunnerError {
-				error: Error::<T>::TransactionMustComeFromEOA,
-				weight,
-			});
+		// Exception: Allow transactions from EOAs whose code is a valid delegation indicator (0xef0100 || address).
+		if is_transactional {
+			let source_code = <AccountCodes<T>>::get(source);
+			if !source_code.is_empty() {
+				// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
+				let is_delegation_indicator = source_code.len() == 23
+					&& source_code[0] == 0xef
+					&& source_code[1] == 0x01
+					&& source_code[2] == 0x00;
+
+				if !is_delegation_indicator {
+					return Err(RunnerError {
+						error: Error::<T>::TransactionMustComeFromEOA,
+						weight,
+					});
+				}
+			}
 		}
 
 		let total_fee_per_gas = if is_transactional {
