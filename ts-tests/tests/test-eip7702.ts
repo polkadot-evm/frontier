@@ -525,62 +525,42 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 
 		// Step 4: Verify delegation by checking the account code
 		const accountCode = await context.web3.eth.getCode(delegatorAddress);
+		console.log("Account code:", accountCode);
+		console.log("Account code length:", accountCode.length);
 		const delegationInfo = isDelegationIndicator(accountCode);
+		console.log("Delegation info:", delegationInfo);
 
-		if (delegationInfo.isDelegation) {
-			// Delegation indicator was set
-			expect(delegationInfo.address.toLowerCase()).to.equal(contractAddress.toLowerCase());
-			
-			// Step 5: Call the delegated function
-			const functionCallResult = await customRequest(context.web3, "eth_call", [
-				{
-					from: GENESIS_ACCOUNT,
-					to: delegatorAddress,
-					data: "0x620f42c0", // getMagicNumber() function selector
-					gas: "0x100000",
-				},
-				"latest",
-			]);
-
-			if (functionCallResult.result && functionCallResult.result !== "0x") {
-				const decodedResult = parseInt(functionCallResult.result, 16);
-				expect(decodedResult).to.equal(42); // Magic number from contract
-			}
-
-			// Alternative: Send a transaction to call the function
-			const callTx = await signer.sendTransaction({
+		// Expect delegation to be set
+		expect(delegationInfo.isDelegation).to.be.true;
+		expect(delegationInfo.address.toLowerCase()).to.equal(contractAddress.toLowerCase());
+		
+		// Step 5: Call the delegated function
+		const functionCallResult = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
 				to: delegatorAddress,
 				data: "0x620f42c0", // getMagicNumber() function selector
-				gasLimit: "0x100000",
-				gasPrice: "0x3B9ACA00",
-			});
+				gas: "0x100000",
+			},
+			"latest",
+		]);
 
-			await createAndFinalizeBlock(context.web3);
-			
-			const callReceipt = await context.ethersjs.getTransactionReceipt(callTx.hash);
-			expect(callReceipt.status).to.equal(1);
-		} else {
-			// If no delegation indicator, verify the account remains an EOA
-			expect(accountCode).to.equal("0x");
-			
-			// The delegation might still be recorded internally in Frontier
-			// Try calling the function anyway
-			const functionCallResult = await customRequest(context.web3, "eth_call", [
-				{
-					from: GENESIS_ACCOUNT,
-					to: delegatorAddress,
-					data: "0x620f42c0", // getMagicNumber() function selector
-					gas: "0x100000",
-				},
-				"latest",
-			]);
+		expect(functionCallResult.result).to.not.equal("0x");
+		const decodedResult = parseInt(functionCallResult.result, 16);
+		expect(decodedResult).to.equal(42); // Magic number from contract
 
-			// Check if we get a result (would indicate internal delegation tracking)
-			if (functionCallResult.result && functionCallResult.result !== "0x") {
-				const decodedResult = parseInt(functionCallResult.result, 16);
-				expect(decodedResult).to.equal(42); // Magic number from contract
-			}
-		}
+		// Also test with a transaction
+		const callTx = await signer.sendTransaction({
+			to: delegatorAddress,
+			data: "0x620f42c0", // getMagicNumber() function selector
+			gasLimit: "0x100000",
+			gasPrice: "0x3B9ACA00",
+		});
+
+		await createAndFinalizeBlock(context.web3);
+		
+		const callReceipt = await context.ethersjs.getTransactionReceipt(callTx.hash);
+		expect(callReceipt.status).to.equal(1);
 
 		// Verify the delegator account still has its balance
 		const finalBalance = await context.web3.eth.getBalance(delegatorAddress);
