@@ -360,10 +360,11 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const newAccount = ethers.Wallet.createRandom();
 		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, newAccount.privateKey);
 
-		// Set up delegation
+		// Set up delegation with a contract call
 		const delegationTx = {
 			from: GENESIS_ACCOUNT,
 			to: newAccount.address,
+			data: "0x620f42c0", // getMagicNumber() function selector
 			value: "0x00",
 			maxFeePerGas: "0x3B9ACA00",
 			maxPriorityFeePerGas: "0x01",
@@ -382,25 +383,20 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 
 		// Check if delegation indicator was set in Frontier
 		const accountCode = await context.web3.eth.getCode(newAccount.address);
-		const delegationCheck = isDelegationIndicator(accountCode);
+		expect(isDelegationIndicator(accountCode)).to.be.true;
 
-		if (delegationCheck.isDelegation) {
-			// Delegation was set successfully - test calling the delegated function
-			const result = await customRequest(context.web3, "eth_call", [
-				{
-					to: newAccount.address,
-					data: "0x620f42c0", // getMagicNumber() function selector
-				},
-				"latest",
-			]);
+		// Delegation was set successfully - test calling the delegated function
+		const result = await customRequest(context.web3, "eth_call", [
+			{
+				to: newAccount.address,
+				data: "0x620f42c0", // getMagicNumber() function selector
+			},
+			"latest",
+		]);
 
-			if (result.result) {
-				const decodedResult = parseInt(result.result, 16);
-				expect(decodedResult).to.equal(42); // Magic number from contract
-			}
-		} else {
-			// No delegation indicator - this test documents current Frontier behavior
-			expect(accountCode).to.equal("0x");
+		if (result.result) {
+			const decodedResult = parseInt(result.result, 16);
+			expect(decodedResult).to.equal(42); // Magic number from contract
 		}
 	});
 
@@ -486,7 +482,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasPrice: "0x3B9ACA00",
 		});
 		await createAndFinalizeBlock(context.web3);
-		
+
 		const fundingReceipt = await context.ethersjs.getTransactionReceipt(fundingTx.hash);
 		expect(fundingReceipt.status).to.equal(1);
 
@@ -495,10 +491,11 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		expect(BigInt(balance)).to.equal(BigInt(ethers.parseEther("1.0")));
 
 		// Step 3: Create authorization to delegate to the test contract
+		const delegatorCurrentNonce = await context.ethersjs.getTransactionCount(delegatorAddress);
 		const authorization = createAuthorizationObject(
 			CHAIN_ID,
 			contractAddress,
-			0, // Nonce for new authorization
+			delegatorCurrentNonce, // Use delegator's current nonce
 			delegatorAccount.privateKey
 		);
 
@@ -533,7 +530,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		// Expect delegation to be set
 		expect(delegationInfo.isDelegation).to.be.true;
 		expect(delegationInfo.address.toLowerCase()).to.equal(contractAddress.toLowerCase());
-		
+
 		// Step 5: Call the delegated function
 		const functionCallResult = await customRequest(context.web3, "eth_call", [
 			{
@@ -558,7 +555,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		});
 
 		await createAndFinalizeBlock(context.web3);
-		
+
 		const callReceipt = await context.ethersjs.getTransactionReceipt(callTx.hash);
 		expect(callReceipt.status).to.equal(1);
 
