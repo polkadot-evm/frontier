@@ -59,7 +59,7 @@ derive_more = "1.0"
 environmental = { version = "1.1.4", default-features = false }
 ethereum = { version = "0.18.2", default-features = false }
 ethereum-types = { version = "0.15", default-features = false }
-evm = { version = "0.43.2", default-features = false }
+evm = { version = "0.43.4", default-features = false }
 futures = "0.3.31"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
