@@ -88,7 +88,7 @@ impl<'de> serde::Deserialize<'de> for TxType {
 #[derive(Clone, Debug, Eq, PartialEq, Default, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Transaction {
-	/// [EIP-2718](https://eips.ethereum.org/EIPS/eip-27    gg  ) transaction type
+	/// [EIP-2718](https://eips.ethereum.org/EIPS/eip-2718) transaction type
 	#[serde(rename = "type")]
 	pub tx_type: TxType,
 
