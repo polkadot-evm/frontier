@@ -24,10 +24,16 @@ use ethereum::{AuthorizationListItem, TransactionAction};
 use pallet_evm::{config_preludes::ChainId, AddressMapping};
 use sp_core::{H160, H256, U256};
 
-// Simple contract that returns 42
-// Compiled from: contract SimpleReturn { function getMagicNumber() external pure returns (uint256) { return 42; } }
-// This is the runtime bytecode (what gets stored in AccountCodes after deployment)
-const SIMPLE_RETURN_CONTRACT_RUNTIME_BYTECODE: &str = "6080604052348015600f57600080fd5b506004361060285760003560e01c8063620f42c014602d575b600080fd5b60336047565b604051603e9190605c565b60405180910390f35b6000602a905090565b6055816075565b82525050565b6000602082019050606f6000830184604e565b92915050565b600081905091905056fea26469706673582212202a1b0d191c66f2b8b36e0ef0a29d6c0e2d0b44f367a7266431df69e3f87b48d464736f6c63430008190033";
+// Simple contract with foo() function that returns 42
+// pragma solidity ^0.8.0;
+// contract SimpleReturn {
+//     function foo() external pure returns (uint256) {
+//         return 42;
+//     }
+// }
+// This is the creation bytecode (constructor + runtime bytecode)
+const FOO_RETURNS_42_CONTRACT: &str = "608060405234801561001057600080fd5b50609d8061001f6000396000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063c298557814602d575b600080fd5b60336047565b604051603e919060565b60405180910390f35b6000602a905090565b6050816069565b82525050565b600060208201905060696000830184604b565b92915050565b600081905091905056fea264697066735822122012345678901234567890123456789012345678901234567890123456789012345678901264736f6c63430008000033";
+
 
 /// Helper function to create an EIP-7702 transaction for testing
 fn eip7702_transaction_unsigned(
@@ -103,8 +109,8 @@ fn eip7702_happy_path() {
 
 	ext.execute_with(|| {
 		// Deploy the contract using a proper transaction
-		// Contract creation bytecode (constructor + runtime bytecode)
-		let contract_creation_bytecode = hex::decode(SIMPLE_RETURN_CONTRACT_RUNTIME_BYTECODE).unwrap();
+		// Using our custom contract with foo() returning 42
+		let contract_creation_bytecode = hex::decode(FOO_RETURNS_42_CONTRACT).unwrap();
 
 		// Deploy contract using Alice's account
 		let deploy_tx = LegacyUnsignedTransaction {
@@ -124,6 +130,7 @@ fn eip7702_happy_path() {
 		let (_, _, deploy_info) = deploy_result.unwrap();
 		let contract_address = match deploy_info {
 			CallOrCreateInfo::Create(info) => {
+				println!("Contract deployment exit reason: {:?}", info.exit_reason);
 				assert!(info.exit_reason.is_succeed(), "Contract deployment should succeed");
 				info.value
 			}
@@ -136,6 +143,7 @@ fn eip7702_happy_path() {
 			!contract_code.is_empty(),
 			"Contract should be deployed with non-empty code"
 		);
+		
 
 		// The nonce = 2 accounts for the increment of Alice's nonce due to contract deployment + EIP-7702 transaction
 		let authorization =
@@ -208,13 +216,14 @@ fn eip7702_happy_path() {
 		);
 
 		// Test that the contract can be called directly (to verify it works)
+		// Our contract has a foo() function (selector: 0xc2985578) that returns 42
 		let direct_call_tx = LegacyUnsignedTransaction {
 			nonce: U256::from(2), // nonce 2 for Alice (after contract deployment + EIP-7702 transaction)
 			gas_price: U256::from(1),
 			gas_limit: U256::from(0x100000),
 			action: TransactionAction::Call(contract_address), // Call contract directly
 			value: U256::zero(),
-			input: hex::decode("620f42c0").unwrap(), // getMagicNumber() selector
+			input: hex::decode("c2985578").unwrap(), // foo() selector
 		}
 		.sign(&alice.private_key);
 
@@ -224,10 +233,10 @@ fn eip7702_happy_path() {
 		let (_, _, direct_call_info) = direct_call_result.unwrap();
 		match direct_call_info {
 			CallOrCreateInfo::Call(info) => {
-				println!("Exit reason: {:?}", info.exit_reason);
-				println!("Value: {:?}", info.value);
+				println!("Direct call exit reason: {:?}", info.exit_reason);
+				println!("Direct call return value: {:?}", info.value);
 				assert!(info.exit_reason.is_succeed());
-				// Verify the contract returns 42
+				// Verify the contract returns 42 for foo()
 				let expected_result = {
 					let mut result = vec![0u8; 32];
 					result[31] = 42;
@@ -235,7 +244,7 @@ fn eip7702_happy_path() {
 				};
 				assert_eq!(
 					info.value, expected_result,
-					"Direct call to contract should return 42"
+					"Direct call to contract foo() should return 42"
 				);
 			}
 			_ => panic!("Expected Call info, got Create"),
