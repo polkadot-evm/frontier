@@ -1240,10 +1240,14 @@ where
 	}
 
 	fn code_size(&self, address: H160) -> U256 {
+		// EIP-7702: EXTCODESIZE does NOT follow delegations
+		// Return the actual code size at the address, including delegation designators
 		U256::from(<Pallet<T>>::account_code_metadata(address).size)
 	}
 
 	fn code_hash(&self, address: H160) -> H256 {
+		// EIP-7702: EXTCODEHASH does NOT follow delegations
+		// Return the hash of the actual code at the address, including delegation designators
 		<Pallet<T>>::account_code_metadata(address).hash
 	}
 
