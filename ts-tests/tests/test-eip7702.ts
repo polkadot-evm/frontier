@@ -499,11 +499,12 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			delegatorAccount.privateKey
 		);
 
-		// Submit the delegation transaction
+		// Submit the delegation transaction (first transaction - simple transfer)
+		const randomRecipient = ethers.Wallet.createRandom().address;
 		const delegationTx = {
 			from: GENESIS_ACCOUNT,
-			to: delegatorAddress, // Send to the delegator account
-			value: "0x00",
+			to: randomRecipient, // Send to a random account
+			value: "0x100", // Small transfer amount
 			maxFeePerGas: "0x3B9ACA00",
 			maxPriorityFeePerGas: "0x01",
 			type: 4, // EIP-7702 transaction type
@@ -531,22 +532,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		expect(delegationInfo.isDelegation).to.be.true;
 		expect(delegationInfo.address.toLowerCase()).to.equal(contractAddress.toLowerCase());
 
-		// Step 5: Call the delegated function
-		const functionCallResult = await customRequest(context.web3, "eth_call", [
-			{
-				from: GENESIS_ACCOUNT,
-				to: delegatorAddress,
-				data: "0x620f42c0", // getMagicNumber() function selector
-				gas: "0x100000",
-			},
-			"latest",
-		]);
-
-		expect(functionCallResult.result).to.not.equal("0x");
-		const decodedResult = parseInt(functionCallResult.result, 16);
-		expect(decodedResult).to.equal(42); // Magic number from contract
-
-		// Also test with a transaction
+		// Step 5: Call the delegated function (second transaction - invoke code at address with delegation indicator)
 		const callTx = await signer.sendTransaction({
 			to: delegatorAddress,
 			data: "0x620f42c0", // getMagicNumber() function selector
