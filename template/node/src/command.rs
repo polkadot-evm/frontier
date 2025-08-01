@@ -176,7 +176,8 @@ pub fn run() -> sc_cli::Result<()> {
 					let (client, backend, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
 					let db = backend.expose_db();
 					let storage = backend.expose_storage();
-					cmd.run(config, client, db, storage)
+					let shared_cache = backend.expose_shared_trie_cache();
+					cmd.run(config, client, db, storage, shared_cache)
 				}),
 				BenchmarkCmd::Overhead(cmd) => runner.sync_run(|mut config| {
 					let (client, _, _, _, _) = service::new_chain_ops(&mut config, &cli.eth)?;
