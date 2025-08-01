@@ -38,6 +38,8 @@ const _SIMPLE_CONTRACT_RUNTIME: &str = "602a60005260206000f3";
 // This pushes the runtime code to memory and returns it
 const SIMPLE_CONTRACT_CREATION: &str = "69602a60005260206000f3600052600a6016f3";
 
+const EIP7702_DELEGATION_INDICATOR: [u8; 3] = [0xef, 0x01, 0x00];
+
 /// Helper function to create an EIP-7702 transaction for testing
 fn eip7702_transaction_unsigned(
 	nonce: U256,
@@ -118,12 +120,6 @@ fn eip7702_happy_path() {
 			"Creation bytecode length: {}",
 			contract_creation_bytecode.len()
 		);
-		if contract_creation_bytecode.len() >= 10 {
-			println!(
-				"Creation bytecode first 10 bytes: {:?}",
-				&contract_creation_bytecode[0..10]
-			);
-		}
 
 		// Deploy contract using Alice's account
 		let deploy_tx = LegacyUnsignedTransaction {
@@ -141,19 +137,20 @@ fn eip7702_happy_path() {
 
 		// Get the deployed contract address
 		let (_, _, deploy_info) = deploy_result.unwrap();
-		let contract_address = match deploy_info {
-			CallOrCreateInfo::Create(info) => {
-				println!("Contract deployment exit reason: {:?}", info.exit_reason);
-				println!("Contract deployment return address: {:?}", info.value);
-				println!("Contract deployment used gas: {:?}", info.used_gas);
-				assert!(
-					info.exit_reason.is_succeed(),
-					"Contract deployment should succeed"
-				);
-				info.value
-			}
-			_ => panic!("Expected Create info, got Call"),
+
+		let CallOrCreateInfo::Create(info) = deploy_info else {
+			panic!("Expected Create info, got Call");
 		};
+
+		println!("Contract deployment exit reason: {:?}", info.exit_reason);
+		println!("Contract deployment return address: {:?}", info.value);
+		println!("Contract deployment used gas: {:?}", info.used_gas);
+		assert!(
+			info.exit_reason.is_succeed(),
+			"Contract deployment should succeed"
+		);
+
+		let contract_address = info.value;
 
 		// Verify contract was deployed correctly
 		let contract_code = pallet_evm::AccountCodes::<Test>::get(contract_address);
@@ -206,7 +203,7 @@ fn eip7702_happy_path() {
 
 		assert_eq!(
 			alice_code[0..3],
-			[0xef, 0x01, 0x00],
+			EIP7702_DELEGATION_INDICATOR,
 			"Delegation code should start with 0xef0100"
 		);
 
