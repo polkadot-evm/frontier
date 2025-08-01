@@ -398,7 +398,7 @@ mod tests {
 		let client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
+		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 			.expect("a temporary db was created");
 
 		// A random ethereum block hash to use

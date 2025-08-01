@@ -29,7 +29,7 @@ where
 		attr.path()
 			.segments
 			.first()
-			.map_or(false, |segment| segment.ident == "precompile")
+			.is_some_and(|segment| segment.ident == "precompile")
 	};
 
 	while let Some(index) = attributes.iter().position(pred) {

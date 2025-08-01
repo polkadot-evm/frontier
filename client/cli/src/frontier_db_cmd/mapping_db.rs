@@ -176,4 +176,4 @@ where
 	}
 }
 
-impl<'a, B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MappingDb<'a, B, C> {}
+impl<B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MappingDb<'_, B, C> {}

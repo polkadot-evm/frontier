@@ -335,7 +335,7 @@ pub struct Runtime<'a, T, H, M: ?Sized> {
 	_phantom_data: PhantomData<(T, M)>,
 }
 
-impl<'a, T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'a, T, H, M> {
+impl<T: Config, H: PrecompileHandle, M: PolkaVmInstance> Runtime<'_, T, H, M> {
 	pub fn handle_interrupt(
 		&mut self,
 		interrupt: Result<polkavm::InterruptKind, polkavm::Error>,

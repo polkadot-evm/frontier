@@ -89,7 +89,7 @@ pub mod v1 {
 		}
 	}
 
-	impl<'a, B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'a, B, C, BE>
+	impl<B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'_, B, C, BE>
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
@@ -203,7 +203,7 @@ pub mod v2 {
 		}
 	}
 
-	impl<'a, B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'a, B, C, BE>
+	impl<B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'_, B, C, BE>
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
@@ -315,7 +315,7 @@ pub mod v3 {
 		}
 	}
 
-	impl<'a, B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'a, B, C, BE>
+	impl<B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'_, B, C, BE>
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
