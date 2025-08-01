@@ -572,10 +572,8 @@ impl<T: Config> Pallet<T> {
 		let origin_code = pallet_evm::AccountCodes::<T>::get(origin);
 		if !origin_code.is_empty() {
 			// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
-			let is_delegation_indicator = origin_code.len() == 23
-				&& origin_code[0] == 0xef
-				&& origin_code[1] == 0x01
-				&& origin_code[2] == 0x00;
+			let is_delegation_indicator =
+				origin_code.len() == 23 && origin_code[0..3] == [0xef, 0x01, 0x00];
 
 			if !is_delegation_indicator {
 				return Err(InvalidTransaction::BadSigner.into());

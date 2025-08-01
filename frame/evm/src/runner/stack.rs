@@ -226,10 +226,8 @@ where
 			let source_code = <AccountCodes<T>>::get(source);
 			if !source_code.is_empty() {
 				// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
-				let is_delegation_indicator = source_code.len() == 23
-					&& source_code[0] == 0xef
-					&& source_code[1] == 0x01
-					&& source_code[2] == 0x00;
+				let is_delegation_indicator =
+					source_code.len() == 23 && source_code[0..3] == [0xef, 0x01, 0x00];
 
 				if !is_delegation_indicator {
 					return Err(RunnerError {
@@ -570,6 +568,20 @@ where
 			)?;
 		}
 
+		// Check if the transaction destination has a delegation indicator and add the delegation target to accessed_addresses
+		let mut updated_access_list = access_list;
+		let target_code = <AccountCodes<T>>::get(target);
+		if target_code.len() == 23
+			&& target_code[0] == 0xef
+			&& target_code[1] == 0x01
+			&& target_code[2] == 0x00
+		{
+			// Extract delegation target address from bytes 3-22 (20 bytes)
+			let delegation_target = H160::from_slice(&target_code[3..23]);
+			// Add delegation target to access list (without any storage keys)
+			updated_access_list.push((delegation_target, Vec::new()));
+		}
+
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -590,7 +602,7 @@ where
 					value,
 					input,
 					gas_limit,
-					access_list,
+					updated_access_list,
 					authorization_list,
 				)
 			},
