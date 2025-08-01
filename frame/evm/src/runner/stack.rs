@@ -57,6 +57,8 @@ use crate::{
 	Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
+const EIP7702_DELEGATION_INDICATOR: [u8; 3] = [0xef, 0x01, 0x00];
+
 #[cfg(feature = "forbid-evm-reentrancy")]
 environmental::environmental!(IN_EVM: bool);
 
@@ -227,7 +229,7 @@ where
 			if !source_code.is_empty() {
 				// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
 				let is_delegation_indicator =
-					source_code.len() == 23 && source_code[0..3] == [0xef, 0x01, 0x00];
+					source_code.len() == 23 && source_code[0..3] == EIP7702_DELEGATION_INDICATOR;
 
 				if !is_delegation_indicator {
 					return Err(RunnerError {

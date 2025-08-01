@@ -72,6 +72,8 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::traits::PalletInfoAccess;
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 
+const EIP7702_DELEGATION_INDICATOR: [u8; 3] = [0xef, 0x01, 0x00];
+
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
 #[derive(Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
 pub enum RawOrigin {
@@ -573,7 +575,7 @@ impl<T: Config> Pallet<T> {
 		if !origin_code.is_empty() {
 			// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
 			let is_delegation_indicator =
-				origin_code.len() == 23 && origin_code[0..3] == [0xef, 0x01, 0x00];
+				origin_code.len() == 23 && origin_code[0..3] == EIP7702_DELEGATION_INDICATOR;
 
 			if !is_delegation_indicator {
 				return Err(InvalidTransaction::BadSigner.into());
