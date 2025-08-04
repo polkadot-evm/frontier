@@ -364,7 +364,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		expect(result.result).to.not.be.null;
 	});
 
-	step("should handle delegation edge cases", async function () {
+	step("should handle self delegation", async function () {
 		this.timeout(15000);
 
 		// Test self-delegation (should be prevented by Frontier)
@@ -395,16 +395,50 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
 		expect(receipt1.status).to.equal(1);
 
+		// TODO add meaningful checks
+	});
+
+	step("should handle zero-address delegation", async function () {
+		this.timeout(15000);
+
+		// Test self-delegation (should be prevented by Frontier)
+		const authorizer = ethers.Wallet.createRandom();
+		const authorization = await authorizer.authorize({
+			address: "0x0000000000000000000000000000000000000042",
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
+
+		const tx1 = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [authorization],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
+
+		const signedTx1 = await signer.sendTransaction(tx1);
+		await createAndFinalizeBlock(context.web3);
+
+		// Self-delegation should be handled gracefully by Frontier
+		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
+		expect(receipt1.status).to.equal(1);
+
 		// Test delegation to zero address
 		const zeroAddressAuth = await authorizer.authorize({
 			address: "0x0000000000000000000000000000000000000000",
-			nonce: 0,
+			nonce: 1,
 			chainId: CHAIN_ID,
 		});
 
 		const tx2 = {
 			from: GENESIS_ACCOUNT,
-			to: "0x1000000000000000000000000000000000000001",
+			to: authorizer.address,
 			value: "0x00",
 			maxFeePerGas: "0x3B9ACA00",
 			maxPriorityFeePerGas: "0x01",
@@ -421,6 +455,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		// Zero address delegation should be handled by Frontier
 		const receipt2 = await context.ethersjs.getTransactionReceipt(signedTx2.hash);
 		expect(receipt2.status).to.equal(1);
+
+		// Verify that delegation to zero address clears the account's code (EIP-7702 spec)
+		const zeroAuthorizerCode = await context.ethersjs.getCode(authorizer.address);
+		expect(zeroAuthorizerCode).to.equal("0x");
 	});
 
 	step("happy path: complete EIP-7702 delegation workflow", async function () {
