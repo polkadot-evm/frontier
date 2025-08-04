@@ -394,8 +394,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		// Self-delegation should be handled gracefully by Frontier
 		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
 		expect(receipt1.status).to.equal(1);
-
-		// TODO add meaningful checks
 	});
 
 	step("should handle zero-address delegation", async function () {
