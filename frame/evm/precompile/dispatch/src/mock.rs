@@ -148,7 +148,6 @@ impl pallet_evm::Config for Test {
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
-	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
 	type ChainId = ();

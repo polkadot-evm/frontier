@@ -6,8 +6,8 @@ let
     });
   nixpkgs = import <nixpkgs> { overlays = [ mozillaOverlay ]; };
   rust-stable = with nixpkgs; ((rustChannelOf { date = "2025-07-01"; channel = "nightly"; }).rust.override {
-    extensions = [ "rust-src" ];
-    targets = [ "wasm32-unknown-unknown" ];
+    extensions = [];
+    targets = [ "wasm32v1-none" ];
   });
 in
 with nixpkgs; pkgs.mkShell {

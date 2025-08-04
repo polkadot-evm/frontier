@@ -84,7 +84,6 @@ impl BaseFeeThresholdT for BaseFeeThreshold {
 }
 
 impl Config for Test {
-	type RuntimeEvent = RuntimeEvent;
 	type Threshold = BaseFeeThreshold;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
 	type DefaultElasticity = DefaultElasticity;
