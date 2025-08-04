@@ -13,8 +13,8 @@ const EIP7702_DELEGATION_PREFIX = "0xef0100";
 
 // Helper function to check if code is a delegation indicator
 function isDelegationIndicator(code: string): { isDelegation: boolean; address?: string } {
-	if (code && code.length === 46 && code.startsWith(EIP7702_DELEGATION_PREFIX)) {
-		const address = "0x" + code.slice(6); // Remove 0xef0100 prefix
+	if (code && code.length === 48 && code.startsWith(EIP7702_DELEGATION_PREFIX)) {
+		const address = "0x" + code.slice(8); // Remove 0xef0100 prefix
 		return { isDelegation: true, address };
 	}
 	return { isDelegation: false };
@@ -301,11 +301,16 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		this.timeout(15000);
 
 		const authorizer = ethers.Wallet.createRandom();
+		console.log("Authorizer address:", authorizer.address);
+		console.log("Contract address to delegate to:", contractAddress);
+		
 		const authorization = await authorizer.authorize({
 			address: contractAddress,
 			nonce: 0,
 			chainId: CHAIN_ID,
 		});
+		console.log("Authorization object:", JSON.stringify(authorization, (key, value) => 
+			typeof value === 'bigint' ? value.toString() : value, 2));
 
 		// Set up delegation with a simple call
 		const delegationTx = {
@@ -321,16 +326,25 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			authorizationList: [authorization],
 			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
 		};
+		console.log("Delegation transaction:", JSON.stringify(delegationTx, (key, value) => 
+			typeof value === 'bigint' ? value.toString() : value, 2));
 
 		const signedTx = await signer.sendTransaction(delegationTx);
+		console.log("Transaction hash:", signedTx.hash);
 		await createAndFinalizeBlock(context.web3);
 
 		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
+		console.log("Receipt status:", receipt.status);
+		console.log("Receipt logs:", receipt.logs);
 		expect(receipt.status).to.equal(1);
 
 		// Check if delegation indicator was set in Frontier
 		const accountCode = await context.web3.eth.getCode(authorizer.address);
-		expect(isDelegationIndicator(accountCode)).to.be.true;
+		console.log("Account code for", authorizer.address, ":", accountCode);
+		console.log("Account code length:", accountCode.length);
+		const delegationInfo = isDelegationIndicator(accountCode);
+		console.log("Delegation info:", delegationInfo);
+		expect(delegationInfo.isDelegation).to.be.true;
 
 		// Delegation was set successfully - test calling the simple contract
 		const result = await customRequest(context.web3, "eth_call", [
