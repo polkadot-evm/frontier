@@ -573,11 +573,7 @@ where
 		// Check if the transaction destination has a delegation indicator and add the delegation target to accessed_addresses
 		let mut updated_access_list = access_list;
 		let target_code = <AccountCodes<T>>::get(target);
-		if target_code.len() == 23
-			&& target_code[0] == 0xef
-			&& target_code[1] == 0x01
-			&& target_code[2] == 0x00
-		{
+		if target_code.len() == 23 && target_code[0..3] == EIP7702_DELEGATION_INDICATOR {
 			// Extract delegation target address from bytes 3-22 (20 bytes)
 			let delegation_target = H160::from_slice(&target_code[3..23]);
 			// Add delegation target to access list (without any storage keys)
