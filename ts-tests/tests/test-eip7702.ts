@@ -303,14 +303,16 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const authorizer = ethers.Wallet.createRandom();
 		console.log("Authorizer address:", authorizer.address);
 		console.log("Contract address to delegate to:", contractAddress);
-		
+
 		const authorization = await authorizer.authorize({
 			address: contractAddress,
 			nonce: 0,
 			chainId: CHAIN_ID,
 		});
-		console.log("Authorization object:", JSON.stringify(authorization, (key, value) => 
-			typeof value === 'bigint' ? value.toString() : value, 2));
+		console.log(
+			"Authorization object:",
+			JSON.stringify(authorization, (key, value) => (typeof value === "bigint" ? value.toString() : value), 2)
+		);
 
 		// Set up delegation with a simple call
 		const delegationTx = {
@@ -326,8 +328,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			authorizationList: [authorization],
 			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
 		};
-		console.log("Delegation transaction:", JSON.stringify(delegationTx, (key, value) => 
-			typeof value === 'bigint' ? value.toString() : value, 2));
+		console.log(
+			"Delegation transaction:",
+			JSON.stringify(delegationTx, (key, value) => (typeof value === "bigint" ? value.toString() : value), 2)
+		);
 
 		const signedTx = await signer.sendTransaction(delegationTx);
 		console.log("Transaction hash:", signedTx.hash);
