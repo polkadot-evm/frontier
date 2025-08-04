@@ -74,7 +74,7 @@ impl From<BlockCount> for u64 {
 	}
 }
 
-impl<'a> Visitor<'a> for BlockCountVisitor {
+impl Visitor<'_> for BlockCountVisitor {
 	type Value = BlockCount;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

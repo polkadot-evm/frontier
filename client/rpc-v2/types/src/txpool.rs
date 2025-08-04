@@ -77,7 +77,7 @@ impl<'de> serde::Deserialize<'de> for Summary {
 		D: serde::Deserializer<'de>,
 	{
 		struct SummaryVisitor;
-		impl<'de> de::Visitor<'de> for SummaryVisitor {
+		impl de::Visitor<'_> for SummaryVisitor {
 			type Value = Summary;
 
 			fn expecting(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {

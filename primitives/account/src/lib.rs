@@ -29,7 +29,6 @@ use scale_info::TypeInfo;
 use sp_core::{crypto::AccountId32, ecdsa, RuntimeDebug, H160, H256};
 use sp_io::hashing::keccak_256;
 use sp_runtime::MultiSignature;
-use sp_runtime_interface::pass_by::PassByInner;
 
 // Polkadot / XCM
 use xcm::latest::{Junction, Location};
@@ -240,7 +239,8 @@ impl EthereumSignature {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo, PassByInner)]
+#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[repr(transparent)]
 pub struct EthereumSigner([u8; 20]);
 
 impl From<[u8; 20]> for EthereumSigner {

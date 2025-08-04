@@ -17,7 +17,7 @@ evm = { workspace = true }
 futures = { workspace = true }
 hex = { workspace = true }
 jsonrpsee = { workspace = true, features = ["server", "macros"] }
-libsecp256k1 = { workspace = true }
+libsecp256k1 = { workspace = true, features = ["static-context", "hmac"] }
 log = { workspace = true }
 prometheus = { version = "0.13.4", default-features = false }
 rand = "0.9"

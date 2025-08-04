@@ -152,4 +152,4 @@ impl<'a, B: BlockT, C: HeaderBackend<B>> MetaDb<'a, B, C> {
 	}
 }
 
-impl<'a, B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MetaDb<'a, B, C> {}
+impl<B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MetaDb<'_, B, C> {}

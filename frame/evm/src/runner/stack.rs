@@ -988,7 +988,7 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 	}
 }
 
-impl<'vicinity, 'config, T: Config> BackendT for SubstrateStackState<'vicinity, 'config, T>
+impl<T: Config> BackendT for SubstrateStackState<'_, '_, T>
 where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {
@@ -1080,8 +1080,7 @@ where
 	}
 }
 
-impl<'vicinity, 'config, T: Config> StackStateT<'config>
-	for SubstrateStackState<'vicinity, 'config, T>
+impl<'config, T: Config> StackStateT<'config> for SubstrateStackState<'_, 'config, T>
 where
 	BalanceOf<T>: TryFrom<U256> + Into<U256>,
 {

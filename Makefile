@@ -21,10 +21,10 @@ fmt:
 .PHONY: clippy clippy-release
 # Run rust clippy with debug profile
 clippy:
-	cargo clippy --all --all-targets --features=runtime-benchmarks,try-runtime -- -D warnings
+	SKIP_WASM_BUILD=1 cargo clippy --all --all-targets --features=runtime-benchmarks,try-runtime -- -D warnings
 # Run rust clippy with release profile
 clippy-release:
-	cargo clippy --release --all --all-targets --features=runtime-benchmarks,try-runtime -- -D warnings
+	SKIP_WASM_BUILD=1 cargo clippy --release --all --all-targets --features=runtime-benchmarks,try-runtime -- -D warnings
 
 .PHONY: check check-release
 # Check code with debug profile
