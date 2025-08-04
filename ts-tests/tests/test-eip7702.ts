@@ -429,7 +429,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 
 		// Test delegation to zero address
 		const zeroAddressAuth = await authorizer.authorize({
-			address: "0x0000000000000000000000000000000000000000",
+			address: ethers.ZeroAddress,
 			nonce: 1,
 			chainId: CHAIN_ID,
 		});
