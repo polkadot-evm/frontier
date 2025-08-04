@@ -282,14 +282,9 @@ fn eip7702_happy_path() {
 		let delegate_call_result = Ethereum::execute(alice.address, &delegate_call_tx, None);
 		println!("Delegate call result: {:?}", delegate_call_result);
 
-		if let Ok((_, _, delegate_call_info)) = delegate_call_result {
-			match delegate_call_info {
-				CallOrCreateInfo::Call(delegate_info) => {
-					println!("Delegate call exit reason: {:?}", delegate_info.exit_reason);
-					println!("Delegate call return value: {:?}", delegate_info.value);
-				}
-				_ => {}
-			}
+		if let Ok((_, _, CallOrCreateInfo::Call(delegate_info))) = delegate_call_result {
+			println!("Delegate call exit reason: {:?}", delegate_info.exit_reason);
+			println!("Delegate call return value: {:?}", delegate_info.value);
 		}
 
 		// Verify the contract returns 42
