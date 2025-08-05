@@ -568,18 +568,6 @@ where
 			)?;
 		}
 
-		// Check if the transaction destination has a delegation indicator and add the delegation target to accessed_addresses
-		let mut updated_access_list = access_list;
-		let target_code = <AccountCodes<T>>::get(target);
-		if target_code.len() == evm::EIP_7702_DELEGATION_SIZE
-			&& &target_code[0..3] == evm::EIP_7702_DELEGATION_PREFIX
-		{
-			// Extract delegation target address from bytes 3-22 (20 bytes)
-			let delegation_target = H160::from_slice(&target_code[3..23]);
-			// Add delegation target to access list (without any storage keys)
-			updated_access_list.push((delegation_target, Vec::new()));
-		}
-
 		let precompiles = T::PrecompilesValue::get();
 		Self::execute(
 			source,
@@ -600,7 +588,7 @@ where
 					value,
 					input,
 					gas_limit,
-					updated_access_list,
+					access_list,
 					authorization_list,
 				)
 			},
