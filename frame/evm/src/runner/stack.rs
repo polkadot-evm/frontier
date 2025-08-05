@@ -57,8 +57,6 @@ use crate::{
 	Error, Event, FeeCalculator, OnChargeEVMTransaction, OnCreate, Pallet, RunnerError,
 };
 
-const EIP7702_DELEGATION_INDICATOR: [u8; 3] = [0xef, 0x01, 0x00];
-
 #[cfg(feature = "forbid-evm-reentrancy")]
 environmental::environmental!(IN_EVM: bool);
 
@@ -228,8 +226,8 @@ where
 			let source_code = <AccountCodes<T>>::get(source);
 			if !source_code.is_empty() {
 				// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
-				let is_delegation_indicator =
-					source_code.len() == 23 && source_code[0..3] == EIP7702_DELEGATION_INDICATOR;
+				let is_delegation_indicator = source_code.len() == evm::EIP_7702_DELEGATION_SIZE
+					&& &source_code[0..3] == evm::EIP_7702_DELEGATION_PREFIX;
 
 				if !is_delegation_indicator {
 					return Err(RunnerError {
@@ -573,7 +571,9 @@ where
 		// Check if the transaction destination has a delegation indicator and add the delegation target to accessed_addresses
 		let mut updated_access_list = access_list;
 		let target_code = <AccountCodes<T>>::get(target);
-		if target_code.len() == 23 && target_code[0..3] == EIP7702_DELEGATION_INDICATOR {
+		if target_code.len() == evm::EIP_7702_DELEGATION_SIZE
+			&& &target_code[0..3] == evm::EIP_7702_DELEGATION_PREFIX
+		{
 			// Extract delegation target address from bytes 3-22 (20 bytes)
 			let delegation_target = H160::from_slice(&target_code[3..23]);
 			// Add delegation target to access list (without any storage keys)
