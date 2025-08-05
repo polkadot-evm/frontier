@@ -707,3 +707,115 @@ fn gas_cost_calculation_with_authorizations() {
 		println!("  - Actual gas used: {}", actual_gas_used);
 	});
 }
+
+#[test]
+fn authorization_with_zero_address_delegation() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	ext.execute_with(|| {
+
+		// Step 1: First create a delegation to a non-zero address (e.g., 0x0...01)
+		let first_delegate_address = H160::from_str("0x0000000000000000000000000000000000000001").unwrap();
+
+		// The nonce = 1 accounts for the increment of Alice's nonce due to submitting the transaction
+		let first_authorization =
+			create_authorization_tuple(ChainId::get(), first_delegate_address, 1, &alice.private_key);
+
+		let first_transaction = eip7702_transaction_unsigned(
+			U256::zero(),
+			U256::from(0x100000),
+			TransactionAction::Call(bob.address),
+			U256::from(500),
+			vec![],
+			vec![first_authorization],
+		)
+		.sign(&alice.private_key, Some(ChainId::get()));
+
+		// Execute the first transaction
+		let result = Ethereum::execute(alice.address, &first_transaction, None);
+		assert_ok!(&result);
+
+		// Verify first delegation was set
+		let alice_code_after_first = pallet_evm::AccountCodes::<Test>::get(alice.address);
+		assert_eq!(
+			alice_code_after_first.len(),
+			23,
+			"Delegation code should be exactly 23 bytes after first delegation"
+		);
+		assert_eq!(
+			alice_code_after_first[0..3],
+			EIP7702_DELEGATION_INDICATOR,
+			"Delegation code should start with 0xef0100"
+		);
+		let delegated_address_first: H160 = H160::from_slice(&alice_code_after_first[3..23]);
+		assert_eq!(
+			delegated_address_first,
+			first_delegate_address,
+			"Alice's account should delegate to the first address"
+		);
+
+		// Step 2: Now create a delegation to the zero address
+		let zero_address = H160::zero();
+
+		let zero_authorization =
+			create_authorization_tuple(ChainId::get(), zero_address, 3, &alice.private_key);
+
+		let zero_transaction = eip7702_transaction_unsigned(
+			U256::from(2),
+			U256::from(0x100000),
+			TransactionAction::Call(bob.address),
+			U256::from(500),
+			vec![],
+			vec![zero_authorization],
+		)
+		.sign(&alice.private_key, Some(ChainId::get()));
+
+
+		// Execute the zero address delegation transaction
+		let result = Ethereum::execute(alice.address, &zero_transaction, None);
+		assert_ok!(&result);
+
+		// Step 3: Verify that delegation to zero address clears the account's code
+		let alice_code_after_zero = pallet_evm::AccountCodes::<Test>::get(alice.address);
+
+		// According to EIP-7702, delegating to zero address should clear the delegation
+		assert!(
+			alice_code_after_zero.is_empty(),
+			"Alice's code should be empty after delegating to zero address (no new delegation set, just cleanup)"
+		);
+
+
+		// Test calling Alice's address after zero address delegation
+		// This should behave like a regular EOA since delegation was cleared
+		let call_after_zero_tx = LegacyUnsignedTransaction {
+			nonce: U256::from(5), // nonce 2 for Alice (after both EIP-7702 transactions)
+			gas_price: U256::from(1),
+			gas_limit: U256::from(0x100000),
+			action: TransactionAction::Call(alice.address), // Call Alice's address
+			value: U256::zero(),
+			input: vec![0x01, 0x02, 0x03, 0x04], // Some arbitrary input
+		}
+		.sign(&alice.private_key);
+
+		let call_result = Ethereum::execute(alice.address, &call_after_zero_tx, None);
+		assert_ok!(&call_result);
+
+		let (_, _, call_info) = call_result.unwrap();
+		let CallOrCreateInfo::Call(info) = call_info else {
+			panic!("Expected Call info, got Create");
+		};
+
+		// After zero address delegation, calls should succeed but return empty data (EOA behavior)
+		assert!(
+			info.exit_reason.is_succeed(),
+			"Call to account after zero-address delegation should succeed"
+		);
+		assert!(
+			info.value.is_empty(),
+			"Call to EOA should return empty data"
+		);
+
+	});
+}
