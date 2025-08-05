@@ -38,8 +38,6 @@ const _SIMPLE_CONTRACT_RUNTIME: &str = "602a60005260206000f3";
 // This pushes the runtime code to memory and returns it
 const SIMPLE_CONTRACT_CREATION: &str = "69602a60005260206000f3600052600a6016f3";
 
-const EIP7702_DELEGATION_INDICATOR: [u8; 3] = [0xef, 0x01, 0x00];
-
 /// Helper function to create an EIP-7702 transaction for testing
 fn eip7702_transaction_unsigned(
 	nonce: U256,
@@ -197,13 +195,13 @@ fn eip7702_happy_path() {
 
 		assert_eq!(
 			alice_code.len(),
-			23,
+			evm::EIP_7702_DELEGATION_SIZE,
 			"Delegation code should be exactly 23 bytes (0xef0100 + 20 byte address)"
 		);
 
 		assert_eq!(
-			alice_code[0..3],
-			EIP7702_DELEGATION_INDICATOR,
+			&alice_code[0..3],
+			evm::EIP_7702_DELEGATION_PREFIX,
 			"Delegation code should start with 0xef0100"
 		);
 
@@ -741,12 +739,12 @@ fn authorization_with_zero_address_delegation() {
 		let alice_code_after_first = pallet_evm::AccountCodes::<Test>::get(alice.address);
 		assert_eq!(
 			alice_code_after_first.len(),
-			23,
+			evm::EIP_7702_DELEGATION_SIZE,
 			"Delegation code should be exactly 23 bytes after first delegation"
 		);
 		assert_eq!(
-			alice_code_after_first[0..3],
-			EIP7702_DELEGATION_INDICATOR,
+			&alice_code_after_first[0..3],
+			evm::EIP_7702_DELEGATION_PREFIX,
 			"Delegation code should start with 0xef0100"
 		);
 		let delegated_address_first: H160 = H160::from_slice(&alice_code_after_first[3..23]);
