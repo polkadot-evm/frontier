@@ -76,7 +76,7 @@ impl pallet_balances::Config for Test {
 impl pallet_timestamp::Config for Test {}
 
 parameter_types! {
-	pub const MaxTreeDepth: u32 = 16;
+	pub const MaxTreeDepth: u32 = 4; // Smaller for testing (2^4 -1 = 15 notes)
 }
 
 impl shielding::Config for Test {
@@ -236,13 +236,9 @@ pub fn new_test_ext_with_initial_balance(
 		.map(|i| address_build(i as u8))
 		.collect::<Vec<_>>();
 
-	let mut balances: Vec<_> = (0..accounts_len)
+	let balances: Vec<_> = (0..accounts_len)
 		.map(|i| (pairs[i].account_id.clone(), initial_balance))
 		.collect();
-
-	// Also initialize the zero address (shielding pool) with some balance
-	let shielding_pool_account_id = <Test as pallet_evm::Config>::AddressMapping::into_account_id(H160::zero());
-	balances.push((shielding_pool_account_id, 1_000_000)); // Give some initial balance to the shielding pool
 
 	pallet_balances::GenesisConfig::<Test> {
 		balances,
@@ -433,7 +429,7 @@ impl EIP1559UnsignedTransaction {
 pub struct ShieldingOnShield;
 impl pallet_evm::OnShield<Test> for ShieldingOnShield {
 	fn on_shield(_source: sp_core::H160, _value: sp_core::U256, note: sp_core::H256) -> Result<(), sp_runtime::DispatchError> {
-		// Extract the note from the transaction input and add it to the shielding pallet
-		::shielding::Pallet::<Test>::add_note_internal(note)
+		let result = ::shielding::Pallet::<Test>::add_note_internal(note);
+		result
 	}
 }
