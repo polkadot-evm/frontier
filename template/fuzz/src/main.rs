@@ -16,17 +16,15 @@ mod grammar;
 
 use frame_system::Account;
 use fuzzed_runtime::{
-	AccountId, Balance, Balances, BalancesConfig, PrecompilesValue, Runtime, RuntimeOrigin,
+	Balance, Balances, BalancesConfig, Runtime,
 };
 use grammar::FuzzData;
 use pallet_balances::{Holds, TotalIssuance};
-use pallet_evm::{config_preludes::FixedGasPrice, FeeCalculator, GasWeightMapping, Runner};
-use sp_consensus_aura::{Slot, AURA_ENGINE_ID};
-use sp_core::{H160, U256};
+use pallet_evm::{GasWeightMapping, Runner};
+use sp_core::H160;
 use sp_runtime::{
-	testing::H256,
-	traits::{Dispatchable, Header},
-	BuildStorage, Digest, DigestItem, Storage,
+	traits::Header,
+	BuildStorage,
 };
 use sp_state_machine::BasicExternalities;
 
@@ -90,6 +88,7 @@ pub fn new_test_ext() -> BasicExternalities {
 		balances: BalancesConfig {
 			// Configure endowed accounts with initial balance of 1 << 80.
 			balances: accounts.iter().cloned().map(|k| (k, 1 << 80)).collect(),
+			..Default::default()
 		},
 		base_fee: Default::default(),
 		evm_chain_id: Default::default(),
@@ -127,7 +126,7 @@ fn check_invariants(initial_total_issuance: Balance) {
 			max_lock, info.data.frozen,
 			"Max lock should be equal to frozen balance"
 		);
-		let sum_holds: Balance = Holds::<Runtime>::get(&account)
+		let sum_holds: Balance = Holds::<Runtime>::get(account)
 			.iter()
 			.map(|l| l.amount)
 			.sum();
