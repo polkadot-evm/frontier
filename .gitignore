@@ -13,11 +13,14 @@ pwasm-libc/Cargo.lock
 node/runtime/wasm/target/
 **/._*
 **/.criterion/
-.vscode
 polkadot.*
 .DS_Store
-.idea/
 .cargo-remote.toml
+
+# Editors
+.vscode
+.idea/
+.zed
 
 # Added by cargo
 /target
