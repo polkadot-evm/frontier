@@ -58,6 +58,36 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	}
 }
 
+export async function attachToFrontierNode(provider?: string): Promise<{
+	web3: Web3;
+	binary: null;
+	ethersjs: ethers.JsonRpcProvider;
+}> {
+	var web3;
+	if (!provider || provider == "http") {
+		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
+	} else if (provider == "ws") {
+		web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
+	}
+
+	// Check if node is running by trying to get chain ID
+	try {
+		const chainId = await web3.eth.getChainId();
+		console.log(`\x1b[32mAttached to existing Frontier node (Chain ID: ${chainId})\x1b[0m`);
+	} catch (error) {
+		console.error(`\x1b[31mFailed to connect to Frontier node at port ${RPC_PORT}\x1b[0m`);
+		console.error(`Make sure a node is running with --rpc-port=${RPC_PORT}`);
+		throw error;
+	}
+
+	let ethersjs = new ethers.JsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
+		chainId: CHAIN_ID,
+		name: "frontier-dev",
+	});
+
+	return { web3, binary: null, ethersjs };
+}
+
 export async function startFrontierNode(
 	provider?: string,
 	additionalArgs: string[] = []
@@ -66,6 +96,18 @@ export async function startFrontierNode(
 	binary: ChildProcess;
 	ethersjs: ethers.JsonRpcProvider;
 }> {
+	// First check if a node is already running
+	const attachOnExisting = process.env.FRONTIER_ATTACH || false;
+	if (attachOnExisting) {
+		try {
+			const result = await attachToFrontierNode(provider);
+			// Return with a fake binary object to maintain API compatibility
+			return { ...result, binary: null as any };
+		} catch (error) {
+			console.log(`\x1b[33mNo existing node found, starting new one...\x1b[0m`);
+		}
+	}
+
 	var web3;
 	if (!provider || provider == "http") {
 		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
@@ -171,7 +213,9 @@ export function describeWithFrontier(
 
 		after(async function () {
 			//console.log(`\x1b[31m Killing RPC\x1b[0m`);
-			binary.kill();
+			if (binary) {
+				binary.kill();
+			}
 		});
 
 		cb(context);
