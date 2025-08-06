@@ -1184,8 +1184,7 @@ where
 		// The EVM returns empty code in case of an EIP-7702 delegation to the zero address.
 		// In response we must remove such delegation from the authorizing account.
 		if code.is_empty() {
-			<AccountCodesMetadata<T>>::remove(address);
-			<AccountCodes<T>>::remove(address);
+			Pallet::<T>::remove_account_code(&address);
 		}
 
 		Pallet::<T>::create_account(address, code, caller)

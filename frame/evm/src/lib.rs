@@ -969,6 +969,12 @@ impl<T: Config> Pallet<T> {
 		let _ = <AccountStorages<T>>::clear_prefix(address, u32::MAX, None);
 	}
 
+	/// Remove an account's code if present.
+	pub fn remove_account_code(address: &H160) {
+		<AccountCodes<T>>::remove(address);
+		<AccountCodesMetadata<T>>::remove(address);
+	}
+
 	/// Create an account.
 	pub fn create_account(
 		address: H160,
