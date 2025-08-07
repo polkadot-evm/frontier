@@ -66,9 +66,26 @@ export async function startFrontierNode(
 	binary: ChildProcess;
 	ethersjs: ethers.JsonRpcProvider;
 }> {
-	var web3;
+	let web3;
 	if (!provider || provider == "http") {
 		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
+	} else if (provider == "ws") {
+		web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
+	}
+
+	const ethersjs = new ethers.JsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
+		chainId: CHAIN_ID,
+		name: "frontier-dev",
+	});
+
+	const attachOnExisting = process.env.FRONTIER_ATTACH || false;
+	if (attachOnExisting) {
+		try {
+			// Return with a fake binary object to maintain API compatibility
+			return { web3, ethersjs, binary: null as any };
+		} catch (_error) {
+			console.log(`\x1b[33mNo existing node found, starting new one...\x1b[0m`);
+		}
 	}
 
 	const cmd = BINARY_PATH;
@@ -140,11 +157,6 @@ export async function startFrontierNode(
 		web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
 	}
 
-	let ethersjs = new ethers.JsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
-		chainId: CHAIN_ID,
-		name: "frontier-dev",
-	});
-
 	return { web3, binary, ethersjs };
 }
 
@@ -171,7 +183,9 @@ export function describeWithFrontier(
 
 		after(async function () {
 			//console.log(`\x1b[31m Killing RPC\x1b[0m`);
-			binary.kill();
+			if (binary) {
+				binary.kill();
+			}
 		});
 
 		cb(context);
