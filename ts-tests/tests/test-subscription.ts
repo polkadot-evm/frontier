@@ -2,9 +2,9 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontierWs } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfinWs } from "./util";
 
-describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
+describeWithTokfinWs("Tokfin RPC (Subscription)", (context) => {
 	let subscription;
 	let logsGenerated = 0;
 

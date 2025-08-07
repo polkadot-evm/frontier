@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -37,16 +37,16 @@ use substrate_test_runtime_client::{
 	BlockBuilderExt, ClientBlockImportExt, ClientExt, DefaultTestClientBuilderExt,
 	TestClientBuilder,
 };
-// Frontier
+// Tokfin
 use fp_storage::{constants::*, EthereumStorageSchema};
-use frontier_template_runtime::RuntimeApi;
+use tokfin_runtime::RuntimeApi;
 
-use crate::frontier_db_cmd::{Column, FrontierDbCmd, Operation};
+use crate::tokfin_db_cmd::{Column, TokfinDbCmd, Operation};
 
 type OpaqueBlock =
 	Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
+pub fn open_tokfin_backend<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: PathBuf,
 ) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
@@ -73,8 +73,8 @@ enum TestValue {
 	Commitment(<OpaqueBlock as BlockT>::Hash),
 }
 
-fn cmd(key: String, value: Option<PathBuf>, operation: Operation, column: Column) -> FrontierDbCmd {
-	FrontierDbCmd {
+fn cmd(key: String, value: Option<PathBuf>, operation: Operation, column: Column) -> TokfinDbCmd {
+	TokfinDbCmd {
 		operation,
 		column,
 		key,
@@ -126,8 +126,8 @@ fn schema_create_success_if_value_is_empty() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	assert_eq!(backend.meta().ethereum_schema(), Ok(None));
@@ -157,8 +157,8 @@ fn schema_create_fails_if_value_is_not_empty() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	let data_before = vec![(EthereumStorageSchema::V2, H256::default())];
@@ -188,8 +188,8 @@ fn schema_read_works() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	assert_eq!(backend.meta().ethereum_schema(), Ok(None));
@@ -220,8 +220,8 @@ fn schema_update_works() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	assert_eq!(backend.meta().ethereum_schema(), Ok(None));
@@ -247,8 +247,8 @@ fn schema_delete_works() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	let data = vec![(EthereumStorageSchema::V2, H256::default())];
@@ -278,8 +278,8 @@ fn tips_create_success_if_value_is_empty() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
@@ -307,8 +307,8 @@ fn tips_create_fails_if_value_is_not_empty() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	let data_before = vec![H256::default()];
@@ -337,8 +337,8 @@ fn tips_read_works() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
@@ -368,8 +368,8 @@ fn tips_update_works() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	assert_eq!(backend.meta().current_syncing_tips(), Ok(vec![]));
@@ -395,8 +395,8 @@ fn tips_delete_works() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	let data = vec![H256::default()];
@@ -426,8 +426,8 @@ fn non_existent_meta_static_keys_are_no_op() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 	let client = client;
 
@@ -500,8 +500,8 @@ fn not_deserializable_input_value_is_no_op() {
 	// Test client.
 	let (client, _) = TestClientBuilder::new().build_with_native_executor::<RuntimeApi, _>(None);
 	let client = Arc::new(client);
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 	let client = client;
 
@@ -562,8 +562,8 @@ fn commitment_create() {
 	// Set the substrate block hash as the value for the command.
 	let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_hash));
 
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	// Run the command using some ethereum block hash as key.
@@ -648,8 +648,8 @@ fn commitment_update() {
 	// Set the substrate block hash as the value for the command.
 	let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_a1_hash));
 
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	// Run the command using some ethereum block hash as key.
@@ -773,8 +773,8 @@ fn mapping_read_works() {
 	// Set the substrate block hash as the value for the command.
 	let test_value_path = test_json_file(&tmp, &TestValue::Commitment(block_hash));
 
-	// Create a temporary frontier secondary DB.
-	let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+	// Create a temporary tokfin secondary DB.
+	let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 		.expect("a temporary db was created");
 
 	// Create command using some ethereum block hash as key.

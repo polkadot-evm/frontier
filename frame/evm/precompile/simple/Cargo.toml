@@ -10,11 +10,11 @@ repository = { workspace = true }
 ripemd = { version = "0.1", default-features = false }
 # Substrate
 sp-io = { workspace = true }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [dev-dependencies]
-# Frontier
+# Tokfin
 pallet-evm-test-vector-support = { workspace = true }
 
 [features]
@@ -23,6 +23,6 @@ std = [
 	"ripemd/std",
 	# Substrate
 	"sp-io/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
@@ -36,7 +36,7 @@ use frame_support::{
 	traits::{ConstU32, Get},
 };
 use sp_runtime::traits::Dispatchable;
-// Frontier
+// Tokfin
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
 	PrecompileResult,

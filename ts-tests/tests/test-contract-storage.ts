@@ -3,9 +3,9 @@ import { AbiItem } from "web3-utils";
 
 import Test from "../build/contracts/Storage.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (Contract)", (context) => {
+describeWithTokfin("Tokfin RPC (Contract)", (context) => {
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 

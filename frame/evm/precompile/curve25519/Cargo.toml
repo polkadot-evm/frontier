@@ -9,12 +9,12 @@ repository = { workspace = true }
 
 [dependencies]
 curve25519-dalek = { version = "4.1.0", default-features = false, features = ["alloc"] }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

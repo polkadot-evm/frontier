@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -18,6 +18,6 @@
 
 #![warn(unused_crate_dependencies)]
 
-mod frontier_db_cmd;
+mod tokfin_db_cmd;
 
-pub use self::frontier_db_cmd::FrontierDbCmd;
+pub use self::tokfin_db_cmd::TokfinDbCmd;

@@ -12,13 +12,13 @@ Choosing the right area usually involves benchmarking. It's also important to un
 
 ## Understand what can be optimized
 
-Related to Frontier, there are three areas that are normally important:
+Related to Tokfin, there are three areas that are normally important:
 
 * Consensus and networking
 * Storage IO
 * VM execution
 
-In the Frontier codebase, we don't directly deal with consensus and networking, and thus our focus would be on storage IO and VM execution. We do want to note that there are still a lot of potential things that can be optimized in consensus and networking especially if one runs a L1 (solo chain). If one runs a L2 (Polkadot parachains or Cardano partner chain), then the consensus and networking is usually fixed and can only be optimized through upstream.
+In the Tokfin codebase, we don't directly deal with consensus and networking, and thus our focus would be on storage IO and VM execution. We do want to note that there are still a lot of potential things that can be optimized in consensus and networking especially if one runs a L1 (solo chain). If one runs a L2 (Polkadot parachains or Cardano partner chain), then the consensus and networking is usually fixed and can only be optimized through upstream.
 
 ## Storage vs VM
 
@@ -28,7 +28,7 @@ Before we proceed, let's first understand what we mean by "storage IO" and "VM e
 * **VM execution**: The engine then starts the actual VM execution running EVM bytecodes. Note that here the engine may still fetch additional values from the storage (via `SLOAD` opcode, for example), which we count in VM execution. It stores all changed storage values normally in a hashmap but does not build the merkle trie yet.
 * **Storage IO**: The engine finalizes the execution, and all changed storage values are built in the merkle trie and put into disk storage.
 
-If one uses Frontier, then one probably is here for the full Ethereum and EVM compatibility. In this case, we can make a reasonable assumption that our userbase will be similar to that of Ethereum, and developers will deploy similar smart contracts. It is therefore really useful to take a look at existing benchmarks on Ethereum mainnet. What are our current bottlenecks? Is it storage IO? Or is it VM execution?
+If one uses Tokfin, then one probably is here for the full Ethereum and EVM compatibility. In this case, we can make a reasonable assumption that our userbase will be similar to that of Ethereum, and developers will deploy similar smart contracts. It is therefore really useful to take a look at existing benchmarks on Ethereum mainnet. What are our current bottlenecks? Is it storage IO? Or is it VM execution?
 
 ![Average transaction processing time](./optimization/transaction-processing-time.jpg)
 
@@ -48,7 +48,7 @@ It's also important to check whether one's blockchain is really already performa
 
 ## Notes on PolkaVM
 
-The Frontier project provides optional support of PolkaVM through the `pallet-evm-polkavm` pallet.
+The Tokfin project provides optional support of PolkaVM through the `pallet-evm-polkavm` pallet.
 
 However, in Polkadot parachains, the performance is [bottlenecked by Proof-of-Validity (PoV) size limit](https://github.com/paritytech/substrate/issues/9354). If the smart contract size becomes larger due to VM execution optimization, then this will result in worse throughput regardless of VM performance -- within the PoV size limit, less contracts can fit.
 

@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# This script can be used for running frontier's benchmarks.
+# This script can be used for running tokfin's benchmarks.
 #
-# The frontier binary is required to be compiled with --features=runtime-benchmarks
+# The tokfin binary is required to be compiled with --features=runtime-benchmarks
 # in release mode.
 
 set -e
 
-BINARY="./target/release/frontier-template-node"
+BINARY="./target/release/tokfin-node"
 
 function choose_and_bench {
     readarray -t options < <(${BINARY} benchmark pallet --list | sed 1d)

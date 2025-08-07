@@ -3,10 +3,10 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, CHAIN_ID } from "./config";
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import { createAndFinalizeBlock, describeWithTokfin, customRequest } from "./util";
 
 // We use ethers library in this test as apparently web3js's types are not fully EIP-1559 compliant yet.
-describeWithFrontier("Frontier RPC (Max Priority Fee Per Gas)", (context) => {
+describeWithTokfin("Tokfin RPC (Max Priority Fee Per Gas)", (context) => {
 	async function sendTransaction(context, payload: any) {
 		let signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
 		// Ethers internally matches the locally calculated transaction hash against the one returned as a response.

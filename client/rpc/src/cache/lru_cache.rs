@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -101,21 +101,21 @@ impl LRUCacheByteLimitedMetrics {
 		Ok(Self {
 			hits: prometheus_endpoint::register(
 				prometheus::IntCounter::new(
-					format!("frontier_eth_{}_hits", cache_name),
+					format!("tokfin_eth_{}_hits", cache_name),
 					format!("Hits of eth {} cache.", cache_name),
 				)?,
 				registry,
 			)?,
 			miss: prometheus_endpoint::register(
 				prometheus::IntCounter::new(
-					format!("frontier_eth_{}_miss", cache_name),
+					format!("tokfin_eth_{}_miss", cache_name),
 					format!("Misses of eth {} cache.", cache_name),
 				)?,
 				registry,
 			)?,
 			size: prometheus_endpoint::register(
 				prometheus_endpoint::Gauge::new(
-					format!("frontier_eth_{}_size", cache_name),
+					format!("tokfin_eth_{}_size", cache_name),
 					format!("Size of eth {} data cache.", cache_name),
 				)?,
 				registry,

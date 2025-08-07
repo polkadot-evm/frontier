@@ -2,8 +2,8 @@ use futures::TryFutureExt;
 // Substrate
 use sc_cli::{ChainSpec, SubstrateCli};
 use sc_service::DatabaseSource;
-// Frontier
-use fc_db::kv::frontier_database_dir;
+// Tokfin
+use fc_db::kv::tokfin_database_dir;
 
 use crate::{
 	chain_spec,
@@ -16,7 +16,7 @@ use crate::chain_spec::get_account_id_from_seed;
 
 impl SubstrateCli for Cli {
 	fn impl_name() -> String {
-		"Frontier Node".into()
+		"Tokfin Node".into()
 	}
 
 	fn impl_version() -> String {
@@ -98,17 +98,17 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::PurgeChain(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|config| {
-				// Remove Frontier offchain db
+				// Remove Tokfin offchain db
 				let db_config_dir = db_config_dir(&config);
-				match cli.eth.frontier_backend_type {
+				match cli.eth.tokfin_backend_type {
 					crate::eth::BackendType::KeyValue => {
-						let frontier_database_config = match config.database {
+						let tokfin_database_config = match config.database {
 							DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
-								path: frontier_database_dir(&db_config_dir, "db"),
+								path: tokfin_database_dir(&db_config_dir, "db"),
 								cache_size: 0,
 							},
 							DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
-								path: frontier_database_dir(&db_config_dir, "paritydb"),
+								path: tokfin_database_dir(&db_config_dir, "paritydb"),
 							},
 							_ => {
 								return Err(format!(
@@ -118,7 +118,7 @@ pub fn run() -> sc_cli::Result<()> {
 								.into())
 							}
 						};
-						cmd.run(frontier_database_config)?;
+						cmd.run(tokfin_database_config)?;
 					}
 					crate::eth::BackendType::Sql => {
 						let db_path = db_config_dir.join("sql");
@@ -162,7 +162,7 @@ pub fn run() -> sc_cli::Result<()> {
 			use frame_benchmarking_cli::{
 				BenchmarkCmd, ExtrinsicFactory, SUBSTRATE_REFERENCE_HARDWARE,
 			};
-			use frontier_template_runtime::{Hashing, EXISTENTIAL_DEPOSIT};
+			use tokfin_runtime::{Hashing, EXISTENTIAL_DEPOSIT};
 
 			let runner = cli.create_runner(cmd)?;
 			match cmd {
@@ -214,16 +214,16 @@ pub fn run() -> sc_cli::Result<()> {
 		Some(Subcommand::Benchmark) => Err("Benchmarking wasn't enabled when building the node. \
 			You can enable it with `--features runtime-benchmarks`."
 			.into()),
-		Some(Subcommand::FrontierDb(cmd)) => {
+		Some(Subcommand::TokfinDb(cmd)) => {
 			let runner = cli.create_runner(cmd)?;
 			runner.sync_run(|mut config| {
-				let (client, _, _, _, frontier_backend) =
+				let (client, _, _, _, tokfin_backend) =
 					service::new_chain_ops(&mut config, &cli.eth)?;
-				let frontier_backend = match frontier_backend {
+				let tokfin_backend = match tokfin_backend {
 					fc_db::Backend::KeyValue(kv) => kv,
 					_ => panic!("Only fc_db::Backend::KeyValue supported"),
 				};
-				cmd.run(client, frontier_backend)
+				cmd.run(client, tokfin_backend)
 			})
 		}
 		None => {

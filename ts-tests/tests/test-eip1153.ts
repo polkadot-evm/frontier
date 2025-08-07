@@ -4,17 +4,17 @@ import { AbiItem } from "web3-utils";
 
 import ReentrancyProtected from "../build/contracts/ReentrancyProtected.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
 chaiUse(chaiAsPromised);
 
-describeWithFrontier("Frontier RPC (EIP-1153)", (context) => {
+describeWithTokfin("Tokfin RPC (EIP-1153)", (context) => {
 	const TEST_CONTRACT_BYTECODE = ReentrancyProtected.bytecode;
 	const TEST_CONTRACT_ABI = ReentrancyProtected.abi as AbiItem[];
 	let contract_address: string = null;
 
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
-	// to spin up a frontier node, it saves a lot of time.
+	// to spin up a tokfin node, it saves a lot of time.
 
 	before("create the contract", async function () {
 		this.timeout(15000);

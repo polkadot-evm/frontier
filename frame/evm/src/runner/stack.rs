@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
@@ -42,7 +42,7 @@ use frame_support::{
 };
 use sp_core::{H160, H256, U256};
 use sp_runtime::traits::UniqueSaturatedInto;
-// Frontier
+// Tokfin
 use fp_evm::{
 	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
 	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_KEY_SIZE,
@@ -1341,7 +1341,7 @@ where
 			// the full key/value for reads. For read and writes over the same storage, the full value
 			// is included.
 			// For cold reads involving code (call, callcode, staticcall and delegatecall):
-			//	- We depend on https://github.com/paritytech/frontier/pull/893
+			//	- We depend on https://github.com/paritytech/tokfin/pull/893
 			//	- Try to get the cached size or compute it on the fly
 			//	- We record the actual size after caching, refunding the difference between it and the initially deducted
 			//	contract size limit.

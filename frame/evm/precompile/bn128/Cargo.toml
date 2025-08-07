@@ -11,11 +11,11 @@ repository = { workspace = true }
 bn = { workspace = true }
 # Substrate
 sp-core = { workspace = true }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [dev-dependencies]
-# Frontier
+# Tokfin
 pallet-evm-test-vector-support = { workspace = true }
 
 [features]
@@ -23,6 +23,6 @@ default = ["std"]
 std = [
 	# Substrate
 	"sp-core/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

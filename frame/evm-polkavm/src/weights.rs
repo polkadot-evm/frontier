@@ -1,6 +1,6 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
-// Copyright (C) Frontier developers.
+// Copyright (C) Tokfin developers.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");

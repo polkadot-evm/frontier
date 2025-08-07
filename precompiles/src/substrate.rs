@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (c) Moonsong Labs.
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -29,7 +29,7 @@ use frame_support::{
 	weights::Weight,
 };
 use sp_runtime::{traits::Dispatchable, DispatchError};
-// Frontier
+// Tokfin
 use fp_evm::{ExitError, PrecompileFailure, PrecompileHandle};
 use pallet_evm::GasWeightMapping;
 

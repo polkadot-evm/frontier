@@ -18,7 +18,7 @@ use sp_consensus_aura::{sr25519::AuthorityId as AuraId, AuraApi};
 use sp_core::H256;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 pub use fc_rpc::{EthBlockDataCacheTask, EthConfig};
 pub use fc_rpc_core::types::{FeeHistoryCache, FeeHistoryCacheLimit, FilterPool};
 use fc_storage::StorageOverride;
@@ -42,8 +42,8 @@ pub struct EthDeps<B: BlockT, C, P, CT, CIDP> {
 	pub network: Arc<dyn NetworkService>,
 	/// Chain syncing service
 	pub sync: Arc<SyncingService<B>>,
-	/// Frontier Backend.
-	pub frontier_backend: Arc<dyn fc_api::Backend<B>>,
+	/// Tokfin Backend.
+	pub tokfin_backend: Arc<dyn fc_api::Backend<B>>,
 	/// Ethereum data access overrides.
 	pub storage_override: Arc<dyn StorageOverride<B>>,
 	/// Cache for Ethereum block data.
@@ -108,7 +108,7 @@ where
 		enable_dev_signer,
 		network,
 		sync,
-		frontier_backend,
+		tokfin_backend,
 		storage_override,
 		block_data_cache,
 		filter_pool,
@@ -134,7 +134,7 @@ where
 			sync.clone(),
 			signers,
 			storage_override.clone(),
-			frontier_backend.clone(),
+			tokfin_backend.clone(),
 			is_authority,
 			block_data_cache.clone(),
 			fee_history_cache,
@@ -152,7 +152,7 @@ where
 		io.merge(
 			EthFilter::new(
 				client.clone(),
-				frontier_backend.clone(),
+				tokfin_backend.clone(),
 				graph.clone(),
 				filter_pool,
 				500_usize, // max stored filters
@@ -190,7 +190,7 @@ where
 	io.merge(
 		Debug::new(
 			client.clone(),
-			frontier_backend,
+			tokfin_backend,
 			storage_override,
 			block_data_cache,
 		)

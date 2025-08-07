@@ -1,6 +1,6 @@
 # Accounts
 
-Frontier provides two different strategies for handling `H160` addresses.
+Tokfin provides two different strategies for handling `H160` addresses.
 
 ## H256 -> H160 mapping
 

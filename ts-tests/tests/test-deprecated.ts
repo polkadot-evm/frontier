@@ -1,8 +1,8 @@
 import { expect } from "chai";
 
-import { customRequest, describeWithFrontier } from "./util";
+import { customRequest, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (Deprecated)", (context) => {
+describeWithTokfin("Tokfin RPC (Deprecated)", (context) => {
 	// List of deprecated methods
 	[
 		{ method: "eth_getCompilers", params: [] },

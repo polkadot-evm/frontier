@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (State root hash)", (context) => {
+describeWithTokfin("Tokfin RPC (State root hash)", (context) => {
 	let block;
 	step("should calculate a valid intermediate state root hash", async function () {
 		await createAndFinalizeBlock(context.web3);

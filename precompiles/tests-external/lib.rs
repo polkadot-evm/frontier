@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (c) Moonsong Labs.
 // Copyright (C) Parity Technologies (UK) Ltd.
@@ -32,7 +32,7 @@ use sp_runtime::{
 	traits::{BlakeTwo256, IdentityLookup},
 	BuildStorage, Perbill,
 };
-// Frontier
+// Tokfin
 use fp_evm::{ExitReason, ExitRevert, PrecompileFailure, PrecompileHandle};
 use pallet_evm::{CodeMetadata, EnsureAddressNever, EnsureAddressRoot};
 use precompile_utils::{

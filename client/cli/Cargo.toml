@@ -2,7 +2,7 @@
 name = "fc-cli"
 version = "1.0.0-dev"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
-description = "Frontier CLI interface"
+description = "Tokfin CLI interface"
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
@@ -20,7 +20,7 @@ sc-cli = { workspace = true }
 sp-api = { workspace = true }
 sp-blockchain = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 fc-db = { workspace = true }
 fp-rpc = { workspace = true, features = ["default"] }
 fp-storage = { workspace = true, features = ["default"] }
@@ -35,10 +35,10 @@ sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 sp-io = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
-# Frontier
+# Tokfin
 fc-api = { workspace = true }
 fc-db = { workspace = true, features = ["rocksdb"] }
-frontier-template-runtime = { workspace = true, features = ["default"] }
+tokfin-runtime = { workspace = true, features = ["default"] }
 
 [features]
 default = ["rocksdb"]

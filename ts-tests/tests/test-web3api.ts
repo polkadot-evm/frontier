@@ -2,9 +2,9 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { RUNTIME_SPEC_NAME, RUNTIME_SPEC_VERSION, RUNTIME_IMPL_VERSION } from "./config";
-import { describeWithFrontier, customRequest } from "./util";
+import { describeWithTokfin, customRequest } from "./util";
 
-describeWithFrontier("Frontier RPC (Web3Api)", (context) => {
+describeWithTokfin("Tokfin RPC (Web3Api)", (context) => {
 	step("should get client version", async function () {
 		const version = await context.web3.eth.getNodeInfo();
 		expect(version).to.be.equal(

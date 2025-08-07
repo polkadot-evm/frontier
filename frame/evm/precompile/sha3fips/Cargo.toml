@@ -9,12 +9,12 @@ repository = { workspace = true }
 
 [dependencies]
 tiny-keccak = { version = "2.0", features = ["fips202"] }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

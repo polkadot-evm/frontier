@@ -9,14 +9,14 @@ import {
 	BLOCK_HASH_COUNT,
 	ETH_BLOCK_GAS_LIMIT,
 } from "./config";
-import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
+describeWithTokfin("Tokfin RPC (Contract Methods)", (context) => {
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
-	// to spin up a frontier node, it saves a lot of time.
+	// to spin up a tokfin node, it saves a lot of time.
 
 	before("create the contract", async function () {
 		this.timeout(15000);

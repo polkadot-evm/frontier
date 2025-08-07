@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -20,7 +20,7 @@ use scale_codec::{Decode, Encode};
 // Substrate
 use sp_core::{H160, H256};
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fp_storage::EthereumStorageSchema;
 
 #[derive(Clone, Debug, Eq, PartialEq, Encode, Decode)]
@@ -30,7 +30,7 @@ pub struct TransactionMetadata<Block: BlockT> {
 	pub ethereum_index: u32,
 }
 
-/// The frontier backend interface.
+/// The tokfin backend interface.
 #[async_trait::async_trait]
 pub trait Backend<Block: BlockT>: Send + Sync {
 	/// Get the substrate hash with the given ethereum block hash.

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -37,7 +37,7 @@ use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
-// Frontier
+// Tokfin
 use fc_mapping_sync::{EthereumBlockNotification, EthereumBlockNotificationSinks};
 use fc_rpc_core::{
 	types::{
@@ -303,6 +303,6 @@ where
 		.boxed();
 
 		self.executor
-			.spawn("frontier-rpc-subscription", Some("rpc"), fut);
+			.spawn("tokfin-rpc-subscription", Some("rpc"), fut);
 	}
 }

@@ -3,9 +3,9 @@ import { AbiItem } from "web3-utils";
 
 import ECRecoverTests from "../build/contracts/ECRecoverTests.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (Precompile)", (context) => {
+describeWithTokfin("Tokfin RPC (Precompile)", (context) => {
 	const TEST_CONTRACT_BYTECODE = ECRecoverTests.bytecode;
 	const TEST_CONTRACT_ABI = ECRecoverTests.abi as AbiItem[];
 
@@ -31,7 +31,7 @@ describeWithFrontier("Frontier RPC (Precompile)", (context) => {
 	});
 
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
-	// to spin up a frontier node, it saves a lot of time.
+	// to spin up a tokfin node, it saves a lot of time.
 
 	it("should perform ecrecover", async () => {
 		const web3 = context.web3;

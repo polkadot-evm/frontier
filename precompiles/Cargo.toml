@@ -29,7 +29,7 @@ sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-weights = { workspace = true }
 
-# Frontier
+# Tokfin
 evm = { workspace = true, features = ["with-codec"] }
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true, features = ["forbid-evm-reentrancy"] }

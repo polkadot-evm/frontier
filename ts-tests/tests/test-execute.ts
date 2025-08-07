@@ -2,7 +2,7 @@ import { assert, expect } from "chai";
 import { step } from "mocha-steps";
 import { ETH_BLOCK_GAS_LIMIT, GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
 
-import { describeWithFrontier, customRequest, createAndFinalizeBlock } from "./util";
+import { describeWithTokfin, customRequest, createAndFinalizeBlock } from "./util";
 import { AbiItem } from "web3-utils";
 
 import Test from "../build/contracts/Test.json";
@@ -15,7 +15,7 @@ const TEST_CONTRACT_DEPLOYED_BYTECODE = Test.deployedBytecode;
 const FORCE_GAS_CONTRACT_BYTECODE = ForceGasLimit.bytecode;
 const FORCE_GAS_CONTRACT_ABI = ForceGasLimit.abi as AbiItem[];
 
-describeWithFrontier("Frontier RPC (estimate gas historically)", (context) => {
+describeWithTokfin("Tokfin RPC (estimate gas historically)", (context) => {
 	const TEST_CONTRACT_BYTECODE = Storage.bytecode;
 	const TEST_CONTRACT_ABI = Storage.abi as AbiItem[];
 
@@ -110,7 +110,7 @@ describeWithFrontier("Frontier RPC (estimate gas historically)", (context) => {
 	});
 });
 
-describeWithFrontier("Frontier RPC (RPC execution)", (context) => {
+describeWithTokfin("Tokfin RPC (RPC execution)", (context) => {
 	step("should call with gas limit under block gas limit", async function () {
 		const result = await customRequest(context.web3, "eth_call", [
 			{

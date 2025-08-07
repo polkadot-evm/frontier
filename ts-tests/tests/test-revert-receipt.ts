@@ -1,9 +1,9 @@
 import { expect } from "chai";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (Constructor Revert)", (context) => {
+describeWithTokfin("Tokfin RPC (Constructor Revert)", (context) => {
 	// ```
 	// pragma solidity >=0.4.22 <0.7.0;
 	//

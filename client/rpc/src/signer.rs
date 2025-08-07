@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -21,7 +21,7 @@ use ethereum_types::{H160, H256};
 use jsonrpsee::types::ErrorObjectOwned;
 // Substrate
 use sp_core::hashing::keccak_256;
-// Frontier
+// Tokfin
 use fc_rpc_core::types::TransactionMessage;
 
 use crate::internal_err;

@@ -58,7 +58,7 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	}
 }
 
-export async function startFrontierNode(
+export async function startTokfinNode(
 	provider?: string,
 	additionalArgs: string[] = []
 ): Promise<{
@@ -84,7 +84,7 @@ export async function startFrontierNode(
 		`-l${FRONTIER_LOG}`,
 		`--port=${PORT}`,
 		`--rpc-port=${RPC_PORT}`,
-		`--frontier-backend-type=${FRONTIER_BACKEND_TYPE}`,
+		`--tokfin-backend-type=${FRONTIER_BACKEND_TYPE}`,
 		`--tmp`,
 		`--unsafe-force-node-key-generation`,
 		...additionalArgs,
@@ -94,7 +94,7 @@ export async function startFrontierNode(
 	binary.on("error", (err) => {
 		if ((err as any).errno == "ENOENT") {
 			console.error(
-				`\x1b[31mMissing Frontier binary (${BINARY_PATH}).\nPlease compile the Frontier project:\ncargo build\x1b[0m`
+				`\x1b[31mMissing Tokfin binary (${BINARY_PATH}).\nPlease compile the Tokfin project:\ncargo build\x1b[0m`
 			);
 		} else {
 			console.error(err);
@@ -105,7 +105,7 @@ export async function startFrontierNode(
 	const binaryLogs = [];
 	await new Promise<void>((resolve) => {
 		const timer = setTimeout(() => {
-			console.error(`\x1b[31m Failed to start Frontier Template Node.\x1b[0m`);
+			console.error(`\x1b[31m Failed to start Tokfin Template Node.\x1b[0m`);
 			console.error(`Command: ${cmd} ${args.join(" ")}`);
 			console.error(`Logs:`);
 			console.error(binaryLogs.map((chunk) => chunk.toString()).join("\n"));
@@ -142,13 +142,13 @@ export async function startFrontierNode(
 
 	let ethersjs = new ethers.JsonRpcProvider(`http://127.0.0.1:${RPC_PORT}`, {
 		chainId: CHAIN_ID,
-		name: "frontier-dev",
+		name: "tokfin-dev",
 	});
 
 	return { web3, binary, ethersjs };
 }
 
-export function describeWithFrontier(
+export function describeWithTokfin(
 	title: string,
 	cb: (context: { web3: Web3 }) => void,
 	provider?: string,
@@ -160,10 +160,10 @@ export function describeWithFrontier(
 			ethersjs: ethers.JsonRpcProvider;
 		} = { web3: null, ethersjs: null };
 		let binary: ChildProcess;
-		// Making sure the Frontier node has started
-		before("Starting Frontier Test Node", async function () {
+		// Making sure the Tokfin node has started
+		before("Starting Tokfin Test Node", async function () {
 			this.timeout(SPAWNING_TIME);
-			const init = await startFrontierNode(provider, additionalArgs);
+			const init = await startTokfinNode(provider, additionalArgs);
 			context.web3 = init.web3;
 			context.ethersjs = init.ethersjs;
 			binary = init.binary;
@@ -178,19 +178,19 @@ export function describeWithFrontier(
 	});
 }
 
-export function describeWithFrontierFaTp(title: string, cb: (context: { web3: Web3 }) => void) {
-	describeWithFrontier(title, cb, undefined, [`--pool-type=fork-aware`]);
+export function describeWithTokfinFaTp(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithTokfin(title, cb, undefined, [`--pool-type=fork-aware`]);
 }
 
-export function describeWithFrontierSsTp(title: string, cb: (context: { web3: Web3 }) => void) {
-	describeWithFrontier(title, cb, undefined, [`--pool-type=single-state`]);
+export function describeWithTokfinSsTp(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithTokfin(title, cb, undefined, [`--pool-type=single-state`]);
 }
 
-export function describeWithFrontierAllPools(title: string, cb: (context: { web3: Web3 }) => void) {
-	describeWithFrontierSsTp(`[SsTp] ${title}`, cb);
-	describeWithFrontierFaTp(`[FaTp] ${title}`, cb);
+export function describeWithTokfinAllPools(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithTokfinSsTp(`[SsTp] ${title}`, cb);
+	describeWithTokfinFaTp(`[FaTp] ${title}`, cb);
 }
 
-export function describeWithFrontierWs(title: string, cb: (context: { web3: Web3 }) => void) {
-	describeWithFrontier(title, cb, "ws");
+export function describeWithTokfinWs(title: string, cb: (context: { web3: Web3 }) => void) {
+	describeWithTokfin(title, cb, "ws");
 }

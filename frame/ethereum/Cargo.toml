@@ -22,7 +22,7 @@ frame-system = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
 sp-version = { workspace = true }
-# Frontier
+# Tokfin
 fp-consensus = { workspace = true }
 fp-ethereum = { workspace = true }
 fp-evm = { workspace = true }
@@ -38,7 +38,7 @@ rlp = { workspace = true }
 pallet-balances = { workspace = true, features = ["default", "insecure_zero_ed"] }
 pallet-timestamp = { workspace = true, features = ["default"] }
 sp-core = { workspace = true, features = ["default"] }
-# Frontier
+# Tokfin
 fp-self-contained = { workspace = true, features = ["default"] }
 
 [features]
@@ -56,7 +56,7 @@ std = [
 	"sp-io/std",
 	"sp-runtime/std",
 	"sp-version/std",
-	# Frontier
+	# Tokfin
 	"fp-consensus/std",
 	"fp-ethereum/std",
 	"fp-evm/std",

@@ -1,5 +1,5 @@
 [package]
-name = "frontier-template-runtime"
+name = "tokfin-runtime"
 version = "0.0.0"
 license = "Unlicense"
 description = "A fresh FRAME-based Substrate runtime, ready for hacking."
@@ -44,12 +44,12 @@ pallet-timestamp = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 
-# Frontier
+# Tokfin
 fp-account = { workspace = true, features = ["serde"] }
 fp-evm = { workspace = true, features = ["serde"] }
 fp-rpc = { workspace = true }
 fp-self-contained = { workspace = true, features = ["serde"] }
-# Frontier FRAME
+# Tokfin FRAME
 pallet-base-fee = { workspace = true }
 pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
@@ -104,12 +104,12 @@ std = [
 	"pallet-timestamp/std",
 	"pallet-transaction-payment/std",
 	"pallet-transaction-payment-rpc-runtime-api/std",
-	# Frontier
+	# Tokfin
 	"fp-account/std",
 	"fp-evm/std",
 	"fp-rpc/std",
 	"fp-self-contained/std",
-	# Frontier FRAME
+	# Tokfin FRAME
 	"pallet-base-fee/std",
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",

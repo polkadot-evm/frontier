@@ -1,6 +1,6 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
-// Copyright (C) Frontier developers.
+// Copyright (C) Tokfin developers.
 // Copyright (C) Parity Technologies (UK) Ltd.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");

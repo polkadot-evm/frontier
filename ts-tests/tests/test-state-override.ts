@@ -6,11 +6,11 @@ import { AbiItem } from "web3-utils";
 import StateOverrideTest from "../build/contracts/StateOverrideTest.json";
 import Test from "../build/contracts/Test.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
 chaiUse(chaiAsPromised);
 
-describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
+describeWithTokfin("Tokfin RPC (StateOverride)", (context) => {
 	const STATE_OVERRIDE_TEST_CONTRACT_BYTECODE = StateOverrideTest.bytecode;
 	const otherAddress = "0xd43593c715fdd31c61141abd04a99fd6822c8558";
 

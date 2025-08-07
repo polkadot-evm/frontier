@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -62,7 +62,7 @@ pub fn maybe_deserialize_value<B: BlockT>(
 }
 
 /// Messaging and prompt.
-pub trait FrontierDbMessage {
+pub trait TokfinDbMessage {
 	fn key_value_error<K: core::fmt::Debug, V: core::fmt::Debug>(
 		&self,
 		key: K,

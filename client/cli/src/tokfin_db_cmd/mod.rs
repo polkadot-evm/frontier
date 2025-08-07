@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -38,9 +38,9 @@ use self::{
 	meta_db::{MetaDb, MetaKey, MetaValue},
 };
 
-/// Cli tool to interact with the Frontier backend db
+/// Cli tool to interact with the Tokfin backend db
 #[derive(Debug, Clone, clap::Parser)]
-pub struct FrontierDbCmd {
+pub struct TokfinDbCmd {
 	/// Specify the operation to perform.
 	///
 	/// Can be one of `create | read | update | delete`.
@@ -97,7 +97,7 @@ pub enum DbValue<H> {
 	Mapping(MappingValue<H>),
 }
 
-impl FrontierDbCmd {
+impl TokfinDbCmd {
 	pub fn run<B, C>(
 		&self,
 		client: Arc<C>,
@@ -150,7 +150,7 @@ impl FrontierDbCmd {
 	}
 }
 
-impl sc_cli::CliConfiguration for FrontierDbCmd {
+impl sc_cli::CliConfiguration for TokfinDbCmd {
 	fn shared_params(&self) -> &SharedParams {
 		&self.shared_params
 	}

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -36,7 +36,7 @@ use sp_runtime::{
 	DispatchError, SaturatedConversion,
 };
 use sp_state_machine::OverlayedChanges;
-// Frontier
+// Tokfin
 use fc_rpc_core::types::*;
 use fp_evm::{ExecutionInfo, ExecutionInfoV2};
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
@@ -44,7 +44,7 @@ use fp_storage::constants::{EVM_ACCOUNT_CODES, EVM_ACCOUNT_STORAGES, PALLET_EVM}
 
 use crate::{
 	eth::{Eth, EthConfig},
-	frontier_backend_client, internal_err,
+	tokfin_backend_client, internal_err,
 };
 
 /// Allow to adapt a request for `estimate_gas`.
@@ -106,7 +106,7 @@ where
 			)
 		};
 
-		let (substrate_hash, mut api) = match frontier_backend_client::native_block_id::<B, C>(
+		let (substrate_hash, mut api) = match tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number_or_hash,
@@ -544,7 +544,7 @@ where
 		const MIN_GAS_PER_TX: U256 = U256([21_000, 0, 0, 0]);
 
 		// Get substrate hash and runtime api
-		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
+		let (substrate_hash, api) = match tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number_or_hash,

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -36,7 +36,7 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero},
 };
-// Frontier
+// Tokfin
 use fc_api::{FilteredLog, TransactionMetadata};
 use fc_storage::{StorageOverride, StorageQuerier};
 use fp_consensus::{FindLogError, Hashes, Log as ConsensusLog, PostLog, PreLog};
@@ -134,7 +134,7 @@ where
 	fn connect_options(config: &BackendConfig) -> Result<SqliteConnectOptions, Error> {
 		match config {
 			BackendConfig::Sqlite(config) => {
-				log::info!(target: "frontier-sql", "📑 Connection configuration: {config:?}");
+				log::info!(target: "tokfin-sql", "📑 Connection configuration: {config:?}");
 				let config = sqlx::sqlite::SqliteConnectOptions::from_str(config.path)?
 					.create_if_missing(config.create_if_missing)
 					// https://www.sqlite.org/pragma.html#pragma_busy_timeout
@@ -219,10 +219,10 @@ where
 				)
 				.expect("runtime api reachable");
 
-			log::debug!(target: "frontier-sql", "Index genesis block, has_api={has_api}, hash={substrate_genesis_hash:?}");
+			log::debug!(target: "tokfin-sql", "Index genesis block, has_api={has_api}, hash={substrate_genesis_hash:?}");
 
 			if has_api {
-				// The chain has frontier support from genesis.
+				// The chain has tokfin support from genesis.
 				// Read from the runtime and store the block metadata.
 				let ethereum_block = client
 					.runtime_api()
@@ -272,7 +272,7 @@ where
 		Client: StorageProvider<Block, BE> + HeaderBackend<Block> + 'static,
 		BE: BackendT<Block> + 'static,
 	{
-		log::trace!(target: "frontier-sql", "🛠️  [Metadata] Retrieving digest data for block {hash:?}");
+		log::trace!(target: "tokfin-sql", "🛠️  [Metadata] Retrieving digest data for block {hash:?}");
 		if let Ok(Some(header)) = client.header(hash) {
 			match fp_consensus::find_log(header.digest()) {
 				Ok(log) => {
@@ -290,7 +290,7 @@ where
 									if got_eth_block_hash != expect_eth_block_hash {
 										return Err(Error::Protocol(format!(
 											"Ethereum block hash mismatch: \
-											frontier consensus digest ({expect_eth_block_hash:?}), \
+											tokfin consensus digest ({expect_eth_block_hash:?}), \
 											db state ({got_eth_block_hash:?})"
 										)));
 									} else {
@@ -313,12 +313,12 @@ where
 					let is_canon = match client.hash(header_number) {
 						Ok(Some(inner_hash)) => (inner_hash == hash) as i32,
 						Ok(None) => {
-							log::debug!(target: "frontier-sql", "[Metadata] Missing header for block #{block_number} ({hash:?})");
+							log::debug!(target: "tokfin-sql", "[Metadata] Missing header for block #{block_number} ({hash:?})");
 							0
 						}
 						Err(err) => {
 							log::debug!(
-								target: "frontier-sql",
+								target: "tokfin-sql",
 								"[Metadata] Failed to retrieve header for block #{block_number} ({hash:?}): {err:?}",
 							);
 							0
@@ -326,7 +326,7 @@ where
 					};
 
 					log::trace!(
-						target: "frontier-sql",
+						target: "tokfin-sql",
 						"[Metadata] Prepared block metadata for #{block_number} ({hash:?}) canon={is_canon}",
 					);
 					Ok(BlockMetadata {
@@ -372,7 +372,7 @@ where
 		let mut tx = self.pool().begin().await?;
 
 		log::debug!(
-			target: "frontier-sql",
+			target: "tokfin-sql",
 			"🛠️  [Metadata] Starting execution of statements on db transaction"
 		);
 		let post_hashes = metadata.post_hashes;
@@ -402,7 +402,7 @@ where
 			let ethereum_transaction_hash = transaction_hash.as_bytes();
 			let ethereum_transaction_index = i as i32;
 			log::trace!(
-				target: "frontier-sql",
+				target: "tokfin-sql",
 				"[Metadata] Inserting TX for block #{block_number} - {transaction_hash:?} index {ethereum_transaction_index}",
 			);
 			let _ = sqlx::query(
@@ -426,7 +426,7 @@ where
 			.execute(&mut *tx)
 			.await?;
 
-		log::debug!(target: "frontier-sql", "[Metadata] Ready to commit");
+		log::debug!(target: "tokfin-sql", "[Metadata] Ready to commit");
 		tx.commit().await
 	}
 
@@ -496,11 +496,11 @@ where
 		}
 		.await
 		.map_err(|e| {
-			log::error!(target: "frontier-sql", "{e}");
+			log::error!(target: "tokfin-sql", "{e}");
 		});
 		// https://www.sqlite.org/pragma.html#pragma_optimize
 		let _ = sqlx::query("PRAGMA optimize").execute(&pool).await;
-		log::debug!(target: "frontier-sql", "Batch committed");
+		log::debug!(target: "tokfin-sql", "Batch committed");
 	}
 
 	fn get_logs(
@@ -539,7 +539,7 @@ where
 			}
 		}
 		log::debug!(
-			target: "frontier-sql",
+			target: "tokfin-sql",
 			"Ready to commit {log_count} logs from {transaction_count} transactions"
 		);
 		logs
@@ -616,7 +616,7 @@ where
 				}
 			}
 			Err(err) => {
-				log::debug!(target: "frontier-sql", "Failed retrieving missing block {err:?}");
+				log::debug!(target: "tokfin-sql", "Failed retrieving missing block {err:?}");
 			}
 		}
 
@@ -645,7 +645,7 @@ where
 				}
 			}
 			Err(err) => {
-				log::debug!(target: "frontier-sql", "Failed retrieving missing block {err:?}");
+				log::debug!(target: "tokfin-sql", "Failed retrieving missing block {err:?}");
 			}
 		}
 
@@ -886,10 +886,10 @@ impl<Block: BlockT<Hash = H256>> fc_api::LogIndexerBackend<Block> for Backend<Bl
 			.await
 			.map_err(|err| format!("{:?}", err))?
 			.set_progress_handler(self.num_ops_timeout, move || {
-				log::debug!(target: "frontier-sql", "Sqlite progress_handler triggered for {log_key2}");
+				log::debug!(target: "tokfin-sql", "Sqlite progress_handler triggered for {log_key2}");
 				false
 			});
-		log::debug!(target: "frontier-sql", "Query: {sql:?} - {log_key}");
+		log::debug!(target: "tokfin-sql", "Query: {sql:?} - {log_key}");
 
 		let mut out: Vec<FilteredLog<Block>> = vec![];
 		let mut rows = query.fetch(&mut *conn);
@@ -934,11 +934,11 @@ impl<Block: BlockT<Hash = H256>> fc_api::LogIndexerBackend<Block> for Backend<Bl
 			.remove_progress_handler();
 
 		if let Some(err) = maybe_err {
-			log::error!(target: "frontier-sql", "Failed to query sql db: {err:?} - {log_key}");
+			log::error!(target: "tokfin-sql", "Failed to query sql db: {err:?} - {log_key}");
 			return Err("Failed to query sql db with statement".to_string());
 		}
 
-		log::info!(target: "frontier-sql", "FILTER remove handler - {log_key}");
+		log::info!(target: "tokfin-sql", "FILTER remove handler - {log_key}");
 		Ok(out)
 	}
 }
@@ -1033,7 +1033,7 @@ mod test {
 	use substrate_test_runtime_client::{
 		DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
-	// Frontier
+	// Tokfin
 	use fc_api::Backend as BackendT;
 	use fc_storage::SchemaV3StorageOverride;
 	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};

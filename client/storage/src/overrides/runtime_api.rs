@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -22,7 +22,7 @@ use ethereum_types::{Address, H256, U256};
 // Substrate
 use sp_api::{ApiExt, ApiRef, ProvideRuntimeApi};
 use sp_runtime::{traits::Block as BlockT, Permill};
-// Frontier
+// Tokfin
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use crate::overrides::StorageOverride;

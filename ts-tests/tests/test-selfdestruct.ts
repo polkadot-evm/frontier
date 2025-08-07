@@ -4,17 +4,17 @@ import { AbiItem } from "web3-utils";
 
 import SelfDestructAfterCreate2 from "../build/contracts/SelfDestructAfterCreate2.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
 chaiUse(chaiAsPromised);
 
-describeWithFrontier("Test self-destruct contract", (context) => {
+describeWithTokfin("Test self-destruct contract", (context) => {
 	const TEST_CONTRACT_BYTECODE = SelfDestructAfterCreate2.bytecode;
 	const TEST_CONTRACT_DEPLOYED_BYTECODE = SelfDestructAfterCreate2.deployedBytecode;
 	const TEST_CONTRACT_ABI = SelfDestructAfterCreate2.abi as AbiItem[];
 
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
-	// to spin up a frontier node, it saves a lot of time.
+	// to spin up a tokfin node, it saves a lot of time.
 
 	it("SELFDESTRUCT must reset contract account", async function () {
 		this.timeout(60000);

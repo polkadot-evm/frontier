@@ -48,7 +48,7 @@ use frame_support::{
 use pallet_transaction_payment::FungibleAdapter;
 use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_genesis_builder::PresetId;
-// Frontier
+// Tokfin
 use fp_account::EthereumSignature;
 use fp_evm::weight_per_gas;
 use fp_rpc::TransactionStatus;
@@ -63,7 +63,7 @@ pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
 mod precompiles;
-use precompiles::FrontierPrecompiles;
+use precompiles::TokfinPrecompiles;
 
 /// Type of block number.
 pub type BlockNumber = u32;
@@ -177,8 +177,8 @@ pub mod opaque {
 
 #[sp_version::runtime_version]
 pub const VERSION: RuntimeVersion = RuntimeVersion {
-	spec_name: Cow::Borrowed("frontier-template"),
-	impl_name: Cow::Borrowed("frontier-template"),
+	spec_name: Cow::Borrowed("tokfin"),
+	impl_name: Cow::Borrowed("tokfin"),
 	authoring_version: 1,
 	spec_version: 1,
 	impl_version: 1,
@@ -353,7 +353,7 @@ parameter_types! {
 	pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
 	pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 	pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
-	pub PrecompilesValue: FrontierPrecompiles<Runtime> = FrontierPrecompiles::<_>::new();
+	pub PrecompilesValue: TokfinPrecompiles<Runtime> = TokfinPrecompiles::<_>::new();
 	pub WeightPerGas: Weight = Weight::from_parts(weight_per_gas(BLOCK_GAS_LIMIT, NORMAL_DISPATCH_RATIO, WEIGHT_MILLISECS_PER_BLOCK), 0);
 }
 
@@ -367,7 +367,7 @@ impl pallet_evm::Config for Runtime {
 	type WithdrawOrigin = EnsureAccountId20;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
-	type PrecompilesType = FrontierPrecompiles<Self>;
+	type PrecompilesType = TokfinPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 	type ChainId = EVMChainId;
 	type BlockGasLimit = BlockGasLimit;

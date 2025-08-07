@@ -3,9 +3,9 @@ import { AbiItem } from "web3-utils";
 
 import ExplicitRevertReason from "../build/contracts/ExplicitRevertReason.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (Revert Reason)", (context) => {
+describeWithTokfin("Tokfin RPC (Revert Reason)", (context) => {
 	let contractAddress;
 
 	const REVERT_W_MESSAGE_BYTECODE = ExplicitRevertReason.bytecode;

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -27,11 +27,11 @@ use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{eth::Eth, tokfin_backend_client, internal_err};
 
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
@@ -58,7 +58,7 @@ where
 				.account_basic(hash, address)
 				.map_err(|err| internal_err(format!("Fetch account balances failed: {err}")))?
 				.balance)
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		} else if let Ok(Some(id)) = tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number_or_hash),
@@ -94,7 +94,7 @@ where
 				.await
 				.map_err(|err| internal_err(format!("Create pending runtime api error: {err}")))?;
 			Ok(api.storage_at(hash, address, index).unwrap_or_default())
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		} else if let Ok(Some(id)) = tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number_or_hash),
@@ -143,7 +143,7 @@ where
 			return Ok(current_nonce);
 		}
 
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number_or_hash,
@@ -182,7 +182,7 @@ where
 				.account_code_at(hash, address)
 				.unwrap_or_default()
 				.into())
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
+		} else if let Ok(Some(id)) = tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number_or_hash),

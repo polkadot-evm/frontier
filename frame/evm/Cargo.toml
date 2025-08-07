@@ -32,7 +32,7 @@ frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-io = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 fp-account = { workspace = true }
 fp-evm = { workspace = true, features = ["serde"] }
 
@@ -63,7 +63,7 @@ std = [
 	"sp-core/std",
 	"sp-io/std",
 	"sp-runtime/std",
-	# Frontier
+	# Tokfin
 	"fp-account/std",
 	"fp-evm/std",
 ]

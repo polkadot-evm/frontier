@@ -9,18 +9,18 @@ repository = { workspace = true }
 
 [dependencies]
 num = { version = "0.4.3", default-features = false, features = ["alloc"] }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [dev-dependencies]
 hex = { workspace = true }
-# Frontier
+# Tokfin
 pallet-evm-test-vector-support = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
 	"num/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

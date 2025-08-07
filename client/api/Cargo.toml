@@ -2,7 +2,7 @@
 name = "fc-api"
 version = "1.0.0-dev"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
-description = "Frontier client interfaces"
+description = "Tokfin client interfaces"
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
@@ -16,5 +16,5 @@ scale-codec = { workspace = true }
 # Substrate
 sp-core = { workspace = true, features = ["default"] }
 sp-runtime = { workspace = true, features = ["default"] }
-# Frontier
+# Tokfin
 fp-storage = { workspace = true, features = ["default"] }

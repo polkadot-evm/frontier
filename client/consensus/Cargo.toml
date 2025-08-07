@@ -2,7 +2,7 @@
 name = "fc-consensus"
 version = "2.0.0-dev"
 license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
-description = "Frontier consensus for substrate."
+description = "Tokfin consensus for substrate."
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
@@ -19,6 +19,6 @@ sp-api = { workspace = true }
 sp-block-builder = { workspace = true, features = ["default"] }
 sp-consensus = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 fp-consensus = { workspace = true, features = ["default"] }
 fp-rpc = { workspace = true, features = ["default"] }

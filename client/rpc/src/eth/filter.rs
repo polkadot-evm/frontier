@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -36,11 +36,11 @@ use sp_runtime::{
 	generic::BlockId,
 	traits::{Block as BlockT, NumberFor, One, Saturating, UniqueSaturatedInto},
 };
-// Frontier
+// Tokfin
 use fc_rpc_core::{types::*, EthFilterApiServer};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+use crate::{cache::EthBlockDataCacheTask, tokfin_backend_client, internal_err};
 
 pub struct EthFilter<B: BlockT, C, BE, P> {
 	client: Arc<C>,
@@ -467,7 +467,7 @@ where
 
 		let mut ret: Vec<Log> = Vec::new();
 		if let Some(hash) = filter.block_hash {
-			let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
+			let substrate_hash = match tokfin_backend_client::load_hash::<B, C>(
 				client.as_ref(),
 				backend.as_ref(),
 				hash,
@@ -659,7 +659,7 @@ where
 		let time_post = timer_post.elapsed().as_millis();
 
 		log::info!(
-			target: "frontier-sql",
+			target: "tokfin-sql",
 			"OUTER-TIMER fetch={}, post={}",
 			time_fetch,
 			time_post,
@@ -667,7 +667,7 @@ where
 	}
 
 	log::info!(
-		target: "frontier-sql",
+		target: "tokfin-sql",
 		"OUTER-TIMER start={}, prepare={}, all_fetch = {}",
 		timer_start.elapsed().as_millis(),
 		time_prepare,

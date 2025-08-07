@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (c) Humanode Core.
 // SPDX-License-Identifier: Apache-2.0

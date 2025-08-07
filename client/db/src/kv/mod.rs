@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -34,7 +34,7 @@ use sp_blockchain::HeaderBackend;
 use sp_core::{H160, H256};
 pub use sp_database::Database;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fc_api::{FilteredLog, TransactionMetadata};
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 
@@ -119,9 +119,9 @@ impl<Block: BlockT> fc_api::LogIndexerBackend<Block> for LogIndexerBackend<Block
 	}
 }
 
-/// Returns the frontier database directory.
-pub fn frontier_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
-	db_config_dir.join("frontier").join(db_path)
+/// Returns the tokfin database directory.
+pub fn tokfin_database_dir(db_config_dir: &Path, db_path: &str) -> PathBuf {
+	db_config_dir.join("tokfin").join(db_path)
 }
 
 impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
@@ -135,17 +135,17 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 			&DatabaseSettings {
 				source: match database {
 					DatabaseSource::Auto { .. } => DatabaseSource::Auto {
-						rocksdb_path: frontier_database_dir(db_config_dir, "db"),
-						paritydb_path: frontier_database_dir(db_config_dir, "paritydb"),
+						rocksdb_path: tokfin_database_dir(db_config_dir, "db"),
+						paritydb_path: tokfin_database_dir(db_config_dir, "paritydb"),
 						cache_size: 0,
 					},
 					#[cfg(feature = "rocksdb")]
 					DatabaseSource::RocksDb { .. } => DatabaseSource::RocksDb {
-						path: frontier_database_dir(db_config_dir, "db"),
+						path: tokfin_database_dir(db_config_dir, "db"),
 						cache_size: 0,
 					},
 					DatabaseSource::ParityDb { .. } => DatabaseSource::ParityDb {
-						path: frontier_database_dir(db_config_dir, "paritydb"),
+						path: tokfin_database_dir(db_config_dir, "paritydb"),
 					},
 					_ => {
 						return Err(

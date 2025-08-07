@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -28,13 +28,13 @@ use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
 	eth::{transaction_build, BlockInfo, Eth},
-	frontier_backend_client, internal_err,
+	tokfin_backend_client, internal_err,
 };
 
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
@@ -51,7 +51,7 @@ where
 		let backend = Arc::clone(&self.backend);
 		let graph = Arc::clone(&self.graph);
 
-		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (eth_block_hash, index) = match tokfin_backend_client::load_transactions::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			hash,
@@ -72,7 +72,7 @@ where
 				} else {
 					return Err(internal_err("failed to retrieve Runtime Api version"));
 				};
-				// If the transaction is not yet mapped in the frontier db,
+				// If the transaction is not yet mapped in the tokfin db,
 				// check for it in the transaction pool.
 				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
 				// Collect transactions in the ready validated pool.
@@ -220,7 +220,7 @@ where
 
 				let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) =
 					if !block_info.is_eip1559 {
-						// Pre-london frontier update stored receipts require cumulative gas calculation.
+						// Pre-london tokfin update stored receipts require cumulative gas calculation.
 						match receipt {
 							ethereum::ReceiptV4::Legacy(ref d) => {
 								let index = core::cmp::min(receipts.len(), index + 1);
@@ -290,7 +290,7 @@ where
 						let base_fee_block_substrate_hash = if parent_eth_hash.is_zero() {
 							substrate_hash
 						} else {
-							frontier_backend_client::load_hash::<B, C>(
+							tokfin_backend_client::load_hash::<B, C>(
 								self.client.as_ref(),
 								self.backend.as_ref(),
 								parent_eth_hash,

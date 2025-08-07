@@ -64,5 +64,5 @@ pub enum Subcommand {
 	Benchmark,
 
 	/// Db meta columns information.
-	FrontierDb(fc_cli::FrontierDbCmd),
+	TokfinDb(fc_cli::TokfinDbCmd),
 }

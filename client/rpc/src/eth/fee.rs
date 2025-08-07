@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -26,11 +26,11 @@ use sp_runtime::{
 	traits::{Block as BlockT, UniqueSaturatedInto},
 	Permill,
 };
-// Frontier
+// Tokfin
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{eth::Eth, frontier_backend_client, internal_err};
+use crate::{eth::Eth, tokfin_backend_client, internal_err};
 
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
@@ -59,7 +59,7 @@ where
 		let range_limit: u64 = 1024;
 		let block_count: u64 = u64::min(block_count, range_limit);
 
-		if let Some(id) = frontier_backend_client::native_block_id::<B, C>(
+		if let Some(id) = tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(newest_block),

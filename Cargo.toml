@@ -45,9 +45,9 @@ members = [
 resolver = "2"
 
 [workspace.package]
-authors = ["Frontier developers <legal@bitarray.dev>"]
+authors = ["Tokfin DevelopersTeam <dev@tokfin.io>"]
 edition = "2021"
-repository = "https://github.com/polkadot-evm/frontier/"
+repository = "https://github.com/easyinver/tokfinnet/"
 
 [workspace.dependencies]
 async-trait = "0.1"
@@ -181,7 +181,7 @@ ark-ec = { version = "0.4.0", default-features = false }
 ark-ff = { version = "0.4.0", default-features = false }
 ark-std = { version = "0.4.0", default-features = false }
 
-# Frontier Client
+# Tokfin Client
 fc-api = { path = "client/api" }
 fc-cli = { path = "client/cli", default-features = false }
 fc-consensus = { path = "client/consensus" }
@@ -193,7 +193,7 @@ fc-rpc-v2 = { path = "client/rpc-v2" }
 fc-rpc-v2-api = { path = "client/rpc-v2/api" }
 fc-rpc-v2-types = { path = "client/rpc-v2/types" }
 fc-storage = { path = "client/storage" }
-# Frontier Primitive
+# Tokfin Primitive
 fp-account = { path = "primitives/account", default-features = false }
 fp-consensus = { path = "primitives/consensus", default-features = false }
 fp-dynamic-fee = { path = "primitives/dynamic-fee", default-features = false }
@@ -202,7 +202,7 @@ fp-evm = { path = "primitives/evm", default-features = false }
 fp-rpc = { path = "primitives/rpc", default-features = false }
 fp-self-contained = { path = "primitives/self-contained", default-features = false }
 fp-storage = { path = "primitives/storage", default-features = false }
-# Frontier FRAME
+# Tokfin FRAME
 pallet-base-fee = { path = "frame/base-fee", default-features = false }
 pallet-dynamic-fee = { path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { path = "frame/ethereum", default-features = false }
@@ -216,10 +216,10 @@ pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", defau
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
 pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
-# Frontier Utility
+# Tokfin Utility
 precompile-utils = { path = "precompiles", default-features = false }
-# Frontier Template
-frontier-template-runtime = { path = "template/runtime", default-features = false }
+# Tokfin Template
+tokfin-runtime = { path = "template/runtime", default-features = false }
 
 [profile.release]
 # Substrate runtime requires unwinding.

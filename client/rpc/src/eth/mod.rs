@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -43,7 +43,7 @@ use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
-// Frontier
+// Tokfin
 use fc_rpc_core::{types::*, EthApiServer};
 use fc_storage::StorageOverride;
 use fp_rpc::{
@@ -52,7 +52,7 @@ use fp_rpc::{
 };
 
 use crate::{
-	cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, public_key,
+	cache::EthBlockDataCacheTask, tokfin_backend_client, internal_err, public_key,
 	signer::EthSigner,
 };
 
@@ -144,7 +144,7 @@ where
 		&self,
 		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number_or_hash),
@@ -167,7 +167,7 @@ where
 		&self,
 		eth_block_hash: H256,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match tokfin_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			eth_block_hash,
@@ -186,7 +186,7 @@ where
 		&self,
 		ethereum_tx_hash: H256,
 	) -> RpcResult<(BlockInfo<B::Hash>, usize)> {
-		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (eth_block_hash, index) = match tokfin_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			ethereum_tx_hash,
@@ -199,7 +199,7 @@ where
 			None => return Ok((BlockInfo::default(), 0)),
 		};
 
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match tokfin_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			eth_block_hash,

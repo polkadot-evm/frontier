@@ -6,7 +6,7 @@ All changes (except new releases) are handled through pull requests.
 
 ## Versioning
 
-Frontier follows [Semantic Versioning](https://semver.org/).
+Tokfin follows [Semantic Versioning](https://semver.org/).
 An unreleased crate in the repository will have the `-dev` suffix in the end, and we do rolling releases.
 
 When you make a pull request against this repository, please also update the affected crates' versions, using the following rules.

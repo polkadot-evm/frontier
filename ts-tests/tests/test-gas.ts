@@ -15,7 +15,7 @@ import {
 	ETH_BLOCK_POV_LIMIT,
 	TEST_ERC20_BYTECODE,
 } from "./config";
-import { describeWithFrontier, createAndFinalizeBlock, customRequest } from "./util";
+import { describeWithTokfin, createAndFinalizeBlock, customRequest } from "./util";
 
 const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
@@ -47,11 +47,11 @@ function estimationVariance(binarySearchEstimation, oneOffEstimation) {
 	return ((binarySearchEstimation - oneOffEstimation) * ESTIMATION_VARIANCE) / binarySearchEstimation;
 }
 
-describeWithFrontier("Frontier RPC (Gas)", (context) => {
+describeWithTokfin("Tokfin RPC (Gas)", (context) => {
 	const TEST_CONTRACT_ABI = Test.abi as AbiItem[];
 
 	// Those test are ordered. In general this should be avoided, but due to the time it takes
-	// to spin up a frontier node, it saves a lot of time.
+	// to spin up a tokfin node, it saves a lot of time.
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
@@ -187,7 +187,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	});
 });
 
-describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => {
+describeWithTokfin("Tokfin RPC (Gas limit Weightv2 ref time)", (context) => {
 	const STORAGE_LOOP_CONTRACT_BYTECODE = StorageLoop.bytecode;
 	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
 
@@ -272,7 +272,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 ref time)", (context) => 
 	});
 });
 
-describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => {
+describeWithTokfin("Tokfin RPC (Gas limit Weightv2 pov size)", (context) => {
 	const STORAGE_LOOP_CONTRACT_BYTECODE = StorageLoop.bytecode;
 	const STORAGE_LOOP_CONTRACT_ABI = StorageLoop.abi as AbiItem[];
 
@@ -392,7 +392,7 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 	});
 });
 
-describeWithFrontier("Frontier RPC (Invalid opcode estimate gas)", (context) => {
+describeWithTokfin("Tokfin RPC (Invalid opcode estimate gas)", (context) => {
 	const INVALID_OPCODE_BYTECODE = InvalidOpcode.bytecode;
 
 	let contractAddess;

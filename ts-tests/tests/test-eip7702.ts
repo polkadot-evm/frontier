@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, CHAIN_ID, FIRST_CONTRACT_ADDRESS } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfin } from "./util";
 
 // Simple contract bytecode that returns a constant value (42)
 // Compiled from: contract DelegateTest { function getMagicNumber() external pure returns (uint256) { return 42; } }
@@ -89,7 +89,7 @@ function isDelegationIndicator(code: string): { isDelegation: boolean; address?:
 }
 
 // We use ethers library for EIP-7702 transaction support
-describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context: any) => {
+describeWithTokfin("Tokfin RPC (EIP-7702 Set Code Authorization)", (context: any) => {
 	let contractAddress: string;
 	let signer: ethers.Wallet;
 
@@ -172,7 +172,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	step("should reject empty authorization list", async function () {
 		this.timeout(15000);
 
-		// Test with empty authorization list - should be rejected by Frontier
+		// Test with empty authorization list - should be rejected by Tokfin
 		const tx = {
 			from: GENESIS_ACCOUNT,
 			to: "0x1000000000000000000000000000000000000001",
@@ -186,7 +186,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
 		};
 
-		// Frontier should reject empty authorization lists during validation
+		// Tokfin should reject empty authorization lists during validation
 		let errorCaught = false;
 		try {
 			await signer.sendTransaction(tx);
@@ -209,7 +209,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	step("should handle authorization with different chain IDs", async function () {
 		this.timeout(15000);
 
-		// Test authorization with wrong chain ID - should be skipped by Frontier
+		// Test authorization with wrong chain ID - should be skipped by Tokfin
 		const wrongChainAuth = createAuthorizationObject(
 			999, // Wrong chain ID
 			contractAddress,
@@ -298,7 +298,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
 		expect(receipt.status).to.equal(1);
 
-		// In Frontier's EIP-7702 implementation, the last valid authorization should take effect
+		// In Tokfin's EIP-7702 implementation, the last valid authorization should take effect
 		expect(receipt).to.not.be.null;
 	});
 
@@ -380,7 +380,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
 		expect(receipt.status).to.equal(1);
 
-		// Check if delegation indicator was set in Frontier
+		// Check if delegation indicator was set in Tokfin
 		const accountCode = await context.web3.eth.getCode(newAccount.address);
 		const delegationCheck = isDelegationIndicator(accountCode);
 
@@ -399,7 +399,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 				expect(decodedResult).to.equal(42); // Magic number from contract
 			}
 		} else {
-			// No delegation indicator - this test documents current Frontier behavior
+			// No delegation indicator - this test documents current Tokfin behavior
 			expect(accountCode).to.equal("0x");
 		}
 	});
@@ -407,7 +407,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	step("should handle delegation edge cases", async function () {
 		this.timeout(15000);
 
-		// Test self-delegation (should be prevented by Frontier)
+		// Test self-delegation (should be prevented by Tokfin)
 		const selfDelegationAuth = createAuthorizationObject(
 			CHAIN_ID,
 			GENESIS_ACCOUNT, // Self-delegation
@@ -431,7 +431,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const signedTx1 = await signer.sendTransaction(tx1);
 		await createAndFinalizeBlock(context.web3);
 
-		// Self-delegation should be handled gracefully by Frontier
+		// Self-delegation should be handled gracefully by Tokfin
 		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
 		expect(receipt1.status).to.equal(1);
 
@@ -459,7 +459,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const signedTx2 = await signer.sendTransaction(tx2);
 		await createAndFinalizeBlock(context.web3);
 
-		// Zero address delegation should be handled by Frontier
+		// Zero address delegation should be handled by Tokfin
 		const receipt2 = await context.ethersjs.getTransactionReceipt(signedTx2.hash);
 		expect(receipt2.status).to.equal(1);
 	});

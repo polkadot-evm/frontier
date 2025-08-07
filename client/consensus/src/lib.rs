@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -26,7 +26,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_consensus::Error as ConsensusError;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-// Frontier
+// Tokfin
 use fp_consensus::{ensure_log, FindLogError};
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -61,15 +61,15 @@ impl From<Error> for ConsensusError {
 	}
 }
 
-pub struct FrontierBlockImport<B: BlockT, I, C> {
+pub struct TokfinBlockImport<B: BlockT, I, C> {
 	inner: I,
 	client: Arc<C>,
 	_marker: PhantomData<B>,
 }
 
-impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImport<Block, I, C> {
+impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for TokfinBlockImport<Block, I, C> {
 	fn clone(&self) -> Self {
-		FrontierBlockImport {
+		TokfinBlockImport {
 			inner: self.inner.clone(),
 			client: self.client.clone(),
 			_marker: PhantomData,
@@ -77,7 +77,7 @@ impl<Block: BlockT, I: Clone + BlockImport<Block>, C> Clone for FrontierBlockImp
 	}
 }
 
-impl<B, I, C> FrontierBlockImport<B, I, C>
+impl<B, I, C> TokfinBlockImport<B, I, C>
 where
 	B: BlockT,
 	I: BlockImport<B>,
@@ -95,7 +95,7 @@ where
 }
 
 #[async_trait::async_trait]
-impl<B, I, C> BlockImport<B> for FrontierBlockImport<B, I, C>
+impl<B, I, C> BlockImport<B> for TokfinBlockImport<B, I, C>
 where
 	B: BlockT,
 	I: BlockImport<B> + Send + Sync,
@@ -110,7 +110,7 @@ where
 	}
 
 	async fn import_block(&self, block: BlockImportParams<B>) -> Result<ImportResult, Self::Error> {
-		// We validate that there are only one frontier log. No other
+		// We validate that there are only one tokfin log. No other
 		// actions are needed and mapping syncing is delegated to a separate
 		// worker.
 		ensure_log(block.header.digest()).map_err(Error::from)?;

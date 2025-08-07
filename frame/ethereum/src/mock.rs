@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
@@ -30,7 +30,7 @@ use sp_runtime::{
 	traits::{Dispatchable, IdentityLookup},
 	AccountId32, BuildStorage,
 };
-// Frontier
+// Tokfin
 use pallet_evm::{config_preludes::ChainId, AddressMapping, EnsureAllowedCreateAddress};
 
 use super::*;

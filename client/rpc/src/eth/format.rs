@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -19,7 +19,7 @@
 // Substrate
 use sc_transaction_pool_api::error::{Error as PError, IntoPoolError};
 use sp_runtime::transaction_validity::InvalidTransaction;
-// Frontier
+// Tokfin
 use fp_evm::TransactionValidationError as VError;
 
 // Formats the same way Geth node formats responses.

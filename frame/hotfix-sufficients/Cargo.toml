@@ -20,7 +20,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 pallet-evm = { workspace = true }
 
 [dev-dependencies]
@@ -38,7 +38,7 @@ std = [
 	"frame-system/std",
 	"sp-core/std",
 	"sp-runtime/std",
-	# Frontier
+	# Tokfin
 	"pallet-evm/std",
 ]
 runtime-benchmarks = [

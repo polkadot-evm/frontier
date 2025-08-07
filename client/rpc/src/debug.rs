@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -27,12 +27,12 @@ use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fc_rpc_core::{types::*, DebugApiServer};
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+use crate::{cache::EthBlockDataCacheTask, tokfin_backend_client, internal_err};
 
 /// Debug API implementation.
 pub struct Debug<B: BlockT, C, BE> {
@@ -64,7 +64,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
 	{
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),
@@ -91,7 +91,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
 	{
-		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
+		let (eth_block_hash, index) = match tokfin_backend_client::load_transactions::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			transaction_hash,
@@ -103,7 +103,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 			None => return Ok(None),
 		};
 
-		let substrate_hash = match frontier_backend_client::load_hash::<B, C>(
+		let substrate_hash = match tokfin_backend_client::load_hash::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			eth_block_hash,
@@ -130,7 +130,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
 	{
-		let id = match frontier_backend_client::native_block_id::<B, C>(
+		let id = match tokfin_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			Some(number),

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -33,7 +33,7 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
-// Frontier
+// Tokfin
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -47,7 +47,7 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	client: Arc<C>,
 	substrate_backend: Arc<BE>,
 	storage_override: Arc<dyn StorageOverride<Block>>,
-	frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
+	tokfin_backend: Arc<fc_db::kv::Backend<Block, C>>,
 
 	have_next: bool,
 	retry_times: usize,
@@ -68,7 +68,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		client: Arc<C>,
 		substrate_backend: Arc<BE>,
 		storage_override: Arc<dyn StorageOverride<Block>>,
-		frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
+		tokfin_backend: Arc<fc_db::kv::Backend<Block, C>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
 		strategy: SyncStrategy,
@@ -85,7 +85,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 			client,
 			substrate_backend,
 			storage_override,
-			frontier_backend,
+			tokfin_backend,
 
 			have_next: true,
 			retry_times,
@@ -142,7 +142,7 @@ where
 				self.client.as_ref(),
 				self.substrate_backend.as_ref(),
 				self.storage_override.clone(),
-				self.frontier_backend.as_ref(),
+				self.tokfin_backend.as_ref(),
 				self.retry_times,
 				self.sync_from,
 				self.strategy,
@@ -245,12 +245,12 @@ mod tests {
 		let backend = builder.backend();
 		// Client
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
-		let frontier_backend = Arc::new(
+		let tokfin_backend = Arc::new(
 			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
@@ -260,7 +260,7 @@ mod tests {
 					},
 				},
 			)
-			.expect("frontier backend"),
+			.expect("tokfin backend"),
 		);
 
 		let notification_stream = client.clone().import_notification_stream();
@@ -280,7 +280,7 @@ mod tests {
 				client_inner,
 				backend,
 				storage_override.clone(),
-				frontier_backend,
+				tokfin_backend,
 				3,
 				0,
 				SyncStrategy::Normal,
@@ -387,12 +387,12 @@ mod tests {
 		let backend = builder.backend();
 		// Client
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 
-		let frontier_backend = Arc::new(
+		let tokfin_backend = Arc::new(
 			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
@@ -402,7 +402,7 @@ mod tests {
 					},
 				},
 			)
-			.expect("frontier backend"),
+			.expect("tokfin backend"),
 		);
 
 		let notification_stream = client.clone().import_notification_stream();
@@ -422,7 +422,7 @@ mod tests {
 				client_inner,
 				backend,
 				storage_override.clone(),
-				frontier_backend,
+				tokfin_backend,
 				3,
 				0,
 				SyncStrategy::Normal,

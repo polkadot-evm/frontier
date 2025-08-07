@@ -3,7 +3,7 @@ name = "pallet-evm-polkavm"
 version = "6.0.0-dev"
 license = "Apache-2.0"
 readme = "README.md"
-description = "PolkaVM support for pallet-evm of Frontier Ethereum-compatibility layer for Polkadot."
+description = "PolkaVM support for pallet-evm of Tokfin Ethereum-compatibility layer for Polkadot."
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }
@@ -20,7 +20,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 # PolkaVM executor
@@ -39,7 +39,7 @@ std = [
 	"sp-runtime/std",
 	"frame-support/std",
 	"frame-system/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 	"pallet-evm/std",
 	# PolkaVM executor

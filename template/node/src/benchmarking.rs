@@ -10,9 +10,9 @@ use sc_client_api::BlockBackend;
 use sp_core::{ecdsa, Pair};
 use sp_inherents::{InherentData, InherentDataProvider};
 use sp_runtime::{generic::Era, OpaqueExtrinsic, SaturatedConversion};
-// Frontier
+// Tokfin
 use fp_account::AccountId20;
-use frontier_template_runtime::{self as runtime, AccountId, Balance, BalancesCall, SystemCall};
+use tokfin_runtime::{self as runtime, AccountId, Balance, BalancesCall, SystemCall};
 
 use crate::service::Client;
 

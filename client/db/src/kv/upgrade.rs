@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -114,7 +114,7 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 					summary.error
 				);
 			} else {
-				log::info!("✔️ Successful Frontier DB migration from version 1 to version 2 ({:?} entries).", summary.success);
+				log::info!("✔️ Successful Tokfin DB migration from version 1 to version 2 ({:?} entries).", summary.success);
 			}
 		}
 		CURRENT_VERSION => (),
@@ -169,7 +169,7 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
 ) -> UpgradeResult<UpgradeVersion1To2Summary> {
-	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
+	log::info!("🔨 Running Tokfin DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
 		error: vec![],
@@ -250,7 +250,7 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	db_path: &Path,
 ) -> UpgradeResult<UpgradeVersion1To2Summary> {
-	log::info!("🔨 Running Frontier DB migration from version 1 to version 2. Please wait.");
+	log::info!("🔨 Running Tokfin DB migration from version 1 to version 2. Please wait.");
 	let mut res = UpgradeVersion1To2Summary {
 		success: 0,
 		error: vec![],
@@ -345,7 +345,7 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
+	pub fn open_tokfin_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		setting: &crate::kv::DatabaseSettings,
 	) -> Result<Arc<crate::kv::Backend<Block, C>>, String> {
@@ -406,8 +406,8 @@ mod tests {
 			let mut substrate_hashes = vec![];
 			let mut transaction_hashes = vec![];
 			{
-				// Create a temporary frontier secondary DB.
-				let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), &setting)
+				// Create a temporary tokfin secondary DB.
+				let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), &setting)
 					.expect("a temporary db was created");
 
 				// Fill the tmp db with some data
@@ -486,7 +486,7 @@ mod tests {
 			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), path, &setting.source);
 
 			// Check data after migration
-			let backend = open_frontier_backend::<OpaqueBlock, _>(client, &setting)
+			let backend = open_tokfin_backend::<OpaqueBlock, _>(client, &setting)
 				.expect("a temporary db was created");
 			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
 				let canon_substrate_block_hash = substrate_hashes.get(i).expect("Block hash");

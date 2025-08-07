@@ -1,6 +1,6 @@
 # Dynamic fee pallet
 
-The dynamic fee pallet allows a Substrate blockchain with Frontier to simulate the functionality of Ethereum dynamic fee adjustment.
+The dynamic fee pallet allows a Substrate blockchain with Tokfin to simulate the functionality of Ethereum dynamic fee adjustment.
 
 ## Overview
 

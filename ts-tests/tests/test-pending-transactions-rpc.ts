@@ -2,9 +2,9 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontierAllPools } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithTokfinAllPools } from "./util";
 
-describeWithFrontierAllPools("Frontier RPC (Pending Transactions)", (context) => {
+describeWithTokfinAllPools("Tokfin RPC (Pending Transactions)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
 	// Helper function to create and send a transaction

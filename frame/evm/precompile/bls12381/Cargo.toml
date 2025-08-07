@@ -12,11 +12,11 @@ ark-ec = { workspace = true }
 ark-ff = { workspace = true }
 ark-std = { workspace = true }
 
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [dev-dependencies]
-# Frontier
+# Tokfin
 pallet-evm-test-vector-support = { workspace = true }
 
 [features]
@@ -28,6 +28,6 @@ std = [
 	"ark-ff/std",
 	"ark-std/std",
 
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

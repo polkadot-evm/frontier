@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -24,10 +24,10 @@ use serde::Deserialize;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use super::{utils::FrontierDbMessage, Column, FrontierDbCmd, Operation};
+use super::{utils::TokfinDbMessage, Column, TokfinDbCmd, Operation};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -41,7 +41,7 @@ pub enum MappingKey {
 }
 
 pub struct MappingDb<'a, B, C> {
-	cmd: &'a FrontierDbCmd,
+	cmd: &'a TokfinDbCmd,
 	client: Arc<C>,
 	backend: Arc<fc_db::kv::Backend<B, C>>,
 }
@@ -53,7 +53,7 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 {
 	pub fn new(
-		cmd: &'a FrontierDbCmd,
+		cmd: &'a TokfinDbCmd,
 		client: Arc<C>,
 		backend: Arc<fc_db::kv::Backend<B, C>>,
 	) -> Self {
@@ -176,4 +176,4 @@ where
 	}
 }
 
-impl<B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MappingDb<'_, B, C> {}
+impl<B: BlockT, C: HeaderBackend<B>> TokfinDbMessage for MappingDb<'_, B, C> {}

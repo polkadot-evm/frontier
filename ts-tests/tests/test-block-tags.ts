@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, describeWithTokfin } from "./util";
 
-describeWithFrontier("Frontier RPC (BlockNumber tags)", (context) => {
+describeWithTokfin("Tokfin RPC (BlockNumber tags)", (context) => {
 	before("Send some transactions across blocks", async function () {
 		// block #1 finalized
 		await createAndFinalizeBlock(context.web3);

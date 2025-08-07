@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -27,13 +27,13 @@ use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
-// Frontier
+// Tokfin
 use fc_rpc_core::types::*;
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
 	eth::{rich_block_build, BlockInfo, Eth},
-	frontier_backend_client, internal_err,
+	tokfin_backend_client, internal_err,
 };
 
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
@@ -90,7 +90,7 @@ where
 		let backend = Arc::clone(&self.backend);
 		let graph = Arc::clone(&self.graph);
 
-		match frontier_backend_client::native_block_id::<B, C>(
+		match tokfin_backend_client::native_block_id::<B, C>(
 			client.as_ref(),
 			backend.as_ref(),
 			Some(number_or_hash),

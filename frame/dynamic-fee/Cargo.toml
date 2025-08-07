@@ -18,7 +18,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-inherents = { workspace = true }
-# Frontier
+# Tokfin
 fp-dynamic-fee = { workspace = true }
 fp-evm = { workspace = true }
 
@@ -39,7 +39,7 @@ std = [
 	# Substrate
 	"frame-system/std",
 	"frame-support/std",
-	# Frontier
+	# Tokfin
 	"fp-dynamic-fee/std",
 	"fp-evm/std",
 ]

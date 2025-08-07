@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -56,7 +56,7 @@ pub use fc_rpc_core::{
 };
 pub use fc_storage::{overrides::*, StorageOverrideHandler};
 
-pub mod frontier_backend_client {
+pub mod tokfin_backend_client {
 	use super::internal_err;
 
 	use ethereum_types::{H160, H256, U256};
@@ -74,7 +74,7 @@ pub mod frontier_backend_client {
 		traits::{Block as BlockT, HashingFor, UniqueSaturatedInto},
 	};
 	use sp_state_machine::OverlayedChanges;
-	// Frontier
+	// Tokfin
 	use fc_rpc_core::types::BlockNumberOrHash;
 
 	/// Implements a default runtime storage override.
@@ -372,7 +372,7 @@ mod tests {
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
 
-	fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
+	fn open_tokfin_backend<Block: BlockT, C: HeaderBackend<Block>>(
 		client: Arc<C>,
 		path: PathBuf,
 	) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
@@ -397,8 +397,8 @@ mod tests {
 
 		let client = Arc::new(client);
 
-		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
+		// Create a temporary tokfin secondary DB.
+		let backend = open_tokfin_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 			.expect("a temporary db was created");
 
 		// A random ethereum block hash to use
@@ -438,7 +438,7 @@ mod tests {
 
 		// Expect B1 to be canon
 		assert_eq!(
-			futures::executor::block_on(super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::tokfin_backend_client::load_hash(
 				client.as_ref(),
 				backend.as_ref(),
 				ethereum_block_hash
@@ -470,7 +470,7 @@ mod tests {
 
 		// Still expect B1 to be canon
 		assert_eq!(
-			futures::executor::block_on(super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::tokfin_backend_client::load_hash(
 				client.as_ref(),
 				backend.as_ref(),
 				ethereum_block_hash
@@ -493,7 +493,7 @@ mod tests {
 
 		// Expect B2 to be new canon
 		assert_eq!(
-			futures::executor::block_on(super::frontier_backend_client::load_hash(
+			futures::executor::block_on(super::tokfin_backend_client::load_hash(
 				client.as_ref(),
 				backend.as_ref(),
 				ethereum_block_hash

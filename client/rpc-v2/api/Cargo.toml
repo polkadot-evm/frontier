@@ -11,5 +11,5 @@ repository = { workspace = true }
 ethereum-types = { workspace = true }
 jsonrpsee = { workspace = true, features = ["client-core", "server-core", "macros"] }
 
-# Frontier
+# Tokfin
 fc-rpc-v2-types = { workspace = true }

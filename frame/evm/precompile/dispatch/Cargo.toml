@@ -12,7 +12,7 @@ scale-codec = { workspace = true }
 # Substrate
 frame-support = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 pallet-evm = { workspace = true }
 
@@ -34,7 +34,7 @@ std = [
 	# Substrate
 	"frame-support/std",
 	"sp-runtime/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 	"pallet-evm/std",
 ]

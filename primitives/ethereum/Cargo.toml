@@ -16,7 +16,7 @@ ethereum-types = { workspace = true }
 scale-codec = { workspace = true }
 # Substrate
 frame-support = { workspace = true }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [features]
@@ -27,6 +27,6 @@ std = [
 	"scale-codec/std",
 	# Substrate
 	"frame-support/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]

@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (c) Moonsong Labs.
 // Copyright (C) Parity Technologies (UK) Ltd.

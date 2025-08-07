@@ -1,6 +1,6 @@
 # Overview
 
-Frontier is the suite that provides an Ethereum compatibility layer for Substrate. It has two components that can be activated separately:
+Tokfin is the suite that provides an Ethereum compatibility layer for Substrate. It has two components that can be activated separately:
 
 - Pallet EVM:
   This is the pallet that enables functionality of running EVM contracts.
@@ -17,7 +17,7 @@ The module, and its EVM execution capabilities, can be added or removed at any m
 With EVM execution only, Substrate uses its account model fully and signs transactions on behalf of EVM accounts.
 
 In this model, however, Ethereum RPCs are not available, and dapps must rewrite their frontend using the Substrate API.
-If this is the intended way of usage, take a look at the [`pallet-evm`](https://github.com/polkadot-evm/frontier/tree/master/frame/evm) documentation.
+If this is the intended way of usage, take a look at the [`pallet-evm`](https://github.com/polkadot-evm/tokfin/tree/master/frame/evm) documentation.
 
 ## Post-block generation
 
@@ -25,7 +25,7 @@ On other situations, a full emulation of Ethereum may be desired so that Ethereu
 In this model, a full Ethereum block is emulated within the Substrate runtime, and is generated post-block for the consumption rest of the APIs.
 In addition to Substrate account signing, traditional Ethereum transactions are also processed and validated.
 
-If this is the intended way of usage, take a look at the [`pallet-ethereum`](https://github.com/polkadot-evm/frontier/tree/master/frame/ethereum) documentation.
+If this is the intended way of usage, take a look at the [`pallet-ethereum`](https://github.com/polkadot-evm/tokfin/tree/master/frame/ethereum) documentation.
 
 ## Pre-block feeding
 
@@ -35,9 +35,9 @@ In the pre-block feeding model, the Ethereum block is fed in *before* runtime ex
 
 A blockchain can first use pre-block feeding with empty extrinsic requirement.
 In this way, because no other external information is fed, combined with a suitable consensus engine, one Ethereum block will have an exact corresponding Substrate block.
-This is called the [wrapper block](https://corepaper.org/substrate/wrapper/) strategy, and it allows Frontier to function as a normal Ethereum client.
+This is called the [wrapper block](https://corepaper.org/substrate/wrapper/) strategy, and it allows Tokfin to function as a normal Ethereum client.
 
-With a sufficient number of the network running a Frontier node, the blockchain can then initiate a hard fork, allowing extrinsic to be added in.
+With a sufficient number of the network running a Tokfin node, the blockchain can then initiate a hard fork, allowing extrinsic to be added in.
 From there on, the blockchain is migrated to Substrate and can enjoy Substrate-specific features like on-chain governance and forkless upgrade.
 
 A complete in-storage pre-block feeding requires using Substrate's child storage.

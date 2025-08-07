@@ -1,6 +1,6 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
-// Copyright (C) Frontier developers.
+// Copyright (C) Tokfin developers.
 // SPDX-License-Identifier: Apache-2.0
 
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -138,9 +138,9 @@ pub mod pallet {
 
 	#[pallet::call]
 	impl<T: Config> Pallet<T> {
-		/// Deploy a new PolkaVM contract into the Frontier state.
+		/// Deploy a new PolkaVM contract into the Tokfin state.
 		///
-		/// A PolkaVM contract is simply a contract in the Frontier state prefixed
+		/// A PolkaVM contract is simply a contract in the Tokfin state prefixed
 		/// by `0xef polkavm`. EIP-3541 ensures that no EVM contract starts with
 		/// the prefix.
 		#[pallet::call_index(0)]

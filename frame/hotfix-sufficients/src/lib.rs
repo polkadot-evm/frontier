@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: Apache-2.0
@@ -33,7 +33,7 @@ use alloc::vec::Vec;
 use frame_support::dispatch::PostDispatchInfo;
 use sp_core::H160;
 use sp_runtime::traits::Zero;
-// Frontier
+// Tokfin
 pub use pallet_evm::AddressMapping;
 
 pub use self::{pallet::*, weights::WeightInfo};

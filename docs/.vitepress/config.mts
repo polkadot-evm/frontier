@@ -3,9 +3,9 @@ import { footnote } from "@mdit/plugin-footnote";
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  title: "Frontier",
+  title: "Tokfin",
   description: "Ethereum and EVM compatibility layer for Polkadot",
-  base: '/frontier',
+  base: '/tokfin',
   cleanUrls: true,
 
   themeConfig: {
@@ -14,7 +14,7 @@ export default defineConfig({
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Overview', link: '/overview' },
-      { text: 'API', link: 'https://polkadot-evm.github.io/frontier/rustdocs/pallet_evm/' }
+      { text: 'API', link: 'https://polkadot-evm.github.io/tokfin/rustdocs/pallet_evm/' }
     ],
 
     sidebar: [
@@ -35,12 +35,12 @@ export default defineConfig({
     ],
 
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/polkadot-evm/frontier' }
+      { icon: 'github', link: 'https://github.com/polkadot-evm/tokfin' }
     ],
 
     footer: {
       message: '<a href="https://bitarray.dev/#legal-notice">Legal notice</a>',
-      copyright: 'Copyright © 2018-present, Frontier developers'
+      copyright: 'Copyright © 2018-present, Tokfin developers'
     },
   },
 

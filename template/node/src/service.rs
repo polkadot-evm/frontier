@@ -19,7 +19,7 @@ use sp_consensus_aura::sr25519::{AuthorityId as AuraId, AuthorityPair as AuraPai
 use sp_core::{H256, U256};
 use sp_runtime::traits::{Block as BlockT, NumberFor};
 // Runtime
-use frontier_template_runtime::{
+use tokfin_runtime::{
 	opaque::Block, AccountId, Balance, Nonce, RuntimeApi, TransactionConverter,
 };
 
@@ -28,8 +28,8 @@ use crate::{
 	cli::Sealing,
 	client::{BaseRuntimeApiCollection, FullBackend, FullClient, RuntimeApiCollection},
 	eth::{
-		new_frontier_partial, spawn_frontier_tasks, BackendType, EthCompatRuntimeApiCollection,
-		FrontierBackend, FrontierBlockImport, FrontierPartialComponents, StorageOverride,
+		new_tokfin_partial, spawn_tokfin_tasks, BackendType, EthCompatRuntimeApiCollection,
+		TokfinBackend, TokfinBlockImport, TokfinPartialComponents, StorageOverride,
 		StorageOverrideHandler,
 	},
 };
@@ -75,7 +75,7 @@ pub fn new_partial<B, RA, HF, BIQ>(
 			Option<Telemetry>,
 			BoxBlockImport<B>,
 			GrandpaLinkHalf<B, FullClient<B, RA, HF>>,
-			FrontierBackend<B, FullClient<B, RA, HF>>,
+			TokfinBackend<B, FullClient<B, RA, HF>>,
 			Arc<dyn StorageOverride<B>>,
 		),
 	>,
@@ -135,8 +135,8 @@ where
 	)?;
 
 	let storage_override = Arc::new(StorageOverrideHandler::<B, _, _>::new(client.clone()));
-	let frontier_backend = match eth_config.frontier_backend_type {
-		BackendType::KeyValue => FrontierBackend::KeyValue(Arc::new(fc_db::kv::Backend::open(
+	let tokfin_backend = match eth_config.tokfin_backend_type {
+		BackendType::KeyValue => TokfinBackend::KeyValue(Arc::new(fc_db::kv::Backend::open(
 			Arc::clone(&client),
 			&config.database,
 			&db_config_dir(config),
@@ -148,19 +148,19 @@ where
 				fc_db::sql::BackendConfig::Sqlite(fc_db::sql::SqliteBackendConfig {
 					path: Path::new("sqlite:///")
 						.join(db_path)
-						.join("frontier.db3")
+						.join("tokfin.db3")
 						.to_str()
 						.unwrap(),
 					create_if_missing: true,
-					thread_count: eth_config.frontier_sql_backend_thread_count,
-					cache_size: eth_config.frontier_sql_backend_cache_size,
+					thread_count: eth_config.tokfin_sql_backend_thread_count,
+					cache_size: eth_config.tokfin_sql_backend_cache_size,
 				}),
-				eth_config.frontier_sql_backend_pool_size,
-				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
+				eth_config.tokfin_sql_backend_pool_size,
+				std::num::NonZeroU32::new(eth_config.tokfin_sql_backend_num_ops_timeout),
 				storage_override.clone(),
 			))
 			.unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
-			FrontierBackend::Sql(Arc::new(backend))
+			TokfinBackend::Sql(Arc::new(backend))
 		}
 	};
 
@@ -196,7 +196,7 @@ where
 			telemetry,
 			block_import,
 			grandpa_link,
-			frontier_backend,
+			tokfin_backend,
 			storage_override,
 		),
 	})
@@ -219,8 +219,8 @@ where
 	RA::RuntimeApi: RuntimeApiCollection<B, AuraId, AccountId, Nonce, Balance>,
 	HF: HostFunctionsT + 'static,
 {
-	let frontier_block_import =
-		FrontierBlockImport::new(grandpa_block_import.clone(), client.clone());
+	let tokfin_block_import =
+		TokfinBlockImport::new(grandpa_block_import.clone(), client.clone());
 
 	let slot_duration = sc_consensus_aura::slot_duration(&*client)?;
 	let target_gas_price = eth_config.target_gas_price;
@@ -237,7 +237,7 @@ where
 
 	let import_queue = sc_consensus_aura::import_queue::<AuraPair, _, _, _, _, _>(
 		sc_consensus_aura::ImportQueueParams {
-			block_import: frontier_block_import.clone(),
+			block_import: tokfin_block_import.clone(),
 			justification_import: Some(Box::new(grandpa_block_import)),
 			client,
 			create_inherent_data_providers,
@@ -250,7 +250,7 @@ where
 	)
 	.map_err::<ServiceError, _>(Into::into)?;
 
-	Ok((import_queue, Box::new(frontier_block_import)))
+	Ok((import_queue, Box::new(tokfin_block_import)))
 }
 
 /// Build the import queue for the template runtime (manual seal).
@@ -269,14 +269,14 @@ where
 	RA::RuntimeApi: RuntimeApiCollection<B, AuraId, AccountId, Nonce, Balance>,
 	HF: HostFunctionsT + 'static,
 {
-	let frontier_block_import = FrontierBlockImport::new(client.clone(), client);
+	let tokfin_block_import = TokfinBlockImport::new(client.clone(), client);
 	Ok((
 		sc_consensus_manual_seal::import_queue(
-			Box::new(frontier_block_import.clone()),
+			Box::new(tokfin_block_import.clone()),
 			&task_manager.spawn_essential_handle(),
 			config.prometheus_registry(),
 		),
-		Box::new(frontier_block_import),
+		Box::new(tokfin_block_import),
 	))
 }
 
@@ -310,14 +310,14 @@ where
 		keystore_container,
 		select_chain,
 		transaction_pool,
-		other: (mut telemetry, block_import, grandpa_link, frontier_backend, storage_override),
+		other: (mut telemetry, block_import, grandpa_link, tokfin_backend, storage_override),
 	} = new_partial(&config, &eth_config, build_import_queue)?;
 
-	let FrontierPartialComponents {
+	let TokfinPartialComponents {
 		filter_pool,
 		fee_history_cache,
 		fee_history_cache_limit,
-	} = new_frontier_partial(&eth_config)?;
+	} = new_tokfin_partial(&eth_config)?;
 
 	let maybe_registry = config.prometheus_config.as_ref().map(|cfg| &cfg.registry);
 	let mut net_config = sc_network::config::FullNetworkConfiguration::<_, _, NB>::new(
@@ -396,7 +396,7 @@ where
 	let role = config.role;
 	let force_authoring = config.force_authoring;
 	let name = config.network.node_name.clone();
-	let frontier_backend = Arc::new(frontier_backend);
+	let tokfin_backend = Arc::new(tokfin_backend);
 	let enable_grandpa = !config.disable_grandpa && sealing.is_none();
 	let prometheus_registry = config.prometheus_registry().cloned();
 
@@ -426,7 +426,7 @@ where
 		let max_past_logs = eth_config.max_past_logs;
 		let execute_gas_limit_multiplier = eth_config.execute_gas_limit_multiplier;
 		let filter_pool = filter_pool.clone();
-		let frontier_backend = frontier_backend.clone();
+		let tokfin_backend = tokfin_backend.clone();
 		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
 		let storage_override = storage_override.clone();
 		let fee_history_cache = fee_history_cache.clone();
@@ -462,7 +462,7 @@ where
 				enable_dev_signer,
 				network: network.clone(),
 				sync: sync_service.clone(),
-				frontier_backend: match &*frontier_backend {
+				tokfin_backend: match &*tokfin_backend {
 					fc_db::Backend::KeyValue(b) => b.clone(),
 					fc_db::Backend::Sql(b) => b.clone(),
 				},
@@ -510,11 +510,11 @@ where
 		telemetry: telemetry.as_mut(),
 	})?;
 
-	spawn_frontier_tasks(
+	spawn_tokfin_tasks(
 		&task_manager,
 		client.clone(),
 		backend,
-		frontier_backend,
+		tokfin_backend,
 		filter_pool,
 		storage_override,
 		fee_history_cache,
@@ -683,7 +683,7 @@ where
 			inherent_data: &mut sp_inherents::InherentData,
 		) -> Result<(), sp_inherents::Error> {
 			TIMESTAMP.with(|x| {
-				*x.borrow_mut() += frontier_template_runtime::SLOT_DURATION;
+				*x.borrow_mut() += tokfin_runtime::SLOT_DURATION;
 				inherent_data.put_data(sp_timestamp::INHERENT_IDENTIFIER, &*x.borrow())
 			})
 		}
@@ -758,7 +758,7 @@ pub fn new_chain_ops(
 		Arc<Backend>,
 		BasicQueue<Block>,
 		TaskManager,
-		FrontierBackend<Block, Client>,
+		TokfinBackend<Block, Client>,
 	),
 	ServiceError,
 > {

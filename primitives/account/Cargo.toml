@@ -2,7 +2,7 @@
 name = "fp-account"
 version = "1.0.0-dev"
 license = "Apache-2.0"
-description = "Primitives for Frontier AccountId20."
+description = "Primitives for Tokfin AccountId20."
 authors = { workspace = true }
 edition = { workspace = true }
 repository = { workspace = true }

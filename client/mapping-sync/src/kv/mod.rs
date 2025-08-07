@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -30,7 +30,7 @@ use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Zero};
-// Frontier
+// Tokfin
 use fc_storage::StorageOverride;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
@@ -79,7 +79,7 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 								if got_eth_block_hash != expect_eth_block_hash {
 									Err(format!(
 										"Ethereum block hash mismatch: \
-										frontier consensus digest ({expect_eth_block_hash:?}), \
+										tokfin consensus digest ({expect_eth_block_hash:?}), \
 										db state ({got_eth_block_hash:?})"
 									))
 								} else {
@@ -148,7 +148,7 @@ pub fn sync_one_block<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
 	storage_override: Arc<dyn StorageOverride<Block>>,
-	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	tokfin_backend: &fc_db::kv::Backend<Block, C>,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
@@ -162,7 +162,7 @@ where
 	C: HeaderBackend<Block> + StorageProvider<Block, BE>,
 	BE: Backend<Block>,
 {
-	let mut current_syncing_tips = frontier_backend.meta().current_syncing_tips()?;
+	let mut current_syncing_tips = tokfin_backend.meta().current_syncing_tips()?;
 
 	if current_syncing_tips.is_empty() {
 		let mut leaves = substrate_backend
@@ -179,7 +179,7 @@ where
 	while let Some(checking_tip) = current_syncing_tips.pop() {
 		if let Some(checking_header) = fetch_header(
 			substrate_backend.blockchain(),
-			frontier_backend,
+			tokfin_backend,
 			checking_tip,
 			sync_from,
 		)? {
@@ -190,7 +190,7 @@ where
 	let operating_header = match operating_header {
 		Some(operating_header) => operating_header,
 		None => {
-			frontier_backend
+			tokfin_backend
 				.meta()
 				.write_current_syncing_tips(current_syncing_tips)?;
 			return Ok(false);
@@ -198,9 +198,9 @@ where
 	};
 
 	if operating_header.number() == &Zero::zero() {
-		sync_genesis_block(client, frontier_backend, &operating_header)?;
+		sync_genesis_block(client, tokfin_backend, &operating_header)?;
 
-		frontier_backend
+		tokfin_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
 	} else {
@@ -209,10 +209,10 @@ where
 		{
 			return Ok(false);
 		}
-		sync_block(storage_override, frontier_backend, &operating_header)?;
+		sync_block(storage_override, tokfin_backend, &operating_header)?;
 
 		current_syncing_tips.push(*operating_header.parent_hash());
-		frontier_backend
+		tokfin_backend
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
 	}
@@ -237,7 +237,7 @@ pub fn sync_blocks<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
 	storage_override: Arc<dyn StorageOverride<Block>>,
-	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	tokfin_backend: &fc_db::kv::Backend<Block, C>,
 	limit: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
 	strategy: SyncStrategy,
@@ -260,7 +260,7 @@ where
 				client,
 				substrate_backend,
 				storage_override.clone(),
-				frontier_backend,
+				tokfin_backend,
 				sync_from,
 				strategy,
 				sync_oracle.clone(),
@@ -273,7 +273,7 @@ where
 
 pub fn fetch_header<Block: BlockT, C, BE>(
 	substrate_backend: &BE,
-	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	tokfin_backend: &fc_db::kv::Backend<Block, C>,
 	checking_tip: Block::Hash,
 	sync_from: <Block::Header as HeaderT>::Number,
 ) -> Result<Option<Block::Header>, String>
@@ -281,7 +281,7 @@ where
 	C: HeaderBackend<Block>,
 	BE: HeaderBackend<Block>,
 {
-	if frontier_backend.mapping().is_synced(&checking_tip)? {
+	if tokfin_backend.mapping().is_synced(&checking_tip)? {
 		return Ok(None);
 	}
 

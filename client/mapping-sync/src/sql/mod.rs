@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -26,7 +26,7 @@ use sp_blockchain::{Backend, HeaderBackend};
 use sp_consensus::SyncOracle;
 use sp_core::H256;
 use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
-// Frontier
+// Tokfin
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
@@ -84,13 +84,13 @@ where
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
 			while let Some(cmd) = rx.recv().await {
-				log::debug!(target: "frontier-sql", "💬 Recv Worker Command {cmd:?}");
+				log::debug!(target: "tokfin-sql", "💬 Recv Worker Command {cmd:?}");
 				match cmd {
 					WorkerCommand::ResumeSync => {
 						// Attempt to resume from last indexed block. If there is no data in the db, sync genesis.
 						match indexer_backend.last_indexed_canon_block().await.ok() {
 							Some(last_block_hash) => {
-								log::debug!(target: "frontier-sql", "Resume from last block {last_block_hash:?}");
+								log::debug!(target: "tokfin-sql", "Resume from last block {last_block_hash:?}");
 								if let Some(parent_hash) = client
 									.header(last_block_hash)
 									.ok()
@@ -151,7 +151,7 @@ where
 						if let Some(block_hash) =
 							indexer_backend.get_first_pending_canon_block().await
 						{
-							log::debug!(target: "frontier-sql", "Indexing pending canonical block {block_hash:?}");
+							log::debug!(target: "tokfin-sql", "Indexing pending canonical block {block_hash:?}");
 							indexer_backend.index_block_logs(block_hash).await;
 						}
 
@@ -221,7 +221,7 @@ where
 				}
 				notification = notifications.next() => if let Some(notification) = notification {
 					log::debug!(
-						target: "frontier-sql",
+						target: "tokfin-sql",
 						"📣  New notification: #{} {:?} (parent {}), best = {}",
 						notification.header.number(),
 						notification.hash,
@@ -231,7 +231,7 @@ where
 					if notification.is_new_best {
 						if let Some(tree_route) = notification.tree_route {
 							log::debug!(
-								target: "frontier-sql",
+								target: "tokfin-sql",
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
 								notification.hash
 							);
@@ -288,18 +288,18 @@ async fn index_block_and_ancestors<Block, Backend, Client>(
 
 		// exit if block is already imported
 		if indexer_backend.is_block_indexed(hash).await {
-			log::debug!(target: "frontier-sql", "🔴 Block {hash:?} already imported");
+			log::debug!(target: "tokfin-sql", "🔴 Block {hash:?} already imported");
 			break;
 		}
 
-		log::debug!(target: "frontier-sql", "🛠️  Importing {hash:?}");
+		log::debug!(target: "tokfin-sql", "🛠️  Importing {hash:?}");
 		let _ = indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.await
 			.map_err(|e| {
-				log::error!(target: "frontier-sql", "{e}");
+				log::error!(target: "tokfin-sql", "{e}");
 			});
-		log::debug!(target: "frontier-sql", "Inserted block metadata");
+		log::debug!(target: "tokfin-sql", "Inserted block metadata");
 		indexer_backend.index_block_logs(hash).await;
 
 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
@@ -337,18 +337,18 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 
 		// exit if canonical block is already imported
 		if status.indexed && status.canon {
-			log::debug!(target: "frontier-sql", "🔴 Block {hash:?} already imported");
+			log::debug!(target: "tokfin-sql", "🔴 Block {hash:?} already imported");
 			break;
 		}
 
 		// If block was previously indexed as non-canon then mark it as canon
 		if status.indexed && !status.canon {
 			if let Err(err) = indexer_backend.set_block_as_canon(hash).await {
-				log::error!(target: "frontier-sql", "Failed setting block {hash:?} as canon: {err:?}");
+				log::error!(target: "tokfin-sql", "Failed setting block {hash:?} as canon: {err:?}");
 				continue;
 			}
 
-			log::debug!(target: "frontier-sql", "🛠️  Marked block as canon {hash:?}");
+			log::debug!(target: "tokfin-sql", "🛠️  Marked block as canon {hash:?}");
 
 			// Check parent block
 			if let Ok(Some(header)) = blockchain_backend.header(hash) {
@@ -359,14 +359,14 @@ async fn index_canonical_block_and_ancestors<Block, Backend, Client>(
 		}
 
 		// Else, import the new block
-		log::debug!(target: "frontier-sql", "🛠️  Importing {hash:?}");
+		log::debug!(target: "tokfin-sql", "🛠️  Importing {hash:?}");
 		let _ = indexer_backend
 			.insert_block_metadata(client.clone(), hash)
 			.await
 			.map_err(|e| {
-				log::error!(target: "frontier-sql", "{e}");
+				log::error!(target: "tokfin-sql", "{e}");
 			});
-		log::debug!(target: "frontier-sql", "Inserted block metadata  {hash:?}");
+		log::debug!(target: "tokfin-sql", "Inserted block metadata  {hash:?}");
 		indexer_backend.index_block_logs(hash).await;
 
 		if let Ok(Some(header)) = blockchain_backend.header(hash) {
@@ -386,7 +386,7 @@ async fn canonicalize_blocks<Block: BlockT<Hash = H256>>(
 ) {
 	if (indexer_backend.canonicalize(&retracted, &enacted).await).is_err() {
 		log::error!(
-			target: "frontier-sql",
+			target: "tokfin-sql",
 			"❌  Canonicalization failed for common ancestor {}, potentially corrupted db. Retracted: {:?}, Enacted: {:?}",
 			common,
 			retracted,
@@ -410,12 +410,12 @@ async fn index_missing_blocks<Block, Client, Backend>(
 	Backend: BackendT<Block> + 'static,
 {
 	if let Some(block_number) = indexer_backend.get_first_missing_canon_block().await {
-		log::debug!(target: "frontier-sql", "Missing {block_number:?}");
+		log::debug!(target: "tokfin-sql", "Missing {block_number:?}");
 		if block_number == 0 {
 			index_genesis_block(client.clone(), indexer_backend.clone()).await;
 		} else if let Ok(Some(block_hash)) = client.hash(block_number.unique_saturated_into()) {
 			log::debug!(
-				target: "frontier-sql",
+				target: "tokfin-sql",
 				"Indexing past canonical blocks from #{} {:?}",
 				block_number,
 				block_hash,
@@ -428,7 +428,7 @@ async fn index_missing_blocks<Block, Client, Backend>(
 			)
 			.await;
 		} else {
-			log::debug!(target: "frontier-sql", "Failed retrieving hash for block #{block_number}");
+			log::debug!(target: "tokfin-sql", "Failed retrieving hash for block #{block_number}");
 		}
 	}
 }
@@ -447,16 +447,16 @@ async fn index_genesis_block<Block, Client, Backend>(
 	Backend: BackendT<Block> + 'static,
 {
 	log::info!(
-		target: "frontier-sql",
+		target: "tokfin-sql",
 		"Import genesis",
 	);
 	if let Ok(Some(substrate_genesis_hash)) = indexer_backend
 		.insert_genesis_block_metadata(client.clone())
 		.await
 		.map_err(|e| {
-			log::error!(target: "frontier-sql", "💔  Cannot sync genesis block: {e}");
+			log::error!(target: "tokfin-sql", "💔  Cannot sync genesis block: {e}");
 		}) {
-		log::debug!(target: "frontier-sql", "Imported genesis block {substrate_genesis_hash:?}");
+		log::debug!(target: "tokfin-sql", "Imported genesis block {substrate_genesis_hash:?}");
 	}
 }
 
@@ -486,7 +486,7 @@ mod test {
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder, TestClientBuilderExt,
 	};
-	// Frontier
+	// Tokfin
 	use fc_storage::SchemaV3StorageOverride;
 	use fp_storage::{constants::*, EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 
@@ -546,7 +546,7 @@ mod test {
 		let backend = builder.backend();
 		// Client
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
@@ -749,7 +749,7 @@ mod test {
 		let backend = builder.backend();
 		// Client
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
@@ -953,7 +953,7 @@ mod test {
 		let backend = builder.backend();
 		// Client
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
@@ -1119,7 +1119,7 @@ mod test {
 		let backend = builder.backend();
 		// Client
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		// Overrides
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
@@ -1265,7 +1265,7 @@ mod test {
 		);
 		let backend = builder.backend();
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
@@ -1366,7 +1366,7 @@ mod test {
 		);
 		let backend = builder.backend();
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
@@ -1481,7 +1481,7 @@ mod test {
 		);
 		let backend = builder.backend();
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
@@ -1582,7 +1582,7 @@ mod test {
 		);
 		let backend = builder.backend();
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
@@ -1697,7 +1697,7 @@ mod test {
 		);
 		let backend = builder.backend();
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(
@@ -1798,7 +1798,7 @@ mod test {
 		);
 		let backend = builder.backend();
 		let (client, _) =
-			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+			builder.build_with_native_executor::<tokfin_runtime::RuntimeApi, _>(None);
 		let client = Arc::new(client);
 		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
 		let indexer_backend = fc_db::sql::Backend::new(

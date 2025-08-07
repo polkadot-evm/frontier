@@ -1,11 +1,11 @@
 import { expect } from "chai";
 
 import { CHAIN_ID } from "./config";
-import { describeWithFrontier } from "./util";
+import { describeWithTokfin } from "./util";
 
 // All test for the RPC
 
-describeWithFrontier("Frontier RPC (Constant)", (context) => {
+describeWithTokfin("Tokfin RPC (Constant)", (context) => {
 	it("should have 0 hashrate", async function () {
 		expect(await context.web3.eth.getHashrate()).to.equal(0);
 	});

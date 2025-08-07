@@ -1,9 +1,9 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { describeWithFrontier, customRequest } from "./util";
+import { describeWithTokfin, customRequest } from "./util";
 
-describeWithFrontier("Frontier RPC (Transaction cost)", (context) => {
+describeWithTokfin("Tokfin RPC (Transaction cost)", (context) => {
 	step("should take transaction cost into account and not submit it to the pool", async function () {
 		// Simple transfer with gas limit 0 manually signed to prevent web3 from rejecting client-side.
 		const tx = await customRequest(context.web3, "eth_sendRawTransaction", [

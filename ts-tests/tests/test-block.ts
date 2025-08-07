@@ -2,9 +2,9 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { BLOCK_TIMESTAMP, ETH_BLOCK_GAS_LIMIT, GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import { createAndFinalizeBlock, describeWithTokfin, customRequest } from "./util";
 
-describeWithFrontier("Frontier RPC (Block)", (context) => {
+describeWithTokfin("Tokfin RPC (Block)", (context) => {
 	let previousBlock;
 	// Those tests are dependent of each other in the given order.
 	// The reason is to avoid having to restart the node each time
@@ -146,7 +146,7 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 	});
 });
 
-describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
+describeWithTokfin("Tokfin RPC (Pending Block)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
 	it("should return pending block", async function () {
@@ -196,7 +196,7 @@ describeWithFrontier("Frontier RPC (Pending Block)", (context) => {
 	});
 });
 
-describeWithFrontier("Frontier RPC (BlockReceipts)", (context) => {
+describeWithTokfin("Tokfin RPC (BlockReceipts)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 	const N = 5;
 

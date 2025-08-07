@@ -1,4 +1,4 @@
-// This file is part of Frontier.
+// This file is part of Tokfin.
 
 // Copyright (C) Parity Technologies (UK) Ltd.
 // SPDX-License-Identifier: GPL-3.0-or-later WITH Classpath-exception-2.0
@@ -28,7 +28,7 @@ use sp_blockchain::HeaderBackend;
 // Substrate
 use sp_runtime::traits::Block as BlockT;
 
-use super::{utils::FrontierDbMessage, FrontierDbCmd, Operation};
+use super::{utils::TokfinDbMessage, TokfinDbCmd, Operation};
 
 #[derive(Debug, Deserialize)]
 #[serde(untagged)]
@@ -59,12 +59,12 @@ impl FromStr for MetaKey {
 }
 
 pub struct MetaDb<'a, B, C> {
-	cmd: &'a FrontierDbCmd,
+	cmd: &'a TokfinDbCmd,
 	backend: Arc<fc_db::kv::Backend<B, C>>,
 }
 
 impl<'a, B: BlockT, C: HeaderBackend<B>> MetaDb<'a, B, C> {
-	pub fn new(cmd: &'a FrontierDbCmd, backend: Arc<fc_db::kv::Backend<B, C>>) -> Self {
+	pub fn new(cmd: &'a TokfinDbCmd, backend: Arc<fc_db::kv::Backend<B, C>>) -> Self {
 		Self { cmd, backend }
 	}
 
@@ -152,4 +152,4 @@ impl<'a, B: BlockT, C: HeaderBackend<B>> MetaDb<'a, B, C> {
 	}
 }
 
-impl<B: BlockT, C: HeaderBackend<B>> FrontierDbMessage for MetaDb<'_, B, C> {}
+impl<B: BlockT, C: HeaderBackend<B>> TokfinDbMessage for MetaDb<'_, B, C> {}

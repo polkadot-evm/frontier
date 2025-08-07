@@ -18,7 +18,7 @@ frame-support = { workspace = true }
 frame-system = { workspace = true }
 sp-core = { workspace = true }
 sp-runtime = { workspace = true }
-# Frontier
+# Tokfin
 fp-evm = { workspace = true }
 
 [dev-dependencies]
@@ -35,7 +35,7 @@ std = [
 	"frame-system/std",
 	"sp-core/std",
 	"sp-runtime/std",
-	# Frontier
+	# Tokfin
 	"fp-evm/std",
 ]
 try-runtime = [

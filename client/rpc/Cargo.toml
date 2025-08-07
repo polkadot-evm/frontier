@@ -52,7 +52,7 @@ sp-state-machine = { workspace = true, features = ["default"] }
 sp-storage = { workspace = true, features = ["default"] }
 sp-timestamp = { workspace = true, features = ["default"], optional = true }
 sp-trie = { workspace = true, features = ["default"] }
-# Frontier
+# Tokfin
 fc-api = { workspace = true }
 fc-mapping-sync = { workspace = true }
 fc-rpc-core = { workspace = true }
@@ -69,7 +69,7 @@ sc-block-builder = { workspace = true }
 sc-client-db = { workspace = true, features = ["rocksdb"] }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
-# Frontier
+# Tokfin
 fc-db = { workspace = true }
 
 [features]
