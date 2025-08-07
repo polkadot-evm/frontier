@@ -88,10 +88,6 @@ export async function startFrontierNode(
 		}
 	}
 
-	if (!provider || provider == "http") {
-		web3 = new Web3(`http://127.0.0.1:${RPC_PORT}`);
-	}
-
 	const cmd = BINARY_PATH;
 	const args = [
 		`--chain=dev`,
