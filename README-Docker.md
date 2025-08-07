@@ -4,19 +4,16 @@ This directory contains Docker configuration files for running the Frontier temp
 
 ## Quick Start
 
-### Production Build
+### Build
 ```bash
 # Build and run the production node
-docker-compose up --build
+docker compose up --build
 ```
 
-### Development Environment
+### Deploy development node
 ```bash
-# Start the development environment
-docker-compose -f docker-compose.dev.yml up --build
-
-# Or enter the development container
-docker-compose -f docker-compose.dev.yml run --rm frontier-dev bash
+# Run a development node
+docker run -d   --name frontier-node   -p 9933:9933   -p 9944:9944   frontier-node   --dev   --rpc-cors=all   --rpc-external   --rpc-methods=Unsafe   --rpc-port 9933
 ```
 
 ## Files
