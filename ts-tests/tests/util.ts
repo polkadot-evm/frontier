@@ -85,7 +85,7 @@ export async function attachToFrontierNode(provider?: string): Promise<{
 		name: "frontier-dev",
 	});
 
-	return { web3, binary: null, ethersjs };
+	return { web3, ethersjs };
 }
 
 export async function startFrontierNode(
