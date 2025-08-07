@@ -20,7 +20,6 @@ use grammar::FuzzData;
 use pallet_balances::{Holds, TotalIssuance};
 use pallet_evm::{GasWeightMapping, Runner};
 use sp_core::H160;
-use sp_runtime::{traits::Header, BuildStorage};
 use sp_state_machine::BasicExternalities;
 
 fn main() {
@@ -54,10 +53,11 @@ fn main() {
 				None,
 				None,
 				Vec::new(),
+				Vec::new(),
 				true,
 				true,
 				Some(weight_limit),
-				Some(0),
+				Some(0.into()),
 				&<Runtime as pallet_evm::Config>::config().clone(),
 			);
 			let proof_size = match res {
