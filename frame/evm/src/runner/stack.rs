@@ -223,25 +223,21 @@ where
 		// Do not allow transactions for which `tx.sender` has any code deployed.
 		// Exception: Allow transactions from EOAs whose code is a valid delegation indicator (0xef0100 || address).
 		if is_transactional {
-			let is_delegation = |origin: H160| {
-				// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
-				if let Some(metadata) = <AccountCodesMetadata<T>>::get(origin) {
-					if metadata.size == evm::EIP_7702_DELEGATION_SIZE as u64
-						&& <AccountCodes<T>>::get(origin)
-							.starts_with(evm::EIP_7702_DELEGATION_PREFIX)
-					{
-						return true;
+			// Check if the account has code deployed
+			if let Some(metadata) = <AccountCodesMetadata<T>>::get(source) {
+				if metadata.size > 0 {
+					// Account has code, check if it's a valid delegation
+					let is_delegation = metadata.size == evm::EIP_7702_DELEGATION_SIZE as u64
+						&& <AccountCodes<T>>::get(source)
+							.starts_with(evm::EIP_7702_DELEGATION_PREFIX);
+
+					if !is_delegation {
+						return Err(RunnerError {
+							error: Error::<T>::TransactionMustComeFromEOA,
+							weight,
+						});
 					}
 				}
-
-				false
-			};
-
-			if !is_delegation(source) {
-				return Err(RunnerError {
-					error: Error::<T>::TransactionMustComeFromEOA,
-					weight,
-				});
 			}
 		}
 

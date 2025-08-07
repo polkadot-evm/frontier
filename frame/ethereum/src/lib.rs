@@ -564,22 +564,17 @@ impl<T: Config> Pallet<T> {
 		// This check should be done on the transaction validation (here) **and**
 		// on transaction execution, otherwise a contract tx will be included in
 		// the mempool and pollute the mempool forever.
-		let is_delegation = |origin: H160| {
-			// Check if code is a valid delegation indicator: 0xef0100 + 20-byte address
-			if let Some(metadata) = pallet_evm::AccountCodesMetadata::<T>::get(origin) {
-				if metadata.size == evm::EIP_7702_DELEGATION_SIZE as u64
+		if let Some(metadata) = pallet_evm::AccountCodesMetadata::<T>::get(origin) {
+			if metadata.size > 0 {
+				// Account has code, check if it's a valid delegation
+				let is_delegation = metadata.size == evm::EIP_7702_DELEGATION_SIZE as u64
 					&& pallet_evm::AccountCodes::<T>::get(origin)
-						.starts_with(evm::EIP_7702_DELEGATION_PREFIX)
-				{
-					return true;
+						.starts_with(evm::EIP_7702_DELEGATION_PREFIX);
+
+				if !is_delegation {
+					return Err(InvalidTransaction::BadSigner.into());
 				}
 			}
-
-			false
-		};
-
-		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() && !is_delegation(origin) {
-			return Err(InvalidTransaction::BadSigner.into());
 		}
 
 		let priority = match (
