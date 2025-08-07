@@ -60,7 +60,6 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 
 export async function attachToFrontierNode(provider?: string): Promise<{
 	web3: Web3;
-	binary: null;
 	ethersjs: ethers.JsonRpcProvider;
 }> {
 	var web3;
