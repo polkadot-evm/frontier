@@ -1,0 +1,1 @@
+pub mod pallet_evm_precompile_curve25519;

@@ -4,6 +4,7 @@ use pallet_evm::{
 };
 use sp_core::H160;
 
+use pallet_evm_precompile_curve25519 as curve25519_precompile;
 use pallet_evm_precompile_modexp::Modexp;
 use pallet_evm_precompile_sha3fips::Sha3FIPS256;
 use pallet_evm_precompile_simple::{ECRecover, ECRecoverPublicKey, Identity, Ripemd160, Sha256};
@@ -17,7 +18,7 @@ where
 	pub fn new() -> Self {
 		Self(Default::default())
 	}
-	pub fn used_addresses() -> [H160; 7] {
+	pub fn used_addresses() -> [H160; 9] {
 		[
 			hash(1),
 			hash(2),
@@ -26,12 +27,14 @@ where
 			hash(5),
 			hash(1024),
 			hash(1025),
+			hash(1026),
+			hash(1027),
 		]
 	}
 }
 impl<R> PrecompileSet for FrontierPrecompiles<R>
 where
-	R: pallet_evm::Config,
+	R: pallet_evm::Config + frame_system::Config,
 {
 	fn execute(&self, handle: &mut impl PrecompileHandle) -> Option<PrecompileResult> {
 		match handle.code_address() {
@@ -44,6 +47,15 @@ where
 			// Non-Frontier specific nor Ethereum precompiles :
 			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
 			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
+			// Curve25519 precompiles
+			a if a == hash(1026) => Some(curve25519_precompile::Curve25519Add::<
+				R,
+				crate::weights::pallet_evm_precompile_curve25519::WeightInfo<R>,
+			>::execute(handle)),
+			a if a == hash(1027) => Some(curve25519_precompile::Curve25519ScalarMul::<
+				R,
+				crate::weights::pallet_evm_precompile_curve25519::WeightInfo<R>,
+			>::execute(handle)),
 			_ => None,
 		}
 	}

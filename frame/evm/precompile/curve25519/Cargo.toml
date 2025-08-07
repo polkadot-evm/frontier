@@ -9,12 +9,14 @@ repository = { workspace = true }
 
 [dependencies]
 curve25519-dalek = { version = "4.1.0", default-features = false, features = ["alloc"] }
-# Frontier
 fp-evm = { workspace = true }
+frame-support = { workspace = true }
+pallet-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	# Frontier
 	"fp-evm/std",
+    "frame-support/std",
+    "pallet-evm/std",
 ]

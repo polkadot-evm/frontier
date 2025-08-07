@@ -3858,6 +3858,7 @@ dependencies = [
  "frame-system",
  "frame-system-benchmarking",
  "frame-system-rpc-runtime-api",
+ "hex-literal",
  "pallet-aura",
  "pallet-balances",
  "pallet-base-fee",
@@ -3865,6 +3866,8 @@ dependencies = [
  "pallet-ethereum",
  "pallet-evm",
  "pallet-evm-chain-id",
+ "pallet-evm-precompile-curve25519",
+ "pallet-evm-precompile-curve25519-benchmarking",
  "pallet-evm-precompile-modexp",
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
@@ -3876,6 +3879,7 @@ dependencies = [
  "parity-scale-codec",
  "polkadot-runtime-common",
  "scale-info",
+ "serde_json",
  "sp-api",
  "sp-block-builder",
  "sp-consensus-aura",
@@ -3886,6 +3890,7 @@ dependencies = [
  "sp-offchain",
  "sp-runtime",
  "sp-session",
+ "sp-std",
  "sp-transaction-pool",
  "sp-version",
  "substrate-wasm-builder",
@@ -7311,6 +7316,20 @@ version = "1.0.0-dev"
 dependencies = [
  "curve25519-dalek",
  "fp-evm",
+ "frame-support",
+ "pallet-evm",
+]
+
+[[package]]
+name = "pallet-evm-precompile-curve25519-benchmarking"
+version = "6.0.0-dev"
+dependencies = [
+ "curve25519-dalek",
+ "frame-benchmarking",
+ "frame-system",
+ "pallet-evm-precompile-curve25519",
+ "sha2 0.10.9",
+ "sp-runtime",
 ]
 
 [[package]]

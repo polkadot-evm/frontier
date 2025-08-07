@@ -60,8 +60,8 @@ pallet-transaction-payment-rpc = { workspace = true }
 pallet-transaction-payment-rpc-runtime-api = { workspace = true }
 substrate-frame-rpc-system = { workspace = true }
 # These dependencies are used for runtime benchmarking
-frame-benchmarking = { workspace = true, optional = true }
-frame-benchmarking-cli = { workspace = true, optional = true }
+frame-benchmarking = { workspace = true }
+frame-benchmarking-cli = { workspace = true }
 frame-system = { workspace = true }
 pallet-transaction-payment = { workspace = true }
 
@@ -112,8 +112,6 @@ sql = [
 txpool = ["fc-rpc/txpool"]
 rpc-binary-search-estimate = ["fc-rpc/rpc-binary-search-estimate"]
 runtime-benchmarks = [
-	"frame-benchmarking/runtime-benchmarks",
-	"frame-benchmarking-cli/runtime-benchmarks",
 	"sc-service/runtime-benchmarks",
 	"frontier-template-runtime/runtime-benchmarks",
 ]
