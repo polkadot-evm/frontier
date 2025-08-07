@@ -1,0 +1,14 @@
+services:
+  frontier-node:
+    build: .
+    ports:
+      - "30333:30333"
+      - "9933:9933"
+      - "9944:9944"
+      - "9615:9615"
+    volumes:
+      - frontier_data:/app/template/node/target/release/chains
+    command: ["--dev", "--tmp", "--rpc-external", "--rpc-methods", "unsafe"]
+
+volumes:
+  frontier_data: 

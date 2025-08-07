@@ -1,0 +1,23 @@
+# Git
+.git
+.gitignore
+
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Docker
+Dockerfile*
+docker-compose*.yml
+.dockerignore 

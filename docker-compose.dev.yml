@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  frontier-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: frontier-dev
+    ports:
+      - "30333:30333"  # P2P port
+      - "9933:9933"    # RPC port
+      - "9944:9944"    # WebSocket port
+      - "9615:9615"    # Prometheus metrics
+    volumes:
+      - .:/app
+      - frontier_dev_data:/app/template/node/target
+      - cargo_cache:/usr/local/cargo
+    environment:
+      - RUST_LOG=debug
+      - RUST_BACKTRACE=1
+    working_dir: /app/template/node
+    stdin_open: true
+    tty: true
+    command: bash
+    networks:
+      - frontier-dev-network
+
+  # Optional: Add a simple monitoring service for development
+  prometheus-dev:
+    image: prom/prometheus:latest
+    container_name: frontier-prometheus-dev
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.enable-lifecycle'
+    restart: unless-stopped
+    networks:
+      - frontier-dev-network
+
+volumes:
+  frontier_dev_data:
+    driver: local
+  cargo_cache:
+    driver: local
+
+networks:
+  frontier-dev-network:
+    driver: bridge 
