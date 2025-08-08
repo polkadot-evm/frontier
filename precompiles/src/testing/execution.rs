@@ -239,16 +239,17 @@ pub trait PrecompileTesterExt: PrecompileSet + Sized {
 		from: impl Into<H160>,
 		to: impl Into<H160>,
 		data: impl Into<Vec<u8>>,
-	) -> PrecompilesTester<Self>;
+	) -> PrecompilesTester<'_, Self>;
 }
 
 impl<T: PrecompileSet> PrecompileTesterExt for T {
 	fn prepare_test(
-		&self,
-		from: impl Into<H160>,
-		to: impl Into<H160>,
-		data: impl Into<Vec<u8>>,
-	) -> PrecompilesTester<Self> {
-		PrecompilesTester::new(self, from, to, data.into())
+	    &self,
+    	from: impl Into<H160>,
+    	to: impl Into<H160>,
+    	data: impl Into<Vec<u8>>,
+	) -> PrecompilesTester<'_, Self> {
+    // ... function body
+	PrecompilesTester::new(self, from, to, data.into())
 	}
 }

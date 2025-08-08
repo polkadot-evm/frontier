@@ -170,7 +170,7 @@ fn testnet_genesis(
 				.map(|k| (k, 1_000_000 * UNITS))
 				.collect::<Vec<_>>()
 		},
-		"aura": { "authorities": initial_authorities.iter().map(|x| (x.0.clone())).collect::<Vec<_>>() },
+		"aura": { "authorities": initial_authorities.iter().map(|x| x.0.clone()).collect::<Vec<_>>() },
 		"grandpa": { "authorities": initial_authorities.iter().map(|x| (x.1.clone(), 1)).collect::<Vec<_>>() },
 		"evmChainId": { "chainId": chain_id },
 		"evm": { "accounts": evm_accounts },

@@ -154,6 +154,7 @@ pallet-transaction-payment = { git = "https://github.com/paritytech/polkadot-sdk
 pallet-transaction-payment-rpc = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 pallet-transaction-payment-rpc-runtime-api = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 pallet-utility = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
+pallet-assets = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
 # Substrate Utility
 frame-benchmarking-cli = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
 prometheus-endpoint = { package = "substrate-prometheus-endpoint", git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
@@ -232,3 +233,6 @@ inherits = "release"
 lto = true
 # https://doc.rust-lang.org/rustc/codegen-options/index.html#codegen-units
 codegen-units = 1
+
+[patch.crates-io]
+trie-db = { path = "./trie/trie-db" }

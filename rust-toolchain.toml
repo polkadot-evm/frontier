@@ -1,6 +1,6 @@
 [toolchain]
-# Stable
-channel = "1.84.1" # rustc 1.84.1 (e71f9a9a9 2025-01-27)
+# Stable   channel = "1.84.1" # rustc 1.84.1 (e71f9a9a9 2025-01-27)
+channel = "nightly"
 components = ["cargo", "clippy", "rustc", "rustfmt", "rust-docs"]
 profile = "minimal"
 targets = ["wasm32v1-none"]

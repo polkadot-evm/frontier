@@ -61,7 +61,8 @@ where
 	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	/// Creates a pending runtime API.
-	pub(crate) async fn pending_runtime_api(&self) -> Result<(B::Hash, ApiRef<C::Api>), Error> {
+	/// pub(crate) async fn pending_runtime_api(&self) -> Result<(B::Hash, ApiRef<C::Api>), Error> {
+	pub(crate) async fn pending_runtime_api(&self) -> Result<(B::Hash, ApiRef<'_, C::Api>), Error> {
 		let api = self.client.runtime_api();
 
 		let info = self.client.info();

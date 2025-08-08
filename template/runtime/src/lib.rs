@@ -300,14 +300,14 @@ impl pallet_balances::Config for Runtime {
 	type Balance = Balance;
 	type DustRemoval = ();
 	type ExistentialDeposit = ConstU128<EXISTENTIAL_DEPOSIT>;
-	type AccountStore = System;
-	type ReserveIdentifier = [u8; 8];
-	type FreezeIdentifier = RuntimeFreezeReason;
-	type MaxLocks = ConstU32<50>;
-	type MaxReserves = ConstU32<50>;
-	type MaxFreezes = ConstU32<1>;
-	type DoneSlashHandler = ();
-}
+		type AccountStore = System;
+		type ReserveIdentifier = [u8; 8];
+		type FreezeIdentifier = RuntimeFreezeReason;
+		type MaxLocks = ConstU32<50>;
+		type MaxReserves = ConstU32<50>;
+		type MaxFreezes = ConstU32<1>;
+		type DoneSlashHandler = ();
+	}
 
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
