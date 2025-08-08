@@ -26,7 +26,7 @@ fn main() {
 	ziggy::fuzz!(|data: FuzzData| {
 		let config = evm::Config::cancun();
 		let source = H160::default();
-		let target = H160::from_low_u64_ne(02);
+		let target = H160::from_low_u64_ne(2);
 		let gas_limit: u64 = 1_000_000;
 		new_test_ext().execute_with(|| {
 			let initial_total_issuance = TotalIssuance::<Runtime>::get();
@@ -49,7 +49,7 @@ fn main() {
 				data.call_data,
 				data.value.into(),
 				gas_limit,
-				Some(1000_000_000.into()),
+				Some(1_000_000_000.into()),
 				None,
 				None,
 				Vec::new(),
@@ -57,7 +57,7 @@ fn main() {
 				true,
 				true,
 				Some(weight_limit),
-				Some(0.into()),
+				Some(0u64.into()),
 				&<Runtime as pallet_evm::Config>::config().clone(),
 			);
 			let proof_size = match res {
