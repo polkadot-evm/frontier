@@ -6,6 +6,10 @@ A [FRAME](https://docs.substrate.io/v3/runtime/frame)-based [Substrate](https://
 
 This template was originally forked from the [Substrate Node Template](https://github.com/substrate-developer-hub/substrate-node-template). You can find more information on features of this template there, and more detailed usage on the [Substrate Developer Hub Tutorials](https://docs.substrate.io/tutorials/v3/) that use this heavily.
 
+## Network Configuration
+
+The native token of this template is **TOKFIN** with the symbol **TKF**.
+
 ## Build & Run
 
 To build the chain, execute the following commands from the project root:

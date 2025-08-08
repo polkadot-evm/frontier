@@ -1,4 +1,4 @@
-# Polkadot Tokfin (a fork from Frontier-Teplate)
+# Tokfin (forked from Polkadok-SDK Frontier-Template)
 
 [![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/polkadot-evm/frontier/test.yml)](https://github.com/polkadot-evm/frontier/actions)
 [![Matrix](https://img.shields.io/matrix/frontier:matrix.org)](https://matrix.to/#/#frontier:matrix.org)
@@ -20,3 +20,5 @@ Tokfin is also a migration framework.
 Besides the common strategy of direct state export/import and transaction-level replays, Tokfin's Pre-Log Wrapper Block feature provides a possible method for a zero-downtime live migration.
 
 ### New Features
+
+* **Native Token:** The native token for this template has been configured to **TOKFIN** with the symbol **TKF**.
