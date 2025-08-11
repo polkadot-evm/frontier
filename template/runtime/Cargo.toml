@@ -62,6 +62,7 @@ pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
+pallet-evm-precompile-sha3fips-benchmarking = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
 pallet-evm-precompile-curve25519 = { workspace = true }
 pallet-evm-precompile-curve25519-benchmarking = { workspace = true }
@@ -125,6 +126,7 @@ std = [
 	"pallet-evm-chain-id/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
+	"pallet-evm-precompile-sha3fips-benchmarking/std",
 	"pallet-evm-precompile-simple/std",
 	"pallet-evm-precompile-curve25519/std",
 	"pallet-evm-precompile-curve25519-benchmarking/std",
@@ -144,5 +146,6 @@ runtime-benchmarks = [
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
 	"pallet-evm-precompile-curve25519-benchmarking/runtime-benchmarks",
+	"pallet-evm-precompile-sha3fips-benchmarking/runtime-benchmarks",
 	"polkadot-runtime-common/runtime-benchmarks",
 ]

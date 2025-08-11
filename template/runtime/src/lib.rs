@@ -600,6 +600,7 @@ mod benches {
 		[pallet_sudo, Sudo]
 		[pallet_evm, EVM]
 		[pallet_evm_precompile_curve25519, EVMPrecompileCurve25519Bench::<Runtime>]
+		[pallet_evm_precompile_sha3fips, EVMPrecompileSha3FIPSBench::<Runtime>]
 	);
 }
 
@@ -1043,6 +1044,7 @@ impl_runtime_apis! {
 			use frame_system_benchmarking::Pallet as SystemBench;
 
 			use pallet_evm_precompile_curve25519_benchmarking::Pallet as EVMPrecompileCurve25519Bench;
+			use pallet_evm_precompile_sha3fips_benchmarking::Pallet as EVMPrecompileSha3FIPSBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
@@ -1061,10 +1063,12 @@ impl_runtime_apis! {
 			use baseline::Pallet as BaselineBench;
 			use frame_system_benchmarking::Pallet as SystemBench;
 			use pallet_evm_precompile_curve25519_benchmarking::Pallet as EVMPrecompileCurve25519Bench;
+			use pallet_evm_precompile_sha3fips_benchmarking::Pallet as EVMPrecompileSha3FIPSBench;
 
 			impl baseline::Config for Runtime {}
 			impl frame_system_benchmarking::Config for Runtime {}
 			impl pallet_evm_precompile_curve25519_benchmarking::Config for Runtime {}
+			impl pallet_evm_precompile_sha3fips_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = Vec::new();
 

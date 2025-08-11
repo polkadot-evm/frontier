@@ -1,1 +1,2 @@
 pub mod pallet_evm_precompile_curve25519;
+pub mod pallet_evm_precompile_sha3fips;

@@ -5,6 +5,7 @@ members = [
 	"frame/ethereum",
 	"frame/evm",
 	"frame/evm/precompile/sha3fips",
+	"frame/evm/precompile/sha3fips/benchmarking",
 	"frame/evm/precompile/simple",
 	"frame/evm/precompile/modexp",
 	"frame/evm/precompile/ed25519",
@@ -217,6 +218,7 @@ pallet-evm-precompile-curve25519-benchmarking = { path = "frame/evm/precompile/c
 pallet-evm-precompile-curve25519 = { path = "frame/evm/precompile/curve25519", default-features = false }
 pallet-evm-precompile-modexp = { path = "frame/evm/precompile/modexp", default-features = false }
 pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", default-features = false }
+pallet-evm-precompile-sha3fips-benchmarking = { path = "frame/evm/precompile/sha3fips/benchmarking", default-features = false }
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
 pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }

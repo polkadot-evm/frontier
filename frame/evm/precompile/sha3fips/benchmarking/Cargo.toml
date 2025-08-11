@@ -1,0 +1,44 @@
+[package]
+name = "pallet-evm-precompile-sha3fips-benchmarking"
+version = "6.0.0-dev"
+license = "Apache-2.0"
+readme = "README.md"
+description = "FRAME EVM precompile benchmarking pallet."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+
+[package.metadata.docs.rs]
+targets = ["x86_64-unknown-linux-gnu"]
+
+[dependencies]
+tiny-keccak = { version = "2.0", features = ["fips202"] }
+
+# Substrate
+frame-benchmarking = { workspace = true, default-features = false }
+frame-system = { workspace = true }
+sp-runtime = { workspace = true, default-features = false }
+
+# Precompile dependencies
+pallet-evm-precompile-sha3fips = { workspace = true, default-features = false }
+
+#[dev-dependencies]
+#hex = { workspace = true }
+#scale-info = { workspace = true }
+#sp-core = { workspace = true }
+
+[features]
+default = ["std"]
+std = [
+#	# Substrate
+	"frame-benchmarking/std",
+	"frame-system/std",
+	"sp-runtime/std",
+#	# Precompile dependencies
+	"pallet-evm-precompile-sha3fips/std",
+]
+runtime-benchmarks = [
+	"frame-benchmarking/runtime-benchmarks",
+	"frame-system/runtime-benchmarks",
+	"sp-runtime/runtime-benchmarks",
+]

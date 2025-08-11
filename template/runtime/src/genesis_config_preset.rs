@@ -32,7 +32,7 @@ pub fn development() -> serde_json::Value {
 fn testnet_genesis(
 	sudo_key: AccountId,
 	endowed_accounts: Vec<AccountId>,
-	initial_authorities: Vec<(AuraId, GrandpaId)>,
+	_initial_authorities: Vec<(AuraId, GrandpaId)>,
 	chain_id: u64,
 	enable_manual_seal: bool,
 ) -> serde_json::Value {

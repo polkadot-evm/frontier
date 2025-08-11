@@ -45,7 +45,10 @@ where
 			a if a == hash(4) => Some(Identity::execute(handle)),
 			a if a == hash(5) => Some(Modexp::execute(handle)),
 			// Non-Frontier specific nor Ethereum precompiles :
-			a if a == hash(1024) => Some(Sha3FIPS256::execute(handle)),
+			a if a == hash(1024) => Some(Sha3FIPS256::<
+				R,
+				crate::weights::pallet_evm_precompile_sha3fips::WeightInfo<R>,
+			>::execute(handle)),
 			a if a == hash(1025) => Some(ECRecoverPublicKey::execute(handle)),
 			// Curve25519 precompiles
 			a if a == hash(1026) => Some(curve25519_precompile::Curve25519Add::<
