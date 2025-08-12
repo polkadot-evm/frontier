@@ -17,6 +17,6 @@ pallet-evm = { workspace = true }
 default = ["std"]
 std = [
 	"fp-evm/std",
-    "frame-support/std",
-    "pallet-evm/std",
+	"frame-support/std",
+	"pallet-evm/std",
 ]

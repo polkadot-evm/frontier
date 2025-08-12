@@ -41,10 +41,10 @@ mod benchmarks {
 		}
 
 		#[block]
-        {
-            Curve25519Add::<(), ()>::execute_inner(&points, 0)
-                .expect("Failed to execute curve25519 add");
-        }
+		{
+			Curve25519Add::<(), ()>::execute_inner(&points, 0)
+				.expect("Failed to execute curve25519 add");
+		}
 
 		Ok(())
 	}
@@ -57,10 +57,10 @@ mod benchmarks {
 		input[32..64].copy_from_slice(&RistrettoPoint::hash_from_bytes::<Sha512>("point_0".as_bytes()).compress().to_bytes());
 
 		#[block]
-        {
-            Curve25519ScalarMul::<(), ()>::execute_inner(&input, 0)
-                .expect("Failed to execute curve25519 add");
-        }
+		{
+			Curve25519ScalarMul::<(), ()>::execute_inner(&input, 0)
+				.expect("Failed to execute curve25519 add");
+		}
 
 		Ok(())
 	}
