@@ -1199,12 +1199,6 @@ where
 			delegation.address()
 		);
 
-		if !<AccountCodes<T>>::contains_key(authority) {
-			let account_id = T::AddressMapping::into_account_id(authority);
-			T::AccountProvider::create_account(&account_id);
-		}
-
-		// Update metadata.
 		let meta = crate::CodeMetadata::from_code(&delegation.to_bytes());
 		<AccountCodesMetadata<T>>::insert(authority, meta);
 		<AccountCodes<T>>::insert(authority, delegation.to_bytes());
