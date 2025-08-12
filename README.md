@@ -21,4 +21,23 @@ Besides the common strategy of direct state export/import and transaction-level 
 
 ### New Features
 
-* **Native Token:** The native token for this template has been configured to **TOKFIN** with the symbol **TKF**.
+* **Native Token:** The native token  is an UTILITY token for this template has been configured to **TOKFIN** with the symbol **TKF**.
+        No Qty Limit
+        All nodes add value tokenized RWA
+        All transactions onNet are in $TKF
+        No speculation (Index Dollar indexed)
+        5% membership  fee  go to users wallets
+        Consensus Rewards Users
+* **Reputation Token:** The reputation token **TKFrep** with the symbol **TKFr**.
+        No Qty Limit
+        Earnings are made by contributing value to the network.
+        Higher reputation comes with greater privileges.
+        Participation in consensus is organized based on reputation.
+        Inactivity reduces reputation.
+* **Equity Token:** The equity token **TKFeqt** with the symbol **TKFe**.
+        Limited offer (80 million tokens)
+        Represent network shares.
+        40% Founders
+        10% Development Team
+        5 private rounds of funding (5%)
+        Public offering (25%)
