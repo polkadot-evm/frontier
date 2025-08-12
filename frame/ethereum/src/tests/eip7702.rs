@@ -195,13 +195,13 @@ fn eip7702_happy_path() {
 
 		assert_eq!(
 			alice_code.len(),
-			evm::EIP_7702_DELEGATION_SIZE,
+			evm::delegation::EIP_7702_DELEGATION_SIZE,
 			"Delegation code should be exactly 23 bytes (0xef0100 + 20 byte address)"
 		);
 
 		assert_eq!(
 			&alice_code[0..3],
-			evm::EIP_7702_DELEGATION_PREFIX,
+			evm::delegation::EIP_7702_DELEGATION_PREFIX,
 			"Delegation code should start with 0xef0100"
 		);
 
@@ -739,12 +739,12 @@ fn authorization_with_zero_address_delegation() {
 		let alice_code_after_first = pallet_evm::AccountCodes::<Test>::get(alice.address);
 		assert_eq!(
 			alice_code_after_first.len(),
-			evm::EIP_7702_DELEGATION_SIZE,
+			evm::delegation::EIP_7702_DELEGATION_SIZE,
 			"Delegation code should be exactly 23 bytes after first delegation"
 		);
 		assert_eq!(
 			&alice_code_after_first[0..3],
-			evm::EIP_7702_DELEGATION_PREFIX,
+			evm::delegation::EIP_7702_DELEGATION_PREFIX,
 			"Delegation code should start with 0xef0100"
 		);
 		let delegated_address_first: H160 = H160::from_slice(&alice_code_after_first[3..23]);
