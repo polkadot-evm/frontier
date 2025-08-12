@@ -17,6 +17,7 @@
 
 use core::marker::PhantomData;
 use frame_benchmarking::v2::*;
+use sp_runtime::Vec;
 
 // Import precompile implementations
 use pallet_evm_precompile_sha3fips::{Sha3FIPS256, Sha3FIPS512};

@@ -24,6 +24,3 @@ pub mod inner;
 
 #[cfg(feature = "runtime-benchmarks")]
 pub use inner::*;
-
-#[cfg(all(feature = "runtime-benchmarks", test))]
-pub(crate) mod mock;

@@ -196,7 +196,7 @@ mod tests {
 		let sum: RistrettoPoint = vec.iter().sum();
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, sum.compress().to_bytes());
 				Ok(())
@@ -214,7 +214,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, RistrettoPoint::identity().compress().to_bytes());
 				Ok(())
@@ -238,7 +238,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519ScalarMul::execute(&input, cost) {
+		match Curve25519ScalarMul::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, p1.compress().to_bytes());
 				assert_ne!(out, p2.compress().to_bytes());
@@ -256,7 +256,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519ScalarMul::execute(&input, cost) {
+		match Curve25519ScalarMul::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work");
 			}
@@ -281,7 +281,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work");
 			}
@@ -316,7 +316,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work");
 			}
@@ -345,7 +345,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work with invalid point");
 			}
@@ -374,7 +374,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519ScalarMul::execute(&input, cost) {
+		match Curve25519ScalarMul::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work with invalid point");
 			}
@@ -402,7 +402,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work with invalid point");
 			}
