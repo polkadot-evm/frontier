@@ -30,11 +30,11 @@ pallet-evm-precompile-sha3fips = { workspace = true, default-features = false }
 [features]
 default = ["std"]
 std = [
-#	# Substrate
+	# Substrate
 	"frame-benchmarking/std",
 	"frame-system/std",
 	"sp-runtime/std",
-#	# Precompile dependencies
+	# Precompile dependencies
 	"pallet-evm-precompile-sha3fips/std",
 ]
 runtime-benchmarks = [

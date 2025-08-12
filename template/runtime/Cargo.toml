@@ -60,12 +60,12 @@ pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
+pallet-evm-precompile-curve25519 = { workspace = true }
+pallet-evm-precompile-curve25519-benchmarking = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-sha3fips-benchmarking = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
-pallet-evm-precompile-curve25519 = { workspace = true }
-pallet-evm-precompile-curve25519-benchmarking = { workspace = true }
 
 # Polkadot
 polkadot-runtime-common = { workspace = true }

@@ -32,11 +32,11 @@ pallet-evm-precompile-curve25519 = { workspace = true, default-features = false 
 default = ["std"]
 std = [
 	"sha2/std",
-#	# Substrate
+	# Substrate
 	"frame-benchmarking/std",
 	"frame-system/std",
 	"sp-runtime/std",
-#	# Precompile dependencies
+	# Precompile dependencies
 	"pallet-evm-precompile-curve25519/std",
 ]
 runtime-benchmarks = [
