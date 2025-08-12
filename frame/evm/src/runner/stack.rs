@@ -1199,7 +1199,16 @@ where
 			delegation.address()
 		);
 
-		Pallet::<T>::create_account(authority, delegation.to_bytes(), None)
+		if !<AccountCodes<T>>::contains_key(authority) {
+			let account_id = T::AddressMapping::into_account_id(authority);
+			T::AccountProvider::create_account(&account_id);
+		}
+
+		// Update metadata.
+		let meta = crate::CodeMetadata::from_code(&delegation.to_bytes());
+		<AccountCodesMetadata<T>>::insert(authority, meta);
+		<AccountCodes<T>>::insert(authority, delegation.to_bytes());
+		Ok(())
 	}
 
 	fn reset_delegation(&mut self, address: H160) -> Result<(), ExitError> {
