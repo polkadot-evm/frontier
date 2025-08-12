@@ -567,9 +567,10 @@ impl<T: Config> Pallet<T> {
 		if let Some(metadata) = pallet_evm::AccountCodesMetadata::<T>::get(origin) {
 			if metadata.size > 0 {
 				// Account has code, check if it's a valid delegation
-				let is_delegation = metadata.size == evm::EIP_7702_DELEGATION_SIZE as u64
+				let is_delegation = metadata.size
+					== evm::delegation::EIP_7702_DELEGATION_SIZE as u64
 					&& pallet_evm::AccountCodes::<T>::get(origin)
-						.starts_with(evm::EIP_7702_DELEGATION_PREFIX);
+						.starts_with(evm::delegation::EIP_7702_DELEGATION_PREFIX);
 
 				if !is_delegation {
 					return Err(InvalidTransaction::BadSigner.into());

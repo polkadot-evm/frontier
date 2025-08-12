@@ -227,9 +227,10 @@ where
 			if let Some(metadata) = <AccountCodesMetadata<T>>::get(source) {
 				if metadata.size > 0 {
 					// Account has code, check if it's a valid delegation
-					let is_delegation = metadata.size == evm::EIP_7702_DELEGATION_SIZE as u64
+					let is_delegation = metadata.size
+						== evm::delegation::EIP_7702_DELEGATION_SIZE as u64
 						&& <AccountCodes<T>>::get(source)
-							.starts_with(evm::EIP_7702_DELEGATION_PREFIX);
+							.starts_with(evm::delegation::EIP_7702_DELEGATION_PREFIX);
 
 					if !is_delegation {
 						return Err(RunnerError {
@@ -1184,13 +1185,32 @@ where
 			address
 		);
 
-		// The EVM returns empty code in case of an EIP-7702 delegation to the zero address.
-		// In response we must remove such delegation from the authorizing account.
-		if code.is_empty() {
-			Pallet::<T>::remove_account_code(&address);
-		}
-
 		Pallet::<T>::create_account(address, code, caller)
+	}
+
+	fn set_delegation(
+		&mut self,
+		authority: H160,
+		delegation: evm::delegation::Delegation,
+	) -> Result<(), ExitError> {
+		log::debug!(
+			target: "evm",
+			"Inserting delegation (23 bytes) at {:?}",
+			delegation.address()
+		);
+
+		Pallet::<T>::create_account(authority, delegation.to_bytes(), None)
+	}
+
+	fn reset_delegation(&mut self, address: H160) -> Result<(), ExitError> {
+		log::debug!(
+			target: "evm",
+			"Resetting delegation at {:?}",
+			address
+		);
+
+		Pallet::<T>::remove_account_code(&address);
+		Ok(())
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
