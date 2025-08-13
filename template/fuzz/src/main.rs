@@ -63,7 +63,7 @@ fn main() {
 					.expect("weight info")
 					.proof_size_usage
 					.expect("proof size usage"),
-				Err(ref info) => 0,
+				Err(ref _info) => 0,
 			};
 			assert!(proof_size <= max_proof_size);
 			check_invariants(initial_total_issuance);
