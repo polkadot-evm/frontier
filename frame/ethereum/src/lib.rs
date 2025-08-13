@@ -559,12 +559,23 @@ impl<T: Config> Pallet<T> {
 
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
+		// Exception: Allow transactions from EOAs whose code is a valid delegation indicator (0xef0100 || address).
 		//
 		// This check should be done on the transaction validation (here) **and**
 		// on transaction execution, otherwise a contract tx will be included in
 		// the mempool and pollute the mempool forever.
-		if !pallet_evm::AccountCodes::<T>::get(origin).is_empty() {
-			return Err(InvalidTransaction::BadSigner.into());
+		if let Some(metadata) = pallet_evm::AccountCodesMetadata::<T>::get(origin) {
+			if metadata.size > 0 {
+				// Account has code, check if it's a valid delegation
+				let is_delegation = metadata.size
+					== evm::delegation::EIP_7702_DELEGATION_SIZE as u64
+					&& pallet_evm::AccountCodes::<T>::get(origin)
+						.starts_with(evm::delegation::EIP_7702_DELEGATION_PREFIX);
+
+				if !is_delegation {
+					return Err(InvalidTransaction::BadSigner.into());
+				}
+			}
 		}
 
 		let priority = match (
