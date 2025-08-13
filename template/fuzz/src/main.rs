@@ -12,6 +12,7 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License./ DEALINGS IN THE SOFTWARE.
+#![allow(clippy::upper_case_acronyms)]
 mod grammar;
 
 use frame_system::Account;
@@ -24,8 +25,6 @@ use sp_state_machine::BasicExternalities;
 
 fn main() {
 	ziggy::fuzz!(|data: FuzzData| {
-		let config = evm::Config::cancun();
-		let source = H160::default();
 		let target = H160::from_low_u64_ne(2);
 		let gas_limit: u64 = 1_000_000;
 		new_test_ext().execute_with(|| {
@@ -41,8 +40,6 @@ fn main() {
 				op.to_bytes(&mut contract);
 			}
 			pallet_evm::AccountCodes::<Runtime>::insert(target, contract);
-			#[cfg(not(feature = "fuzzing"))]
-			let now = std::time::Instant::now();
 			let res = <Runtime as pallet_evm::Config>::Runner::call(
 				H160::default(),
 				target,
@@ -57,7 +54,7 @@ fn main() {
 				true,
 				true,
 				Some(weight_limit),
-				Some(0u64.into()),
+				Some(0u64),
 				&<Runtime as pallet_evm::Config>::config().clone(),
 			);
 			let proof_size = match res {
