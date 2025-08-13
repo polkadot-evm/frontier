@@ -221,11 +221,25 @@ where
 		//
 		// EIP-3607: https://eips.ethereum.org/EIPS/eip-3607
 		// Do not allow transactions for which `tx.sender` has any code deployed.
-		if is_transactional && !<AccountCodes<T>>::get(source).is_empty() {
-			return Err(RunnerError {
-				error: Error::<T>::TransactionMustComeFromEOA,
-				weight,
-			});
+		// Exception: Allow transactions from EOAs whose code is a valid delegation indicator (0xef0100 || address).
+		if is_transactional {
+			// Check if the account has code deployed
+			if let Some(metadata) = <AccountCodesMetadata<T>>::get(source) {
+				if metadata.size > 0 {
+					// Account has code, check if it's a valid delegation
+					let is_delegation = metadata.size
+						== evm::delegation::EIP_7702_DELEGATION_SIZE as u64
+						&& <AccountCodes<T>>::get(source)
+							.starts_with(evm::delegation::EIP_7702_DELEGATION_PREFIX);
+
+					if !is_delegation {
+						return Err(RunnerError {
+							error: Error::<T>::TransactionMustComeFromEOA,
+							weight,
+						});
+					}
+				}
+			}
 		}
 
 		let total_fee_per_gas = if is_transactional {
@@ -1170,7 +1184,36 @@ where
 			code.len(),
 			address
 		);
+
 		Pallet::<T>::create_account(address, code, caller)
+	}
+
+	fn set_delegation(
+		&mut self,
+		authority: H160,
+		delegation: evm::delegation::Delegation,
+	) -> Result<(), ExitError> {
+		log::debug!(
+			target: "evm",
+			"Inserting delegation (23 bytes) at {:?}",
+			delegation.address()
+		);
+
+		let meta = crate::CodeMetadata::from_code(&delegation.to_bytes());
+		<AccountCodesMetadata<T>>::insert(authority, meta);
+		<AccountCodes<T>>::insert(authority, delegation.to_bytes());
+		Ok(())
+	}
+
+	fn reset_delegation(&mut self, address: H160) -> Result<(), ExitError> {
+		log::debug!(
+			target: "evm",
+			"Resetting delegation at {:?}",
+			address
+		);
+
+		Pallet::<T>::remove_account_code(&address);
+		Ok(())
 	}
 
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
@@ -1215,10 +1258,14 @@ where
 	}
 
 	fn code_size(&self, address: H160) -> U256 {
+		// EIP-7702: EXTCODESIZE does NOT follow delegations
+		// Return the actual code size at the address, including delegation designators
 		U256::from(<Pallet<T>>::account_code_metadata(address).size)
 	}
 
 	fn code_hash(&self, address: H160) -> H256 {
+		// EIP-7702: EXTCODEHASH does NOT follow delegations
+		// Return the hash of the actual code at the address, including delegation designators
 		<Pallet<T>>::account_code_metadata(address).hash
 	}
 

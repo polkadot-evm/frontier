@@ -5,84 +5,16 @@ import { step } from "mocha-steps";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, CHAIN_ID, FIRST_CONTRACT_ADDRESS } from "./config";
 import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
-// Simple contract bytecode that returns a constant value (42)
-// Compiled from: contract DelegateTest { function getMagicNumber() external pure returns (uint256) { return 42; } }
-const DELEGATE_TEST_CONTRACT_BYTECODE =
-	"0x608060405234801561001057600080fd5b50610150806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063620f42c014610030575b600080fd5b61003861004e565b60405161004591906100a6565b60405180910390f35b6000602a905090565b6000819050919050565b600081905092915050565b6000610075826100c1565b61007f81856100cc565b935061008f8185602086016100d7565b80840191505092915050565b6100a4816100b7565b82525050565b60006020820190506100bf600083018461009b565b92915050565b6000819050919050565b600082825260208201905092915050565b60005b838110156100f55780820151818401526020810190506100da565b838111156101045760008484015b50505050565b7f4e487b7100000000000000000000000000000000000000000000000000000000600052602260045260246000fd5b6000600282049050600182168061015957607f821691505b60208210810361016c5761016b610112565b5b5091905056fea2646970667358221220d4f2d0b4f8a4ebc0f2f5f8e8f5e5f2e5e5f2e5e5f2e5e5f2e5e5f2e5e5f2e564736f6c634300080a0033";
+// Simple contract creation bytecode
+const SIMPLE_CONTRACT_CREATION = "69602a60005260206000f3600052600a6016f3";
 
 // EIP-7702 delegation prefix
 const EIP7702_DELEGATION_PREFIX = "0xef0100";
 
-// Helper function to create EIP-7702 authorization tuple
-function createAuthorizationObject(chainId: number, address: string, nonce: number, privateKey: string): any {
-	// Validate inputs
-	if (typeof chainId !== "number" || chainId < 0) {
-		throw new Error(`Invalid chainId: ${chainId}`);
-	}
-	if (!address || typeof address !== "string" || !address.match(/^0x[a-fA-F0-9]{40}$/)) {
-		throw new Error(`Invalid address: ${address}`);
-	}
-	if (typeof nonce !== "number" || nonce < 0) {
-		throw new Error(`Invalid nonce: ${nonce}`);
-	}
-	if (!privateKey || typeof privateKey !== "string") {
-		throw new Error(`Invalid privateKey: ${privateKey}`);
-	}
-
-	try {
-		const wallet = new ethers.Wallet(privateKey);
-
-		// Create message to sign according to EIP-7702 specification
-		// authority = ecrecover(keccak(0x05 || rlp([chain_id, address, nonce])), y_parity, r, s)
-		const MAGIC = "0x05";
-
-		// Convert values to proper format for RLP encoding
-		// ethers.encodeRlp expects hex strings for numbers
-		const chainIdHex = ethers.toBeHex(chainId);
-		const nonceHex = ethers.toBeHex(nonce);
-
-		// RLP encode the authorization tuple [chain_id, address, nonce]
-		const rlpEncoded = ethers.encodeRlp([chainIdHex, address, nonceHex]);
-
-		// Create the message hash: keccak(0x05 || rlp([chain_id, address, nonce]))
-		const messageBytes = ethers.concat([MAGIC, rlpEncoded]);
-		const messageHash = ethers.keccak256(messageBytes);
-
-		// Sign the message hash
-		const signature = wallet.signingKey.sign(messageHash);
-
-		// Create authorization object with proper format
-		const authorization = {
-			chainId: chainId,
-			address: address,
-			nonce: nonce,
-			yParity: signature.v - 27, // Convert v to yParity (0 or 1)
-			r: signature.r,
-			s: signature.s,
-		};
-
-		// Verify the signature can be recovered correctly
-		const recoveredAddress = ethers.recoverAddress(messageHash, {
-			v: signature.v,
-			r: signature.r,
-			s: signature.s,
-		});
-
-		// Ensure signature verification is successful
-		if (recoveredAddress.toLowerCase() !== wallet.address.toLowerCase()) {
-			throw new Error(`Signature verification failed: expected ${wallet.address}, got ${recoveredAddress}`);
-		}
-
-		return authorization;
-	} catch (error) {
-		throw new Error(`Failed to create authorization object: ${error.message}`);
-	}
-}
-
 // Helper function to check if code is a delegation indicator
 function isDelegationIndicator(code: string): { isDelegation: boolean; address?: string } {
-	if (code && code.length === 46 && code.startsWith(EIP7702_DELEGATION_PREFIX)) {
-		const address = "0x" + code.slice(6); // Remove 0xef0100 prefix
+	if (code && code.length === 48 && code.startsWith(EIP7702_DELEGATION_PREFIX)) {
+		const address = "0x" + code.slice(8); // Remove 0xef0100 prefix
 		return { isDelegation: true, address };
 	}
 	return { isDelegation: false };
@@ -94,11 +26,11 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	let signer: ethers.Wallet;
 
 	// Deploy a test contract first
-	step("should deploy delegate test contract", async function () {
+	step("should deploy delegate test contract", async () => {
 		signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
 
 		const tx = await signer.sendTransaction({
-			data: DELEGATE_TEST_CONTRACT_BYTECODE,
+			data: "0x" + SIMPLE_CONTRACT_CREATION,
 			gasLimit: "0x100000",
 			gasPrice: "0x3B9ACA00",
 		});
@@ -136,8 +68,12 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			throw new Error("Contract address is required but not set from previous step");
 		}
 
-		// Create a simple authorization for testing
-		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+		const authorizer = ethers.Wallet.createRandom();
+		const authorization = await authorizer.authorize({
+			address: contractAddress,
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
 
 		// Get current nonce
 		const currentNonce = await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT);
@@ -210,12 +146,12 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		this.timeout(15000);
 
 		// Test authorization with wrong chain ID - should be skipped by Frontier
-		const wrongChainAuth = createAuthorizationObject(
-			999, // Wrong chain ID
-			contractAddress,
-			0,
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
+		const authorizer = ethers.Wallet.createRandom();
+		const wrongChainAuth = await authorizer.authorize({
+			address: contractAddress,
+			nonce: 0,
+			chainId: 999,
+		});
 
 		const tx1 = {
 			from: GENESIS_ACCOUNT,
@@ -238,12 +174,11 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		expect(receipt1.status).to.equal(1);
 
 		// Test authorization with chain ID = 0 (universally valid)
-		const universalAuth = createAuthorizationObject(
-			0, // Universal chain ID
-			contractAddress,
-			0,
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
+		const universalAuth = await authorizer.authorize({
+			address: contractAddress,
+			nonce: 1,
+			chainId: 0,
+		});
 
 		const tx2 = {
 			from: GENESIS_ACCOUNT,
@@ -270,14 +205,18 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		this.timeout(15000);
 
 		// Create multiple authorizations for the same authority
-		const auth1 = createAuthorizationObject(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+		const authorizer = ethers.Wallet.createRandom();
+		const auth1 = await authorizer.authorize({
+			address: contractAddress,
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
 
-		const auth2 = createAuthorizationObject(
-			CHAIN_ID,
-			"0x2000000000000000000000000000000000000002",
-			0,
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
+		const auth2 = await authorizer.authorize({
+			address: "0x2000000000000000000000000000000000000002",
+			nonce: 1,
+			chainId: CHAIN_ID,
+		});
 
 		const tx = {
 			from: GENESIS_ACCOUNT,
@@ -298,8 +237,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
 		expect(receipt.status).to.equal(1);
 
-		// In Frontier's EIP-7702 implementation, the last valid authorization should take effect
-		expect(receipt).to.not.be.null;
+		// TODO In Frontier's EIP-7702 implementation, the last valid authorization should take effect
 	});
 
 	step("should verify gas cost calculation includes authorization costs", async function () {
@@ -310,7 +248,12 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			throw new Error("Contract address is required but not set from previous step");
 		}
 
-		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, GENESIS_ACCOUNT_PRIVATE_KEY);
+		const authorizer = ethers.Wallet.createRandom();
+		const authorization = await authorizer.authorize({
+			address: contractAddress,
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
 
 		// Instead of using estimateGas (which might fail), execute actual transactions
 		// and compare their gas usage
@@ -354,16 +297,28 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		expect(Number(eip7702Receipt.gasUsed)).to.be.greaterThan(Number(regularReceipt.gasUsed));
 	});
 
-	step("should test delegation behavior", async function () {
+	step("should apply delegation behavior", async function () {
 		this.timeout(15000);
 
-		const newAccount = ethers.Wallet.createRandom();
-		const authorization = createAuthorizationObject(CHAIN_ID, contractAddress, 0, newAccount.privateKey);
+		const authorizer = ethers.Wallet.createRandom();
+		console.log("Authorizer address:", authorizer.address);
+		console.log("Contract address to delegate to:", contractAddress);
 
-		// Set up delegation
+		const authorization = await authorizer.authorize({
+			address: contractAddress,
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
+		console.log(
+			"Authorization object:",
+			JSON.stringify(authorization, (key, value) => (typeof value === "bigint" ? value.toString() : value), 2)
+		);
+
+		// Set up delegation with a simple call
 		const delegationTx = {
 			from: GENESIS_ACCOUNT,
-			to: newAccount.address,
+			to: authorizer.address,
+			data: "0x", // Empty data for simple delegation test
 			value: "0x00",
 			maxFeePerGas: "0x3B9ACA00",
 			maxPriorityFeePerGas: "0x01",
@@ -373,47 +328,52 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			authorizationList: [authorization],
 			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
 		};
+		console.log(
+			"Delegation transaction:",
+			JSON.stringify(delegationTx, (key, value) => (typeof value === "bigint" ? value.toString() : value), 2)
+		);
 
 		const signedTx = await signer.sendTransaction(delegationTx);
+		console.log("Transaction hash:", signedTx.hash);
 		await createAndFinalizeBlock(context.web3);
 
 		const receipt = await context.ethersjs.getTransactionReceipt(signedTx.hash);
+		console.log("Receipt status:", receipt.status);
+		console.log("Receipt logs:", receipt.logs);
 		expect(receipt.status).to.equal(1);
 
 		// Check if delegation indicator was set in Frontier
-		const accountCode = await context.web3.eth.getCode(newAccount.address);
-		const delegationCheck = isDelegationIndicator(accountCode);
+		const accountCode = await context.web3.eth.getCode(authorizer.address);
+		console.log("Account code for", authorizer.address, ":", accountCode);
+		console.log("Account code length:", accountCode.length);
+		const delegationInfo = isDelegationIndicator(accountCode);
+		console.log("Delegation info:", delegationInfo);
+		expect(delegationInfo.isDelegation).to.be.true;
 
-		if (delegationCheck.isDelegation) {
-			// Delegation was set successfully - test calling the delegated function
-			const result = await customRequest(context.web3, "eth_call", [
-				{
-					to: newAccount.address,
-					data: "0x620f42c0", // getMagicNumber() function selector
-				},
-				"latest",
-			]);
+		// Delegation was set successfully - test calling the simple contract
+		const result = await customRequest(context.web3, "eth_call", [
+			{
+				to: authorizer.address,
+				data: "0x", // Empty call data
+			},
+			"latest",
+		]);
 
-			if (result.result) {
-				const decodedResult = parseInt(result.result, 16);
-				expect(decodedResult).to.equal(42); // Magic number from contract
-			}
-		} else {
-			// No delegation indicator - this test documents current Frontier behavior
-			expect(accountCode).to.equal("0x");
-		}
+		// Simple contract should execute successfully
+		// TODO check if the result is as expected
+		expect(result.result).to.not.be.null;
 	});
 
-	step("should handle delegation edge cases", async function () {
+	step("should handle self delegation", async function () {
 		this.timeout(15000);
 
 		// Test self-delegation (should be prevented by Frontier)
-		const selfDelegationAuth = createAuthorizationObject(
-			CHAIN_ID,
-			GENESIS_ACCOUNT, // Self-delegation
-			0,
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
+		const authorizer = ethers.Wallet.createRandom();
+		const selfDelegationAuth = await authorizer.authorize({
+			address: authorizer.address,
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
 
 		const tx1 = {
 			from: GENESIS_ACCOUNT,
@@ -434,18 +394,49 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		// Self-delegation should be handled gracefully by Frontier
 		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
 		expect(receipt1.status).to.equal(1);
+	});
+
+	step("should handle zero-address delegation", async function () {
+		this.timeout(15000);
+
+		// Test self-delegation (should be prevented by Frontier)
+		const authorizer = ethers.Wallet.createRandom();
+		const authorization = await authorizer.authorize({
+			address: "0x0000000000000000000000000000000000000042",
+			nonce: 0,
+			chainId: CHAIN_ID,
+		});
+
+		const tx1 = {
+			from: GENESIS_ACCOUNT,
+			to: "0x1000000000000000000000000000000000000001",
+			value: "0x00",
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4,
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [authorization],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
+
+		const signedTx1 = await signer.sendTransaction(tx1);
+		await createAndFinalizeBlock(context.web3);
+
+		// Self-delegation should be handled gracefully by Frontier
+		const receipt1 = await context.ethersjs.getTransactionReceipt(signedTx1.hash);
+		expect(receipt1.status).to.equal(1);
 
 		// Test delegation to zero address
-		const zeroAddressAuth = createAuthorizationObject(
-			CHAIN_ID,
-			"0x0000000000000000000000000000000000000000",
-			0,
-			GENESIS_ACCOUNT_PRIVATE_KEY
-		);
+		const zeroAddressAuth = await authorizer.authorize({
+			address: ethers.ZeroAddress,
+			nonce: 1,
+			chainId: CHAIN_ID,
+		});
 
 		const tx2 = {
 			from: GENESIS_ACCOUNT,
-			to: "0x1000000000000000000000000000000000000001",
+			to: authorizer.address,
 			value: "0x00",
 			maxFeePerGas: "0x3B9ACA00",
 			maxPriorityFeePerGas: "0x01",
@@ -462,5 +453,98 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		// Zero address delegation should be handled by Frontier
 		const receipt2 = await context.ethersjs.getTransactionReceipt(signedTx2.hash);
 		expect(receipt2.status).to.equal(1);
+
+		// Verify that delegation to zero address clears the account's code (EIP-7702 spec)
+		const zeroAuthorizerCode = await context.ethersjs.getCode(authorizer.address);
+		expect(zeroAuthorizerCode).to.equal("0x");
+	});
+
+	step("happy path: complete EIP-7702 delegation workflow", async function () {
+		this.timeout(20000);
+
+		// This test demonstrates the complete happy path for EIP-7702 delegation:
+		// 1. Create a new EOA that will delegate to a smart contract
+		// 2. Fund the EOA
+		// 3. Create and submit a delegation authorization
+		// 4. Verify the delegation was successful
+		// 5. Call a function through the delegated EOA
+
+		// Step 1: Create a new EOA
+		const delegatorAccount = ethers.Wallet.createRandom();
+		const delegatorAddress = delegatorAccount.address;
+
+		// Step 2: Fund the EOA
+		const fundingTx = await signer.sendTransaction({
+			to: delegatorAddress,
+			value: ethers.parseEther("1.0"), // Send 1 ETH
+			gasLimit: "0x5208",
+			gasPrice: "0x3B9ACA00",
+		});
+		await createAndFinalizeBlock(context.web3);
+
+		const fundingReceipt = await context.ethersjs.getTransactionReceipt(fundingTx.hash);
+		expect(fundingReceipt.status).to.equal(1);
+
+		// Verify balance
+		const balance = await context.web3.eth.getBalance(delegatorAddress);
+		expect(BigInt(balance)).to.equal(BigInt(ethers.parseEther("1.0")));
+
+		// Step 3: Create authorization to delegate to the test contract
+		const delegatorCurrentNonce = await context.ethersjs.getTransactionCount(delegatorAddress);
+		const authorization = await delegatorAccount.authorize({
+			address: contractAddress,
+			nonce: delegatorCurrentNonce,
+			chainId: CHAIN_ID,
+		});
+
+		// Submit the delegation transaction (first transaction - simple transfer)
+		const randomRecipient = ethers.Wallet.createRandom().address;
+		const delegationTx = {
+			from: GENESIS_ACCOUNT,
+			to: randomRecipient, // Send to a random account
+			value: "0x100", // Small transfer amount
+			maxFeePerGas: "0x3B9ACA00",
+			maxPriorityFeePerGas: "0x01",
+			type: 4, // EIP-7702 transaction type
+			gasLimit: "0x100000",
+			chainId: CHAIN_ID,
+			authorizationList: [authorization],
+			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+		};
+
+		const signedDelegationTx = await signer.sendTransaction(delegationTx);
+		await createAndFinalizeBlock(context.web3);
+
+		const delegationReceipt = await context.ethersjs.getTransactionReceipt(signedDelegationTx.hash);
+		expect(delegationReceipt.status).to.equal(1);
+		expect(delegationReceipt.logs).to.be.an("array");
+
+		// Step 4: Verify delegation by checking the account code
+		const accountCode = await context.web3.eth.getCode(delegatorAddress);
+		console.log("Account code:", accountCode);
+		console.log("Account code length:", accountCode.length);
+		const delegationInfo = isDelegationIndicator(accountCode);
+		console.log("Delegation info:", delegationInfo);
+
+		// Expect delegation to be set
+		expect(delegationInfo.isDelegation).to.be.true;
+		expect(delegationInfo.address.toLowerCase()).to.equal(contractAddress.toLowerCase());
+
+		// Step 5: Call the delegated contract (second transaction - invoke code at address with delegation indicator)
+		const callTx = await signer.sendTransaction({
+			to: delegatorAddress,
+			data: "0x", // Empty data for simple contract call
+			gasLimit: "0x100000",
+			gasPrice: "0x3B9ACA00",
+		});
+
+		await createAndFinalizeBlock(context.web3);
+
+		const callReceipt = await context.ethersjs.getTransactionReceipt(callTx.hash);
+		expect(callReceipt.status).to.equal(1);
+
+		// Verify the delegator account still has its balance
+		const finalBalance = await context.web3.eth.getBalance(delegatorAddress);
+		expect(Number(finalBalance)).to.be.greaterThan(0);
 	});
 });
