@@ -65,4 +65,3 @@ mod benchmarks {
 		Ok(())
 	}
 }
-

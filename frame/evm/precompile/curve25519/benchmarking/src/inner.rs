@@ -17,7 +17,7 @@
 
 use alloc::format;
 use core::marker::PhantomData;
-use curve25519_dalek::{RistrettoPoint, scalar::Scalar};
+use curve25519_dalek::{scalar::Scalar, RistrettoPoint};
 use frame_benchmarking::v2::*;
 use sha2::Sha512;
 use sp_runtime::Vec;
@@ -37,7 +37,12 @@ mod benchmarks {
 		// Encode N points into a single buffer
 		let mut points = Vec::new();
 		for i in 0..n {
-			points.extend(RistrettoPoint::hash_from_bytes::<Sha512>(format!("point_{}", i).as_bytes()).compress().to_bytes().to_vec());
+			points.extend(
+				RistrettoPoint::hash_from_bytes::<Sha512>(format!("point_{}", i).as_bytes())
+					.compress()
+					.to_bytes()
+					.to_vec(),
+			);
 		}
 
 		#[block]
@@ -54,7 +59,11 @@ mod benchmarks {
 		// Encode input (scalar - 32 bytes, point - 32 bytes)
 		let mut input = [0; 64];
 		input[0..32].copy_from_slice(&Scalar::from(1234567890u64).to_bytes());
-		input[32..64].copy_from_slice(&RistrettoPoint::hash_from_bytes::<Sha512>("point_0".as_bytes()).compress().to_bytes());
+		input[32..64].copy_from_slice(
+			&RistrettoPoint::hash_from_bytes::<Sha512>("point_0".as_bytes())
+				.compress()
+				.to_bytes(),
+		);
 
 		#[block]
 		{
@@ -65,4 +74,3 @@ mod benchmarks {
 		Ok(())
 	}
 }
-
