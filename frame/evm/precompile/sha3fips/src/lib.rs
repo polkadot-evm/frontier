@@ -36,12 +36,29 @@ pub trait WeightInfo {
 	fn sha3_fips_512(preimage_len: u32) -> Weight;
 }
 
+// Default weights from benchmarks run on a laptop, do not use them in production !
 impl WeightInfo for () {
-	fn sha3_fips_256(_preimage_len: u32) -> Weight {
-		Weight::zero()
+	/// The range of component `n` is `[1, 4096]`.
+	fn sha3_fips_256(n: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(516_915, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 13
+			.saturating_add(Weight::from_parts(2_019, 0).saturating_mul(n.into()))
 	}
-	fn sha3_fips_512(_preimage_len: u32) -> Weight {
-		Weight::zero()
+	/// The range of component `n` is `[1, 4096]`.
+	fn sha3_fips_512(n: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(441_854, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 14
+			.saturating_add(Weight::from_parts(3_678, 0).saturating_mul(n.into()))
 	}
 }
 

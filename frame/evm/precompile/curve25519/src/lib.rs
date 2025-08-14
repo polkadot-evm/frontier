@@ -40,12 +40,26 @@ pub trait WeightInfo {
 	fn curve25519_scaler_mul() -> Weight;
 }
 
+// Default weights from benchmarks run on a laptop, do not use them in production !
 impl WeightInfo for () {
-	fn curve25519_add_n_points(_: u32) -> Weight {
-		Weight::zero()
+	/// The range of component `n` is `[1, 10]`.
+	fn curve25519_add_n_points(n: u32, ) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 10_000_000 picoseconds.
+		Weight::from_parts(5_399_134, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 8_395
+			.saturating_add(Weight::from_parts(5_153_957, 0).saturating_mul(n.into()))
 	}
 	fn curve25519_scaler_mul() -> Weight {
-		Weight::zero()
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 81_000_000 picoseconds.
+		Weight::from_parts(87_000_000, 0)
+			.saturating_add(Weight::from_parts(0, 0))
 	}
 }
 
