@@ -39,7 +39,7 @@ pub trait WeightInfo {
 // Default weights from benchmarks run on a laptop, do not use them in production !
 impl WeightInfo for () {
 	/// The range of component `n` is `[1, 4096]`.
-	fn sha3_fips_256(n: u32, ) -> Weight {
+	fn sha3_fips_256(n: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -50,7 +50,7 @@ impl WeightInfo for () {
 			.saturating_add(Weight::from_parts(2_019, 0).saturating_mul(n.into()))
 	}
 	/// The range of component `n` is `[1, 4096]`.
-	fn sha3_fips_512(n: u32, ) -> Weight {
+	fn sha3_fips_512(n: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`

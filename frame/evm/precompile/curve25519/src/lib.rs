@@ -43,7 +43,7 @@ pub trait WeightInfo {
 // Default weights from benchmarks run on a laptop, do not use them in production !
 impl WeightInfo for () {
 	/// The range of component `n` is `[1, 10]`.
-	fn curve25519_add_n_points(n: u32, ) -> Weight {
+	fn curve25519_add_n_points(n: u32) -> Weight {
 		// Proof Size summary in bytes:
 		//  Measured:  `0`
 		//  Estimated: `0`
@@ -58,8 +58,7 @@ impl WeightInfo for () {
 		//  Measured:  `0`
 		//  Estimated: `0`
 		// Minimum execution time: 81_000_000 picoseconds.
-		Weight::from_parts(87_000_000, 0)
-			.saturating_add(Weight::from_parts(0, 0))
+		Weight::from_parts(87_000_000, 0).saturating_add(Weight::from_parts(0, 0))
 	}
 }
 
