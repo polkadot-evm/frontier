@@ -105,7 +105,7 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
 
-	#[derive(Encode, Decode, RuntimeDebug, PartialEq)]
+	#[derive(Encode, Decode, DecodeWithMemTracking, RuntimeDebug, PartialEq)]
 	pub enum InherentError {
 		/// The target gas price is too high compared to the current gas price.
 		TargetGasPriceTooHigh,

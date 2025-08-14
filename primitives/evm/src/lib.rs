@@ -27,7 +27,7 @@ mod validation;
 
 use alloc::{collections::BTreeMap, vec::Vec};
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
-use scale_codec::{Decode, Encode};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -81,7 +81,18 @@ pub enum AccessedStorage {
 	AccountStorages((H160, H256)),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, Default, TypeInfo)]
+#[derive(
+	Clone,
+	Copy,
+	Eq,
+	PartialEq,
+	Debug,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	TypeInfo
+)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
 	pub ref_time_limit: Option<u64>,

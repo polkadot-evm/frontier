@@ -73,7 +73,13 @@ use frame_support::traits::PalletInfoAccess;
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 
 #[derive(Clone, Eq, PartialEq, RuntimeDebug)]
-#[derive(Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
+#[derive(
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	TypeInfo
+)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
 }

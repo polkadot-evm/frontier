@@ -105,6 +105,7 @@ impl sp_runtime::traits::Convert<H160, MockAccount> for MockAccount {
 	Clone,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	sp_core::RuntimeDebug,
 	TypeInfo,
 	Serialize,
@@ -168,6 +169,7 @@ impl sp_runtime::traits::Verify for MockSignature {
 	Clone,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	sp_core::RuntimeDebug,
 	TypeInfo
 )]
