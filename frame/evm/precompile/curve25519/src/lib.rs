@@ -21,21 +21,76 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use core::marker::PhantomData;
 use curve25519_dalek::{
 	ristretto::{CompressedRistretto, RistrettoPoint},
 	scalar::Scalar,
 	traits::Identity,
 };
-use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
+use fp_evm::{
+	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
+	PrecompileResult,
+};
+use frame_support::weights::Weight;
+use pallet_evm::GasWeightMapping;
+
+// Weight provider trait expected by these precompiles. Implementations should return Substrate Weights.
+pub trait WeightInfo {
+	fn curve25519_add_n_points(n: u32) -> Weight;
+	fn curve25519_scaler_mul() -> Weight;
+}
+
+// Default weights from benchmarks run on a laptop, do not use them in production !
+impl WeightInfo for () {
+	/// The range of component `n` is `[1, 10]`.
+	fn curve25519_add_n_points(n: u32) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 10_000_000 picoseconds.
+		Weight::from_parts(5_399_134, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 8_395
+			.saturating_add(Weight::from_parts(5_153_957, 0).saturating_mul(n.into()))
+	}
+	fn curve25519_scaler_mul() -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 81_000_000 picoseconds.
+		Weight::from_parts(87_000_000, 0).saturating_add(Weight::from_parts(0, 0))
+	}
+}
 
 // Adds at most 10 curve25519 points and returns the CompressedRistretto bytes representation
-pub struct Curve25519Add;
+pub struct Curve25519Add<R, WI>(PhantomData<(R, WI)>);
 
-impl LinearCostPrecompile for Curve25519Add {
-	const BASE: u64 = 60;
-	const WORD: u64 = 12;
+impl<R, WI> Precompile for Curve25519Add<R, WI>
+where
+	R: pallet_evm::Config,
+	WI: WeightInfo,
+{
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let n_points = (handle.input().len() / 32) as u32;
+		let weight = WI::curve25519_add_n_points(n_points);
+		let gas = R::GasWeightMapping::weight_to_gas(weight);
+		handle.record_cost(gas)?;
+		let (exit_status, output) = Self::execute_inner(handle.input(), gas)?;
+		Ok(PrecompileOutput {
+			exit_status,
+			output,
+		})
+	}
+}
 
-	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+impl<R, WI> Curve25519Add<R, WI>
+where
+	WI: WeightInfo,
+{
+	pub fn execute_inner(
+		input: &[u8],
+		_: u64,
+	) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() % 32 != 0 {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other("input must contain multiple of 32 bytes".into()),
@@ -75,13 +130,33 @@ impl LinearCostPrecompile for Curve25519Add {
 }
 
 // Multiplies a scalar field element with an elliptic curve point
-pub struct Curve25519ScalarMul;
+pub struct Curve25519ScalarMul<R, WI>(PhantomData<(R, WI)>);
 
-impl LinearCostPrecompile for Curve25519ScalarMul {
-	const BASE: u64 = 60;
-	const WORD: u64 = 12;
+impl<R, WI> Precompile for Curve25519ScalarMul<R, WI>
+where
+	R: pallet_evm::Config,
+	WI: WeightInfo,
+{
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let weight = WI::curve25519_scaler_mul();
+		let gas = R::GasWeightMapping::weight_to_gas(weight);
+		handle.record_cost(gas)?;
+		let (exit_status, output) = Self::execute_inner(handle.input(), gas)?;
+		Ok(PrecompileOutput {
+			exit_status,
+			output,
+		})
+	}
+}
 
-	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+impl<R, WI> Curve25519ScalarMul<R, WI>
+where
+	WI: WeightInfo,
+{
+	pub fn execute_inner(
+		input: &[u8],
+		_: u64,
+	) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() != 64 {
 			return Err(PrecompileFailure::Error {
 				exit_status: ExitError::Other(
@@ -134,7 +209,7 @@ mod tests {
 		let sum: RistrettoPoint = vec.iter().sum();
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, sum.compress().to_bytes());
 				Ok(())
@@ -152,7 +227,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, RistrettoPoint::identity().compress().to_bytes());
 				Ok(())
@@ -176,7 +251,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519ScalarMul::execute(&input, cost) {
+		match Curve25519ScalarMul::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, p1.compress().to_bytes());
 				assert_ne!(out, p2.compress().to_bytes());
@@ -194,7 +269,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519ScalarMul::execute(&input, cost) {
+		match Curve25519ScalarMul::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work");
 			}
@@ -219,7 +294,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work");
 			}
@@ -254,7 +329,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work");
 			}
@@ -283,7 +358,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work with invalid point");
 			}
@@ -312,7 +387,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519ScalarMul::execute(&input, cost) {
+		match Curve25519ScalarMul::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work with invalid point");
 			}
@@ -340,7 +415,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Curve25519Add::execute(&input, cost) {
+		match Curve25519Add::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, _out)) => {
 				panic!("Test not expected to work with invalid point");
 			}

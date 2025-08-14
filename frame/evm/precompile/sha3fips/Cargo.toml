@@ -9,12 +9,18 @@ repository = { workspace = true }
 
 [dependencies]
 tiny-keccak = { version = "2.0", features = ["fips202"] }
+# Substrate
+frame-support = { workspace = true }
 # Frontier
 fp-evm = { workspace = true }
+pallet-evm = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
+	# Substrate
+	"frame-support/std",
 	# Frontier
 	"fp-evm/std",
+	"pallet-evm/std",
 ]
