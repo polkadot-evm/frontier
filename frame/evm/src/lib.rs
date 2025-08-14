@@ -53,7 +53,7 @@
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_crate_dependencies)]
-#![allow(clippy::too_many_arguments, clippy::useless_conversion)]
+#![allow(clippy::too_many_arguments)]
 
 extern crate alloc;
 
@@ -287,6 +287,7 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
+	#[allow(clippy::useless_conversion)]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::call_index(0)]
