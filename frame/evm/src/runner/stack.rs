@@ -302,9 +302,8 @@ where
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		// Execute the EVM call.
-		let (reason, retv, used_gas, effective_gas) = fp_evm::handle_storage_oog::<R, _>(
-			gas_limit,
-			|| {
+		let (reason, retv, used_gas, effective_gas) =
+			fp_evm::handle_storage_oog::<R, _>(gas_limit, || {
 				let (reason, retv) = f(&mut executor);
 
 				// Compute the storage gas cost based on the storage growth.
@@ -331,7 +330,9 @@ where
 
 					log::trace!(
 						target: "evm",
-						"Proof size computation: (estimated: {estimated_proof_size}, actual: {actual_proof_size})",
+						"Proof size computation: (estimated: {}, actual: {})",
+						estimated_proof_size,
+						actual_proof_size
 					);
 
 					// If the proof_size calculated from the host-function gives an higher cost than
@@ -342,8 +343,10 @@ where
 					if actual_proof_size > estimated_proof_size {
 						log::debug!(
 							target: "evm",
-							"Proof size underestimation detected! (estimated: {estimated_proof_size}, actual: {actual_proof_size}, diff: {diff})",
-							diff = actual_proof_size.saturating_sub(estimated_proof_size),
+							"Proof size underestimation detected! (estimated: {}, actual: {}, diff: {})",
+							estimated_proof_size,
+							actual_proof_size,
+							actual_proof_size.saturating_sub(estimated_proof_size),
 						);
 						estimated_proof_size
 					} else {
@@ -360,19 +363,32 @@ where
 
 				log::debug!(
 					target: "evm",
-					"Calculating effective gas: max(used: {used_gas}, pov: {pov_gas}, storage: {storage_gas}) = {effective_gas}",
+					"Calculating effective gas: max(used: {}, pov: {}, storage: {}) = {}",
+					used_gas,
+					pov_gas,
+					storage_gas,
+					effective_gas
 				);
 
 				(reason, retv, used_gas, U256::from(effective_gas))
-			},
-		);
+			});
 
 		let actual_fee = effective_gas.saturating_mul(total_fee_per_gas);
 		let actual_base_fee = effective_gas.saturating_mul(base_fee);
 
 		log::debug!(
 			target: "evm",
-			"Execution {reason:?} [source: {source:?}, value: {value}, gas_limit: {gas_limit}, actual_fee: {actual_fee}, used_gas: {used_gas}, effective_gas: {effective_gas}, base_fee: {base_fee}, total_fee_per_gas: {total_fee_per_gas}, is_transactional: {is_transactional}]",
+			"Execution {:?} [source: {:?}, value: {}, gas_limit: {}, actual_fee: {}, used_gas: {}, effective_gas: {}, base_fee: {}, total_fee_per_gas: {}, is_transactional: {}]",
+			reason,
+			source,
+			value,
+			gas_limit,
+			actual_fee,
+			used_gas,
+			effective_gas,
+			base_fee,
+			total_fee_per_gas,
+			is_transactional
 		);
 		// The difference between initially withdrawn and the actual cost is refunded.
 		//
@@ -411,7 +427,8 @@ where
 		for address in &state.substate.deletes {
 			log::debug!(
 				target: "evm",
-				"Deleting account at {address:?}",
+				"Deleting account at {:?}",
+				address
 			);
 			Pallet::<T>::remove_account(address)
 		}
@@ -1117,13 +1134,18 @@ where
 		if value == H256::default() {
 			log::debug!(
 				target: "evm",
-				"Removing storage for {address:?} [index: {index:?}]",
+				"Removing storage for {:?} [index: {:?}]",
+				address,
+				index,
 			);
 			<AccountStorages<T>>::remove(address, index);
 		} else {
 			log::debug!(
 				target: "evm",
-				"Updating storage for {address:?} [index: {index:?}, value: {value:?}]",
+				"Updating storage for {:?} [index: {:?}, value: {:?}]",
+				address,
+				index,
+				value,
 			);
 			<AccountStorages<T>>::insert(address, index, value);
 		}
@@ -1186,7 +1208,8 @@ where
 	fn reset_delegation(&mut self, address: H160) -> Result<(), ExitError> {
 		log::debug!(
 			target: "evm",
-			"Resetting delegation at {address:?}",
+			"Resetting delegation at {:?}",
+			address
 		);
 
 		Pallet::<T>::remove_account_code(&address);

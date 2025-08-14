@@ -287,7 +287,6 @@ pub mod pallet {
 	}
 
 	#[pallet::call]
-	#[allow(clippy::useless_conversion)]
 	impl<T: Config> Pallet<T> {
 		/// Withdraw balance from EVM into currency/balances pallet.
 		#[pallet::call_index(0)]
