@@ -22,7 +22,7 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
-use scale_codec::{Decode, Encode};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use sp_core::H256;
 use sp_runtime::{
 	generic::{Digest, OpaqueDigestItemId},
@@ -56,7 +56,7 @@ pub enum PostLog {
 	BlockHash(H256),
 }
 
-#[derive(Decode, Encode, Clone, PartialEq, Eq)]
+#[derive(Decode, DecodeWithMemTracking, Encode, Clone, PartialEq, Eq)]
 pub struct Hashes {
 	/// Ethereum block hash.
 	pub block_hash: H256,

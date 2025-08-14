@@ -24,7 +24,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use ethereum::{AuthorizationList, Log};
 use ethereum_types::{Address, Bloom};
-use scale_codec::{Decode, Encode};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 // Substrate
 use sp_core::{H256, U256};
@@ -34,7 +34,17 @@ use sp_runtime::{
 };
 use sp_state_machine::OverlayedChanges;
 
-#[derive(Clone, Eq, PartialEq, Default, RuntimeDebug, Encode, Decode, TypeInfo)]
+#[derive(
+	Clone,
+	Eq,
+	PartialEq,
+	Default,
+	RuntimeDebug,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	TypeInfo
+)]
 pub struct TransactionStatus {
 	pub transaction_hash: H256,
 	pub transaction_index: u32,

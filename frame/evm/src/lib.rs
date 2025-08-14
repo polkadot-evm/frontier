@@ -75,7 +75,7 @@ pub use evm::{
 };
 use hash_db::Hasher;
 use impl_trait_for_tuples::impl_for_tuples;
-use scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
@@ -705,6 +705,7 @@ type NegativeImbalanceOf<C, T> = <C as Currency<AccountIdOf<T>>>::NegativeImbala
 	PartialEq,
 	Encode,
 	Decode,
+	DecodeWithMemTracking,
 	TypeInfo,
 	MaxEncodedLen
 )]
