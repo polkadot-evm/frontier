@@ -53,7 +53,7 @@ impl FromStr for MetaKey {
 		match input {
 			x if x == tips => Ok(MetaKey::Tips),
 			y if y == schema => Ok(MetaKey::Schema),
-			_ => Err(format!("`{:?}` is not a meta column static key", input).into()),
+			_ => Err(format!("`{input:?}` is not a meta column static key").into()),
 		}
 	}
 }
@@ -99,12 +99,12 @@ impl<'a, B: BlockT, C: HeaderBackend<B>> MetaDb<'a, B, C> {
 				// Read meta column, static tips key.
 				MetaKey::Tips => {
 					let value = self.backend.meta().current_syncing_tips()?;
-					println!("{:?}", value);
+					println!("{value:?}");
 				}
 				// Read meta column, static schema cache key.
 				MetaKey::Schema => {
 					let value = self.backend.meta().ethereum_schema()?;
-					println!("{:?}", value);
+					println!("{value:?}");
 				}
 			},
 			Operation::Update => match (key, value) {

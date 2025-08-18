@@ -68,11 +68,7 @@ pub trait FrontierDbMessage {
 		key: K,
 		value: &V,
 	) -> sc_cli::Error {
-		format!(
-			"Key `{:?}` and Value `{:?}` are not compatible with this operation",
-			key, value
-		)
-		.into()
+		format!("Key `{key:?}` and Value `{value:?}` are not compatible with this operation").into()
 	}
 
 	fn key_column_error<K: core::fmt::Debug, V: core::fmt::Debug>(
@@ -80,15 +76,12 @@ pub trait FrontierDbMessage {
 		key: K,
 		value: &V,
 	) -> sc_cli::Error {
-		format!(
-			"Key `{:?}` and Column `{:?}` are not compatible with this operation",
-			key, value
-		)
-		.into()
+		format!("Key `{key:?}` and Column `{value:?}` are not compatible with this operation")
+			.into()
 	}
 
 	fn key_not_empty_error<K: core::fmt::Debug>(&self, key: K) -> sc_cli::Error {
-		format!("Operation not allowed for non-empty Key `{:?}`", key).into()
+		format!("Operation not allowed for non-empty Key `{key:?}`").into()
 	}
 
 	#[cfg(not(test))]

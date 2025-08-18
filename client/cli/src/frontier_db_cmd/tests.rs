@@ -569,7 +569,7 @@ fn commitment_create() {
 	// Run the command using some ethereum block hash as key.
 	let ethereum_block_hash = H256::default();
 	assert!(cmd(
-		format!("{:?}", ethereum_block_hash),
+		format!("{ethereum_block_hash:?}"),
 		Some(test_value_path.clone()),
 		Operation::Create,
 		Column::Block
@@ -596,7 +596,7 @@ fn commitment_create() {
 
 	// Expect a second command run to fail, as the key is not empty anymore.
 	assert!(cmd(
-		format!("{:?}", ethereum_block_hash),
+		format!("{ethereum_block_hash:?}"),
 		Some(test_value_path),
 		Operation::Create,
 		Column::Block
@@ -655,7 +655,7 @@ fn commitment_update() {
 	// Run the command using some ethereum block hash as key.
 	let ethereum_block_hash = H256::default();
 	assert!(cmd(
-		format!("{:?}", ethereum_block_hash),
+		format!("{ethereum_block_hash:?}"),
 		Some(test_value_path),
 		Operation::Create,
 		Column::Block
@@ -703,7 +703,7 @@ fn commitment_update() {
 	// Run the command using some ethereum block hash as key.
 	let ethereum_block_hash = H256::default();
 	assert!(cmd(
-		format!("{:?}", ethereum_block_hash),
+		format!("{ethereum_block_hash:?}"),
 		Some(test_value_path),
 		Operation::Update,
 		Column::Block
@@ -780,7 +780,7 @@ fn mapping_read_works() {
 	// Create command using some ethereum block hash as key.
 	let ethereum_block_hash = H256::default();
 	assert!(cmd(
-		format!("{:?}", ethereum_block_hash),
+		format!("{ethereum_block_hash:?}"),
 		Some(test_value_path),
 		Operation::Create,
 		Column::Block,
@@ -790,7 +790,7 @@ fn mapping_read_works() {
 
 	// Read block command.
 	assert!(cmd(
-		format!("{:?}", ethereum_block_hash),
+		format!("{ethereum_block_hash:?}"),
 		None,
 		Operation::Read,
 		Column::Block
@@ -800,7 +800,7 @@ fn mapping_read_works() {
 
 	// Read transaction command.
 	assert!(cmd(
-		format!("{:?}", t1_hash),
+		format!("{t1_hash:?}"),
 		None,
 		Operation::Read,
 		Column::Transaction

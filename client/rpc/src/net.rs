@@ -68,7 +68,7 @@ where
 	fn peer_count(&self) -> RpcResult<PeerCount> {
 		let peer_count = self.network.sync_num_connected();
 		Ok(match self.peer_count_as_hex {
-			true => PeerCount::String(format!("0x{:x}", peer_count)),
+			true => PeerCount::String(format!("0x{peer_count:x}")),
 			false => PeerCount::U32(peer_count as u32),
 		})
 	}

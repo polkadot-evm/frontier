@@ -72,8 +72,7 @@ where
 					}
 				}
 				Err(err) => Err(D::Error::custom(format!(
-					"Invalid variadic value type: {}",
-					err
+					"Invalid variadic value type: {err}"
 				))),
 			}
 		}

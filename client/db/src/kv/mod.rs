@@ -260,7 +260,7 @@ pub struct MappingDb<Block> {
 impl<Block: BlockT> MappingDb<Block> {
 	pub fn is_synced(&self, block_hash: &Block::Hash) -> Result<bool, String> {
 		match self.db.get(columns::SYNCED_MAPPING, &block_hash.encode()) {
-			Some(raw) => Ok(bool::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?),
+			Some(raw) => Ok(bool::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?),
 			None => Ok(false),
 		}
 	}
@@ -274,7 +274,7 @@ impl<Block: BlockT> MappingDb<Block> {
 			.get(columns::BLOCK_MAPPING, &ethereum_block_hash.encode())
 		{
 			Some(raw) => Ok(Some(
-				Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{:?}", e))?,
+				Vec::<Block::Hash>::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?,
 			)),
 			None => Ok(None),
 		}

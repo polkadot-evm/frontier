@@ -100,7 +100,7 @@ where
 			Some(id) => {
 				let substrate_hash = client
 					.expect_block_hash_from_id(&id)
-					.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+					.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 				let block = block_data_cache.current_block(substrate_hash).await;
 				let statuses = block_data_cache
@@ -160,7 +160,7 @@ where
 
 				let (block, statuses) = api
 					.pending_block(best_hash, xts)
-					.map_err(|_| internal_err(format!("Runtime access error at {}", best_hash)))?;
+					.map_err(|_| internal_err(format!("Runtime access error at {best_hash}")))?;
 
 				let base_fee = api.gas_price(best_hash).ok();
 

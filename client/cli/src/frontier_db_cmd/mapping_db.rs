@@ -87,7 +87,7 @@ where
 							.client
 							.runtime_api()
 							.current_transaction_statuses(*substrate_block_hash)
-							.map_err(|e| format!("{:?}", e))?
+							.map_err(|e| format!("{e:?}"))?
 						{
 							statuses
 								.iter()
@@ -114,7 +114,7 @@ where
 				// Given ethereum block hash, get substrate block hash.
 				(Column::Block, MappingKey::EthBlockOrTransactionHash(ethereum_block_hash)) => {
 					let value = self.backend.mapping().block_hash(ethereum_block_hash)?;
-					println!("{:?}", value);
+					println!("{value:?}");
 				}
 				// Given ethereum transaction hash, get transaction metadata.
 				(
@@ -125,7 +125,7 @@ where
 						.backend
 						.mapping()
 						.transaction_metadata(ethereum_transaction_hash)?;
-					println!("{:?}", value);
+					println!("{value:?}");
 				}
 				_ => return Err(self.key_column_error(key, value)),
 			},
@@ -145,7 +145,7 @@ where
 							.client
 							.runtime_api()
 							.current_transaction_statuses(*substrate_block_hash)
-							.map_err(|e| format!("{:?}", e))?
+							.map_err(|e| format!("{e:?}"))?
 						{
 							statuses
 								.iter()

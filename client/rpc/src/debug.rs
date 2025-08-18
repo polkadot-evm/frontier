@@ -78,7 +78,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		let substrate_hash = self
 			.client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 		let block = self.block_data_cache.current_block(substrate_hash).await;
 		Ok(block)
 	}
@@ -144,7 +144,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		let substrate_hash = self
 			.client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 		// TODO: use data cache in the future
 		let receipts = self.storage_override.current_receipts(substrate_hash);

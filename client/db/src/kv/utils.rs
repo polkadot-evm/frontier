@@ -70,7 +70,7 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(super::columns::NUM_COLUMNS);
 	db_config.create_if_missing = create;
 
-	let db = kvdb_rocksdb::Database::open(&db_config, path).map_err(|err| format!("{}", err))?;
+	let db = kvdb_rocksdb::Database::open(&db_config, path).map_err(|err| format!("{err}"))?;
 	// write database version only after the database is successfully opened
 	#[cfg(not(test))]
 	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;
@@ -102,7 +102,7 @@ fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	let mut config = parity_db::Options::with_columns(path, super::columns::NUM_COLUMNS as u8);
 	config.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
-	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{}", err))?;
+	let db = parity_db::Db::open_or_create(&config).map_err(|err| format!("{err}"))?;
 	// write database version only after the database is successfully opened
 	#[cfg(not(test))]
 	super::upgrade::update_version(path).map_err(|_| "Cannot update db version".to_string())?;

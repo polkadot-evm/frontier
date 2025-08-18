@@ -46,7 +46,7 @@ where
 		self.client
 			.runtime_api()
 			.gas_price(block_hash)
-			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
+			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {err:?}")))
 	}
 
 	pub async fn fee_history(
@@ -128,10 +128,10 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
-					let substrate_hash =
-						self.client.expect_block_hash_from_id(&id).map_err(|_| {
-							internal_err(format!("Expect block number from id: {}", id))
-						})?;
+					let substrate_hash = self
+						.client
+						.expect_block_hash_from_id(&id)
+						.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 					let elasticity = self
 						.storage_override
 						.elasticity(substrate_hash)
@@ -165,8 +165,7 @@ where
 			}
 		}
 		Err(internal_err(format!(
-			"Failed to retrieve requested block {:?}.",
-			newest_block
+			"Failed to retrieve requested block {newest_block:?}."
 		)))
 	}
 

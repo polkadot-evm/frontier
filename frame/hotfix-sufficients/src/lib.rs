@@ -17,6 +17,7 @@
 
 #![cfg_attr(not(feature = "std"), no_std)]
 #![warn(unused_crate_dependencies)]
+#![allow(clippy::useless_conversion)]
 
 extern crate alloc;
 

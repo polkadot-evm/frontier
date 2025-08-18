@@ -49,7 +49,7 @@ impl Serialize for BlockCount {
 	{
 		match *self {
 			BlockCount::U256(ref x) => x.serialize(serializer),
-			BlockCount::Num(ref x) => serializer.serialize_str(&format!("0x{:x}", x)),
+			BlockCount::Num(ref x) => serializer.serialize_str(&format!("0x{x:x}")),
 		}
 	}
 }

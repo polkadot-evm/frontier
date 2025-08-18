@@ -74,7 +74,7 @@ where
 				.client
 				.runtime_api()
 				.account_basic(substrate_hash, address)
-				.map_err(|err| internal_err(format!("Fetch account balances failed: {:?}", err)))?
+				.map_err(|err| internal_err(format!("Fetch account balances failed: {err:?}")))?
 				.balance)
 		} else {
 			Ok(U256::zero())

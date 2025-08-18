@@ -252,8 +252,8 @@ fn eip7702_happy_path() {
 
 		// Debug: Check what code Alice actually has
 		let alice_code_after = pallet_evm::AccountCodes::<Test>::get(alice.address);
-		println!("Alice's code after EIP-7702: {:?}", alice_code_after);
-		println!("Contract address: {:?}", contract_address);
+		println!("Alice's code after EIP-7702: {alice_code_after:?}");
+		println!("Contract address: {contract_address:?}");
 
 		// Check what code the contract actually has
 		let contract_code_final = pallet_evm::AccountCodes::<Test>::get(contract_address);
@@ -278,7 +278,7 @@ fn eip7702_happy_path() {
 		.sign(&alice.private_key);
 
 		let delegate_call_result = Ethereum::execute(alice.address, &delegate_call_tx, None);
-		println!("Delegate call result: {:?}", delegate_call_result);
+		println!("Delegate call result: {delegate_call_result:?}");
 
 		if let Ok((_, _, CallOrCreateInfo::Call(delegate_info))) = delegate_call_result {
 			println!("Delegate call exit reason: {:?}", delegate_info.exit_reason);
@@ -468,7 +468,7 @@ fn eip7702_transaction_execution() {
 		// Debug information for understanding the current state
 		println!("Alice's code length: {}", alice_code.len());
 		println!("Contract address code length: {}", contract_code.len());
-		println!("Alice's code: {:?}", alice_code);
+		println!("Alice's code: {alice_code:?}");
 
 		// According to EIP-7702, after processing an authorization, the authorizing account
 		// should have code set to 0xef0100 || address (delegation designator)
@@ -684,25 +684,21 @@ fn gas_cost_calculation_with_authorizations() {
 		let minimum_expected_gas = U256::from(BASE_TX_COST + PER_AUTH_BASE_COST);
 		assert!(
 			actual_gas_used >= minimum_expected_gas,
-			"Actual gas used ({}) should be at least minimum expected ({})",
-			actual_gas_used,
-			minimum_expected_gas
+			"Actual gas used ({actual_gas_used}) should be at least minimum expected ({minimum_expected_gas})"
 		);
 
 		// The actual gas usage in our test is 36800, so let's validate against the real implementation
 		// rather than theoretical constants that may not match the current EVM implementation
 		assert!(
 			actual_gas_used >= minimum_expected_gas,
-			"Actual gas used ({}) should be at least base + authorization cost ({})",
-			actual_gas_used,
-			minimum_expected_gas
+			"Actual gas used ({actual_gas_used}) should be at least base + authorization cost ({minimum_expected_gas})"
 		);
 
 		println!("✓ EIP-7702 gas cost validation passed:");
-		println!("  - Base transaction cost: {}", BASE_TX_COST);
-		println!("  - Per-authorization cost: {}", PER_AUTH_BASE_COST);
-		println!("  - Per-empty-account cost: {}", PER_EMPTY_ACCOUNT_COST);
-		println!("  - Actual gas used: {}", actual_gas_used);
+		println!("  - Base transaction cost: {BASE_TX_COST}");
+		println!("  - Per-authorization cost: {PER_AUTH_BASE_COST}");
+		println!("  - Per-empty-account cost: {PER_EMPTY_ACCOUNT_COST}");
+		println!("  - Actual gas used: {actual_gas_used}");
 	});
 }
 

@@ -158,7 +158,7 @@ where
 		let substrate_hash = self
 			.client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 		self.block_info_by_substrate_hash(substrate_hash).await
 	}
@@ -173,7 +173,7 @@ where
 			eth_block_hash,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(BlockInfo::default()),
@@ -193,7 +193,7 @@ where
 			true,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some((hash, index)) => (hash, index as usize),
 			None => return Ok((BlockInfo::default(), 0)),
@@ -205,7 +205,7 @@ where
 			eth_block_hash,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some(hash) => hash,
 			_ => return Ok((BlockInfo::default(), 0)),
@@ -624,10 +624,7 @@ fn transaction_build(
 	status: Option<&TransactionStatus>,
 	base_fee: Option<U256>,
 ) -> Transaction {
-	let pubkey = match public_key(ethereum_transaction) {
-		Ok(p) => Some(p),
-		Err(_) => None,
-	};
+	let pubkey = public_key(ethereum_transaction).ok();
 	let from = status.map_or(
 		{
 			match pubkey {

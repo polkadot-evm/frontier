@@ -23,7 +23,7 @@ fn handle_err<T>(result: parity_db::Result<T>) -> T {
 	match result {
 		Ok(r) => r,
 		Err(e) => {
-			panic!("Critical database error: {:?}", e);
+			panic!("Critical database error: {e:?}");
 		}
 	}
 }

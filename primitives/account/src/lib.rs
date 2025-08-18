@@ -312,7 +312,7 @@ mod tests {
 			.public();
 		let signer: EthereumSigner = pk.into();
 		let account: AccountId20 = signer.into_account();
-		let account_fmt = format!("{}", account);
+		let account_fmt = format!("{account}");
 		assert_eq!(account_fmt, "0xE04CC55ebEE1cBCE552f250e85c57B70B2E2625b");
 	}
 }

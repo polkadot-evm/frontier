@@ -36,7 +36,7 @@ impl<K: Eq + core::hash::Hash, V: Encode> LRUCacheByteLimited<K, V> {
 			Some(registry) => match LRUCacheByteLimitedMetrics::register(cache_name, &registry) {
 				Ok(metrics) => Some(metrics),
 				Err(e) => {
-					log::error!(target: "eth-cache", "Failed to register metrics: {:?}", e);
+					log::error!(target: "eth-cache", "Failed to register metrics: {e:?}");
 					None
 				}
 			},
@@ -101,22 +101,22 @@ impl LRUCacheByteLimitedMetrics {
 		Ok(Self {
 			hits: prometheus_endpoint::register(
 				prometheus::IntCounter::new(
-					format!("frontier_eth_{}_hits", cache_name),
-					format!("Hits of eth {} cache.", cache_name),
+					format!("frontier_eth_{cache_name}_hits"),
+					format!("Hits of eth {cache_name} cache."),
 				)?,
 				registry,
 			)?,
 			miss: prometheus_endpoint::register(
 				prometheus::IntCounter::new(
-					format!("frontier_eth_{}_miss", cache_name),
-					format!("Misses of eth {} cache.", cache_name),
+					format!("frontier_eth_{cache_name}_miss"),
+					format!("Misses of eth {cache_name} cache."),
 				)?,
 				registry,
 			)?,
 			size: prometheus_endpoint::register(
 				prometheus_endpoint::Gauge::new(
-					format!("frontier_eth_{}_size", cache_name),
-					format!("Size of eth {} data cache.", cache_name),
+					format!("frontier_eth_{cache_name}_size"),
+					format!("Size of eth {cache_name} data cache."),
 				)?,
 				registry,
 			)?,

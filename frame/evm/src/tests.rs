@@ -213,7 +213,7 @@ mod proof_size_test {
 			// selector for ProofSizeTest::test_call function..
 			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
 			// ..encode the callee address argument
-			call_data.push_str(&format!("{:x}", subcall_contract_address));
+			call_data.push_str(&format!("{subcall_contract_address:x}"));
 
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
@@ -489,7 +489,7 @@ mod proof_size_test {
 			// selector for ProofSizeTest::test_call function..
 			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
 			// ..encode the callee address argument
-			call_data.push_str(&format!("{:x}", subcall_contract_address));
+			call_data.push_str(&format!("{subcall_contract_address:x}"));
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
 				call_contract_address,

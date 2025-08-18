@@ -202,17 +202,17 @@ where
 
 		let api_version = api
 			.api_version::<dyn EthereumRuntimeRPCApi<B>>(best_block)
-			.map_err(|err| internal_err(format!("Failed to get API version: {}", err)))?
+			.map_err(|err| internal_err(format!("Failed to get API version: {err}")))?
 			.ok_or_else(|| internal_err("Failed to get API version"))?;
 
 		let ethereum_txs = if api_version > 1 {
 			api.extrinsic_filter(best_block, all_extrinsics)
-				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?
+				.map_err(|err| internal_err(format!("Runtime call failed: {err}")))?
 		} else {
 			#[allow(deprecated)]
 			let legacy = api
 				.extrinsic_filter_before_version_2(best_block, all_extrinsics)
-				.map_err(|err| internal_err(format!("Runtime call failed: {}", err)))?;
+				.map_err(|err| internal_err(format!("Runtime call failed: {err}")))?;
 			legacy.into_iter().map(|tx| tx.into()).collect()
 		};
 

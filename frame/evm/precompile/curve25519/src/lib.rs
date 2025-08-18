@@ -140,7 +140,7 @@ mod tests {
 				Ok(())
 			}
 			Err(e) => {
-				panic!("Test not expected to fail: {:?}", e);
+				panic!("Test not expected to fail: {e:?}");
 			}
 		}
 	}
@@ -158,7 +158,7 @@ mod tests {
 				Ok(())
 			}
 			Err(e) => {
-				panic!("Test not expected to fail: {:?}", e);
+				panic!("Test not expected to fail: {e:?}");
 			}
 		}
 	}
@@ -183,7 +183,7 @@ mod tests {
 				Ok(())
 			}
 			Err(e) => {
-				panic!("Test not expected to fail: {:?}", e);
+				panic!("Test not expected to fail: {e:?}");
 			}
 		}
 	}
