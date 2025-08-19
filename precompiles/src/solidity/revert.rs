@@ -217,7 +217,7 @@ impl core::fmt::Display for Revert {
 
 impl core::fmt::Debug for Revert {
 	fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
-		write!(f, "{}", self)
+		write!(f, "{self}")
 	}
 }
 

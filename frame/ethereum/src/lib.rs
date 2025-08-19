@@ -22,7 +22,11 @@
 
 // Ensure we're `no_std` when compiling for Wasm.
 #![cfg_attr(not(feature = "std"), no_std)]
-#![allow(clippy::comparison_chain, clippy::large_enum_variant)]
+#![allow(
+	clippy::comparison_chain,
+	clippy::large_enum_variant,
+	clippy::useless_conversion
+)]
 #![warn(unused_crate_dependencies)]
 
 extern crate alloc;

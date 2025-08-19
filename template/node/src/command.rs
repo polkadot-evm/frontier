@@ -130,11 +130,9 @@ pub fn run() -> sc_cli::Result<()> {
 								eprintln!("{:?} did not exist.", &db_path);
 							}
 							Err(err) => {
-								return Err(format!(
-									"Cannot purge `{:?}` database: {:?}",
-									db_path, err,
+								return Err(
+									format!("Cannot purge `{db_path:?}` database: {err:?}").into()
 								)
-								.into())
 							}
 						};
 					}

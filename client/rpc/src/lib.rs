@@ -208,7 +208,7 @@ pub mod frontier_backend_client {
 			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
 				Ok(hash) => Some(BlockId::Hash(hash)),
 				Err(e) => {
-					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
+					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {e:?}");
 					Some(BlockId::Hash(client.info().best_hash))
 				}
 			},
@@ -231,7 +231,7 @@ pub mod frontier_backend_client {
 		let substrate_hashes = backend
 			.block_hash(&hash)
 			.await
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
+			.map_err(|err| internal_err(format!("fetch aux store failed: {err:?}")))?;
 
 		if let Some(substrate_hashes) = substrate_hashes {
 			for substrate_hash in substrate_hashes {
@@ -269,7 +269,7 @@ pub mod frontier_backend_client {
 		let transaction_metadata = backend
 			.transaction_metadata(&transaction_hash)
 			.await
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
+			.map_err(|err| internal_err(format!("fetch aux store failed: {err:?}")))?;
 
 		transaction_metadata
 			.iter()

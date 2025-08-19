@@ -58,7 +58,7 @@ where
 			true,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some((eth_block_hash, index)) => (eth_block_hash, index as usize),
 			None => {
@@ -94,16 +94,13 @@ where
 
 				let ethereum_transactions: Vec<EthereumTransaction> = if api_version > 1 {
 					api.extrinsic_filter(best_block, xts).map_err(|err| {
-						internal_err(format!("fetch runtime extrinsic filter failed: {:?}", err))
+						internal_err(format!("fetch runtime extrinsic filter failed: {err:?}"))
 					})?
 				} else {
 					#[allow(deprecated)]
 					let legacy = api.extrinsic_filter_before_version_2(best_block, xts)
 						.map_err(|err| {
-							internal_err(format!(
-								"fetch runtime extrinsic filter failed: {:?}",
-								err
-							))
+							internal_err(format!("fetch runtime extrinsic filter failed: {err:?}"))
 						})?;
 					legacy.into_iter().map(|tx| tx.into()).collect()
 				};
@@ -161,7 +158,7 @@ where
 						Some(base_fee),
 					)))
 				} else {
-					Err(internal_err(format!("{:?} is out of bounds", index)))
+					Err(internal_err(format!("{index:?} is out of bounds")))
 				}
 			}
 			_ => Ok(None),
@@ -193,7 +190,7 @@ where
 						Some(base_fee),
 					)))
 				} else {
-					Err(internal_err(format!("{:?} is out of bounds", index)))
+					Err(internal_err(format!("{index:?} is out of bounds")))
 				}
 			}
 			_ => Ok(None),
@@ -218,66 +215,63 @@ where
 				let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 				let receipt = receipts[index].clone();
 
-				let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) =
-					if !block_info.is_eip1559 {
-						// Pre-london frontier update stored receipts require cumulative gas calculation.
-						match receipt {
-							ethereum::ReceiptV4::Legacy(ref d) => {
-								let index = core::cmp::min(receipts.len(), index + 1);
-								let cumulative_gas: u32 = receipts[..index]
-									.iter()
-									.map(|r| match r {
-										ethereum::ReceiptV4::Legacy(d) => Ok(d.used_gas.as_u32()),
-										_ => Err(internal_err(format!(
-											"Unknown receipt for request {}",
-											hash
-										))),
-									})
-									.sum::<RpcResult<u32>>()?;
-								(
-									d.logs.clone(),
-									d.logs_bloom,
-									d.status_code,
-									U256::from(cumulative_gas),
-									d.used_gas,
-								)
-							}
-							_ => {
-								return Err(internal_err(format!(
-									"Unknown receipt for request {}",
-									hash
-								)))
-							}
+				let (logs, logs_bloom, status_code, cumulative_gas_used, gas_used) = if !block_info
+					.is_eip1559
+				{
+					// Pre-london frontier update stored receipts require cumulative gas calculation.
+					match receipt {
+						ethereum::ReceiptV4::Legacy(ref d) => {
+							let index = core::cmp::min(receipts.len(), index + 1);
+							let cumulative_gas: u32 = receipts[..index]
+								.iter()
+								.map(|r| match r {
+									ethereum::ReceiptV4::Legacy(d) => Ok(d.used_gas.as_u32()),
+									_ => Err(internal_err(format!(
+										"Unknown receipt for request {hash}"
+									))),
+								})
+								.sum::<RpcResult<u32>>()?;
+							(
+								d.logs.clone(),
+								d.logs_bloom,
+								d.status_code,
+								U256::from(cumulative_gas),
+								d.used_gas,
+							)
 						}
-					} else {
-						match receipt {
-							ethereum::ReceiptV4::Legacy(ref d)
-							| ethereum::ReceiptV4::EIP2930(ref d)
-							| ethereum::ReceiptV4::EIP1559(ref d)
-							| ethereum::ReceiptV4::EIP7702(ref d) => {
-								let cumulative_gas = d.used_gas;
-								let gas_used = if index > 0 {
-									let previous_receipt = receipts[index - 1].clone();
-									let previous_gas_used = match previous_receipt {
-										ethereum::ReceiptV4::Legacy(d)
-										| ethereum::ReceiptV4::EIP2930(d)
-										| ethereum::ReceiptV4::EIP1559(d)
-										| ethereum::ReceiptV4::EIP7702(d) => d.used_gas,
-									};
-									cumulative_gas.saturating_sub(previous_gas_used)
-								} else {
-									cumulative_gas
+						_ => {
+							return Err(internal_err(format!("Unknown receipt for request {hash}")))
+						}
+					}
+				} else {
+					match receipt {
+						ethereum::ReceiptV4::Legacy(ref d)
+						| ethereum::ReceiptV4::EIP2930(ref d)
+						| ethereum::ReceiptV4::EIP1559(ref d)
+						| ethereum::ReceiptV4::EIP7702(ref d) => {
+							let cumulative_gas = d.used_gas;
+							let gas_used = if index > 0 {
+								let previous_receipt = receipts[index - 1].clone();
+								let previous_gas_used = match previous_receipt {
+									ethereum::ReceiptV4::Legacy(d)
+									| ethereum::ReceiptV4::EIP2930(d)
+									| ethereum::ReceiptV4::EIP1559(d)
+									| ethereum::ReceiptV4::EIP7702(d) => d.used_gas,
 								};
-								(
-									d.logs.clone(),
-									d.logs_bloom,
-									d.status_code,
-									cumulative_gas,
-									gas_used,
-								)
-							}
+								cumulative_gas.saturating_sub(previous_gas_used)
+							} else {
+								cumulative_gas
+							};
+							(
+								d.logs.clone(),
+								d.logs_bloom,
+								d.status_code,
+								cumulative_gas,
+								gas_used,
+							)
 						}
-					};
+					}
+				};
 
 				let status = statuses[index].clone();
 				let mut cumulative_receipts = receipts;
@@ -296,7 +290,7 @@ where
 								parent_eth_hash,
 							)
 							.await
-							.map_err(|err| internal_err(format!("{:?}", err)))?
+							.map_err(|err| internal_err(format!("{err:?}")))?
 							.ok_or(internal_err(
 								"Failed to retrieve substrate parent block hash",
 							))?

@@ -51,7 +51,7 @@ impl core::fmt::Debug for PrettyLog {
 			.0
 			.data
 			.iter()
-			.map(|b| format!("{:02X}", b))
+			.map(|b| format!("{b:02X}"))
 			.collect::<Vec<String>>()
 			.join("");
 

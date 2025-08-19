@@ -59,7 +59,7 @@ where
 			.client
 			.runtime_api()
 			.version(hash)
-			.map_err(|err| internal_err(format!("fetch runtime version failed: {:?}", err)))?;
+			.map_err(|err| internal_err(format!("fetch runtime version failed: {err:?}")))?;
 		Ok(format!(
 			"{spec_name}/v{spec_version}.{impl_version}/{pkg_name}-{pkg_version}",
 			spec_name = version.spec_name,
