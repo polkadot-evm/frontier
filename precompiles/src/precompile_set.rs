@@ -40,7 +40,7 @@ use sp_core::{H160, H256};
 /// Types implementing this trait are made to be chained in a tuple.
 ///
 /// For that reason every method returns an Option, None meaning that
-/// the implementor have no constraint and the decision is left to
+/// the implementer have no constraint and the decision is left to
 /// latter elements in the chain. If None is returned by all elements of
 /// the chain then sensible defaults are used.
 ///
@@ -506,7 +506,7 @@ pub trait IsActivePrecompile {
 /// was a PrecompileSet containing only the precompile(set) it wraps.
 /// They can be combined into a real PrecompileSet using `PrecompileSetBuilder`.
 pub trait PrecompileSetFragment {
-	/// Instanciate the fragment.
+	/// Instantiate the fragment.
 	fn new() -> Self;
 
 	/// Execute the fragment.
