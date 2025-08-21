@@ -32,7 +32,7 @@ mod benchmarks {
 	#[benchmark]
 	fn sha3_fips_256(n: Linear<1, 4_096>) -> Result<(), BenchmarkError> {
 		// Deterministic preimage content of requested size
-		let mut input: Vec<u8> = Vec::with_capacity(n as usize);
+		let mut input: Vec<u8> = vec![0; n as usize];
 		input.resize(n as usize, 0u8);
 		for (i, b) in input.iter_mut().enumerate() {
 			*b = (i as u8).wrapping_mul(31).wrapping_add(7);
@@ -50,7 +50,7 @@ mod benchmarks {
 	#[benchmark]
 	fn sha3_fips_512(n: Linear<1, 4_096>) -> Result<(), BenchmarkError> {
 		// Deterministic preimage content of requested size
-		let mut input: Vec<u8> = Vec::with_capacity(n as usize);
+		let mut input: Vec<u8> = vec![0; n as usize];
 		input.resize(n as usize, 0u8);
 		for (i, b) in input.iter_mut().enumerate() {
 			*b = (i as u8).wrapping_mul(17).wrapping_add(13);
