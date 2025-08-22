@@ -38,7 +38,7 @@ mod benchmarks {
 		let mut points = Vec::new();
 		for i in 0..n {
 			points.extend(
-				RistrettoPoint::hash_from_bytes::<Sha512>(format!("point_{}", i).as_bytes())
+				RistrettoPoint::hash_from_bytes::<Sha512>(format!("point_{i}").as_bytes())
 					.compress()
 					.to_bytes()
 					.to_vec(),

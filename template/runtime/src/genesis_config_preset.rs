@@ -105,7 +105,6 @@ fn testnet_genesis(
 		},
 		sudo: SudoConfig {
 			key: Some(sudo_key),
-			..Default::default()
 		},
 		transaction_payment: Default::default(),
 	};
