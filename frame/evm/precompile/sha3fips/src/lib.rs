@@ -21,16 +21,76 @@
 extern crate alloc;
 
 use alloc::vec::Vec;
+use core::marker::PhantomData;
 
-use fp_evm::{ExitSucceed, LinearCostPrecompile, PrecompileFailure};
+use fp_evm::{
+	ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
+	PrecompileResult,
+};
+use frame_support::weights::Weight;
+use pallet_evm::GasWeightMapping;
 
-pub struct Sha3FIPS256;
+// Weight provider trait for these precompiles. Implementations should return Substrate Weights.
+pub trait WeightInfo {
+	fn sha3_fips_256(preimage_len: u32) -> Weight;
+	fn sha3_fips_512(preimage_len: u32) -> Weight;
+}
 
-impl LinearCostPrecompile for Sha3FIPS256 {
-	const BASE: u64 = 60;
-	const WORD: u64 = 12;
+// Default weights from benchmarks run on a laptop, do not use them in production !
+impl WeightInfo for () {
+	/// The range of component `n` is `[1, 4096]`.
+	fn sha3_fips_256(n: u32) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(516_915, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 13
+			.saturating_add(Weight::from_parts(2_019, 0).saturating_mul(n.into()))
+	}
+	/// The range of component `n` is `[1, 4096]`.
+	fn sha3_fips_512(n: u32) -> Weight {
+		// Proof Size summary in bytes:
+		//  Measured:  `0`
+		//  Estimated: `0`
+		// Minimum execution time: 0_000 picoseconds.
+		Weight::from_parts(441_854, 0)
+			.saturating_add(Weight::from_parts(0, 0))
+			// Standard Error: 14
+			.saturating_add(Weight::from_parts(3_678, 0).saturating_mul(n.into()))
+	}
+}
 
-	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+pub struct Sha3FIPS256<R, WI>(PhantomData<(R, WI)>);
+
+impl<R, WI> Precompile for Sha3FIPS256<R, WI>
+where
+	R: pallet_evm::Config,
+	WI: WeightInfo,
+{
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let input_len = handle.input().len() as u32;
+		let weight = WI::sha3_fips_256(input_len);
+		let gas = R::GasWeightMapping::weight_to_gas(weight);
+		handle.record_cost(gas)?;
+
+		let (exit_status, output) = Self::execute_inner(handle.input(), gas)?;
+		Ok(PrecompileOutput {
+			exit_status,
+			output,
+		})
+	}
+}
+
+impl<R, WI> Sha3FIPS256<R, WI>
+where
+	WI: WeightInfo,
+{
+	pub fn execute_inner(
+		input: &[u8],
+		_: u64,
+	) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		use tiny_keccak::Hasher;
 		let mut output = [0; 32];
 		let mut sha3 = tiny_keccak::Sha3::v256();
@@ -40,13 +100,35 @@ impl LinearCostPrecompile for Sha3FIPS256 {
 	}
 }
 
-pub struct Sha3FIPS512;
+pub struct Sha3FIPS512<R, WI>(PhantomData<(R, WI)>);
 
-impl LinearCostPrecompile for Sha3FIPS512 {
-	const BASE: u64 = 60;
-	const WORD: u64 = 12;
+impl<R, WI> Precompile for Sha3FIPS512<R, WI>
+where
+	R: pallet_evm::Config,
+	WI: WeightInfo,
+{
+	fn execute(handle: &mut impl PrecompileHandle) -> PrecompileResult {
+		let input_len = handle.input().len() as u32;
+		let weight = WI::sha3_fips_512(input_len);
+		let gas = R::GasWeightMapping::weight_to_gas(weight);
+		handle.record_cost(gas)?;
 
-	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
+		let (exit_status, output) = Self::execute_inner(handle.input(), gas)?;
+		Ok(PrecompileOutput {
+			exit_status,
+			output,
+		})
+	}
+}
+
+impl<R, WI> Sha3FIPS512<R, WI>
+where
+	WI: WeightInfo,
+{
+	pub fn execute_inner(
+		input: &[u8],
+		_: u64,
+	) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		use tiny_keccak::Hasher;
 		let mut output = [0; 64];
 		let mut sha3 = tiny_keccak::Sha3::v512();
@@ -70,7 +152,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS256::execute(&input, cost) {
+		match Sha3FIPS256::<(), ()>::execute_inner(&input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
@@ -91,7 +173,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS256::execute(input, cost) {
+		match Sha3FIPS256::<(), ()>::execute_inner(input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
@@ -112,7 +194,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS256::execute(input, cost) {
+		match Sha3FIPS256::<(), ()>::execute_inner(input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())
@@ -135,7 +217,7 @@ mod tests {
 
 		let cost: u64 = 1;
 
-		match Sha3FIPS512::execute(input, cost) {
+		match Sha3FIPS512::<(), ()>::execute_inner(input, cost) {
 			Ok((_, out)) => {
 				assert_eq!(out, expected);
 				Ok(())

@@ -8,6 +8,10 @@
 
 extern crate alloc;
 
+mod genesis_config_preset;
+mod precompiles;
+mod weights;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
@@ -40,7 +44,7 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	derive_impl,
-	genesis_builder_helper::{build_state, get_preset},
+	genesis_builder_helper::build_state,
 	parameter_types,
 	traits::{ConstBool, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
@@ -62,7 +66,6 @@ pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
 
-mod precompiles;
 use precompiles::FrontierPrecompiles;
 
 /// Type of block number.
@@ -596,6 +599,8 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
 		[pallet_evm, EVM]
+		[pallet_evm_precompile_curve25519, EVMPrecompileCurve25519Bench::<Runtime>]
+		[pallet_evm_precompile_sha3fips, EVMPrecompileSha3FIPSBench::<Runtime>]
 	);
 }
 
@@ -671,11 +676,11 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<PresetId>) -> Option<Vec<u8>> {
-			get_preset::<RuntimeGenesisConfig>(id, |_| None)
+			frame_support::genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, genesis_config_preset::get_preset)
 		}
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			vec![]
+			vec![PresetId::from(sp_genesis_builder::DEV_RUNTIME_PRESET)]
 		}
 	}
 
@@ -1038,6 +1043,9 @@ impl_runtime_apis! {
 			use baseline::Pallet as BaselineBench;
 			use frame_system_benchmarking::Pallet as SystemBench;
 
+			use pallet_evm_precompile_curve25519_benchmarking::Pallet as EVMPrecompileCurve25519Bench;
+			use pallet_evm_precompile_sha3fips_benchmarking::Pallet as EVMPrecompileSha3FIPSBench;
+
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
 
@@ -1054,9 +1062,13 @@ impl_runtime_apis! {
 
 			use baseline::Pallet as BaselineBench;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use pallet_evm_precompile_curve25519_benchmarking::Pallet as EVMPrecompileCurve25519Bench;
+			use pallet_evm_precompile_sha3fips_benchmarking::Pallet as EVMPrecompileSha3FIPSBench;
 
 			impl baseline::Config for Runtime {}
 			impl frame_system_benchmarking::Config for Runtime {}
+			impl pallet_evm_precompile_curve25519_benchmarking::Config for Runtime {}
+			impl pallet_evm_precompile_sha3fips_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = Vec::new();
 
