@@ -315,19 +315,6 @@ where
 						.map(|item| (item.address, item.storage_keys))
 						.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
 
-					let authorization_list = authorization_list
-						.unwrap_or_default()
-						.iter()
-						.map(|d| {
-							(
-								U256::from(d.chain_id),
-								d.address,
-								d.nonce,
-								d.authorizing_address().ok(),
-							)
-						})
-						.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
-
 					let encoded_params = Encode::encode(&(
 						&from.unwrap_or_default(),
 						&to,
@@ -339,7 +326,7 @@ where
 						&nonce,
 						&false,
 						&Some(access_list),
-						&Some(authorization_list),
+						&authorization_list,
 					));
 					let overlayed_changes = self.create_overrides_overlay(
 						substrate_hash,
@@ -820,19 +807,6 @@ where
 								.map(|item| (item.address, item.storage_keys))
 								.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
 
-							let authorization_list = authorization_list
-								.unwrap_or_default()
-								.iter()
-								.map(|d| {
-									(
-										U256::from(d.chain_id),
-										d.address,
-										d.nonce,
-										d.authorizing_address().ok(),
-									)
-								})
-								.collect::<Vec<(U256, H160, U256, Option<H160>)>>();
-
 							let encoded_params = Encode::encode(&(
 								&from.unwrap_or_default(),
 								&to,
@@ -846,7 +820,7 @@ where
 								&Some(
 									access_list
 								),
-								&Some(authorization_list),
+								&authorization_list,
 							));
 
 							// Proof size recording
@@ -1008,19 +982,6 @@ where
 								.map(|item| (item.address, item.storage_keys))
 								.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
 
-							let authorization_list = authorization_list
-								.unwrap_or_default()
-								.iter()
-								.map(|d| {
-									(
-										U256::from(d.chain_id),
-										d.address,
-										d.nonce,
-										d.authorizing_address().ok(),
-									)
-								})
-								.collect::<Vec<(U256, H160, U256, Option<H160>)>>();
-
 							let encoded_params = Encode::encode(&(
 								&from.unwrap_or_default(),
 								&data,
@@ -1033,7 +994,7 @@ where
 								&Some(
 									access_list
 								),
-								&Some(authorization_list),
+								&authorization_list,
 							));
 
 							// Enable proof size recording

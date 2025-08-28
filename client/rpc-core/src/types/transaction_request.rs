@@ -269,7 +269,7 @@ impl From<TransactionRequest> for Option<TransactionMessage> {
 				value,
 				data: data_bytes,
 				access_list,
-				authorization_list: req.authorization_list.unwrap(),
+				authorization_list: req.authorization_list.unwrap_or_default(),
 				chain_id,
 			})),
 			// EIP1559: Has max_fee_per_gas but no gas_price, or all fee fields are None
