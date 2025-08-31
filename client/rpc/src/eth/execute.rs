@@ -1260,6 +1260,12 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> RpcResult
 			const MESSAGE_START: usize = 68;
 
 			let mut message = "VM Exception while processing transaction: revert".to_string();
+			let reason_uint = U256::from(&data[4..36]);
+			let offset :U256 = U256::from(32);
+
+			if data.len() == LEN_START {
+				message = format!("{message}: {}", reason_uint);
+			}
 			// A minimum size of error function selector (4) + offset (32) + string length (32)
 			// should contain a utf-8 encoded revert reason.
 			if data.len() > MESSAGE_START {
@@ -1270,7 +1276,12 @@ pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> RpcResult
 				if data.len() >= message_end {
 					let body: &[u8] = &data[MESSAGE_START..message_end];
 					if let Ok(reason) = std::str::from_utf8(body) {
-						message = format!("{message} {reason}");
+						if reason_uint < offset {
+							message = format!("{message} {reason_uint} {reason}");
+						}
+						else {
+						message = format!("{message}{reason}");
+						}
 					}
 				}
 			}
