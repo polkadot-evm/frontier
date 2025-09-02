@@ -12,10 +12,11 @@ TO-DO
 			"pallet-certauth/std",      // did, 
 			"pallet-storage/std",       // ipfs, performance
 			"pallet-exchange/std",      // treasury, pool, payments
-			"pallet-app-srv/std",       // srv. clients, api, services
-			"pallet-dao-srv/std",       // srv, clients, api, services
-			"pallet-fundation/std",     // governance, poloties
-			"pallet-ConsensusTeam/std", // signer, validator, nominator, collator, master
+			"pallet-devTeam/std",       // dao developers, srv. clients, api, services
+			"pallet-dao-srv/std",       // dao entrerprises, srv, clients, api, services
+			"pallet-fundation/std",     // governance, polities
+			"pallet-cTeam/std", 		// signer, validator, nominator, collator, master
+			"pallet-shareholders/std",  // reparto rewards, batch diario
 			]
 			[features]
 				# ... other features
