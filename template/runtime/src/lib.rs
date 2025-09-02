@@ -33,6 +33,7 @@ use sp_runtime::{
 	ApplyExtrinsicResult, ConsensusEngineId, ExtrinsicInclusionMode, Perbill, Permill,
 };
 use sp_version::RuntimeVersion;
+
 // Substrate FRAME
 #[cfg(feature = "with-paritydb-weights")]
 use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
@@ -423,6 +424,41 @@ impl pallet_base_fee::Config for Runtime {
 	type DefaultElasticity = DefaultElasticity;
 }
 
+//use frame_support::traits::EnsureRoot;
+//use frame_system::EnsureSigned;
+use frame_support::traits::AsEnsureOriginWithArg;
+use frame_system::{EnsureRoot, EnsureSigned};
+
+
+impl pallet_assets::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+    type Balance = Balance;
+    type AssetId = u32;
+    type AssetIdParameter = u32;
+
+    /// Quién puede crear assets (normalmente root o signed)
+   type CreateOrigin = AsEnsureOriginWithArg<EnsureSigned<AccountId>>;
+//    type CreateOrigin = AsEnsureOriginWithArg<EnsureRoot<AccountId>>;
+//	type CreateOrigin = EnsureRoot<AccountId>;
+    type ForceOrigin = EnsureRoot<AccountId>;
+
+    type AssetDeposit = ConstU128<0>;
+    type MetadataDepositBase = ConstU128<0>;
+    type MetadataDepositPerByte = ConstU128<0>;
+    type ApprovalDeposit = ConstU128<0>;
+    type StringLimit = ConstU32<50>;
+    type Freezer = ();
+    type Extra = ();
+	type Holder = ();
+	type Currency = Balances;
+    type WeightInfo = pallet_assets::weights::SubstrateWeight<Runtime>;
+    type AssetAccountDeposit = ConstU128<0>;
+    type RemoveItemsLimit = ConstU32<1000>;
+    type CallbackHandle = ();
+}
+
+
+
 #[frame_support::pallet]
 pub mod pallet_manual_seal {
 	use super::*;
@@ -504,6 +540,9 @@ mod runtime {
 
 	#[runtime::pallet_index(11)]
 	pub type ManualSeal = pallet_manual_seal;
+
+	#[runtime::pallet_index(12)]
+	pub type TokfinAssets = pallet_assets;
 }
 
 #[derive(Clone)]
