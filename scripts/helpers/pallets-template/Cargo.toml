@@ -1,0 +1,22 @@
+[package]
+name = "pallet-template"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+frame-support = { workspace = true, default-features = false }
+frame-system  = { workspace = true, default-features = false }
+parity-scale-codec = { version = "3.6.9", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
+sp-std = { workspace = true, default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "frame-system/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sp-std/std",
+]

@@ -543,6 +543,13 @@ mod runtime {
 
 	#[runtime::pallet_index(12)]
 	pub type TokfinAssets = pallet_assets;
+
+	#[runtime::pallet_index(13)]
+	pub type StoragePallet = pallet_storage;
+
+//	#[runtime::pallet_index(13)]	
+//	pub type TofinCauth = pallet_cauth;
+
 }
 
 #[derive(Clone)]
@@ -553,6 +560,16 @@ impl<B> Default for TransactionConverter<B> {
 		Self(PhantomData)
 	}
 }
+
+impl pallet_storage::Config for Runtime {
+   // type RuntimeEvent = RuntimeEvent;
+}
+
+/*
+impl pallet_cauth::Config for Runtime {
+    type RuntimeEvent = RuntimeEvent;
+}
+*/
 
 impl<B: BlockT> fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> for TransactionConverter<B> {
 	fn convert_transaction(

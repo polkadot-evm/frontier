@@ -41,6 +41,7 @@ members = [
 	"precompiles",
 	"precompiles/macro",
 	"precompiles/tests-external",
+	"frame/pallet-storage", 
 ]
 resolver = "2"
 
@@ -82,10 +83,10 @@ scale-info = { version = "2.11.6", default-features = false, features = ["derive
 serde = { version = "1.0", default-features = false, features = ["derive", "alloc"] }
 serde_json = "1.0"
 similar-asserts = "1.7.0"
-sqlx = { version = "0.7.4", default-features = false, features = ["macros"] }
+sqlx = { version = "0.8.6", default-features = false, features = ["macros"] }
 syn = "2.0.87"
 thiserror = "2.0"
-tokio = "1.45.0"
+tokio = "1.47.0"
 
 # Substrate Client
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
@@ -217,6 +218,8 @@ pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", defau
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
 pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
+pallet-storage = { path = "frame/pallet-storage", default-features = false }
+
 # Tokfin Utility
 precompile-utils = { path = "precompiles", default-features = false }
 # Tokfin Template

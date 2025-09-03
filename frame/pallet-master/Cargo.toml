@@ -1,0 +1,32 @@
+[package]
+name = "pallet-master"   
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+# SCALE codec
+parity-scale-codec = { version = "3", default-features = false, features = ["derive"] }
+
+# Metadata de tipos
+scale-info = { version = "2", default-features = false, features = ["derive"] }
+
+# FRAME
+frame-support = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
+frame-system  = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
+
+# Substrate primitives
+sp-std     = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
+sp-runtime = { default-features = false, git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506" }
+
+[features]
+default = ["std"]
+
+std = [
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "frame-support/std",
+    "frame-system/std",
+    "sp-std/std",
+    "sp-runtime/std",
+]

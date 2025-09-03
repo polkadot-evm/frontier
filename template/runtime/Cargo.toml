@@ -59,6 +59,9 @@ pallet-evm-chain-id = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
+pallet-storage = { workspace = true }
+
+
 
 # Polkadot
 polkadot-runtime-common = { workspace = true }
@@ -120,6 +123,7 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",
+	"pallet-storage/std",
 	# Polkadot
 	"polkadot-runtime-common/std",
 	# Cumulus primitives

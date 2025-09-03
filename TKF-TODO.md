@@ -1,12 +1,12 @@
 TO-DO
 1.0(*) añadir token reputación TKFr
-1.1(+) añadir test y benchmarks para TKFr
-1.2() añadir token equity TKFe
-1.3() añadir test y benchmarks oara TKFe
-1.4() Realizar test y Actualizar repositorio y Documentar cambios - SI todo OK
+1.1(*) añadir test y benchmarks para TKFr
+1.2(*) añadir token equity TKFe
+1.3(*) añadir test y benchmarks oara TKFe
+1.4(*) Realizar test y Actualizar repositorio y Documentar cambios - SI todo OK
 ------------------------------------------------------------------
-2.0() Crear rama Especialized-Nodes
-2.1() Pallet FullNode
+2.0(*) Crear rama Especialized-Nodes
+2.1(*) Pallet FullNode
 		Cargo.toml > full-node = [
 			"pallet-master/std",        // main chain
 			"pallet-certauth/std",      // did, 
@@ -25,6 +25,8 @@ TO-DO
 				app-srv = ["pallet-operations/std"]
 		cargo build --release --features "full-node" < compilar por features
 2.2() Realizar test, documentar y actualizar directorio 
+2.3() Crear cuentas de nodos para testnet
+2.4() Montar testnet en la nube DO/AWS
 ------------------------------------------------------------------
 3.0() Crear Rama FixBlock - Tamaño fijo de bloque (Mina Network based)
 3.1() Pallet para la limitación del tamaño: 
