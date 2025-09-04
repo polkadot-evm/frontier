@@ -1,0 +1,22 @@
+[package]
+name = "pallet-tkf-exchange"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+frame-support = { workspace = true, default-features = false }
+frame-system = { workspace = true, default-features = false }
+scale-codec = { workspace = true, default-features = false, features = ["derive"] }
+scale-info = { workspace = true, default-features = false, features = ["derive"] }
+sp-std = { workspace = true, default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "frame-system/std",
+    "scale-codec/std",
+    "scale-info/std",
+    "sp-std/std",
+]

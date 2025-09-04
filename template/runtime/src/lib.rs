@@ -504,7 +504,25 @@ mod runtime {
 		RuntimeTask
 	)]
 	pub struct Runtime;
-
+ 
+	#[runtime::pallet_index(20)]
+	pub type Tokfinorchestra = pallet_tkf_orchestra;
+ 
+	#[runtime::pallet_index(19)]
+	pub type Tokfincauth = pallet_tkf_cauth;
+ 
+	#[runtime::pallet_index(13)]
+	pub type Tokfinstorage = pallet_tkf_storage;
+ 
+	#[runtime::pallet_index(18)]
+	pub type Tokfincteam = pallet_tkf_cteam;
+ 
+	#[runtime::pallet_index(17)]
+	pub type TokfinDevteam = pallet_tkf_devteam;
+ 
+	#[runtime::pallet_index(16)]
+	pub type TokfinFoundation = pallet_tkf_foundation;
+    
 	#[runtime::pallet_index(0)]
 	pub type System = frame_system;
 
@@ -544,11 +562,12 @@ mod runtime {
 	#[runtime::pallet_index(12)]
 	pub type TokfinAssets = pallet_assets;
 
-	#[runtime::pallet_index(13)]
-	pub type StoragePallet = pallet_storage;
+	#[runtime::pallet_index(14)]
+    pub type TokfinMaster = pallet_tkf_master;
 
-//	#[runtime::pallet_index(13)]	
-//	pub type TofinCauth = pallet_cauth;
+	#[runtime::pallet_index(15)]
+    pub type TokfinExchange = pallet_tkf_exchange;
+
 
 }
 
@@ -561,15 +580,9 @@ impl<B> Default for TransactionConverter<B> {
 	}
 }
 
-impl pallet_storage::Config for Runtime {
-   // type RuntimeEvent = RuntimeEvent;
-}
+impl pallet_tkf_exchange::Config for Runtime {}
 
-/*
-impl pallet_cauth::Config for Runtime {
-    type RuntimeEvent = RuntimeEvent;
-}
-*/
+impl pallet_tkf_master::Config for Runtime {}
 
 impl<B: BlockT> fp_rpc::ConvertTransaction<<B as BlockT>::Extrinsic> for TransactionConverter<B> {
 	fn convert_transaction(
@@ -1136,3 +1149,17 @@ mod tests {
 		assert!(base_extrinsic.ref_time() <= min_ethereum_transaction_weight.ref_time());
 	}
 }
+
+
+impl pallet_tkf_foundation::Config for Runtime {}
+impl pallet_tkf_devteam::Config for Runtime {}
+impl pallet_tkf_cteam::Config for Runtime {}
+
+impl pallet_tkf_storage::Config for Runtime {}
+
+
+impl pallet_tkf_cauth::Config for Runtime {}
+
+
+impl pallet_tkf_orchestra::Config for Runtime {}
+

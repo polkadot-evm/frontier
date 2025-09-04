@@ -1,0 +1,24 @@
+[package]
+name = "pallet-tkf-master"
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+
+[dependencies]
+frame-support = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
+frame-system  = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
+parity-scale-codec = { version = "3.7.5", default-features = false, features = ["derive"] }
+scale-info = { version = "2.11.6", default-features = false, features = ["derive"] }
+sp-std = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2506", default-features = false }
+log = { version = "0.4", default-features = false }
+
+[features]
+default = ["std"]
+std = [
+    "frame-support/std",
+    "frame-system/std",
+    "parity-scale-codec/std",
+    "scale-info/std",
+    "sp-std/std",
+    "log/std",
+]

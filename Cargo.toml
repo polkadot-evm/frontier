@@ -1,5 +1,8 @@
 [workspace]
 members = [
+  "frame/pallet-tkf-cteam",
+  "frame/pallet-tkf-devteam",
+  "frame/pallet-tkf-foundation",
 	"frame/base-fee",
 	"frame/dynamic-fee",
 	"frame/ethereum",
@@ -41,7 +44,8 @@ members = [
 	"precompiles",
 	"precompiles/macro",
 	"precompiles/tests-external",
-	"frame/pallet-storage", 
+	"frame/pallet-tkf-master",
+    "frame/pallet-tkf-exchange"
 ]
 resolver = "2"
 
@@ -51,6 +55,9 @@ edition = "2021"
 repository = "https://github.com/easyinver/tokfinnet/"
 
 [workspace.dependencies]
+pallet-tkf-orchestra = { path = "frame/pallet-tkf-orchestra", default-features = false }
+pallet-tkf-cauth = { path = "frame/pallet-tkf-cauth", default-features = false }
+pallet-tkf-storage = { path = "frame/pallet-tkf-storage", default-features = false }
 async-trait = "0.1"
 bitflags = "1.3.2"
 bn = { package = "substrate-bn", version = "0.6", default-features = false }
@@ -205,6 +212,8 @@ fp-rpc = { path = "primitives/rpc", default-features = false }
 fp-self-contained = { path = "primitives/self-contained", default-features = false }
 fp-storage = { path = "primitives/storage", default-features = false }
 # Tokfin FRAME
+pallet-tkf-cteam = { path = "frame/pallet-tkf-cteam", default-features = false }
+pallet-tkf-devteam = { path = "frame/pallet-tkf-devteam", default-features = false }
 pallet-base-fee = { path = "frame/base-fee", default-features = false }
 pallet-dynamic-fee = { path = "frame/dynamic-fee", default-features = false }
 pallet-ethereum = { path = "frame/ethereum", default-features = false }
@@ -218,8 +227,9 @@ pallet-evm-precompile-sha3fips = { path = "frame/evm/precompile/sha3fips", defau
 pallet-evm-precompile-simple = { path = "frame/evm/precompile/simple", default-features = false }
 pallet-evm-test-vector-support = { path = "frame/evm/test-vector-support" }
 pallet-hotfix-sufficients = { path = "frame/hotfix-sufficients", default-features = false }
-pallet-storage = { path = "frame/pallet-storage", default-features = false }
-
+pallet-tkf-master = { path = "frame/pallet-tkf-master", default-features = false }
+pallet-tkf-exchange = { path = "frame/pallet-tkf-exchange", default-features = false }
+pallet-tkf-foundation = { path = "frame/pallet-tkf-foundation", default-features = false }
 # Tokfin Utility
 precompile-utils = { path = "precompiles", default-features = false }
 # Tokfin Template

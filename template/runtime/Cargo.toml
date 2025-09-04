@@ -12,6 +12,12 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+pallet-tkf-orchestra = { workspace = true, optional = true }
+pallet-tkf-cauth = { workspace = true, optional = true }
+pallet-tkf-storage = { workspace = true, optional = true }
+pallet-tkf-cteam = { workspace = true }
+pallet-tkf-devteam = { workspace = true, optional = true }
+pallet-tkf-foundation = { workspace = true, optional = true }
 ethereum = { workspace = true }
 scale-codec = { workspace = true }
 scale-info = { workspace = true }
@@ -59,9 +65,8 @@ pallet-evm-chain-id = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
-pallet-storage = { workspace = true }
-
-
+pallet-tkf-master = { workspace = true,  optional = true }
+pallet-tkf-exchange = { workspace = true, optional = true }
 
 # Polkadot
 polkadot-runtime-common = { workspace = true }
@@ -77,6 +82,12 @@ default = ["std", "with-rocksdb-weights"]
 with-rocksdb-weights = []
 with-paritydb-weights = []
 std = [
+  "pallet-tkf-orchestra/std",
+  "pallet-tkf-cauth/std",
+  "pallet-tkf-storage/std",
+  "pallet-tkf-cteam/std",
+  "pallet-tkf-devteam/std",
+  "pallet-tkf-foundation/std",
 	"ethereum/std",
 	"scale-codec/std",
 	"scale-info/std",
@@ -115,6 +126,8 @@ std = [
 	"fp-rpc/std",
 	"fp-self-contained/std",
 	# Tokfin FRAME
+    "pallet-tkf-exchange/std",
+	"pallet-tkf-master/std",
 	"pallet-base-fee/std",
 	"pallet-dynamic-fee/std",
 	"pallet-ethereum/std",
@@ -123,7 +136,6 @@ std = [
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
 	"pallet-evm-precompile-simple/std",
-	"pallet-storage/std",
 	# Polkadot
 	"polkadot-runtime-common/std",
 	# Cumulus primitives

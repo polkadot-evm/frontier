@@ -7859,17 +7859,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "pallet-storage"
-version = "0.1.0"
-dependencies = [
- "frame-support",
- "frame-system",
- "parity-scale-codec",
- "scale-info",
- "sp-std",
-]
-
-[[package]]
 name = "pallet-sudo"
 version = "41.0.0"
 source = "git+https://github.com/paritytech/polkadot-sdk?branch=stable2506#03d0b0245b13ee858c411abfe5016b5cf2b8121b"
@@ -7900,6 +7889,101 @@ dependencies = [
  "sp-runtime",
  "sp-storage",
  "sp-timestamp",
+]
+
+[[package]]
+name = "pallet-tkf-cauth"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-cteam"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-devteam"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-exchange"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-foundation"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-master"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-orchestra"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-storage"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
 ]
 
 [[package]]
@@ -13854,9 +13938,16 @@ dependencies = [
  "pallet-evm-precompile-sha3fips",
  "pallet-evm-precompile-simple",
  "pallet-grandpa",
- "pallet-storage",
  "pallet-sudo",
  "pallet-timestamp",
+ "pallet-tkf-cauth",
+ "pallet-tkf-cteam",
+ "pallet-tkf-devteam",
+ "pallet-tkf-exchange",
+ "pallet-tkf-foundation",
+ "pallet-tkf-master",
+ "pallet-tkf-orchestra",
+ "pallet-tkf-storage",
  "pallet-transaction-payment",
  "pallet-transaction-payment-rpc-runtime-api",
  "parity-scale-codec",

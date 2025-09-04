@@ -35,25 +35,16 @@ tokfinnet/
 1. Crear un pallet nuevo:
 
 ```bash
-./scripts/new-pallet.sh pallet-storage
+./scripts/new-pallet.sh pallet-tkf-storage
 ```
 
 2. Añadirlo al runtime con un índice libre:
 
 ```bash
-./scripts/add-pallet.sh storage 14  (14 es un numero de ejemplo ver el index que toca 0,1,2....N)
+./scripts/add-pallet.sh tkf-storage 14  (14 es un numero de ejemplo ver el index que toca 0,1,2....N)
 ```
 
 3. Compilar:
 
 SKIP_WASM_BUILD=1 cargo build --release
 
-
-# 1. Crear un nuevo pallet
-./scripts/new-pallet.sh pallet-storage
-
-# 2. Añadirlo al runtime con un índice libre
-./scripts/add-pallet.sh storage 14
-
-# 3. Compilar el nodo
-SKIP_WASM_BUILD=1 cargo build --release
