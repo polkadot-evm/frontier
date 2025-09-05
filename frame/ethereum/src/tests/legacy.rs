@@ -305,7 +305,7 @@ fn contract_creation_succeeds_with_allowed_address() {
 			input: hex::decode(TEST_CONTRACT_CODE).unwrap(),
 		}
 		.sign(&alice.private_key);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None));
 	});
 }
 
@@ -326,7 +326,7 @@ fn contract_creation_fails_with_not_allowed_address() {
 		}
 		.sign(&bob.private_key);
 
-		let result = Ethereum::execute(bob.address, &t, None);
+		let result = Ethereum::execute(bob.address, &t, None, None);
 		assert!(result.is_err());
 
 		// Note: assert_err! macro doesn't work here because we receive 'None' as
@@ -356,7 +356,7 @@ fn inner_contract_creation_succeeds_with_allowed_address() {
 
 	ext.execute_with(|| {
 		let t = legacy_foo_bar_contract_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let new_bar = hex::decode("2fc11060").unwrap();
@@ -373,9 +373,9 @@ fn inner_contract_creation_succeeds_with_allowed_address() {
 		.sign(&alice.private_key);
 
 		let (_, _, info) =
-			Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).unwrap();
+			Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None, None).unwrap();
 
-		assert!(Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None).is_ok());
+		assert!(Ethereum::execute(alice.address, &new_bar_inner_creation_tx, None, None).is_ok());
 		match info {
 			CallOrCreateInfo::Call(info) => {
 				assert_eq!(info.exit_reason, ExitReason::Succeed(ExitSucceed::Returned));
@@ -393,7 +393,7 @@ fn inner_contract_creation_reverts_with_not_allowed_address() {
 
 	ext.execute_with(|| {
 		let t = legacy_foo_bar_contract_creation_transaction(alice);
-		assert_ok!(Ethereum::execute(alice.address, &t, None,));
+		assert_ok!(Ethereum::execute(alice.address, &t, None, None));
 
 		let contract_address = hex::decode("32dcab0ef3fb2de2fce1d2e0799d36239671f04a").unwrap();
 		let new_bar = hex::decode("2fc11060").unwrap();
@@ -410,7 +410,7 @@ fn inner_contract_creation_reverts_with_not_allowed_address() {
 		.sign(&bob.private_key);
 
 		let (_, _, info) =
-			Ethereum::execute(bob.address, &new_bar_inner_creation_tx, None).unwrap();
+			Ethereum::execute(bob.address, &new_bar_inner_creation_tx, None, None).unwrap();
 
 		match info {
 			CallOrCreateInfo::Call(info) => {

@@ -112,6 +112,7 @@ pub trait Runner<T: Config> {
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: AuthorizationList,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,

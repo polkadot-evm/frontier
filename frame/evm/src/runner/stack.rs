@@ -762,6 +762,7 @@ where
 		max_priority_fee_per_gas: Option<U256>,
 		nonce: Option<U256>,
 		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: AuthorizationList,
 		is_transactional: bool,
 		validate: bool,
 		weight_limit: Option<Weight>,
@@ -769,6 +770,24 @@ where
 		config: &evm::Config,
 		contract_address: H160,
 	) -> Result<CreateInfo, RunnerError<Self::Error>> {
+		let measured_proof_size_before = get_proof_size().unwrap_or_default();
+		let (_, weight) = T::FeeCalculator::min_gas_price();
+
+		T::CreateOriginFilter::check_create_origin(&source)
+			.map_err(|error| RunnerError { error, weight })?;
+
+		let authorization_list = authorization_list
+			.iter()
+			.map(|d| {
+				(
+					U256::from(d.chain_id),
+					d.address,
+					d.nonce,
+					d.authorizing_address().ok(),
+				)
+			})
+			.collect::<Vec<(U256, sp_core::H160, U256, Option<sp_core::H160>)>>();
+
 		if validate {
 			Self::validate(
 				source,
@@ -780,6 +799,7 @@ where
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.clone(),
+				authorization_list.clone(),
 				is_transactional,
 				weight_limit,
 				proof_size_base_cost,
@@ -798,6 +818,7 @@ where
 			is_transactional,
 			weight_limit,
 			proof_size_base_cost,
+			measured_proof_size_before,
 			|executor| {
 				T::OnCreate::on_create(source, contract_address);
 				let (reason, _) = executor.transact_create_force_address(
@@ -806,6 +827,7 @@ where
 					init,
 					gas_limit,
 					access_list,
+					authorization_list,
 					contract_address,
 				);
 				(reason, contract_address)
