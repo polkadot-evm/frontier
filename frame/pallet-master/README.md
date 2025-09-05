@@ -15,5 +15,6 @@ Déjame organizarlo en flujo **secuencial**, porque esto se alinea perfecto con 
 * Define cuentas de sistema (foundation, devTeam, oracles, etc).
 * Activa seguridad base + ledger + mecanismos de minería/consenso.
 * Configura los “espacios” donde se desplegarán las primeras **DAppCells**.
-
+* FixBlock
+* Parallel processing
 
