@@ -49,7 +49,7 @@ impl Serialize for BlockCount {
 	{
 		match *self {
 			BlockCount::U256(ref x) => x.serialize(serializer),
-			BlockCount::Num(ref x) => serializer.serialize_str(&format!("0x{:x}", x)),
+			BlockCount::Num(ref x) => serializer.serialize_str(&format!("0x{x:x}")),
 		}
 	}
 }
@@ -74,7 +74,7 @@ impl From<BlockCount> for u64 {
 	}
 }
 
-impl<'a> Visitor<'a> for BlockCountVisitor {
+impl Visitor<'_> for BlockCountVisitor {
 	type Value = BlockCount;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {

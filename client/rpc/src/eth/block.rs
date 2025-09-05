@@ -22,8 +22,7 @@ use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
-use sc_transaction_pool_api::InPoolTransaction;
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
@@ -37,14 +36,14 @@ use crate::{
 	frontier_backend_client, internal_err,
 };
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	A: ChainApi<Block = B>,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	pub async fn block_by_hash(&self, hash: H256, full: bool) -> RpcResult<Option<RichBlock>> {
 		let BlockInfo {
@@ -101,7 +100,7 @@ where
 			Some(id) => {
 				let substrate_hash = client
 					.expect_block_hash_from_id(&id)
-					.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+					.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 				let block = block_data_cache.current_block(substrate_hash).await;
 				let statuses = block_data_cache
@@ -145,7 +144,6 @@ where
 				// ready validated pool
 				xts.extend(
 					graph
-						.validated_pool()
 						.ready()
 						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
@@ -154,16 +152,15 @@ where
 				// future validated pool
 				xts.extend(
 					graph
-						.validated_pool()
 						.futures()
 						.iter()
-						.map(|(_hash, extrinsic)| extrinsic.as_ref().clone())
+						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 
 				let (block, statuses) = api
 					.pending_block(best_hash, xts)
-					.map_err(|_| internal_err(format!("Runtime access error at {}", best_hash)))?;
+					.map_err(|_| internal_err(format!("Runtime access error at {best_hash}")))?;
 
 				let base_fee = api.gas_price(best_hash).ok();
 
@@ -197,9 +194,7 @@ where
 	) -> RpcResult<Option<U256>> {
 		if let BlockNumberOrHash::Pending = number_or_hash {
 			// get the pending transactions count
-			return Ok(Some(U256::from(
-				self.graph.validated_pool().ready().count(),
-			)));
+			return Ok(Some(U256::from(self.graph.ready().count())));
 		}
 
 		let block_info = self.block_info_by_number(number_or_hash).await?;

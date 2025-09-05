@@ -81,10 +81,9 @@ impl Serialize for BlockNumberOrHash {
 				hash,
 				require_canonical,
 			} => serializer.serialize_str(&format!(
-				"{{ 'hash': '{}', 'requireCanonical': '{}'  }}",
-				hash, require_canonical
+				"{{ 'hash': '{hash}', 'requireCanonical': '{require_canonical}'  }}"
 			)),
-			BlockNumberOrHash::Num(ref x) => serializer.serialize_str(&format!("0x{:x}", x)),
+			BlockNumberOrHash::Num(ref x) => serializer.serialize_str(&format!("0x{x:x}")),
 			BlockNumberOrHash::Latest => serializer.serialize_str("latest"),
 			BlockNumberOrHash::Earliest => serializer.serialize_str("earliest"),
 			BlockNumberOrHash::Pending => serializer.serialize_str("pending"),
@@ -121,9 +120,8 @@ impl<'a> Visitor<'a> for BlockNumberOrHashVisitor {
 					"blockNumber" => {
 						let value: String = visitor.next_value()?;
 						if let Some(stripped) = value.strip_prefix("0x") {
-							let number = u64::from_str_radix(stripped, 16).map_err(|e| {
-								Error::custom(format!("Invalid block number: {}", e))
-							})?;
+							let number = u64::from_str_radix(stripped, 16)
+								.map_err(|e| Error::custom(format!("Invalid block number: {e}")))?;
 
 							block_number = Some(number);
 							break;
@@ -139,7 +137,7 @@ impl<'a> Visitor<'a> for BlockNumberOrHashVisitor {
 					"requireCanonical" => {
 						require_canonical = visitor.next_value()?;
 					}
-					key => return Err(Error::custom(format!("Unknown key: {}", key))),
+					key => return Err(Error::custom(format!("Unknown key: {key}"))),
 				},
 				None => break,
 			};
@@ -171,7 +169,7 @@ impl<'a> Visitor<'a> for BlockNumberOrHashVisitor {
 			"finalized" => Ok(BlockNumberOrHash::Finalized),
 			_ if value.starts_with("0x") => u64::from_str_radix(&value[2..], 16)
 				.map(BlockNumberOrHash::Num)
-				.map_err(|e| Error::custom(format!("Invalid block number: {}", e))),
+				.map_err(|e| Error::custom(format!("Invalid block number: {e}"))),
 			_ => value
 				.parse::<u64>()
 				.map(BlockNumberOrHash::Num)

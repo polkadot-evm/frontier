@@ -18,8 +18,7 @@
 
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
-use sc_transaction_pool_api::InPoolTransaction;
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::{ApiExt, ApiRef, Core, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::{ApplyExtrinsicFailed, HeaderBackend};
@@ -50,7 +49,7 @@ pub(crate) enum Error {
 	ApplyExtrinsicFailed(#[from] ApplyExtrinsicFailed),
 }
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
@@ -58,8 +57,8 @@ where
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B>,
-	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	/// Creates a pending runtime API.
 	pub(crate) async fn pending_runtime_api(&self) -> Result<(B::Hash, ApiRef<C::Api>), Error> {
@@ -123,7 +122,6 @@ where
 		// Get all extrinsics from the ready queue.
 		let extrinsics: Vec<<B as BlockT>::Extrinsic> = self
 			.graph
-			.validated_pool()
 			.ready()
 			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect::<Vec<<B as BlockT>::Extrinsic>>();

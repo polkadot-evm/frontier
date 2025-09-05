@@ -13,14 +13,21 @@ pwasm-libc/Cargo.lock
 node/runtime/wasm/target/
 **/._*
 **/.criterion/
-.vscode
 polkadot.*
 .DS_Store
-.idea/
 .cargo-remote.toml
+
+# Editors
+.vscode
+.idea/
+.zed
 
 # Added by cargo
 /target
+
+# Vitepress
+/docs/.vitepress/cache
+/docs/.vitepress/dist
 
 # NixOS development environment
 .envrc

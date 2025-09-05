@@ -30,13 +30,12 @@ mod transaction;
 
 use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
 
-use ethereum::{BlockV2 as EthereumBlock, TransactionV2 as EthereumTransaction};
+use ethereum::{BlockV3 as EthereumBlock, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
 use sc_network_sync::SyncingService;
-use sc_transaction_pool::{ChainApi, Pool};
 use sc_transaction_pool_api::TransactionPool;
 use sp_api::{CallApiAt, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
@@ -71,9 +70,9 @@ impl<B: BlockT, C> EthConfig<B, C> for () {
 }
 
 /// Eth API implementation.
-pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC> {
+pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	pool: Arc<P>,
-	graph: Arc<Pool<A>>,
+	graph: Arc<P>,
 	client: Arc<C>,
 	convert_transaction: Option<CT>,
 	sync: Arc<SyncingService<B>>,
@@ -94,19 +93,18 @@ pub struct Eth<B: BlockT, C, P, CT, BE, A: ChainApi, CIDP, EC> {
 	_marker: PhantomData<(BE, EC)>,
 }
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	A: ChainApi<Block = B>,
 {
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
-		graph: Arc<Pool<A>>,
+		graph: Arc<P>,
 		convert_transaction: Option<CT>,
 		sync: Arc<SyncingService<B>>,
 		signers: Vec<Box<dyn EthSigner>>,
@@ -160,7 +158,7 @@ where
 		let substrate_hash = self
 			.client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 		self.block_info_by_substrate_hash(substrate_hash).await
 	}
@@ -175,7 +173,7 @@ where
 			eth_block_hash,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some(hash) => hash,
 			_ => return Ok(BlockInfo::default()),
@@ -195,7 +193,7 @@ where
 			true,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some((hash, index)) => (hash, index as usize),
 			None => return Ok((BlockInfo::default(), 0)),
@@ -207,7 +205,7 @@ where
 			eth_block_hash,
 		)
 		.await
-		.map_err(|err| internal_err(format!("{:?}", err)))?
+		.map_err(|err| internal_err(format!("{err:?}")))?
 		{
 			Some(hash) => hash,
 			_ => return Ok((BlockInfo::default(), 0)),
@@ -247,13 +245,12 @@ where
 	}
 }
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
-	A: ChainApi<Block = B>,
 	EC: EthConfig<B, C>,
 {
-	pub fn replace_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, A, CIDP, EC2> {
+	pub fn replace_config<EC2: EthConfig<B, C>>(self) -> Eth<B, C, P, CT, BE, CIDP, EC2> {
 		let Self {
 			client,
 			pool,
@@ -297,16 +294,15 @@ where
 }
 
 #[async_trait]
-impl<B, C, P, CT, BE, A, CIDP, EC> EthApiServer for Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> EthApiServer for Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + ConvertTransactionRuntimeApi<B> + EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	P: TransactionPool<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + Send + Sync + 'static,
-	A: ChainApi<Block = B> + 'static,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 	EC: EthConfig<B, C>,
 {
@@ -453,6 +449,10 @@ where
 		number_or_hash: Option<BlockNumberOrHash>,
 	) -> RpcResult<U256> {
 		self.transaction_count(address, number_or_hash).await
+	}
+
+	async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>> {
+		self.pending_transactions().await
 	}
 
 	async fn code_at(
@@ -624,10 +624,7 @@ fn transaction_build(
 	status: Option<&TransactionStatus>,
 	base_fee: Option<U256>,
 ) -> Transaction {
-	let pubkey = match public_key(ethereum_transaction) {
-		Ok(p) => Some(p),
-		Err(_) => None,
-	};
+	let pubkey = public_key(ethereum_transaction).ok();
 	let from = status.map_or(
 		{
 			match pubkey {
@@ -677,7 +674,7 @@ fn transaction_build(
 #[derive(Clone, Default)]
 pub struct BlockInfo<H> {
 	block: Option<EthereumBlock>,
-	receipts: Option<Vec<ethereum::ReceiptV3>>,
+	receipts: Option<Vec<ethereum::ReceiptV4>>,
 	statuses: Option<Vec<TransactionStatus>>,
 	substrate_hash: H,
 	is_eip1559: bool,
@@ -687,7 +684,7 @@ pub struct BlockInfo<H> {
 impl<H> BlockInfo<H> {
 	pub fn new(
 		block: Option<EthereumBlock>,
-		receipts: Option<Vec<ethereum::ReceiptV3>>,
+		receipts: Option<Vec<ethereum::ReceiptV4>>,
 		statuses: Option<Vec<TransactionStatus>>,
 		substrate_hash: H,
 		is_eip1559: bool,

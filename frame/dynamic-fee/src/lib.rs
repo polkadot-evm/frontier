@@ -105,12 +105,20 @@ pub mod pallet {
 	#[pallet::storage]
 	pub type TargetMinGasPrice<T: Config> = StorageValue<_, U256>;
 
-	#[derive(Encode, Decode, RuntimeDebug)]
-	pub enum InherentError {}
+	#[derive(Encode, Decode, DecodeWithMemTracking, RuntimeDebug, PartialEq)]
+	pub enum InherentError {
+		/// The target gas price is too high compared to the current gas price.
+		TargetGasPriceTooHigh,
+		/// The target gas price is too low compared to the current gas price.
+		TargetGasPriceTooLow,
+		/// The target gas price is zero, which is not allowed.
+		TargetGasPriceZero,
+	}
 
 	impl IsFatalError for InherentError {
 		fn is_fatal_error(&self) -> bool {
-			match *self {}
+			// All inherent errors are fatal as they indicate invalid block data
+			true
 		}
 	}
 
@@ -126,7 +134,32 @@ pub mod pallet {
 			Some(Call::note_min_gas_price_target { target })
 		}
 
-		fn check_inherent(_call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
+		fn check_inherent(call: &Self::Call, _data: &InherentData) -> Result<(), Self::Error> {
+			if let Call::note_min_gas_price_target { target } = call {
+				// Check that target is not zero
+				if target.is_zero() {
+					return Err(InherentError::TargetGasPriceZero);
+				}
+
+				// Get current gas price
+				let current_gas_price = MinGasPrice::<T>::get();
+
+				// Calculate the bound for validation
+				let bound = current_gas_price / T::MinGasPriceBoundDivisor::get() + U256::one();
+
+				// Calculate upper and lower limits for validation
+				let upper_limit = current_gas_price.saturating_add(bound);
+				let lower_limit = current_gas_price.saturating_sub(bound);
+
+				// Validate that target is within the allowed bounds
+				if *target > upper_limit {
+					return Err(InherentError::TargetGasPriceTooHigh);
+				}
+				if *target < lower_limit {
+					return Err(InherentError::TargetGasPriceTooLow);
+				}
+			}
+
 			Ok(())
 		}
 

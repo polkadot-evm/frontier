@@ -15,14 +15,14 @@ path = "tests/tests.rs"
 [dependencies]
 case = "1.0"
 num_enum = { workspace = true }
-prettyplease = "0.2.29"
+prettyplease = "0.2.32"
 proc-macro2 = "1.0"
 quote = "1.0"
 sp-crypto-hashing = { workspace = true }
 syn = "2.0"
 
 [dev-dependencies]
-macrotest = "1.0.13"
+macrotest = "1.1.0"
 trybuild = "1.0"
 
 precompile-utils = { path = "../", features = ["testing"] }

@@ -20,7 +20,6 @@ use ethereum_types::U256;
 use jsonrpsee::core::RpcResult;
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_runtime::{
@@ -33,14 +32,13 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{eth::Eth, frontier_backend_client, internal_err};
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	A: ChainApi<Block = B>,
 {
 	pub fn gas_price(&self) -> RpcResult<U256> {
 		let block_hash = self.client.info().best_hash;
@@ -48,7 +46,7 @@ where
 		self.client
 			.runtime_api()
 			.gas_price(block_hash)
-			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {:?}", err)))
+			.map_err(|err| internal_err(format!("fetch runtime chain id failed: {err:?}")))
 	}
 
 	pub async fn fee_history(
@@ -130,10 +128,10 @@ where
 					response.gas_used_ratio.last(),
 					response.base_fee_per_gas.last(),
 				) {
-					let substrate_hash =
-						self.client.expect_block_hash_from_id(&id).map_err(|_| {
-							internal_err(format!("Expect block number from id: {}", id))
-						})?;
+					let substrate_hash = self
+						.client
+						.expect_block_hash_from_id(&id)
+						.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 					let elasticity = self
 						.storage_override
 						.elasticity(substrate_hash)
@@ -167,8 +165,7 @@ where
 			}
 		}
 		Err(internal_err(format!(
-			"Failed to retrieve requested block {:?}.",
-			newest_block
+			"Failed to retrieve requested block {newest_block:?}."
 		)))
 	}
 

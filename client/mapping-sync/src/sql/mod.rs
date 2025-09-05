@@ -387,10 +387,7 @@ async fn canonicalize_blocks<Block: BlockT<Hash = H256>>(
 	if (indexer_backend.canonicalize(&retracted, &enacted).await).is_err() {
 		log::error!(
 			target: "frontier-sql",
-			"❌  Canonicalization failed for common ancestor {}, potentially corrupted db. Retracted: {:?}, Enacted: {:?}",
-			common,
-			retracted,
-			enacted,
+			"❌  Canonicalization failed for common ancestor {common}, potentially corrupted db. Retracted: {retracted:?}, Enacted: {enacted:?}"
 		);
 	}
 }
@@ -416,9 +413,7 @@ async fn index_missing_blocks<Block, Client, Backend>(
 		} else if let Ok(Some(block_hash)) = client.hash(block_number.unique_saturated_into()) {
 			log::debug!(
 				target: "frontier-sql",
-				"Indexing past canonical blocks from #{} {:?}",
-				block_number,
-				block_hash,
+				"Indexing past canonical blocks from #{block_number} {block_hash:?}"
 			);
 			index_canonical_block_and_ancestors(
 				client.clone(),
@@ -525,7 +520,7 @@ mod test {
 			mix_hash: H256::default(),
 			nonce: ethereum_types::H64::default(),
 		};
-		let ethereum_transactions: Vec<ethereum::TransactionV2> = vec![];
+		let ethereum_transactions: Vec<ethereum::TransactionV3> = vec![];
 		let ethereum_block = ethereum::Block::new(partial_header, ethereum_transactions, vec![]);
 		DigestItem::Consensus(
 			fp_consensus::FRONTIER_ENGINE_ID,
@@ -596,7 +591,7 @@ mod test {
 			let topics_2_4 = H256::repeat_byte(0x06);
 
 			let receipts = Encode::encode(&vec![
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),
@@ -606,7 +601,7 @@ mod test {
 						data: vec![],
 					}],
 				}),
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),
@@ -829,7 +824,7 @@ mod test {
 			let topics_2_4 = H256::random();
 
 			let receipts = Encode::encode(&vec![
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),
@@ -839,7 +834,7 @@ mod test {
 						data: vec![],
 					}],
 				}),
-				ethereum::ReceiptV3::EIP1559(ethereum::EIP1559ReceiptData {
+				ethereum::ReceiptV4::EIP1559(ethereum::EIP1559ReceiptData {
 					status_code: 0u8,
 					used_gas: U256::zero(),
 					logs_bloom: ethereum_types::Bloom::zero(),

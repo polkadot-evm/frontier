@@ -17,8 +17,8 @@
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 use ethereum::{
-	AccessListItem, EIP1559TransactionMessage, EIP2930TransactionMessage, LegacyTransactionMessage,
-	TransactionAction,
+	AccessListItem, AuthorizationListItem, EIP1559TransactionMessage, EIP2930TransactionMessage,
+	EIP7702TransactionMessage, LegacyTransactionMessage, TransactionAction,
 };
 use ethereum_types::{H160, U256, U64};
 use serde::{Deserialize, Deserializer};
@@ -55,6 +55,9 @@ pub struct TransactionRequest {
 	/// EIP-2930 access list
 	#[serde(with = "access_list_item_camelcase", default)]
 	pub access_list: Option<Vec<AccessListItem>>,
+	/// EIP-7702 authorization list
+	#[serde(with = "authorization_list_item_camelcase", default)]
+	pub authorization_list: Option<Vec<AuthorizationListItem>>,
 	/// Chain ID that this transaction is valid on
 	pub chain_id: Option<U64>,
 
@@ -95,6 +98,49 @@ mod access_list_item_camelcase {
 	}
 }
 
+/// Serde support for AuthorizationListItem with camelCase field names
+mod authorization_list_item_camelcase {
+	use ethereum::{eip2930::MalleableTransactionSignature, AuthorizationListItem};
+	use ethereum_types::{Address, H256};
+	use serde::{Deserialize, Deserializer};
+
+	#[derive(Deserialize)]
+	#[serde(rename_all = "camelCase")]
+	struct AuthorizationListItemDef {
+		chain_id: u64,
+		address: Address,
+		nonce: ethereum_types::U256,
+		y_parity: bool,
+		r: H256,
+		s: H256,
+	}
+
+	pub fn deserialize<'de, D>(
+		deserializer: D,
+	) -> Result<Option<Vec<AuthorizationListItem>>, D::Error>
+	where
+		D: Deserializer<'de>,
+	{
+		let auth_item_defs_opt: Option<Vec<AuthorizationListItemDef>> =
+			Option::deserialize(deserializer)?;
+		Ok(auth_item_defs_opt.map(|auth_item_defs| {
+			auth_item_defs
+				.into_iter()
+				.map(|auth_item_def| AuthorizationListItem {
+					chain_id: auth_item_def.chain_id,
+					address: auth_item_def.address,
+					nonce: auth_item_def.nonce,
+					signature: MalleableTransactionSignature {
+						odd_y_parity: auth_item_def.y_parity,
+						r: auth_item_def.r,
+						s: auth_item_def.s,
+					},
+				})
+				.collect()
+		}))
+	}
+}
+
 impl TransactionRequest {
 	// We accept "data" and "input" for backwards-compatibility reasons.
 	// "input" is the newer name and should be preferred by clients.
@@ -105,6 +151,28 @@ impl TransactionRequest {
 			(None, Some(data)) => Some(data),
 			(None, None) => None,
 		}
+	}
+
+	/// Convert the transaction request's `to` field into a TransactionAction
+	fn to_action(&self) -> TransactionAction {
+		match self.to {
+			Some(to) => TransactionAction::Call(to),
+			None => TransactionAction::Create,
+		}
+	}
+
+	/// Convert the transaction request's data field into bytes
+	fn data_to_bytes(&self) -> Vec<u8> {
+		self.data
+			.clone()
+			.into_bytes()
+			.map(|bytes| bytes.into_vec())
+			.unwrap_or_default()
+	}
+
+	/// Extract chain_id as u64
+	fn chain_id_u64(&self) -> u64 {
+		self.chain_id.map(|id| id.as_u64()).unwrap_or_default()
 	}
 }
 
@@ -167,71 +235,83 @@ pub enum TransactionMessage {
 	Legacy(LegacyTransactionMessage),
 	EIP2930(EIP2930TransactionMessage),
 	EIP1559(EIP1559TransactionMessage),
+	EIP7702(EIP7702TransactionMessage),
 }
 
 impl From<TransactionRequest> for Option<TransactionMessage> {
 	fn from(req: TransactionRequest) -> Self {
-		match (req.max_fee_per_gas, &req.access_list, req.gas_price) {
-			// EIP1559
-			// Empty fields fall back to the canonical transaction schema.
-			(Some(_), _, None) | (None, None, None) => {
+		// Common fields extraction - these are used by all transaction types
+		let nonce = req.nonce.unwrap_or_default();
+		let gas_limit = req.gas.unwrap_or_default();
+		let value = req.value.unwrap_or_default();
+		let action = req.to_action();
+		let chain_id = req.chain_id_u64();
+		let data_bytes = req.data_to_bytes();
+
+		// Determine transaction type based on presence of fields
+		let has_authorization_list = req.authorization_list.is_some();
+		let has_access_list = req.access_list.is_some();
+		let access_list = req.access_list.unwrap_or_default();
+
+		match (
+			req.max_fee_per_gas,
+			has_access_list,
+			req.gas_price,
+			has_authorization_list,
+		) {
+			// EIP7702: Has authorization_list (takes priority)
+			(_, _, _, true) => Some(TransactionMessage::EIP7702(EIP7702TransactionMessage {
+				destination: action,
+				nonce,
+				max_priority_fee_per_gas: req.max_priority_fee_per_gas.unwrap_or_default(),
+				max_fee_per_gas: req.max_fee_per_gas.unwrap_or_default(),
+				gas_limit,
+				value,
+				data: data_bytes,
+				access_list,
+				authorization_list: req.authorization_list.unwrap_or_default(),
+				chain_id,
+			})),
+			// EIP1559: Has max_fee_per_gas but no gas_price, or all fee fields are None
+			(Some(_), _, None, false) | (None, false, None, false) => {
 				Some(TransactionMessage::EIP1559(EIP1559TransactionMessage {
-					action: match req.to {
-						Some(to) => TransactionAction::Call(to),
-						None => TransactionAction::Create,
-					},
-					nonce: req.nonce.unwrap_or_default(),
+					action,
+					nonce,
 					max_priority_fee_per_gas: req.max_priority_fee_per_gas.unwrap_or_default(),
 					max_fee_per_gas: req.max_fee_per_gas.unwrap_or_default(),
-					gas_limit: req.gas.unwrap_or_default(),
-					value: req.value.unwrap_or_default(),
-					input: req
-						.data
-						.into_bytes()
-						.map(|bytes| bytes.into_vec())
-						.unwrap_or_default(),
-					access_list: req.access_list.unwrap_or_default(),
-					chain_id: req.chain_id.map(|id| id.as_u64()).unwrap_or_default(),
+					gas_limit,
+					value,
+					input: data_bytes,
+					access_list,
+					chain_id,
 				}))
 			}
-			// EIP2930
-			(None, Some(_), _) => Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
-				action: match req.to {
-					Some(to) => TransactionAction::Call(to),
-					None => TransactionAction::Create,
-				},
-				nonce: req.nonce.unwrap_or_default(),
-				gas_price: req.gas_price.unwrap_or_default(),
-				gas_limit: req.gas.unwrap_or_default(),
-				value: req.value.unwrap_or_default(),
-				input: req
-					.data
-					.into_bytes()
-					.map(|bytes| bytes.into_vec())
-					.unwrap_or_default(),
-				access_list: req.access_list.unwrap_or_default(),
-				chain_id: req.chain_id.map(|id| id.as_u64()).unwrap_or_default(),
-			})),
-			// Legacy
-			(None, None, Some(gas_price)) => {
+			// EIP2930: Has access_list but no max_fee_per_gas
+			(None, true, _, false) => {
+				Some(TransactionMessage::EIP2930(EIP2930TransactionMessage {
+					action,
+					nonce,
+					gas_price: req.gas_price.unwrap_or_default(),
+					gas_limit,
+					value,
+					input: data_bytes,
+					access_list,
+					chain_id,
+				}))
+			}
+			// Legacy: Has gas_price but no access_list or max_fee_per_gas
+			(None, false, Some(gas_price), false) => {
 				Some(TransactionMessage::Legacy(LegacyTransactionMessage {
-					action: match req.to {
-						Some(to) => TransactionAction::Call(to),
-						None => TransactionAction::Create,
-					},
-					nonce: req.nonce.unwrap_or_default(),
+					action,
+					nonce,
 					gas_price,
-					gas_limit: req.gas.unwrap_or_default(),
-					value: req.value.unwrap_or_default(),
-					input: req
-						.data
-						.into_bytes()
-						.map(|bytes| bytes.into_vec())
-						.unwrap_or_default(),
-					chain_id: None,
+					gas_limit,
+					value,
+					input: data_bytes,
+					chain_id: None, // Legacy transactions don't include chain_id
 				}))
 			}
-			// Invalid parameter
+			// Invalid parameter combination
 			_ => None,
 		}
 	}

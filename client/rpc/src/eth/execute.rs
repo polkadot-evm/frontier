@@ -24,7 +24,7 @@ use jsonrpsee::{core::RpcResult, types::error::CALL_EXECUTION_FAILED_CODE};
 use scale_codec::{Decode, Encode};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::ChainApi;
+use sc_transaction_pool_api::TransactionPool;
 use sp_api::{ApiExt, CallApiAt, CallApiAtParams, CallContext, ProvideRuntimeApi};
 use sp_block_builder::BlockBuilder as BlockBuilderApi;
 use sp_blockchain::HeaderBackend;
@@ -65,16 +65,16 @@ impl EstimateGasAdapter for () {
 	}
 }
 
-impl<B, C, P, CT, BE, A, CIDP, EC> Eth<B, C, P, CT, BE, A, CIDP, EC>
+impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
 	C: CallApiAt<B> + ProvideRuntimeApi<B>,
 	C::Api: BlockBuilderApi<B> + EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	A: ChainApi<Block = B>,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 	EC: EthConfig<B, C>,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	pub async fn call(
 		&self,
@@ -93,6 +93,7 @@ where
 			data,
 			nonce,
 			access_list,
+			authorization_list,
 			..
 		} = request;
 
@@ -105,7 +106,7 @@ where
 			)
 		};
 
-		let (substrate_hash, api) = match frontier_backend_client::native_block_id::<B, C>(
+		let (substrate_hash, mut api) = match frontier_backend_client::native_block_id::<B, C>(
 			self.client.as_ref(),
 			self.backend.as_ref(),
 			number_or_hash,
@@ -126,6 +127,12 @@ where
 				(hash, api)
 			}
 		};
+
+		// Enable proof size recording
+		api.record_proof();
+		let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+		let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+		api.register_extension(ext);
 
 		let api_version = if let Ok(Some(api_version)) =
 			api.api_version::<dyn EthereumRuntimeRPCApi<B>>(substrate_hash)
@@ -238,14 +245,21 @@ where
 						api_version,
 						state_overrides,
 					)?;
+
+					// Enable proof size recording
+					let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+					let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+					let mut exts = Extensions::new();
+					exts.register(ext);
+
 					let params = CallApiAtParams {
 						at: substrate_hash,
 						function: "EthereumRuntimeRPCApi_call",
 						arguments: encoded_params,
 						overlayed_changes: &RefCell::new(overlayed_changes),
 						call_context: CallContext::Offchain,
-						recorder: &None,
-						extensions: &RefCell::new(Extensions::new()),
+						recorder: &Some(recorder),
+						extensions: &RefCell::new(exts),
 					};
 
 					let value = if api_version == 4 {
@@ -287,10 +301,74 @@ where
 						error_on_execution_failure(&info.exit_reason, &info.value)?;
 						info.value
 					} else {
-						unreachable!("invalid version");
+						return Err(internal_err(format!(
+							"Unsupported EthereumRuntimeRPCApi version: {api_version}"
+						)));
 					};
 
 					Ok(Bytes(value))
+				} else if api_version == 6 {
+					// Pectra - authorization list support (EIP-7702)
+					let access_list = access_list
+						.unwrap_or_default()
+						.into_iter()
+						.map(|item| (item.address, item.storage_keys))
+						.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+					let encoded_params = Encode::encode(&(
+						&from.unwrap_or_default(),
+						&to,
+						&data,
+						&value.unwrap_or_default(),
+						&gas_limit,
+						&max_fee_per_gas,
+						&max_priority_fee_per_gas,
+						&nonce,
+						&false,
+						&Some(access_list),
+						&authorization_list,
+					));
+					let overlayed_changes = self.create_overrides_overlay(
+						substrate_hash,
+						api_version,
+						state_overrides,
+					)?;
+
+					// Enable proof size recording
+					let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+					let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+					let mut exts = Extensions::new();
+					exts.register(ext);
+
+					let params = CallApiAtParams {
+						at: substrate_hash,
+						function: "EthereumRuntimeRPCApi_call",
+						arguments: encoded_params,
+						overlayed_changes: &RefCell::new(overlayed_changes),
+						call_context: CallContext::Offchain,
+						recorder: &Some(recorder),
+						extensions: &RefCell::new(exts),
+					};
+
+					let info =
+						self.client
+							.call_api_at(params)
+							.and_then(|r| {
+								Result::map_err(
+									<Result<ExecutionInfoV2::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_call",
+										error,
+										raw: r
+									},
+								)
+							})
+							.map_err(|err| internal_err(format!("runtime error: {err}")))?
+							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+
+					Ok(Bytes(info.value))
 				} else {
 					Err(internal_err("failed to retrieve Runtime Api version"))
 				}
@@ -374,6 +452,37 @@ where
 				} else if api_version == 5 {
 					// Post-london + access list support
 					let access_list = access_list.unwrap_or_default();
+					#[allow(deprecated)]
+					let info = api.create_before_version_6(
+						substrate_hash,
+						from.unwrap_or_default(),
+						data,
+						value.unwrap_or_default(),
+						gas_limit,
+						max_fee_per_gas,
+						max_priority_fee_per_gas,
+						nonce,
+						false,
+						Some(
+							access_list
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect(),
+						),
+					)
+					.map_err(|err| internal_err(format!("runtime error: {err}")))?
+					.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+					error_on_execution_failure(&info.exit_reason, &[])?;
+
+					let code = api
+						.account_code_at(substrate_hash, info.value)
+						.map_err(|err| internal_err(format!("runtime error: {err}")))?;
+					Ok(Bytes(code))
+				} else if api_version == 6 {
+					// Pectra EIP-7702 support
+					let access_list = access_list.unwrap_or_default();
+					let authorization_list = authorization_list.unwrap_or_default();
 					let info = api
 						.create(
 							substrate_hash,
@@ -391,6 +500,7 @@ where
 									.map(|item| (item.address, item.storage_keys))
 									.collect(),
 							),
+							Some(authorization_list),
 						)
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?
 						.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
@@ -561,6 +671,7 @@ where
 					value,
 					data,
 					access_list,
+					authorization_list,
 					..
 				} = request;
 
@@ -634,31 +745,119 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, info.value, info.used_gas)
-						} else {
-							// Post-london + access list support
-							let access_list = access_list.unwrap_or_default();
-							let info = api.call(
-								substrate_hash,
-								from.unwrap_or_default(),
-								to,
-								data,
-								value.unwrap_or_default(),
-								gas_limit,
-								max_fee_per_gas,
-								max_priority_fee_per_gas,
-								None,
-								estimate_mode,
-								Some(
+						} else if api_version == 5 {
+							// Post-london + access list support (version 5)
+							let encoded_params = Encode::encode(&(
+								&from.unwrap_or_default(),
+								&to,
+								&data,
+								&value.unwrap_or_default(),
+								&gas_limit,
+								&max_fee_per_gas,
+								&max_priority_fee_per_gas,
+								&None::<Option<U256>>,
+								&estimate_mode,
+								&Some(
 									access_list
+										.unwrap_or_default()
 										.into_iter()
 										.map(|item| (item.address, item.storage_keys))
-										.collect(),
+										.collect::<Vec<(sp_core::H160, Vec<H256>)>>(),
 								),
-							)
-							.map_err(|err| internal_err(format!("runtime error: {err}")))?
-							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+							));
+
+							// Proof size recording
+							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+							let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+							let mut exts = Extensions::new();
+							exts.register(ext);
+
+							let params = CallApiAtParams {
+								at: substrate_hash,
+								function: "EthereumRuntimeRPCApi_call",
+								arguments: encoded_params,
+								overlayed_changes: &RefCell::new(Default::default()),
+								call_context: CallContext::Offchain,
+								recorder: &Some(recorder),
+								extensions: &RefCell::new(exts),
+							};
+
+							let info = self
+								.client
+								.call_api_at(params)
+								.and_then(|r| {
+									Result::map_err(
+										<Result<ExecutionInfoV2::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+										|error| sp_api::ApiError::FailedToDecodeReturnValue {
+											function: "EthereumRuntimeRPCApi_call",
+											error,
+											raw: r
+										},
+									)
+								})
+								.map_err(|err| internal_err(format!("runtime error: {err}")))?
+								.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, info.value, info.used_gas.effective)
+						} else if api_version == 6 {
+							// Pectra - authorization list support (EIP-7702)
+							let access_list = access_list
+								.unwrap_or_default()
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+							let encoded_params = Encode::encode(&(
+								&from.unwrap_or_default(),
+								&to,
+								&data,
+								&value.unwrap_or_default(),
+								&gas_limit,
+								&max_fee_per_gas,
+								&max_priority_fee_per_gas,
+								&None::<Option<U256>>,
+								&estimate_mode,
+								&Some(
+									access_list
+								),
+								&authorization_list,
+							));
+
+							// Proof size recording
+							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+							let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+							let mut exts = Extensions::new();
+							exts.register(ext);
+
+							let params = CallApiAtParams {
+								at: substrate_hash,
+								function: "EthereumRuntimeRPCApi_call",
+								arguments: encoded_params,
+								overlayed_changes: &RefCell::new(Default::default()),
+								call_context: CallContext::Offchain,
+								recorder: &Some(recorder),
+								extensions: &RefCell::new(exts),
+							};
+
+							let info = self
+								.client
+								.call_api_at(params)
+								.and_then(|r| {
+									Result::map_err(
+										<Result<ExecutionInfoV2::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+										|error| sp_api::ApiError::FailedToDecodeReturnValue {
+											function: "EthereumRuntimeRPCApi_call",
+											error,
+											raw: r
+										},
+									)
+								})
+								.map_err(|err| internal_err(format!("runtime error: {err}")))?
+								.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+							(info.exit_reason, info.value, info.used_gas.effective)
+						} else {
+							return Err(internal_err(format!("Unsupported EthereumRuntimeRPCApi version: {api_version}")));
 						}
 					}
 					None => {
@@ -722,30 +921,117 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, Vec::new(), info.used_gas)
-						} else {
-							// Post-london + access list support
-							let access_list = access_list.unwrap_or_default();
-							let info = api.create(
-								substrate_hash,
-								from.unwrap_or_default(),
-								data,
-								value.unwrap_or_default(),
-								gas_limit,
-								max_fee_per_gas,
-								max_priority_fee_per_gas,
-								None,
-								estimate_mode,
-								Some(
+						} else if api_version == 5 {
+							// Post-london + access list support (version 5)
+							let encoded_params = Encode::encode(&(
+								&from.unwrap_or_default(),
+								&data,
+								&value.unwrap_or_default(),
+								&gas_limit,
+								&max_fee_per_gas,
+								&max_priority_fee_per_gas,
+								&None::<Option<U256>>,
+								&estimate_mode,
+								&Some(
 									access_list
+										.unwrap_or_default()
 										.into_iter()
 										.map(|item| (item.address, item.storage_keys))
-										.collect(),
+										.collect::<Vec<(sp_core::H160, Vec<H256>)>>(),
 								),
-							)
+							));
+
+							// Enable proof size recording
+							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+							let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+							let mut exts = Extensions::new();
+							exts.register(ext);
+
+							let params = CallApiAtParams {
+								at: substrate_hash,
+								function: "EthereumRuntimeRPCApi_create",
+								arguments: encoded_params,
+								overlayed_changes: &RefCell::new(Default::default()),
+								call_context: CallContext::Offchain,
+								recorder: &Some(recorder),
+								extensions: &RefCell::new(exts),
+							};
+
+							let info = self
+							.client
+							.call_api_at(params)
+							.and_then(|r| {
+								Result::map_err(
+									<Result<ExecutionInfoV2::<H160>, DispatchError> as Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_create",
+										error,
+										raw: r
+									},
+								)
+							})
 							.map_err(|err| internal_err(format!("runtime error: {err}")))?
 							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, Vec::new(), info.used_gas.effective)
+						} else if api_version == 6 {
+							// Pectra - authorization list support (EIP-7702)
+							let access_list = access_list
+								.unwrap_or_default()
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+							let encoded_params = Encode::encode(&(
+								&from.unwrap_or_default(),
+								&data,
+								&value.unwrap_or_default(),
+								&gas_limit,
+								&max_fee_per_gas,
+								&max_priority_fee_per_gas,
+								&None::<Option<U256>>,
+								&estimate_mode,
+								&Some(
+									access_list
+								),
+								&authorization_list,
+							));
+
+							// Enable proof size recording
+							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+							let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+							let mut exts = Extensions::new();
+							exts.register(ext);
+
+							let params = CallApiAtParams {
+								at: substrate_hash,
+								function: "EthereumRuntimeRPCApi_create",
+								arguments: encoded_params,
+								overlayed_changes: &RefCell::new(Default::default()),
+								call_context: CallContext::Offchain,
+								recorder: &Some(recorder),
+								extensions: &RefCell::new(exts),
+							};
+
+							let info = self
+							.client
+							.call_api_at(params)
+							.and_then(|r| {
+								Result::map_err(
+									<Result<ExecutionInfoV2::<H160>, DispatchError> as Decode>::decode(&mut &r[..]),
+									|error| sp_api::ApiError::FailedToDecodeReturnValue {
+										function: "EthereumRuntimeRPCApi_create",
+										error,
+										raw: r
+									},
+								)
+							})
+							.map_err(|err| internal_err(format!("runtime error: {err}")))?
+							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+							(info.exit_reason, Vec::new(), info.used_gas.effective)
+						} else {
+							return Err(internal_err(format!("Unsupported EthereumRuntimeRPCApi version: {api_version}")));
 						}
 					}
 				};
@@ -783,8 +1069,7 @@ where
 			ExitReason::Succeed(_) => (),
 			ExitReason::Error(ExitError::OutOfGas) => {
 				return Err(internal_err(format!(
-					"gas required exceeds allowance {}",
-					cap
+					"gas required exceeds allowance {cap}"
 				)))
 			}
 			// If the transaction reverts, there are two possible cases,

@@ -148,7 +148,6 @@ impl pallet_evm::Config for Test {
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
 
-	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
 	type ChainId = ();
@@ -160,6 +159,8 @@ impl pallet_evm::Config for Test {
 	type GasLimitPovSizeRatio = ();
 	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;
+	type CreateInnerOriginFilter = ();
+	type CreateOriginFilter = ();
 	type WeightInfo = ();
 }
 
@@ -216,11 +217,19 @@ impl PrecompileHandle for MockHandle {
 		&self.context
 	}
 
+	fn origin(&self) -> H160 {
+		unimplemented!()
+	}
+
 	fn is_static(&self) -> bool {
 		unimplemented!()
 	}
 
 	fn gas_limit(&self) -> Option<u64> {
 		None
+	}
+
+	fn is_contract_being_constructed(&self, _address: H160) -> bool {
+		unimplemented!()
 	}
 }

@@ -113,8 +113,8 @@ pub fn compute_selector(v: &str) -> u32 {
 
 /// Returns a list of [SolidityFunction] defined in a solidity file
 pub fn get_selectors(filename: &str) -> Vec<SolidityFunction> {
-	let file = File::open(filename)
-		.unwrap_or_else(|e| panic!("failed opening file '{}': {}", filename, e));
+	let file =
+		File::open(filename).unwrap_or_else(|e| panic!("failed opening file '{filename}': {e}"));
 	get_selectors_from_reader(file)
 }
 

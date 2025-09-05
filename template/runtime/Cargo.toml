@@ -12,8 +12,13 @@ repository = { workspace = true }
 targets = ["x86_64-unknown-linux-gnu"]
 
 [dependencies]
+ethereum = { workspace = true }
+hex-literal = { workspace = true }
 scale-codec = { workspace = true }
 scale-info = { workspace = true }
+serde_json = { workspace = true, default-features = false, features = [
+	"alloc",
+] }
 
 # Substrate
 sp-api = { workspace = true }
@@ -26,6 +31,7 @@ sp-inherents = { workspace = true }
 sp-offchain = { workspace = true }
 sp-runtime = { workspace = true }
 sp-session = { workspace = true }
+sp-std = { workspace = true }
 sp-transaction-pool = { workspace = true }
 sp-version = { workspace = true }
 # Substrate FRAME
@@ -54,9 +60,18 @@ pallet-dynamic-fee = { workspace = true }
 pallet-ethereum = { workspace = true }
 pallet-evm = { workspace = true }
 pallet-evm-chain-id = { workspace = true }
+pallet-evm-precompile-curve25519 = { workspace = true }
+pallet-evm-precompile-curve25519-benchmarking = { workspace = true }
 pallet-evm-precompile-modexp = { workspace = true }
 pallet-evm-precompile-sha3fips = { workspace = true }
+pallet-evm-precompile-sha3fips-benchmarking = { workspace = true }
 pallet-evm-precompile-simple = { workspace = true }
+
+# Polkadot
+polkadot-runtime-common = { workspace = true }
+
+# Cumulus primitives
+cumulus-pallet-weight-reclaim = { workspace = true }
 
 [build-dependencies]
 substrate-wasm-builder = { workspace = true, optional = true }
@@ -66,6 +81,7 @@ default = ["std", "with-rocksdb-weights"]
 with-rocksdb-weights = []
 with-paritydb-weights = []
 std = [
+	"ethereum/std",
 	"scale-codec/std",
 	"scale-info/std",
 	# Substrate
@@ -79,6 +95,7 @@ std = [
 	"sp-offchain/std",
 	"sp-runtime/std",
 	"sp-session/std",
+	"sp-std/std",
 	"sp-transaction-pool/std",
 	"sp-version/std",
 	"substrate-wasm-builder",
@@ -109,7 +126,14 @@ std = [
 	"pallet-evm-chain-id/std",
 	"pallet-evm-precompile-modexp/std",
 	"pallet-evm-precompile-sha3fips/std",
+	"pallet-evm-precompile-sha3fips-benchmarking/std",
 	"pallet-evm-precompile-simple/std",
+	"pallet-evm-precompile-curve25519/std",
+	"pallet-evm-precompile-curve25519-benchmarking/std",
+	# Polkadot
+	"polkadot-runtime-common/std",
+	# Cumulus primitives
+	"cumulus-pallet-weight-reclaim/std",
 ]
 runtime-benchmarks = [
 	"frame-benchmarking/runtime-benchmarks",
@@ -121,4 +145,7 @@ runtime-benchmarks = [
 	"pallet-sudo/runtime-benchmarks",
 	"pallet-ethereum/runtime-benchmarks",
 	"pallet-evm/runtime-benchmarks",
+	"pallet-evm-precompile-curve25519-benchmarking/runtime-benchmarks",
+	"pallet-evm-precompile-sha3fips-benchmarking/runtime-benchmarks",
+	"polkadot-runtime-common/runtime-benchmarks",
 ]

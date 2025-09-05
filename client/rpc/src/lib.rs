@@ -47,7 +47,7 @@ pub use self::{
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
 };
-pub use ethereum::TransactionV2 as EthereumTransaction;
+pub use ethereum::TransactionV3 as EthereumTransaction;
 #[cfg(feature = "txpool")]
 pub use fc_rpc_core::TxPoolApiServer;
 pub use fc_rpc_core::{
@@ -208,7 +208,7 @@ pub mod frontier_backend_client {
 			BlockNumberOrHash::Latest => match backend.latest_block_hash().await {
 				Ok(hash) => Some(BlockId::Hash(hash)),
 				Err(e) => {
-					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {:?}", e);
+					log::warn!(target: "rpc", "Failed to get latest block hash from the sql db: {e:?}");
 					Some(BlockId::Hash(client.info().best_hash))
 				}
 			},
@@ -231,7 +231,7 @@ pub mod frontier_backend_client {
 		let substrate_hashes = backend
 			.block_hash(&hash)
 			.await
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
+			.map_err(|err| internal_err(format!("fetch aux store failed: {err:?}")))?;
 
 		if let Some(substrate_hashes) = substrate_hashes {
 			for substrate_hash in substrate_hashes {
@@ -269,7 +269,7 @@ pub mod frontier_backend_client {
 		let transaction_metadata = backend
 			.transaction_metadata(&transaction_hash)
 			.await
-			.map_err(|err| internal_err(format!("fetch aux store failed: {:?}", err)))?;
+			.map_err(|err| internal_err(format!("fetch aux store failed: {err:?}")))?;
 
 		transaction_metadata
 			.iter()
@@ -331,16 +331,22 @@ pub fn public_key(transaction: &EthereumTransaction) -> Result<[u8; 64], sp_io::
 			msg.copy_from_slice(&ethereum::LegacyTransactionMessage::from(t.clone()).hash()[..]);
 		}
 		EthereumTransaction::EIP2930(t) => {
-			sig[0..32].copy_from_slice(&t.r[..]);
-			sig[32..64].copy_from_slice(&t.s[..]);
-			sig[64] = t.odd_y_parity as u8;
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.odd_y_parity() as u8;
 			msg.copy_from_slice(&ethereum::EIP2930TransactionMessage::from(t.clone()).hash()[..]);
 		}
 		EthereumTransaction::EIP1559(t) => {
-			sig[0..32].copy_from_slice(&t.r[..]);
-			sig[32..64].copy_from_slice(&t.s[..]);
-			sig[64] = t.odd_y_parity as u8;
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.odd_y_parity() as u8;
 			msg.copy_from_slice(&ethereum::EIP1559TransactionMessage::from(t.clone()).hash()[..]);
+		}
+		EthereumTransaction::EIP7702(t) => {
+			sig[0..32].copy_from_slice(&t.signature.r()[..]);
+			sig[32..64].copy_from_slice(&t.signature.s()[..]);
+			sig[64] = t.signature.odd_y_parity() as u8;
+			msg.copy_from_slice(&ethereum::EIP7702TransactionMessage::from(t.clone()).hash()[..]);
 		}
 	}
 	sp_io::crypto::secp256k1_ecdsa_recover(&sig, &msg)
@@ -392,7 +398,7 @@ mod tests {
 		let client = Arc::new(client);
 
 		// Create a temporary frontier secondary DB.
-		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.into_path())
+		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep())
 			.expect("a temporary db was created");
 
 		// A random ethereum block hash to use

@@ -27,7 +27,7 @@ mod validation;
 
 use alloc::{collections::BTreeMap, vec::Vec};
 use frame_support::weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, Weight};
-use scale_codec::{Decode, Encode};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -81,7 +81,18 @@ pub enum AccessedStorage {
 	AccountStorages((H160, H256)),
 }
 
-#[derive(Clone, Copy, Eq, PartialEq, Debug, Encode, Decode, TypeInfo)]
+#[derive(
+	Clone,
+	Copy,
+	Eq,
+	PartialEq,
+	Debug,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	Default,
+	TypeInfo
+)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct WeightInfo {
 	pub ref_time_limit: Option<u64>,
@@ -130,11 +141,15 @@ impl WeightInfo {
 		if let (Some(ref_time_usage), Some(ref_time_limit)) =
 			(self.ref_time_usage, self.ref_time_limit)
 		{
-			let ref_time_usage = self.try_consume(cost, ref_time_limit, ref_time_usage)?;
-			if ref_time_usage > ref_time_limit {
-				return Err(ExitError::OutOfGas);
+			match self.try_consume(cost, ref_time_limit, ref_time_usage) {
+				Ok(ref_time_usage) => {
+					self.ref_time_usage = Some(ref_time_usage);
+				}
+				Err(e) => {
+					self.ref_time_usage = Some(ref_time_limit);
+					return Err(e);
+				}
 			}
-			self.ref_time_usage = Some(ref_time_usage);
 		}
 		Ok(())
 	}
@@ -143,12 +158,15 @@ impl WeightInfo {
 		if let (Some(proof_size_usage), Some(proof_size_limit)) =
 			(self.proof_size_usage, self.proof_size_limit)
 		{
-			let proof_size_usage = self.try_consume(cost, proof_size_limit, proof_size_usage)?;
-			if proof_size_usage > proof_size_limit {
-				storage_oog::set_storage_oog();
-				return Err(ExitError::OutOfGas);
+			match self.try_consume(cost, proof_size_limit, proof_size_usage) {
+				Ok(proof_size_usage) => {
+					self.proof_size_usage = Some(proof_size_usage);
+				}
+				Err(e) => {
+					self.proof_size_usage = Some(proof_size_limit);
+					return Err(e);
+				}
 			}
-			self.proof_size_usage = Some(proof_size_usage);
 		}
 		Ok(())
 	}

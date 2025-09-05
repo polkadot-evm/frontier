@@ -57,11 +57,11 @@ pub mod v1 {
 			SchemaStorageOverrideRef::new(&self.querier).account_storage_at(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			SchemaStorageOverrideRef::new(&self.querier).current_receipts(at)
 		}
 
@@ -89,7 +89,7 @@ pub mod v1 {
 		}
 	}
 
-	impl<'a, B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'a, B, C, BE>
+	impl<B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'_, B, C, BE>
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
@@ -103,20 +103,20 @@ pub mod v1 {
 			self.querier.account_storage(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			self.querier
 				.current_block::<ethereum::BlockV0>(at)
 				.map(Into::into)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			self.querier
 				.current_receipts::<ethereum::ReceiptV0>(at)
 				.map(|receipts| {
 					receipts
 						.into_iter()
 						.map(|r| {
-							ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+							ethereum::ReceiptV4::Legacy(ethereum::EIP658ReceiptData {
 								status_code: r.state_root.to_low_u64_be() as u8,
 								used_gas: r.used_gas,
 								logs_bloom: r.logs_bloom,
@@ -171,11 +171,11 @@ pub mod v2 {
 			SchemaStorageOverrideRef::new(&self.querier).account_storage_at(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			SchemaStorageOverrideRef::new(&self.querier).current_receipts(at)
 		}
 
@@ -203,7 +203,7 @@ pub mod v2 {
 		}
 	}
 
-	impl<'a, B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'a, B, C, BE>
+	impl<B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'_, B, C, BE>
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
@@ -217,18 +217,18 @@ pub mod v2 {
 			self.querier.account_storage(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			self.querier.current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			self.querier
 				.current_receipts::<ethereum::ReceiptV0>(at)
 				.map(|receipts| {
 					receipts
 						.into_iter()
 						.map(|r| {
-							ethereum::ReceiptV3::Legacy(ethereum::EIP658ReceiptData {
+							ethereum::ReceiptV4::Legacy(ethereum::EIP658ReceiptData {
 								status_code: r.state_root.to_low_u64_be() as u8,
 								used_gas: r.used_gas,
 								logs_bloom: r.logs_bloom,
@@ -283,11 +283,11 @@ pub mod v3 {
 			SchemaStorageOverrideRef::new(&self.querier).account_storage_at(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			SchemaStorageOverrideRef::new(&self.querier).current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
 			SchemaStorageOverrideRef::new(&self.querier).current_receipts(at)
 		}
 
@@ -315,7 +315,7 @@ pub mod v3 {
 		}
 	}
 
-	impl<'a, B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'a, B, C, BE>
+	impl<B, C, BE> StorageOverride<B> for SchemaStorageOverrideRef<'_, B, C, BE>
 	where
 		B: BlockT,
 		C: StorageProvider<B, BE> + Send + Sync,
@@ -329,12 +329,12 @@ pub mod v3 {
 			self.querier.account_storage(at, address, index)
 		}
 
-		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV2> {
+		fn current_block(&self, at: B::Hash) -> Option<ethereum::BlockV3> {
 			self.querier.current_block(at)
 		}
 
-		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV3>> {
-			self.querier.current_receipts::<ethereum::ReceiptV3>(at)
+		fn current_receipts(&self, at: B::Hash) -> Option<Vec<ethereum::ReceiptV4>> {
+			self.querier.current_receipts::<ethereum::ReceiptV4>(at)
 		}
 
 		fn current_transaction_statuses(&self, at: B::Hash) -> Option<Vec<TransactionStatus>> {

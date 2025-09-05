@@ -23,13 +23,12 @@ extern crate alloc;
 use alloc::string::{String, ToString};
 use core::fmt;
 
-use scale_codec::{Decode, Encode, MaxEncodedLen};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use sp_core::{crypto::AccountId32, ecdsa, RuntimeDebug, H160, H256};
 use sp_io::hashing::keccak_256;
 use sp_runtime::MultiSignature;
-use sp_runtime_interface::pass_by::PassByInner;
 
 // Polkadot / XCM
 use xcm::latest::{Junction, Location};
@@ -38,7 +37,7 @@ use xcm::latest::{Junction, Location};
 /// Conforms to H160 address and ECDSA key standards.
 /// Alternative to H256->H160 mapping.
 #[derive(Copy, Clone, Eq, PartialEq, Ord, PartialOrd, Default, Hash)]
-#[derive(Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
 pub struct AccountId20(pub [u8; 20]);
 
 #[cfg(feature = "serde")]
@@ -186,7 +185,14 @@ impl From<AccountId20> for Location {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(
+	RuntimeDebug,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	MaxEncodedLen,
+	TypeInfo
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EthereumSignature(ecdsa::Signature);
 
@@ -233,7 +239,8 @@ impl EthereumSignature {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo, PassByInner)]
+#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[repr(transparent)]
 pub struct EthereumSigner([u8; 20]);
 
 impl From<[u8; 20]> for EthereumSigner {
@@ -305,7 +312,7 @@ mod tests {
 			.public();
 		let signer: EthereumSigner = pk.into();
 		let account: AccountId20 = signer.into_account();
-		let account_fmt = format!("{}", account);
+		let account_fmt = format!("{account}");
 		assert_eq!(account_fmt, "0xE04CC55ebEE1cBCE552f250e85c57B70B2E2625b");
 	}
 }

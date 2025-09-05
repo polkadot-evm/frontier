@@ -8,12 +8,17 @@
 
 extern crate alloc;
 
+mod genesis_config_preset;
+mod precompiles;
+mod weights;
+
 // Make the WASM binary available.
 #[cfg(feature = "std")]
 include!(concat!(env!("OUT_DIR"), "/wasm_binary.rs"));
 
 use alloc::{borrow::Cow, vec, vec::Vec};
 use core::marker::PhantomData;
+use ethereum::AuthorizationList;
 use scale_codec::{Decode, Encode};
 use sp_api::impl_runtime_apis;
 use sp_consensus_aura::sr25519::AuthorityId as AuraId;
@@ -26,7 +31,7 @@ use sp_runtime::{
 	generic, impl_opaque_keys,
 	traits::{
 		BlakeTwo256, Block as BlockT, DispatchInfoOf, Dispatchable, Get, IdentifyAccount,
-		IdentityLookup, NumberFor, One, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
+		IdentityLookup, NumberFor, PostDispatchInfoOf, UniqueSaturatedInto, Verify,
 	},
 	transaction_validity::{TransactionSource, TransactionValidity, TransactionValidityError},
 	ApplyExtrinsicResult, ConsensusEngineId, ExtrinsicInclusionMode, Perbill, Permill,
@@ -39,12 +44,13 @@ use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	derive_impl,
-	genesis_builder_helper::{build_state, get_preset},
+	genesis_builder_helper::build_state,
 	parameter_types,
 	traits::{ConstBool, ConstU32, ConstU64, ConstU8, FindAuthor, OnFinalize, OnTimestampSet},
 	weights::{constants::WEIGHT_REF_TIME_PER_MILLIS, IdentityFee, Weight},
 };
-use pallet_transaction_payment::{ConstFeeMultiplier, FungibleAdapter};
+use pallet_transaction_payment::FungibleAdapter;
+use polkadot_runtime_common::SlowAdjustingFeeUpdate;
 use sp_genesis_builder::PresetId;
 // Frontier
 use fp_account::EthereumSignature;
@@ -59,9 +65,7 @@ use pallet_evm::{
 pub use frame_system::Call as SystemCall;
 pub use pallet_balances::Call as BalancesCall;
 pub use pallet_timestamp::Call as TimestampCall;
-use pallet_transaction_payment::Multiplier;
 
-mod precompiles;
 use precompiles::FrontierPrecompiles;
 
 /// Type of block number.
@@ -109,16 +113,19 @@ pub type SignedBlock = generic::SignedBlock<Block>;
 pub type BlockId = generic::BlockId<Block>;
 
 /// The SignedExtension to the basic transaction logic.
-pub type SignedExtra = (
-	frame_system::CheckNonZeroSender<Runtime>,
-	frame_system::CheckSpecVersion<Runtime>,
-	frame_system::CheckTxVersion<Runtime>,
-	frame_system::CheckGenesis<Runtime>,
-	frame_system::CheckEra<Runtime>,
-	frame_system::CheckNonce<Runtime>,
-	frame_system::CheckWeight<Runtime>,
-	pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
-);
+pub type SignedExtra = cumulus_pallet_weight_reclaim::StorageWeightReclaim<
+	Runtime,
+	(
+		frame_system::CheckNonZeroSender<Runtime>,
+		frame_system::CheckSpecVersion<Runtime>,
+		frame_system::CheckTxVersion<Runtime>,
+		frame_system::CheckGenesis<Runtime>,
+		frame_system::CheckEra<Runtime>,
+		frame_system::CheckNonce<Runtime>,
+		frame_system::CheckWeight<Runtime>,
+		pallet_transaction_payment::ChargeTransactionPayment<Runtime>,
+	),
+>;
 
 /// Unchecked extrinsic type as expected by this runtime.
 pub type UncheckedExtrinsic =
@@ -261,6 +268,10 @@ impl pallet_grandpa::Config for Runtime {
 	type EquivocationReportSystem = ();
 }
 
+impl cumulus_pallet_weight_reclaim::Config for Runtime {
+	type WeightInfo = ();
+}
+
 parameter_types! {
 	pub storage EnableManualSeal: bool = false;
 }
@@ -301,16 +312,14 @@ impl pallet_balances::Config for Runtime {
 	type DoneSlashHandler = ();
 }
 
-parameter_types! {
-	pub FeeMultiplier: Multiplier = Multiplier::one();
-}
-
 impl pallet_transaction_payment::Config for Runtime {
 	type RuntimeEvent = RuntimeEvent;
 	type OnChargeTransaction = FungibleAdapter<Balances, ()>;
 	type WeightToFee = IdentityFee<Balance>;
 	type LengthToFee = IdentityFee<Balance>;
-	type FeeMultiplierUpdate = ConstFeeMultiplier<FeeMultiplier>;
+	/// Parameterized slow adjusting fee updated based on
+	/// <https://research.web3.foundation/Polkadot/overview/token-economics#2-slow-adjusting-mechanism>
+	type FeeMultiplierUpdate = SlowAdjustingFeeUpdate<Runtime>;
 	type OperationalFeeMultiplier = ConstU8<5>;
 	type WeightInfo = pallet_transaction_payment::weights::SubstrateWeight<Runtime>;
 }
@@ -361,7 +370,6 @@ impl pallet_evm::Config for Runtime {
 	type WithdrawOrigin = EnsureAccountId20;
 	type AddressMapping = IdentityAddressMapping;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = FrontierPrecompiles<Self>;
 	type PrecompilesValue = PrecompilesValue;
 	type ChainId = EVMChainId;
@@ -373,6 +381,8 @@ impl pallet_evm::Config for Runtime {
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type GasLimitStorageGrowthRatio = GasLimitStorageGrowthRatio;
 	type Timestamp = Timestamp;
+	type CreateOriginFilter = ();
+	type CreateInnerOriginFilter = ();
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Self>;
 }
 
@@ -381,7 +391,6 @@ parameter_types! {
 }
 
 impl pallet_ethereum::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type StateRoot = pallet_ethereum::IntermediateStateRoot<Self::Version>;
 	type PostLogContent = PostBlockAndTxnHashes;
 	type ExtraDataLength = ConstU32<30>;
@@ -412,7 +421,6 @@ impl pallet_base_fee::BaseFeeThreshold for BaseFeeThreshold {
 	}
 }
 impl pallet_base_fee::Config for Runtime {
-	type RuntimeEvent = RuntimeEvent;
 	type Threshold = BaseFeeThreshold;
 	type DefaultBaseFeePerGas = DefaultBaseFeePerGas;
 	type DefaultElasticity = DefaultElasticity;
@@ -591,6 +599,8 @@ mod benches {
 		[pallet_timestamp, Timestamp]
 		[pallet_sudo, Sudo]
 		[pallet_evm, EVM]
+		[pallet_evm_precompile_curve25519, EVMPrecompileCurve25519Bench::<Runtime>]
+		[pallet_evm_precompile_sha3fips, EVMPrecompileSha3FIPSBench::<Runtime>]
 	);
 }
 
@@ -666,11 +676,11 @@ impl_runtime_apis! {
 		}
 
 		fn get_preset(id: &Option<PresetId>) -> Option<Vec<u8>> {
-			get_preset::<RuntimeGenesisConfig>(id, |_| None)
+			frame_support::genesis_builder_helper::get_preset::<RuntimeGenesisConfig>(id, genesis_config_preset::get_preset)
 		}
 
 		fn preset_names() -> Vec<sp_genesis_builder::PresetId> {
-			vec![]
+			vec![PresetId::from(sp_genesis_builder::DEV_RUNTIME_PRESET)]
 		}
 	}
 
@@ -797,6 +807,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			authorization_list: Option<AuthorizationList>,
 		) -> Result<pallet_evm::CallInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -809,7 +820,7 @@ impl_runtime_apis! {
 			};
 
 			// Estimated encoded transaction size must be based on the heaviest transaction
-			// type (EIP1559Transaction) to be compatible with all transaction types.
+			// type (EIP7702Transaction) to be compatible with all transaction types.
 			let mut estimated_transaction_len = data.len() +
 				// pallet ethereum index: 1
 				// transact call index: 1
@@ -822,13 +833,17 @@ impl_runtime_apis! {
 				// action: 21 (enum varianrt + call address)
 				// value: 32
 				// access_list: 1 (empty vec size)
+				// authorization_list: 1 (empty vec size)
 				// 65 bytes signature
-				258;
+				259;
 
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
 
+			if authorization_list.is_some() {
+				estimated_transaction_len += authorization_list.encoded_size();
+			}
 
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
@@ -858,6 +873,7 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				authorization_list.unwrap_or_default(),
 				false,
 				true,
 				weight_limit,
@@ -876,6 +892,7 @@ impl_runtime_apis! {
 			nonce: Option<U256>,
 			estimate: bool,
 			access_list: Option<Vec<(H160, Vec<H256>)>>,
+			authorization_list: Option<AuthorizationList>,
 		) -> Result<pallet_evm::CreateInfo, sp_runtime::DispatchError> {
 			use pallet_evm::GasWeightMapping as _;
 
@@ -907,7 +924,9 @@ impl_runtime_apis! {
 			if access_list.is_some() {
 				estimated_transaction_len += access_list.encoded_size();
 			}
-
+			if authorization_list.is_some() {
+				estimated_transaction_len += authorization_list.encoded_size();
+			}
 
 			let gas_limit = if gas_limit > U256::from(u64::MAX) {
 				u64::MAX
@@ -936,6 +955,7 @@ impl_runtime_apis! {
 				max_priority_fee_per_gas,
 				nonce,
 				access_list.unwrap_or_default(),
+				authorization_list.unwrap_or_default(),
 				false,
 				true,
 				weight_limit,
@@ -1017,11 +1037,14 @@ impl_runtime_apis! {
 			Vec<frame_benchmarking::BenchmarkList>,
 			Vec<frame_support::traits::StorageInfo>,
 		) {
-			use frame_benchmarking::{baseline, Benchmarking, BenchmarkList};
+			use frame_benchmarking::{baseline, BenchmarkList};
 			use frame_support::traits::StorageInfoTrait;
 
 			use baseline::Pallet as BaselineBench;
 			use frame_system_benchmarking::Pallet as SystemBench;
+
+			use pallet_evm_precompile_curve25519_benchmarking::Pallet as EVMPrecompileCurve25519Bench;
+			use pallet_evm_precompile_sha3fips_benchmarking::Pallet as EVMPrecompileSha3FIPSBench;
 
 			let mut list = Vec::<BenchmarkList>::new();
 			list_benchmarks!(list, extra);
@@ -1030,17 +1053,22 @@ impl_runtime_apis! {
 			(list, storage_info)
 		}
 
+		#[allow(non_local_definitions)]
 		fn dispatch_benchmark(
 			config: frame_benchmarking::BenchmarkConfig
 		) -> Result<Vec<frame_benchmarking::BenchmarkBatch>, alloc::string::String> {
-			use frame_benchmarking::{baseline, Benchmarking, BenchmarkBatch};
+			use frame_benchmarking::{baseline, BenchmarkBatch};
 			use frame_support::traits::TrackedStorageKey;
 
 			use baseline::Pallet as BaselineBench;
 			use frame_system_benchmarking::Pallet as SystemBench;
+			use pallet_evm_precompile_curve25519_benchmarking::Pallet as EVMPrecompileCurve25519Bench;
+			use pallet_evm_precompile_sha3fips_benchmarking::Pallet as EVMPrecompileSha3FIPSBench;
 
 			impl baseline::Config for Runtime {}
 			impl frame_system_benchmarking::Config for Runtime {}
+			impl pallet_evm_precompile_curve25519_benchmarking::Config for Runtime {}
+			impl pallet_evm_precompile_sha3fips_benchmarking::Config for Runtime {}
 
 			let whitelist: Vec<TrackedStorageKey> = Vec::new();
 

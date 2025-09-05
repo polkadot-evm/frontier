@@ -517,9 +517,10 @@ where
 		transaction_count += receipts.len();
 		for (transaction_index, receipt) in receipts.iter().enumerate() {
 			let receipt_logs = match receipt {
-				ethereum::ReceiptV3::Legacy(d)
-				| ethereum::ReceiptV3::EIP2930(d)
-				| ethereum::ReceiptV3::EIP1559(d) => &d.logs,
+				ethereum::ReceiptV4::Legacy(d)
+				| ethereum::ReceiptV4::EIP2930(d)
+				| ethereum::ReceiptV4::EIP1559(d)
+				| ethereum::ReceiptV4::EIP7702(d) => &d.logs,
 			};
 			let transaction_index = transaction_index as i32;
 			log_count += receipt_logs.len();
@@ -826,7 +827,7 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 			.fetch_one(self.pool())
 			.await
 			.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
-			.map_err(|e| format!("Failed to fetch oldest block hash: {}", e))
+			.map_err(|e| format!("Failed to fetch oldest block hash: {e}"))
 	}
 
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
@@ -835,7 +836,7 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 			.fetch_one(self.pool())
 			.await
 			.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
-			.map_err(|e| format!("Failed to fetch best hash: {}", e))
+			.map_err(|e| format!("Failed to fetch best hash: {e}"))
 	}
 }
 
@@ -879,11 +880,11 @@ impl<Block: BlockT<Hash = H256>> fc_api::LogIndexerBackend<Block> for Backend<Bl
 			.pool()
 			.acquire()
 			.await
-			.map_err(|err| format!("failed acquiring sqlite connection: {}", err))?;
+			.map_err(|err| format!("failed acquiring sqlite connection: {err}"))?;
 		let log_key2 = log_key.clone();
 		conn.lock_handle()
 			.await
-			.map_err(|err| format!("{:?}", err))?
+			.map_err(|err| format!("{err:?}"))?
 			.set_progress_handler(self.num_ops_timeout, move || {
 				log::debug!(target: "frontier-sql", "Sqlite progress_handler triggered for {log_key2}");
 				false
@@ -929,7 +930,7 @@ impl<Block: BlockT<Hash = H256>> fc_api::LogIndexerBackend<Block> for Backend<Bl
 		drop(rows);
 		conn.lock_handle()
 			.await
-			.map_err(|err| format!("{:?}", err))?
+			.map_err(|err| format!("{err:?}"))?
 			.remove_progress_handler();
 
 		if let Some(err) = maybe_err {

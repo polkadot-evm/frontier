@@ -29,7 +29,7 @@ use alloc::{collections::btree_map::BTreeMap, vec, vec::Vec};
 use core::{cell::RefCell, marker::PhantomData, ops::RangeInclusive};
 use fp_evm::{
 	ExitError, IsPrecompileResult, Precompile, PrecompileFailure, PrecompileHandle,
-	PrecompileResult, PrecompileSet,
+	PrecompileResult, PrecompileSet, ACCOUNT_CODES_METADATA_PROOF_SIZE,
 };
 use frame_support::pallet_prelude::Get;
 use impl_trait_for_tuples::impl_for_tuples;
@@ -40,7 +40,7 @@ use sp_core::{H160, H256};
 /// Types implementing this trait are made to be chained in a tuple.
 ///
 /// For that reason every method returns an Option, None meaning that
-/// the implementor have no constraint and the decision is left to
+/// the implementer have no constraint and the decision is left to
 /// latter elements in the chain. If None is returned by all elements of
 /// the chain then sensible defaults are used.
 ///
@@ -304,13 +304,11 @@ impl<T: SelectorFilter> PrecompileChecks for CallableByPrecompile<T> {
 #[derive(PartialEq)]
 #[cfg_attr(feature = "std", derive(Debug))]
 pub enum AddressType {
-	/// The code stored at the address is less than 5 bytes, but not well known.
-	Unknown,
 	/// No code is stored at the address, therefore is EOA.
 	EOA,
 	/// The 5-byte magic constant for a precompile is stored at the address.
 	Precompile,
-	/// The code is greater than 5-bytes, potentially a Smart Contract.
+	/// Every address that is not a EOA or a Precompile is potentially a Smart Contract.
 	Contract,
 }
 
@@ -319,39 +317,27 @@ pub fn get_address_type<R: pallet_evm::Config>(
 	handle: &mut impl PrecompileHandle,
 	address: H160,
 ) -> Result<AddressType, ExitError> {
+	// Check if address is a precompile
+	if let Ok(true) = is_precompile_or_fail::<R>(address, handle.remaining_gas()) {
+		return Ok(AddressType::Precompile);
+	}
+
+	// Contracts under-construction don't have code yet
+	if handle.is_contract_being_constructed(address) {
+		return Ok(AddressType::Contract);
+	}
+
 	// AccountCodesMetadata:
 	// Blake2128(16) + H160(20) + CodeMetadata(40)
-	handle.record_db_read::<R>(76)?;
+	handle.record_db_read::<R>(ACCOUNT_CODES_METADATA_PROOF_SIZE as usize)?;
 	let code_len = pallet_evm::Pallet::<R>::account_code_metadata(address).size;
 
-	// 0 => either EOA or precompile without dummy code
+	// Having no code at this point means that the address is an EOA
 	if code_len == 0 {
 		return Ok(AddressType::EOA);
 	}
 
-	// dummy code is 5 bytes long, so any other len means it is a contract.
-	if code_len != 5 {
-		return Ok(AddressType::Contract);
-	}
-
-	// check code matches dummy code
-	handle.record_db_read::<R>(code_len as usize)?;
-	let code = pallet_evm::AccountCodes::<R>::get(address);
-	if code == [0x60, 0x00, 0x60, 0x00, 0xfd] {
-		return Ok(AddressType::Precompile);
-	}
-
-	Ok(AddressType::Unknown)
-}
-
-fn is_address_eoa_or_precompile<R: pallet_evm::Config>(
-	handle: &mut impl PrecompileHandle,
-	address: H160,
-) -> Result<bool, ExitError> {
-	match get_address_type::<R>(handle, address)? {
-		AddressType::EOA | AddressType::Precompile => Ok(true),
-		_ => Ok(false),
-	}
+	Ok(AddressType::Contract)
 }
 
 /// Common checks for precompile and precompile sets.
@@ -375,17 +361,27 @@ fn common_checks<R: pallet_evm::Config, C: PrecompileChecks>(
 		u32::from_be_bytes(buffer)
 	});
 
-	// Is this selector callable from a smart contract?
-	let callable_by_smart_contract =
-		C::callable_by_smart_contract(caller, selector).unwrap_or(false);
-	if !callable_by_smart_contract && !is_address_eoa_or_precompile::<R>(handle, caller)? {
-		return Err(revert("Function not callable by smart contracts"));
-	}
-
-	// Is this selector callable from a precompile?
-	let callable_by_precompile = C::callable_by_precompile(caller, selector).unwrap_or(false);
-	if !callable_by_precompile && is_precompile_or_fail::<R>(caller, handle.remaining_gas())? {
-		return Err(revert("Function not callable by precompiles"));
+	let caller_address_type = get_address_type::<R>(handle, caller)?;
+	match caller_address_type {
+		AddressType::Precompile => {
+			// Is this selector callable from a precompile?
+			let callable_by_precompile =
+				C::callable_by_precompile(caller, selector).unwrap_or(false);
+			if !callable_by_precompile {
+				return Err(revert("Function not callable by precompiles"));
+			}
+		}
+		AddressType::Contract => {
+			// Is this selector callable from a smart contract?
+			let callable_by_smart_contract =
+				C::callable_by_smart_contract(caller, selector).unwrap_or(false);
+			if !callable_by_smart_contract {
+				return Err(revert("Function not callable by smart contracts"));
+			}
+		}
+		AddressType::EOA => {
+			// No check required for EOA
+		}
 	}
 
 	Ok(())
@@ -413,7 +409,7 @@ pub struct RestrictiveHandle<'a, H> {
 	allow_subcalls: bool,
 }
 
-impl<'a, H: PrecompileHandle> PrecompileHandle for RestrictiveHandle<'a, H> {
+impl<H: PrecompileHandle> PrecompileHandle for RestrictiveHandle<'_, H> {
 	fn call(
 		&mut self,
 		address: H160,
@@ -463,6 +459,10 @@ impl<'a, H: PrecompileHandle> PrecompileHandle for RestrictiveHandle<'a, H> {
 		self.handle.context()
 	}
 
+	fn origin(&self) -> H160 {
+		self.handle.origin()
+	}
+
 	fn is_static(&self) -> bool {
 		self.handle.is_static()
 	}
@@ -484,6 +484,10 @@ impl<'a, H: PrecompileHandle> PrecompileHandle for RestrictiveHandle<'a, H> {
 	fn refund_external_cost(&mut self, ref_time: Option<u64>, proof_size: Option<u64>) {
 		self.handle.refund_external_cost(ref_time, proof_size)
 	}
+
+	fn is_contract_being_constructed(&self, address: H160) -> bool {
+		self.handle.is_contract_being_constructed(address)
+	}
 }
 
 /// Allows to know if a precompile is active or not.
@@ -502,7 +506,7 @@ pub trait IsActivePrecompile {
 /// was a PrecompileSet containing only the precompile(set) it wraps.
 /// They can be combined into a real PrecompileSet using `PrecompileSetBuilder`.
 pub trait PrecompileSetFragment {
-	/// Instanciate the fragment.
+	/// Instantiate the fragment.
 	fn new() -> Self;
 
 	/// Execute the fragment.

@@ -75,7 +75,7 @@ impl<'a> Deserialize<'a> for Bytes {
 
 struct BytesVisitor;
 
-impl<'a> Visitor<'a> for BytesVisitor {
+impl Visitor<'_> for BytesVisitor {
 	type Value = Bytes;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -87,9 +87,10 @@ impl<'a> Visitor<'a> for BytesVisitor {
 		E: Error,
 	{
 		if value.len() >= 2 && value.starts_with("0x") && value.len() & 1 == 0 {
-			Ok(Bytes::new(FromHex::from_hex(&value[2..]).map_err(|e| {
-				Error::custom(format!("Invalid hex: {}", e))
-			})?))
+			Ok(Bytes::new(
+				FromHex::from_hex(&value[2..])
+					.map_err(|e| Error::custom(format!("Invalid hex: {e}")))?,
+			))
 		} else {
 			Err(Error::custom(
 				"Invalid bytes format. Expected a 0x-prefixed hex string with even length",

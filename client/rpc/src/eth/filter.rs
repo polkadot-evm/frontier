@@ -23,13 +23,12 @@ use std::{
 	time::{Duration, Instant},
 };
 
-use ethereum::BlockV2 as EthereumBlock;
+use ethereum::BlockV3 as EthereumBlock;
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::{async_trait, RpcResult};
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
-use sc_transaction_pool::{ChainApi, Pool};
-use sc_transaction_pool_api::InPoolTransaction;
+use sc_transaction_pool_api::{InPoolTransaction, TransactionPool};
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
 use sp_core::hashing::keccak_256;
@@ -43,10 +42,10 @@ use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
 
-pub struct EthFilter<B: BlockT, C, BE, A: ChainApi> {
+pub struct EthFilter<B: BlockT, C, BE, P> {
 	client: Arc<C>,
 	backend: Arc<dyn fc_api::Backend<B>>,
-	graph: Arc<Pool<A>>,
+	graph: Arc<P>,
 	filter_pool: FilterPool,
 	max_stored_filters: usize,
 	max_past_logs: u32,
@@ -54,11 +53,11 @@ pub struct EthFilter<B: BlockT, C, BE, A: ChainApi> {
 	_marker: PhantomData<BE>,
 }
 
-impl<B: BlockT, C, BE, A: ChainApi> EthFilter<B, C, BE, A> {
+impl<B: BlockT, C, BE, P: TransactionPool> EthFilter<B, C, BE, P> {
 	pub fn new(
 		client: Arc<C>,
 		backend: Arc<dyn fc_api::Backend<B>>,
-		graph: Arc<Pool<A>>,
+		graph: Arc<P>,
 		filter_pool: FilterPool,
 		max_stored_filters: usize,
 		max_past_logs: u32,
@@ -77,13 +76,13 @@ impl<B: BlockT, C, BE, A: ChainApi> EthFilter<B, C, BE, A> {
 	}
 }
 
-impl<B, C, BE, A> EthFilter<B, C, BE, A>
+impl<B, C, BE, P> EthFilter<B, C, BE, P>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + 'static,
-	A: ChainApi<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let info = self.client.info();
@@ -109,7 +108,6 @@ where
 			let pending_transaction_hashes = if let FilterType::PendingTransaction = filter_type {
 				let txs_ready = self
 					.graph
-					.validated_pool()
 					.ready()
 					.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 					.collect();
@@ -146,14 +144,14 @@ where
 }
 
 #[async_trait]
-impl<B, C, BE, A> EthFilterApiServer for EthFilter<B, C, BE, A>
+impl<B, C, BE, P> EthFilterApiServer for EthFilter<B, C, BE, P>
 where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
 	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 	BE: Backend<B> + 'static,
-	A: ChainApi<Block = B> + 'static,
+	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
 		self.create_filter(FilterType::Log(filter))
@@ -223,7 +221,6 @@ where
 						let previous_hashes = pool_item.pending_transaction_hashes;
 						let txs_ready = self
 							.graph
-							.validated_pool()
 							.ready()
 							.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 							.collect();
@@ -305,7 +302,7 @@ where
 					}
 				}
 			} else {
-				FuturePath::Error(internal_err(format!("Filter id {:?} does not exist.", key)))
+				FuturePath::Error(internal_err(format!("Filter id {key:?} does not exist.")))
 			}
 		} else {
 			FuturePath::Error(internal_err("Filter pool is not available."))
@@ -322,9 +319,9 @@ where
 				let mut ethereum_hashes: Vec<H256> = Vec::new();
 				for n in last..next {
 					let id = BlockId::Number(n.unique_saturated_into());
-					let substrate_hash = client.expect_block_hash_from_id(&id).map_err(|_| {
-						internal_err(format!("Expect block number from id: {}", id))
-					})?;
+					let substrate_hash = client
+						.expect_block_hash_from_id(&id)
+						.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 					let block = block_data_cache.current_block(substrate_hash).await;
 					if let Some(block) = block {
@@ -383,13 +380,12 @@ where
 
 			let pool_item = pool
 				.get(&key)
-				.ok_or_else(|| internal_err(format!("Filter id {:?} does not exist.", key)))?;
+				.ok_or_else(|| internal_err(format!("Filter id {key:?} does not exist.")))?;
 
 			match &pool_item.filter_type {
 				FilterType::Log(filter) => Ok(filter.clone()),
 				_ => Err(internal_err(format!(
-					"Filter id {:?} is not a Log filter.",
-					key
+					"Filter id {key:?} is not a Log filter."
 				))),
 			}
 		})();
@@ -454,7 +450,7 @@ where
 			if locked.remove(&key).is_some() {
 				Ok(true)
 			} else {
-				Err(internal_err(format!("Filter id {:?} does not exist.", key)))
+				Err(internal_err(format!("Filter id {key:?} does not exist.")))
 			}
 		} else {
 			Err(internal_err("Filter pool is not available."))
@@ -476,7 +472,7 @@ where
 				hash,
 			)
 			.await
-			.map_err(|err| internal_err(format!("{:?}", err)))?
+			.map_err(|err| internal_err(format!("{err:?}")))?
 			{
 				Some(hash) => hash,
 				_ => return Err(crate::err(-32000, "unknown block", None)),
@@ -647,8 +643,7 @@ where
 			// Check for restrictions
 			if ret.len() as u32 > max_past_logs {
 				return Err(internal_err(format!(
-					"query returned more than {} results",
-					max_past_logs
+					"query returned more than {max_past_logs} results",
 				)));
 			}
 			if begin_request.elapsed() > max_duration {
@@ -663,9 +658,7 @@ where
 
 		log::info!(
 			target: "frontier-sql",
-			"OUTER-TIMER fetch={}, post={}",
-			time_fetch,
-			time_post,
+			"OUTER-TIMER fetch={time_fetch}, post={time_post}"
 		);
 	}
 
@@ -715,7 +708,7 @@ where
 		let id = BlockId::Number(current_number);
 		let substrate_hash = client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 		let block = block_data_cache.current_block(substrate_hash).await;
 
@@ -734,8 +727,7 @@ where
 		// Check for restrictions
 		if ret.len() as u32 > max_past_logs {
 			return Err(internal_err(format!(
-				"query returned more than {} results",
-				max_past_logs
+				"query returned more than {max_past_logs} results"
 			)));
 		}
 		if begin_request.elapsed() > max_duration {

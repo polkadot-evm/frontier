@@ -185,7 +185,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
 					panic!("Output doesn't match");
 				}
 			}
-			other => panic!("Unexpected result: {:?}", other),
+			other => panic!("Unexpected result: {other:?}"),
 		}
 
 		self.assert_optionals();
@@ -216,7 +216,7 @@ impl<'p, P: PrecompileSet> PrecompilesTester<'p, P> {
 					panic!("Revert reason doesn't match !");
 				}
 			}
-			other => panic!("Didn't revert, instead returned {:?}", other),
+			other => panic!("Didn't revert, instead returned {other:?}"),
 		}
 
 		self.assert_optionals();

@@ -59,7 +59,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		}
 	}
 
-	async fn block_by(&self, number: BlockNumberOrHash) -> RpcResult<Option<ethereum::BlockV2>>
+	async fn block_by(&self, number: BlockNumberOrHash) -> RpcResult<Option<ethereum::BlockV3>>
 	where
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
@@ -78,7 +78,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		let substrate_hash = self
 			.client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 		let block = self.block_data_cache.current_block(substrate_hash).await;
 		Ok(block)
 	}
@@ -86,7 +86,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 	async fn transaction_by(
 		&self,
 		transaction_hash: H256,
-	) -> RpcResult<Option<ethereum::TransactionV2>>
+	) -> RpcResult<Option<ethereum::TransactionV3>>
 	where
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
@@ -125,7 +125,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 	async fn receipts_by(
 		&self,
 		number: BlockNumberOrHash,
-	) -> RpcResult<Option<Vec<ethereum::ReceiptV3>>>
+	) -> RpcResult<Option<Vec<ethereum::ReceiptV4>>>
 	where
 		C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
 		BE: Backend<B>,
@@ -144,7 +144,7 @@ impl<B: BlockT, C, BE> Debug<B, C, BE> {
 		let substrate_hash = self
 			.client
 			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {}", id)))?;
+			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
 
 		// TODO: use data cache in the future
 		let receipts = self.storage_override.current_receipts(substrate_hash);

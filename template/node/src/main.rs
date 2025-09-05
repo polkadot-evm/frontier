@@ -4,7 +4,8 @@
 #![allow(
 	clippy::type_complexity,
 	clippy::too_many_arguments,
-	clippy::large_enum_variant
+	clippy::large_enum_variant,
+	clippy::result_large_err
 )]
 #![cfg_attr(feature = "runtime-benchmarks", warn(unused_crate_dependencies))]
 

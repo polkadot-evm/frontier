@@ -48,11 +48,13 @@ impl Geth {
 						"max priority fee per gas higher than max fee per gas".into()
 					}
 					VError::InvalidFeeInput => "invalid fee input".into(),
+					VError::EmptyAuthorizationList => "authorization list cannot be empty".into(),
+					VError::AuthorizationListTooLarge => "authorization list too large".into(),
 					_ => "transaction validation error".into(),
 				},
 				_ => "unknown error".into(),
 			},
-			err => format!("submit transaction to pool failed: {:?}", err),
+			err => format!("submit transaction to pool failed: {err:?}"),
 		}
 	}
 }

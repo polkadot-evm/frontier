@@ -17,15 +17,15 @@
 
 use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
-	traits::{ExtrinsicCall, InherentBuilder, SignedTransactionBuilder},
+	traits::{InherentBuilder, SignedTransactionBuilder},
 };
-use scale_codec::{Decode, Encode};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	generic::{self, Preamble},
 	traits::{
-		self, Checkable, Dispatchable, ExtrinsicLike, ExtrinsicMetadata, IdentifyAccount,
-		MaybeDisplay, Member, TransactionExtension,
+		self, Checkable, Dispatchable, ExtrinsicCall, ExtrinsicLike, ExtrinsicMetadata,
+		IdentifyAccount, MaybeDisplay, Member, TransactionExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	OpaqueExtrinsic, RuntimeDebug,
@@ -35,7 +35,16 @@ use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 
 /// A extrinsic right from the external world. This is unchecked and so
 /// can contain a signature.
-#[derive(PartialEq, Eq, Clone, Encode, Decode, RuntimeDebug, TypeInfo)]
+#[derive(
+	PartialEq,
+	Eq,
+	Clone,
+	Encode,
+	Decode,
+	DecodeWithMemTracking,
+	RuntimeDebug,
+	TypeInfo
+)]
 pub struct UncheckedExtrinsic<Address, Call, Signature, Extension>(
 	pub generic::UncheckedExtrinsic<Address, Call, Signature, Extension>,
 );
@@ -192,7 +201,7 @@ where
 impl<'a, Address: Decode, Signature: Decode, Call, Extension> serde::Deserialize<'a>
 	for UncheckedExtrinsic<Address, Call, Signature, Extension>
 where
-	Call: Decode + Dispatchable,
+	Call: Decode + Dispatchable + DecodeWithMemTracking,
 	Extension: Decode + TransactionExtension<Call>,
 {
 	fn deserialize<D>(de: D) -> Result<Self, D::Error>

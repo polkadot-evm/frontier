@@ -40,7 +40,7 @@ fp-storage = { workspace = true, features = ["default"] }
 [dev-dependencies]
 futures = { workspace = true }
 maplit = "1.0.2"
-tempfile = "3.14.0"
+tempfile = "3.21.0"
 # Substrate
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }

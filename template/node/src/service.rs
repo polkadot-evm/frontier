@@ -12,7 +12,7 @@ use sc_executor::HostFunctions as HostFunctionsT;
 use sc_network_sync::strategy::warp::{WarpSyncConfig, WarpSyncProvider};
 use sc_service::{error::Error as ServiceError, Configuration, PartialComponents, TaskManager};
 use sc_telemetry::{Telemetry, TelemetryHandle, TelemetryWorker};
-use sc_transaction_pool::{BasicPool, FullChainApi};
+use sc_transaction_pool::TransactionPoolHandle;
 use sc_transaction_pool_api::OffchainTransactionPoolFactory;
 use sp_api::ConstructRuntimeApi;
 use sp_consensus_aura::sr25519::{AuthorityId as AuraId, AuthorityPair as AuraPair};
@@ -39,10 +39,14 @@ use crate::{
 pub type HostFunctions = (
 	sp_io::SubstrateHostFunctions,
 	frame_benchmarking::benchmarking::HostFunctions,
+	cumulus_primitives_proof_size_hostfunction::storage_proof_size::HostFunctions,
 );
 /// Otherwise we use empty host functions for ext host functions.
 #[cfg(not(feature = "runtime-benchmarks"))]
-pub type HostFunctions = sp_io::SubstrateHostFunctions;
+pub type HostFunctions = (
+	sp_io::SubstrateHostFunctions,
+	cumulus_primitives_proof_size_hostfunction::storage_proof_size::HostFunctions,
+);
 
 pub type Backend = FullBackend<Block>;
 pub type Client = FullClient<Block, RuntimeApi, HostFunctions>;
@@ -51,7 +55,6 @@ type FullSelectChain<B> = sc_consensus::LongestChain<FullBackend<B>, B>;
 type GrandpaBlockImport<B, C> =
 	sc_consensus_grandpa::GrandpaBlockImport<FullBackend<B>, B, C, FullSelectChain<B>>;
 type GrandpaLinkHalf<B, C> = sc_consensus_grandpa::LinkHalf<B, C, FullSelectChain<B>>;
-type FullPool<B, RA, HF> = BasicPool<FullChainApi<FullClient<B, RA, HF>, B>, B>;
 
 /// The minimum period of blocks on which justifications will be
 /// imported and generated.
@@ -67,7 +70,7 @@ pub fn new_partial<B, RA, HF, BIQ>(
 		FullBackend<B>,
 		FullSelectChain<B>,
 		BasicQueue<B>,
-		FullPool<B, RA, HF>,
+		sc_transaction_pool::TransactionPoolHandle<B, FullClient<B, RA, HF>>,
 		(
 			Option<Telemetry>,
 			BoxBlockImport<B>,
@@ -106,11 +109,13 @@ where
 
 	let executor = sc_service::new_wasm_executor(&config.executor);
 
-	let (client, backend, keystore_container, task_manager) = sc_service::new_full_parts::<B, RA, _>(
-		config,
-		telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
-		executor,
-	)?;
+	let (client, backend, keystore_container, task_manager) =
+		sc_service::new_full_parts_record_import::<B, RA, _>(
+			config,
+			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
+			executor,
+			true,
+		)?;
 	let client = Arc::new(client);
 
 	let telemetry = telemetry.map(|(worker, telemetry)| {
@@ -154,7 +159,7 @@ where
 				std::num::NonZeroU32::new(eth_config.frontier_sql_backend_num_ops_timeout),
 				storage_override.clone(),
 			))
-			.unwrap_or_else(|err| panic!("failed creating sql backend: {:?}", err));
+			.unwrap_or_else(|err| panic!("failed creating sql backend: {err:?}"));
 			FrontierBackend::Sql(Arc::new(backend))
 		}
 	};
@@ -168,14 +173,16 @@ where
 		grandpa_block_import,
 	)?;
 
-	// FIXME: The `config.transaction_pool.options` field is private, so for now use its default value
-	let transaction_pool = Arc::from(BasicPool::new_full(
-		Default::default(),
-		config.role.is_authority().into(),
-		config.prometheus_registry(),
-		task_manager.spawn_essential_handle(),
-		client.clone(),
-	));
+	let transaction_pool = Arc::from(
+		sc_transaction_pool::Builder::new(
+			task_manager.spawn_essential_handle(),
+			client.clone(),
+			config.role.is_authority().into(),
+		)
+		.with_options(config.transaction_pool.clone())
+		.with_prometheus(config.prometheus_registry())
+		.build(),
+	);
 
 	Ok(PartialComponents {
 		client,
@@ -349,7 +356,7 @@ where
 		Some(WarpSyncConfig::WithProvider(warp_sync))
 	};
 
-	let (network, system_rpc_tx, tx_handler_controller, network_starter, sync_service) =
+	let (network, system_rpc_tx, tx_handler_controller, sync_service) =
 		sc_service::build_network(sc_service::BuildNetworkParams {
 			config: &config,
 			net_config,
@@ -449,7 +456,7 @@ where
 			let eth_deps = crate::rpc::EthDeps {
 				client: client.clone(),
 				pool: pool.clone(),
-				graph: pool.pool().clone(),
+				graph: pool.clone(),
 				converter: Some(TransactionConverter::<B>::default()),
 				is_authority,
 				enable_dev_signer,
@@ -533,7 +540,6 @@ where
 				commands_stream,
 			)?;
 
-			network_starter.start_network();
 			log::info!("Manual Seal Ready");
 			return Ok(task_manager);
 		}
@@ -632,7 +638,6 @@ where
 			.spawn_blocking("grandpa-voter", None, grandpa_voter);
 	}
 
-	network_starter.start_network();
 	Ok(task_manager)
 }
 
@@ -640,7 +645,7 @@ fn run_manual_seal_authorship<B, RA, HF>(
 	eth_config: &EthConfiguration,
 	sealing: Sealing,
 	client: Arc<FullClient<B, RA, HF>>,
-	transaction_pool: Arc<FullPool<B, RA, HF>>,
+	transaction_pool: Arc<TransactionPoolHandle<B, FullClient<B, RA, HF>>>,
 	select_chain: FullSelectChain<B>,
 	block_import: BoxBlockImport<B>,
 	task_manager: &TaskManager,

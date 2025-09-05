@@ -121,7 +121,7 @@ pub fn create_benchmark_extrinsic(
 		.checked_next_power_of_two()
 		.map(|c| c / 2)
 		.unwrap_or(2) as u64;
-	let extra: runtime::SignedExtra = (
+	let extra = runtime::SignedExtra::new((
 		frame_system::CheckNonZeroSender::<runtime::Runtime>::new(),
 		frame_system::CheckSpecVersion::<runtime::Runtime>::new(),
 		frame_system::CheckTxVersion::<runtime::Runtime>::new(),
@@ -133,7 +133,7 @@ pub fn create_benchmark_extrinsic(
 		frame_system::CheckNonce::<runtime::Runtime>::from(nonce),
 		frame_system::CheckWeight::<runtime::Runtime>::new(),
 		pallet_transaction_payment::ChargeTransactionPayment::<runtime::Runtime>::from(0),
-	);
+	));
 
 	let raw_payload = runtime::SignedPayload::from_raw(
 		call.clone(),
@@ -168,6 +168,6 @@ pub fn inherent_benchmark_data() -> Result<InherentData> {
 	let timestamp = sp_timestamp::InherentDataProvider::new(d.into());
 
 	futures::executor::block_on(timestamp.provide_inherent_data(&mut inherent_data))
-		.map_err(|e| format!("creating inherent data: {:?}", e))?;
+		.map_err(|e| format!("creating inherent data: {e:?}"))?;
 	Ok(inherent_data)
 }

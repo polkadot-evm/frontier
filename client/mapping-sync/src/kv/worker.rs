@@ -155,7 +155,7 @@ where
 				}
 				Err(e) => {
 					self.have_next = false;
-					debug!(target: "mapping-sync", "Syncing failed with error {:?}, retrying.", e);
+					debug!(target: "mapping-sync", "Syncing failed with error {e:?}, retrying.");
 					Poll::Ready(Some(()))
 				}
 			}

@@ -17,7 +17,11 @@
 
 //! Test utilities
 
-use ethereum::{TransactionAction, TransactionSignature};
+use core::str::FromStr;
+use ethereum::{
+	eip2930::TransactionSignature as EIP2930TransactionSignature,
+	legacy::TransactionSignature as LegacyTransactionSignature, TransactionAction,
+};
 use rlp::RlpStream;
 // Substrate
 use frame_support::{derive_impl, parameter_types, traits::FindAuthor, ConsensusEngineId};
@@ -27,7 +31,7 @@ use sp_runtime::{
 	AccountId32, BuildStorage,
 };
 // Frontier
-use pallet_evm::{config_preludes::ChainId, AddressMapping};
+use pallet_evm::{config_preludes::ChainId, AddressMapping, EnsureAllowedCreateAddress};
 
 use super::*;
 
@@ -86,12 +90,17 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const GasLimitStorageGrowthRatio: u64 = 0;
+	// Alice is allowed to create contracts via CREATE and CALL(CREATE)
+	pub AllowedAddressesCreate: Vec<H160> = vec![H160::from_str("0x1a642f0e3c3af545e7acbd38b07251b3990914f1").expect("alice address")];
+	pub AllowedAddressesCreateInner: Vec<H160> = vec![H160::from_str("0x1a642f0e3c3af545e7acbd38b07251b3990914f1").expect("alice address")];
 }
 
 #[derive_impl(pallet_evm::config_preludes::TestDefaultConfig)]
 impl pallet_evm::Config for Test {
 	type AccountProvider = pallet_evm::FrameSystemAccountProvider<Self>;
 	type BlockHashMapping = crate::EthereumBlockHashMapping<Self>;
+	type CreateOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreate>;
+	type CreateInnerOriginFilter = EnsureAllowedCreateAddress<AllowedAddressesCreateInner>;
 	type Currency = Balances;
 	type PrecompilesType = ();
 	type PrecompilesValue = ();
@@ -195,9 +204,12 @@ pub fn new_test_ext(accounts_len: usize) -> (Vec<AccountInfo>, sp_io::TestExtern
 		.map(|i| (pairs[i].account_id.clone(), 10_000_000))
 		.collect();
 
-	pallet_balances::GenesisConfig::<Test> { balances }
-		.assimilate_storage(&mut ext)
-		.unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances,
+		dev_accounts: None,
+	}
+	.assimilate_storage(&mut ext)
+	.unwrap();
 
 	(pairs, ext.into())
 }
@@ -220,9 +232,12 @@ pub fn new_test_ext_with_initial_balance(
 		.map(|i| (pairs[i].account_id.clone(), initial_balance))
 		.collect();
 
-	pallet_balances::GenesisConfig::<Test> { balances }
-		.assimilate_storage(&mut ext)
-		.unwrap();
+	pallet_balances::GenesisConfig::<Test> {
+		balances,
+		dev_accounts: None,
+	}
+	.assimilate_storage(&mut ext)
+	.unwrap();
 
 	(pairs, ext.into())
 }
@@ -283,7 +298,7 @@ impl LegacyUnsignedTransaction {
 		);
 		let sig = s.0.serialize();
 
-		let sig = TransactionSignature::new(
+		let sig = LegacyTransactionSignature::new(
 			s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
@@ -344,9 +359,7 @@ impl EIP2930UnsignedTransaction {
 			value: msg.value,
 			input: msg.input.clone(),
 			access_list: msg.access_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-			s,
+			signature: EIP2930TransactionSignature::new(recid.serialize() != 0, r, s).unwrap(),
 		})
 	}
 }
@@ -396,9 +409,60 @@ impl EIP1559UnsignedTransaction {
 			value: msg.value,
 			input: msg.input.clone(),
 			access_list: msg.access_list,
-			odd_y_parity: recid.serialize() != 0,
-			r,
-			s,
+			signature: EIP2930TransactionSignature::new(recid.serialize() != 0, r, s).unwrap(),
+		})
+	}
+}
+
+pub struct EIP7702UnsignedTransaction {
+	pub nonce: U256,
+	pub max_priority_fee_per_gas: U256,
+	pub max_fee_per_gas: U256,
+	pub gas_limit: U256,
+	pub destination: TransactionAction,
+	pub value: U256,
+	pub data: Vec<u8>,
+	pub authorization_list: Vec<ethereum::AuthorizationListItem>,
+}
+
+impl EIP7702UnsignedTransaction {
+	pub fn sign(&self, secret: &H256, chain_id: Option<u64>) -> Transaction {
+		let secret = {
+			let mut sk: [u8; 32] = [0u8; 32];
+			sk.copy_from_slice(&secret[0..]);
+			libsecp256k1::SecretKey::parse(&sk).unwrap()
+		};
+		let chain_id = chain_id.unwrap_or(ChainId::get());
+		let msg = ethereum::EIP7702TransactionMessage {
+			chain_id,
+			nonce: self.nonce,
+			max_priority_fee_per_gas: self.max_priority_fee_per_gas,
+			max_fee_per_gas: self.max_fee_per_gas,
+			gas_limit: self.gas_limit,
+			destination: self.destination,
+			value: self.value,
+			data: self.data.clone(),
+			access_list: vec![],
+			authorization_list: self.authorization_list.clone(),
+		};
+		let signing_message = libsecp256k1::Message::parse_slice(&msg.hash()[..]).unwrap();
+
+		let (signature, recid) = libsecp256k1::sign(&signing_message, &secret);
+		let rs = signature.serialize();
+		let r = H256::from_slice(&rs[0..32]);
+		let s = H256::from_slice(&rs[32..64]);
+		Transaction::EIP7702(ethereum::EIP7702Transaction {
+			chain_id: msg.chain_id,
+			nonce: msg.nonce,
+			max_priority_fee_per_gas: msg.max_priority_fee_per_gas,
+			max_fee_per_gas: msg.max_fee_per_gas,
+			gas_limit: msg.gas_limit,
+			destination: msg.destination,
+			value: msg.value,
+			data: msg.data.clone(),
+			access_list: msg.access_list,
+			authorization_list: msg.authorization_list,
+			signature: EIP2930TransactionSignature::new(recid.serialize() != 0, r, s).unwrap(),
 		})
 	}
 }

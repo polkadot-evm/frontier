@@ -111,6 +111,10 @@ impl PrecompileHandle for MockHandle {
 		&self.context
 	}
 
+	fn origin(&self) -> H160 {
+		unimplemented!()
+	}
+
 	fn is_static(&self) -> bool {
 		self.is_static
 	}
@@ -118,14 +122,17 @@ impl PrecompileHandle for MockHandle {
 	fn gas_limit(&self) -> Option<u64> {
 		self.gas_limit
 	}
+
+	fn is_contract_being_constructed(&self, _address: H160) -> bool {
+		unimplemented!()
+	}
 }
 
 /// Tests a precompile against the ethereum consensus tests defined in the given file at filepath.
 /// The file is expected to be in JSON format and contain an array of test vectors, where each
 /// vector can be deserialized into an "EthConsensusTest".
 pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(), String> {
-	let data =
-		fs::read_to_string(filepath).unwrap_or_else(|_| panic!("Failed to read {}", filepath));
+	let data = fs::read_to_string(filepath).unwrap_or_else(|_| panic!("Failed to read {filepath}"));
 
 	let tests: Vec<EthConsensusTest> = serde_json::from_str(&data).expect("expected json array");
 
@@ -175,8 +182,7 @@ pub fn test_precompile_test_vectors<P: Precompile>(filepath: &str) -> Result<(),
 }
 
 pub fn test_precompile_failure_test_vectors<P: Precompile>(filepath: &str) -> Result<(), String> {
-	let data =
-		fs::read_to_string(filepath).unwrap_or_else(|_| panic!("Failed to read {}", filepath));
+	let data = fs::read_to_string(filepath).unwrap_or_else(|_| panic!("Failed to read {filepath}"));
 
 	let tests: Vec<EthConsensusFailureTest> =
 		serde_json::from_str(&data).expect("expected json array");

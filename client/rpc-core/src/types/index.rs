@@ -45,7 +45,7 @@ impl<'a> Deserialize<'a> for Index {
 
 struct IndexVisitor;
 
-impl<'a> Visitor<'a> for IndexVisitor {
+impl Visitor<'_> for IndexVisitor {
 	type Value = Index;
 
 	fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
@@ -59,11 +59,11 @@ impl<'a> Visitor<'a> for IndexVisitor {
 		match value {
 			_ if value.starts_with("0x") => usize::from_str_radix(&value[2..], 16)
 				.map(Index)
-				.map_err(|e| Error::custom(format!("Invalid index: {}", e))),
+				.map_err(|e| Error::custom(format!("Invalid index: {e}"))),
 			_ => value
 				.parse::<usize>()
 				.map(Index)
-				.map_err(|e| Error::custom(format!("Invalid index: {}", e))),
+				.map_err(|e| Error::custom(format!("Invalid index: {e}"))),
 		}
 	}
 

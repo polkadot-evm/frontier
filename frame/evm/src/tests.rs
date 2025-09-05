@@ -14,9 +14,11 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+
 use super::*;
 use crate::mock::*;
 
+use evm::ExitReason;
 use frame_support::{
 	assert_ok,
 	traits::{LockIdentifier, LockableCurrency, WithdrawReasons},
@@ -98,6 +100,7 @@ mod proof_size_test {
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 			true, // transactional
 			true, // must be validated
 			weight_limit,
@@ -118,6 +121,7 @@ mod proof_size_test {
 			Some(FixedGasPrice::min_gas_price().0),
 			None,
 			None,
+			Vec::new(),
 			Vec::new(),
 			true, // non-transactional
 			true, // must be validated
@@ -209,7 +213,7 @@ mod proof_size_test {
 			// selector for ProofSizeTest::test_call function..
 			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
 			// ..encode the callee address argument
-			call_data.push_str(&format!("{:x}", subcall_contract_address));
+			call_data.push_str(&format!("{subcall_contract_address:x}"));
 
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
@@ -220,6 +224,7 @@ mod proof_size_test {
 				Some(FixedGasPrice::min_gas_price().0),
 				None,
 				None,
+				Vec::new(),
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
@@ -277,6 +282,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
+				Vec::new(),
 				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
@@ -332,6 +338,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
+				Vec::new(),
 				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
@@ -381,6 +388,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
+				Vec::new(),
 				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
@@ -415,7 +423,8 @@ mod proof_size_test {
 			let mut weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
 
 			// Artifically set a lower proof size limit so we OOG this instead gas.
-			*weight_limit.proof_size_mut() = weight_limit.proof_size() / 2;
+			let proof_size_limit = weight_limit.proof_size() / 2;
+			*weight_limit.proof_size_mut() = proof_size_limit;
 
 			// Create proof size test contract
 			let result = create_proof_size_test_contract(gas_limit, None).expect("create succeeds");
@@ -434,6 +443,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
+				Vec::new(),
 				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
@@ -442,25 +452,13 @@ mod proof_size_test {
 			)
 			.expect("call succeeds");
 
-			// Find how many random balance reads can we do with the available proof size.
-			let reading_main_contract_len =
-				AccountCodes::<Test>::get(call_contract_address).len() as u64;
-			let overhead = reading_main_contract_len
-				+ ACCOUNT_CODES_METADATA_PROOF_SIZE
-				+ IS_EMPTY_CHECK_PROOF_SIZE;
-			let available_proof_size = weight_limit.proof_size() - overhead;
-			let number_balance_reads =
-				available_proof_size.saturating_div(ACCOUNT_BASIC_PROOF_SIZE);
-			// The actual proof size consumed by those balance reads.
-			let expected_proof_size = overhead + (number_balance_reads * ACCOUNT_BASIC_PROOF_SIZE);
-
 			let actual_proof_size = result
 				.weight_info
 				.expect("weight info")
 				.proof_size_usage
 				.expect("proof size usage");
 
-			assert_eq!(expected_proof_size, actual_proof_size);
+			assert_eq!(proof_size_limit, actual_proof_size);
 		});
 	}
 
@@ -491,7 +489,7 @@ mod proof_size_test {
 			// selector for ProofSizeTest::test_call function..
 			let mut call_data: String = "c6d6f606000000000000000000000000".to_owned();
 			// ..encode the callee address argument
-			call_data.push_str(&format!("{:x}", subcall_contract_address));
+			call_data.push_str(&format!("{subcall_contract_address:x}"));
 			let result = <Test as Config>::Runner::call(
 				H160::default(),
 				call_contract_address,
@@ -501,6 +499,7 @@ mod proof_size_test {
 				Some(FixedGasPrice::min_gas_price().0),
 				None,
 				None,
+				Vec::new(),
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
@@ -561,6 +560,7 @@ mod proof_size_test {
 				None,
 				None,
 				Vec::new(),
+				Vec::new(),
 				true, // transactional
 				true, // must be validated
 				Some(weight_limit),
@@ -601,6 +601,7 @@ mod proof_size_test {
 				Some(FixedGasPrice::min_gas_price().0),
 				None,
 				None,
+				Vec::new(),
 				Vec::new(),
 				true, // transactional
 				true, // must be validated
@@ -650,6 +651,7 @@ mod storage_growth_test {
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 			true, // transactional
 			true, // must be validated
 			Some(FixedGasWeightMapping::<Test>::gas_to_weight(
@@ -676,6 +678,7 @@ mod storage_growth_test {
 			Some(FixedGasPrice::min_gas_price().0),
 			None,
 			None,
+			Vec::new(),
 			Vec::new(),
 			true, // transactional
 			true, // must be validated
@@ -876,6 +879,33 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			code: vec![],
 		},
 	);
+	accounts.insert(
+		H160::from([4u8; 20]), // alith
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::max_value(),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
+	accounts.insert(
+		H160::from([5u8; 20]), // bob
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::max_value(),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
+	accounts.insert(
+		H160::from([6u8; 20]), // charleth
+		GenesisAccount {
+			nonce: U256::from(1),
+			balance: U256::max_value(),
+			storage: Default::default(),
+			code: vec![],
+		},
+	);
 
 	// Create the block author account with some balance.
 	let author = H160::from_str("0x1234500000000000000000000000000000000000").unwrap();
@@ -884,6 +914,7 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 			<Test as Config>::AddressMapping::into_account_id(author),
 			12345,
 		)],
+		dev_accounts: None,
 	}
 	.assimilate_storage(&mut t)
 	.expect("Pallet balances storage can be assimilated");
@@ -896,6 +927,187 @@ pub fn new_test_ext() -> sp_io::TestExternalities {
 	.unwrap();
 
 	t.into()
+}
+
+// pragma solidity ^0.8.2;
+
+// contract Foo {
+
+//  function newBar() // 2fc11060
+//    public
+//    returns(Bar newContract)
+//  {
+//    Bar b = new Bar();
+//    return b;
+//  }
+//}
+
+// contract Bar {
+//  function getNumber()
+//    public
+//    pure
+//    returns (uint32 number)
+//  {
+//    return 10;
+//  }
+//}
+pub const FOO_BAR_CONTRACT_CREATOR_BYTECODE: &str =
+	include_str!("./res/foo_bar_contract_creator.txt");
+
+fn create_foo_bar_contract_creator(
+	gas_limit: u64,
+	weight_limit: Option<Weight>,
+) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+	<Test as Config>::Runner::create(
+		H160::default(),
+		hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+		U256::zero(),
+		gas_limit,
+		Some(FixedGasPrice::min_gas_price().0),
+		None,
+		None,
+		Vec::new(),
+		Vec::new(),
+		true, // transactional
+		true, // must be validated
+		weight_limit,
+		Some(0),
+		&<Test as Config>::config().clone(),
+	)
+}
+
+#[test]
+fn test_contract_deploy_succeeds_if_address_is_allowed() {
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		assert!(<Test as Config>::Runner::create(
+			// Alith is allowed to deploy contracts
+			H160::from([4u8; 20]),
+			hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+		.is_ok());
+	});
+}
+
+#[test]
+fn test_contract_deploy_fails_if_address_not_allowed() {
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		match <Test as Config>::Runner::create(
+			// Bob is not allowed to deploy contracts
+			H160::from([5u8; 20]),
+			hex::decode(FOO_BAR_CONTRACT_CREATOR_BYTECODE.trim_end()).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		) {
+			Err(RunnerError {
+				error: Error::CreateOriginNotAllowed,
+				..
+			}) => (),
+			_ => panic!("Should have failed with CreateOriginNotAllowed"),
+		}
+	});
+}
+
+#[test]
+fn test_inner_contract_deploy_succeeds_if_address_is_allowed() {
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		let result1 = create_foo_bar_contract_creator(gas_limit, Some(weight_limit))
+			.expect("create succeeds");
+
+		let call_data: String = "2fc11060".to_owned();
+		let call_contract_address = result1.value;
+
+		let result = <Test as Config>::Runner::call(
+			// Alith is allowed to deploy inner contracts
+			H160::from([4u8; 20]),
+			call_contract_address,
+			hex::decode(&call_data).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call succeeds");
+
+		assert_eq!(
+			result.exit_reason,
+			ExitReason::Succeed(ExitSucceed::Returned)
+		);
+	});
+}
+
+#[test]
+fn test_inner_contract_deploy_reverts_if_address_not_allowed() {
+	new_test_ext().execute_with(|| {
+		let gas_limit: u64 = 1_000_000;
+		let weight_limit = FixedGasWeightMapping::<Test>::gas_to_weight(gas_limit, true);
+
+		let result1 = create_foo_bar_contract_creator(gas_limit, Some(weight_limit))
+			.expect("create succeeds");
+
+		let call_data: String = "2fc11060".to_owned();
+		let call_contract_address = result1.value;
+
+		let result = <Test as Config>::Runner::call(
+			// Charleth is not allowed to deploy inner contracts
+			H160::from([6u8; 20]),
+			call_contract_address,
+			hex::decode(&call_data).unwrap(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			Some(weight_limit),
+			Some(0),
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call succeeds");
+
+		assert_eq!(result.exit_reason, ExitReason::Revert(ExitRevert::Reverted));
+	});
 }
 
 #[test]
@@ -912,6 +1124,7 @@ fn fail_call_return_ok() {
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 		));
 
 		assert_ok!(EVM::call(
@@ -924,6 +1137,7 @@ fn fail_call_return_ok() {
 			U256::from(1_000_000_000),
 			None,
 			None,
+			Vec::new(),
 			Vec::new(),
 		));
 	});
@@ -971,6 +1185,7 @@ fn ed_0_refund_patch_works() {
 			U256::from(1_000_000_000),
 			None,
 			Some(U256::from(0)),
+			Vec::new(),
 			Vec::new(),
 		);
 		// All that was due, was refunded.
@@ -1059,6 +1274,7 @@ fn author_should_get_tip() {
 			Some(U256::from(1)),
 			None,
 			Vec::new(),
+			Vec::new(),
 		);
 		result.expect("EVM can be called");
 		let after_tip = EVM::account_basic(&author).0.balance;
@@ -1080,6 +1296,7 @@ fn issuance_after_tip() {
 			U256::from(2_000_000_000),
 			Some(U256::from(1)),
 			None,
+			Vec::new(),
 			Vec::new(),
 		);
 		result.expect("EVM can be called");
@@ -1108,6 +1325,7 @@ fn author_same_balance_without_tip() {
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 		);
 		let after_tip = EVM::account_basic(&author).0.balance;
 		assert_eq!(after_tip, before_tip);
@@ -1132,6 +1350,7 @@ fn refunds_should_work() {
 			U256::from(2_000_000_000),
 			None,
 			None,
+			Vec::new(),
 			Vec::new(),
 		);
 		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
@@ -1165,6 +1384,7 @@ fn refunds_and_priority_should_work() {
 			Some(tip),
 			None,
 			Vec::new(),
+			Vec::new(),
 		);
 		let (base_fee, _) = <Test as Config>::FeeCalculator::min_gas_price();
 		let actual_tip = (max_fee_per_gas - base_fee).min(tip) * used_gas;
@@ -1194,6 +1414,7 @@ fn call_should_fail_with_priority_greater_than_max_fee() {
 			Some(U256::from(tip)),
 			None,
 			Vec::new(),
+			Vec::new(),
 		);
 		assert!(result.is_err());
 		// Some used weight is returned as part of the error.
@@ -1221,6 +1442,7 @@ fn call_should_succeed_with_priority_equal_to_max_fee() {
 			Some(U256::from(tip)),
 			None,
 			Vec::new(),
+			Vec::new(),
 		);
 		assert!(result.is_ok());
 	});
@@ -1243,8 +1465,8 @@ fn handle_sufficient_reference() {
 		assert_eq!(account.sufficients, 0);
 
 		// Using the create / remove account functions is the correct way to handle it.
-		EVM::create_account(addr_2, vec![1, 2, 3]);
-		let account_2 = frame_system::Account::<Test>::get(&substrate_addr_2);
+		assert!(EVM::create_account(addr_2, vec![1, 2, 3], None).is_ok());
+		let account_2 = frame_system::Account::<Test>::get(substrate_addr_2.clone());
 		// We increased the sufficient reference by 1.
 		assert_eq!(account_2.sufficients, 1);
 		EVM::remove_account(&addr_2);
@@ -1274,6 +1496,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_pr
 			None,
 			None,
 			None,
+			Vec::new(),
 			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
@@ -1311,6 +1534,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_err_with_gas_pric
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
 			None,
@@ -1334,6 +1558,7 @@ fn runner_transactional_call_with_zero_gas_price_fails() {
 			None,
 			None,
 			None,
+			Vec::new(),
 			Vec::new(),
 			true, // transactional
 			true, // must be validated
@@ -1359,6 +1584,7 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			Some(U256::from(2_000_000_000)),
 			None,
 			Vec::new(),
+			Vec::new(),
 			true, // transactional
 			true, // must be validated
 			None,
@@ -1375,6 +1601,7 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			Some(U256::from(1_000_000_000)),
 			Some(U256::from(2_000_000_000)),
 			None,
+			Vec::new(),
 			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
@@ -1401,6 +1628,7 @@ fn eip3607_transaction_from_contract() {
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 			true,  // transactional
 			false, // not sure be validated
 			None,
@@ -1426,6 +1654,7 @@ fn eip3607_transaction_from_contract() {
 			None,
 			None,
 			Vec::new(),
+			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
 			None,
@@ -1441,7 +1670,7 @@ fn metadata_code_gets_cached() {
 	new_test_ext().execute_with(|| {
 		let address = H160::repeat_byte(0xaa);
 
-		crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec());
+		assert!(crate::Pallet::<Test>::create_account(address, b"Exemple".to_vec(), None).is_ok());
 
 		let metadata = crate::Pallet::<Test>::account_code_metadata(address);
 		assert_eq!(metadata.size, 7);

@@ -34,7 +34,7 @@ use sp_runtime::{
 };
 // Frontier
 use fp_evm::{ExitReason, ExitRevert, PrecompileFailure, PrecompileHandle};
-use pallet_evm::{EnsureAddressNever, EnsureAddressRoot};
+use pallet_evm::{CodeMetadata, EnsureAddressNever, EnsureAddressRoot};
 use precompile_utils::{
 	precompile_set::*,
 	solidity::{codec::Writer, revert::revert},
@@ -147,7 +147,16 @@ impl MockPrecompile {
 	}
 }
 
-struct MockPrecompileHandle;
+#[derive(Default)]
+struct MockPrecompileHandle {
+	contracts_being_constructed: Vec<H160>,
+}
+impl MockPrecompileHandle {
+	fn with_contracts_being_constructed(mut self, contracts_being_constructed: Vec<H160>) -> Self {
+		self.contracts_being_constructed = contracts_being_constructed;
+		self
+	}
+}
 impl PrecompileHandle for MockPrecompileHandle {
 	fn call(
 		&mut self,
@@ -177,7 +186,7 @@ impl PrecompileHandle for MockPrecompileHandle {
 	fn refund_external_cost(&mut self, _ref_time: Option<u64>, _proof_size: Option<u64>) {}
 
 	fn remaining_gas(&self) -> u64 {
-		unimplemented!()
+		0
 	}
 
 	fn log(&mut self, _: H160, _: Vec<H256>, _: Vec<u8>) -> Result<(), evm::ExitError> {
@@ -196,12 +205,20 @@ impl PrecompileHandle for MockPrecompileHandle {
 		unimplemented!()
 	}
 
+	fn origin(&self) -> H160 {
+		Alice.into()
+	}
+
 	fn is_static(&self) -> bool {
 		true
 	}
 
 	fn gas_limit(&self) -> Option<u64> {
 		unimplemented!()
+	}
+
+	fn is_contract_being_constructed(&self, address: H160) -> bool {
+		self.contracts_being_constructed.contains(&address)
 	}
 }
 
@@ -239,7 +256,6 @@ impl pallet_evm::Config for Runtime {
 	type WithdrawOrigin = EnsureAddressNever<AccountId>;
 	type AddressMapping = AccountId;
 	type Currency = Balances;
-	type RuntimeEvent = RuntimeEvent;
 	type PrecompilesType = Precompiles<Runtime>;
 	type PrecompilesValue = PrecompilesValue;
 	type ChainId = ();
@@ -251,6 +267,8 @@ impl pallet_evm::Config for Runtime {
 	type GasLimitPovSizeRatio = GasLimitPovSizeRatio;
 	type GasLimitStorageGrowthRatio = ();
 	type Timestamp = Timestamp;
+	type CreateInnerOriginFilter = ();
+	type CreateOriginFilter = ();
 	type WeightInfo = pallet_evm::weights::SubstrateWeight<Runtime>;
 }
 
@@ -312,9 +330,10 @@ fn default_checks_revert_when_called_by_precompile() {
 #[test]
 fn default_checks_revert_when_called_by_contract() {
 	ExtBuilder::default().build().execute_with(|| {
-		pallet_evm::Pallet::<Runtime>::create_account(
+		let _ = pallet_evm::Pallet::<Runtime>::create_account(
 			Alice.into(),
 			hex_literal::hex!("1460006000fd").to_vec(),
+			None,
 		);
 
 		precompiles()
@@ -337,9 +356,10 @@ fn default_checks_revert_when_doing_subcall() {
 #[test]
 fn callable_by_contract_works() {
 	ExtBuilder::default().build().execute_with(|| {
-		pallet_evm::Pallet::<Runtime>::create_account(
+		let _ = pallet_evm::Pallet::<Runtime>::create_account(
 			Alice.into(),
 			hex_literal::hex!("1460006000fd").to_vec(),
+			None,
 		);
 
 		precompiles()
@@ -384,10 +404,12 @@ fn subcalls_works_when_allowed() {
 #[test]
 fn get_address_type_works_for_eoa() {
 	ExtBuilder::default().build().execute_with(|| {
-		let addr = H160::repeat_byte(0x1d);
+		let externally_owned_account: H160 = Alice.into();
+		let mut handle = MockPrecompileHandle::default();
+
 		assert_eq!(
 			AddressType::EOA,
-			get_address_type::<Runtime>(&mut MockPrecompileHandle, addr).expect("OOG")
+			get_address_type::<Runtime>(&mut handle, externally_owned_account).expect("OOG")
 		);
 	})
 }
@@ -395,47 +417,50 @@ fn get_address_type_works_for_eoa() {
 #[test]
 fn get_address_type_works_for_precompile() {
 	ExtBuilder::default().build().execute_with(|| {
-		let addr = H160::repeat_byte(0x1d);
-		pallet_evm::AccountCodes::<Runtime>::insert(addr, vec![0x60, 0x00, 0x60, 0x00, 0xfd]);
-		assert_eq!(
-			AddressType::Precompile,
-			get_address_type::<Runtime>(&mut MockPrecompileHandle, addr).expect("OOG")
-		);
+		let precompiles: Vec<H160> = Precompiles::<Runtime>::used_addresses_h160().collect();
+		// We expect 4 precompiles
+		assert_eq!(precompiles.len(), 4);
+
+		let mut handle = MockPrecompileHandle::default();
+		precompiles.iter().cloned().for_each(|precompile| {
+			assert_eq!(
+				AddressType::Precompile,
+				get_address_type::<Runtime>(&mut handle, precompile).expect("OOG")
+			);
+		});
 	})
 }
 
 #[test]
 fn get_address_type_works_for_smart_contract() {
 	ExtBuilder::default().build().execute_with(|| {
-		let addr = H160::repeat_byte(0x1d);
-
-		// length > 5
-		pallet_evm::AccountCodes::<Runtime>::insert(
-			addr,
-			vec![0x60, 0x00, 0x60, 0x00, 0xfd, 0xff, 0xff],
-		);
-		assert_eq!(
-			AddressType::Contract,
-			get_address_type::<Runtime>(&mut MockPrecompileHandle, addr).expect("OOG")
+		let address = H160::repeat_byte(0x1d);
+		pallet_evm::AccountCodesMetadata::<Runtime>::insert(
+			address,
+			CodeMetadata {
+				hash: Default::default(),
+				size: 1,
+			},
 		);
 
-		// length < 5
-		pallet_evm::AccountCodes::<Runtime>::insert(addr, vec![0x60, 0x00, 0x60]);
+		let mut handle = MockPrecompileHandle::default();
 		assert_eq!(
 			AddressType::Contract,
-			get_address_type::<Runtime>(&mut MockPrecompileHandle, addr).expect("OOG")
+			get_address_type::<Runtime>(&mut handle, address).expect("OOG")
 		);
 	})
 }
 
 #[test]
-fn get_address_type_works_for_unknown() {
+fn get_address_type_works_for_smart_contract_being_constructed() {
 	ExtBuilder::default().build().execute_with(|| {
-		let addr = H160::repeat_byte(0x1d);
-		pallet_evm::AccountCodes::<Runtime>::insert(addr, vec![0x11, 0x00, 0x60, 0x00, 0xfd]);
+		let contract_being_constucted = H160::repeat_byte(0x1d);
+		let mut handle = MockPrecompileHandle::default()
+			.with_contracts_being_constructed(vec![contract_being_constucted]);
+
 		assert_eq!(
-			AddressType::Unknown,
-			get_address_type::<Runtime>(&mut MockPrecompileHandle, addr).expect("OOG")
+			AddressType::Contract,
+			get_address_type::<Runtime>(&mut handle, contract_being_constucted).expect("OOG")
 		);
 	})
 }

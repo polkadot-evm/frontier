@@ -63,7 +63,7 @@ impl<'de> serde::Deserialize<'de> for Index {
 
 		struct IndexVisitor;
 
-		impl<'de> de::Visitor<'de> for IndexVisitor {
+		impl de::Visitor<'_> for IndexVisitor {
 			type Value = Index;
 
 			fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
