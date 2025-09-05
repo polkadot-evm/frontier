@@ -1,0 +1,71 @@
+version: "3.8"
+services:
+  bootnode:
+    build: .
+    container_name: tokfin-bootnode
+    command: >
+      tokfin-node
+      --chain=local
+      --base-path /data
+      --port 30333
+      --ws-port 9944
+      --rpc-port 9933
+      --rpc-cors all
+      --validator
+      --alice
+      --unsafe-ws-external
+      --unsafe-rpc-external
+      --rpc-methods=Unsafe
+      --name "Tokfin-Bootnode"
+    volumes:
+      - ./data/bootnode:/data
+    ports:
+      - "30333:30333"
+      - "9944:9944"
+      - "9933:9933"
+
+  validator1:
+    build: .
+    container_name: tokfin-validator1
+    command: >
+      tokfin-node
+      --chain=local
+      --base-path /data
+      --port 30334
+      --ws-port 9945
+      --rpc-port 9934
+      --validator
+      --bob
+      --bootnodes /dns4/tokfin-bootnode/tcp/30333/p2p/BOOTNODE_PEER_ID
+      --name "Tokfin-Validator1"
+    volumes:
+      - ./data/validator1:/data
+    depends_on:
+      - bootnode
+    ports:
+      - "30334:30334"
+      - "9945:9945"
+      - "9934:9934"
+
+  validator2:
+    build: .
+    container_name: tokfin-validator2
+    command: >
+      tokfin-node
+      --chain=local
+      --base-path /data
+      --port 30335
+      --ws-port 9946
+      --rpc-port 9935
+      --validator
+      --charlie
+      --bootnodes /dns4/tokfin-bootnode/tcp/30333/p2p/BOOTNODE_PEER_ID
+      --name "Tokfin-Validator2"
+    volumes:
+      - ./data/validator2:/data
+    depends_on:
+      - bootnode
+    ports:
+      - "30335:30335"
+      - "9946:9946"
+      - "9935:9935"

@@ -9,3 +9,4 @@ Esqueleto de pallet FRAME para Tokfinet.
 ## Uso
 1. Añadir al workspace en el Cargo.toml raíz
 2. Añadir al runtime con `scripts/add-pallet.sh pallet-tkf-storage <índice>`
+

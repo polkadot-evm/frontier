@@ -505,6 +505,12 @@ mod runtime {
 	)]
 	pub struct Runtime;
  
+	#[runtime::pallet_index(22)]
+	pub type Tokfindashboard = pallet_tkf_dashboard;
+ 
+	#[runtime::pallet_index(21)]
+	pub type Tokfindaosrv = pallet_tkf_daosrv;
+ 
 	#[runtime::pallet_index(20)]
 	pub type Tokfinorchestra = pallet_tkf_orchestra;
  
@@ -1162,4 +1168,10 @@ impl pallet_tkf_cauth::Config for Runtime {}
 
 
 impl pallet_tkf_orchestra::Config for Runtime {}
+
+
+impl pallet_tkf_daosrv::Config for Runtime {}
+
+
+impl pallet_tkf_dashboard::Config for Runtime {}
 

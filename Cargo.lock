@@ -7916,6 +7916,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "pallet-tkf-daosrv"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
+name = "pallet-tkf-dashboard"
+version = "0.1.0"
+dependencies = [
+ "frame-support",
+ "frame-system",
+ "log",
+ "parity-scale-codec",
+ "scale-info",
+ "sp-std",
+]
+
+[[package]]
 name = "pallet-tkf-devteam"
 version = "0.1.0"
 dependencies = [
@@ -13942,6 +13966,8 @@ dependencies = [
  "pallet-timestamp",
  "pallet-tkf-cauth",
  "pallet-tkf-cteam",
+ "pallet-tkf-daosrv",
+ "pallet-tkf-dashboard",
  "pallet-tkf-devteam",
  "pallet-tkf-exchange",
  "pallet-tkf-foundation",

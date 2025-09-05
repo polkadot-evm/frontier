@@ -55,6 +55,8 @@ edition = "2021"
 repository = "https://github.com/easyinver/tokfinnet/"
 
 [workspace.dependencies]
+pallet-tkf-dashboard = { path = "frame/pallet-tkf-dashboard", default-features = false }
+pallet-tkf-daosrv = { path = "frame/pallet-tkf-daosrv", default-features = false }
 pallet-tkf-orchestra = { path = "frame/pallet-tkf-orchestra", default-features = false }
 pallet-tkf-cauth = { path = "frame/pallet-tkf-cauth", default-features = false }
 pallet-tkf-storage = { path = "frame/pallet-tkf-storage", default-features = false }
