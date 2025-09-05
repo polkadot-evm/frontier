@@ -130,7 +130,7 @@ fn eip7702_happy_path() {
 		}
 		.sign(&alice.private_key);
 
-		let deploy_result = Ethereum::execute(alice.address, &deploy_tx, None);
+		let deploy_result = Ethereum::execute(alice.address, &deploy_tx, None, None);
 		assert_ok!(&deploy_result);
 
 		// Get the deployed contract address
@@ -180,7 +180,7 @@ fn eip7702_happy_path() {
 		let initial_bob_balance = Balances::free_balance(&substrate_bob);
 
 		// Execute the transaction
-		let result = Ethereum::execute(alice.address, &transaction, None);
+		let result = Ethereum::execute(alice.address, &transaction, None, None);
 		assert_ok!(&result);
 
 		// Check that the delegation code was set as AccountCodes
@@ -239,7 +239,7 @@ fn eip7702_happy_path() {
 		}
 		.sign(&alice.private_key);
 
-		let direct_call_result = Ethereum::execute(alice.address, &direct_call_tx, None);
+		let direct_call_result = Ethereum::execute(alice.address, &direct_call_tx, None, None);
 		assert_ok!(&direct_call_result);
 
 		let (_, _, direct_call_info) = direct_call_result.unwrap();
@@ -277,7 +277,7 @@ fn eip7702_happy_path() {
 		}
 		.sign(&alice.private_key);
 
-		let delegate_call_result = Ethereum::execute(alice.address, &delegate_call_tx, None);
+		let delegate_call_result = Ethereum::execute(alice.address, &delegate_call_tx, None, None);
 		println!("Delegate call result: {delegate_call_result:?}");
 
 		if let Ok((_, _, CallOrCreateInfo::Call(delegate_info))) = delegate_call_result {
@@ -409,7 +409,7 @@ fn eip7702_transaction_execution() {
 		let initial_bob_balance = Balances::free_balance(&substrate_bob);
 
 		// Execute the transaction using the Ethereum pallet
-		let result = Ethereum::execute(alice.address, &transaction, None);
+		let result = Ethereum::execute(alice.address, &transaction, None, None);
 
 		// Verify transaction execution and state changes
 		let Ok(execution_info) = result else {
@@ -669,7 +669,7 @@ fn gas_cost_calculation_with_authorizations() {
 		.sign(&alice.private_key, Some(ChainId::get()));
 
 		// Execute the transaction and capture gas usage
-		let execution_result = Ethereum::execute(alice.address, &transaction, None);
+		let execution_result = Ethereum::execute(alice.address, &transaction, None, None);
 		assert_ok!(&execution_result);
 
 		let (_, _, call_info) = execution_result.unwrap();
@@ -728,7 +728,7 @@ fn authorization_with_zero_address_delegation() {
 		.sign(&alice.private_key, Some(ChainId::get()));
 
 		// Execute the first transaction
-		let result = Ethereum::execute(alice.address, &first_transaction, None);
+		let result = Ethereum::execute(alice.address, &first_transaction, None, None);
 		assert_ok!(&result);
 
 		// Verify first delegation was set
@@ -768,7 +768,7 @@ fn authorization_with_zero_address_delegation() {
 
 
 		// Execute the zero address delegation transaction
-		let result = Ethereum::execute(alice.address, &zero_transaction, None);
+		let result = Ethereum::execute(alice.address, &zero_transaction, None, None);
 		assert_ok!(&result);
 
 		// Step 3: Verify that delegation to zero address clears the account's code
@@ -793,7 +793,7 @@ fn authorization_with_zero_address_delegation() {
 		}
 		.sign(&alice.private_key);
 
-		let call_result = Ethereum::execute(alice.address, &call_after_zero_tx, None);
+		let call_result = Ethereum::execute(alice.address, &call_after_zero_tx, None, None);
 		assert_ok!(&call_result);
 
 		let (_, _, call_info) = call_result.unwrap();
