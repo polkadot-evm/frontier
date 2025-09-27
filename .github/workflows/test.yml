@@ -2,13 +2,11 @@ name: Test
 
 on:
   push:
-    branches:
-      - master
-      - 'polkadot-v**'
+    branches: [master, 'polkadot-v**']
   pull_request:
-    branches:
-      - master
-      - 'polkadot-v**'
+    branches: [master, 'polkadot-v**']
+  merge_group:
+    branches: master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
