@@ -21,6 +21,7 @@ serde_json = { workspace = true }
 
 # Substrate
 sp-crypto-hashing = { workspace = true, features = ["default"] }
+sp-core = { workspace = true }
 
 [features]
 txpool = []

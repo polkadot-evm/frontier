@@ -20,16 +20,14 @@
 
 use std::collections::BTreeMap;
 
-use ethereum::{
-	BlockV3 as EthereumBlock, ReceiptV4 as EthereumReceipt, TransactionV3 as EthereumTransaction,
-};
+use ethereum::{BlockV3 as EthereumBlock, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H256, U256};
 use serde::{de::Error, Deserialize, Deserializer, Serialize, Serializer};
 use serde_json::{from_value, Value};
 // Substrate
 use sp_crypto_hashing::keccak_256;
 
-use crate::types::{Bytes, Filter, FilteredParams, Header, Log, Rich, RichHeader};
+use crate::types::{Bytes, Filter, Header, Log, Rich, RichHeader};
 
 /// Subscription kind.
 #[derive(Clone, Debug, Eq, PartialEq, Hash, Deserialize)]
@@ -110,53 +108,6 @@ impl PubSubResult {
 			},
 			extra_info: BTreeMap::new(),
 		}))
-	}
-
-	pub fn logs(
-		block: EthereumBlock,
-		receipts: Vec<EthereumReceipt>,
-		params: &FilteredParams,
-	) -> impl Iterator<Item = Self> {
-		let block_number = block.header.number;
-		let block_hash = block.header.hash();
-
-		let mut logs: Vec<Log> = vec![];
-		let mut log_index: u32 = 0;
-		for (receipt_index, receipt) in receipts.into_iter().enumerate() {
-			let receipt_logs = match receipt {
-				EthereumReceipt::Legacy(d)
-				| EthereumReceipt::EIP2930(d)
-				| EthereumReceipt::EIP1559(d)
-				| EthereumReceipt::EIP7702(d) => d.logs,
-			};
-
-			let transaction_hash: Option<H256> = if !receipt_logs.is_empty() {
-				Some(block.transactions[receipt_index].hash())
-			} else {
-				None
-			};
-
-			let mut transaction_log_index = 0;
-			for log in receipt_logs {
-				if params.is_not_filtered(block_number, block_hash, &log.address, &log.topics) {
-					logs.push(Log {
-						address: log.address,
-						topics: log.topics,
-						data: Bytes(log.data),
-						block_hash: Some(block_hash),
-						block_number: Some(block_number),
-						transaction_hash,
-						transaction_index: Some(U256::from(receipt_index)),
-						log_index: Some(U256::from(log_index)),
-						transaction_log_index: Some(U256::from(transaction_log_index)),
-						removed: false,
-					});
-				}
-				transaction_log_index += 1;
-				log_index += 1;
-			}
-		}
-		logs.into_iter().map(|log| Self::Log(Box::new(log)))
 	}
 
 	pub fn transaction_hash(tx: &EthereumTransaction) -> Self {
