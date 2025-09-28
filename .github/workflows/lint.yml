@@ -13,6 +13,8 @@ on:
       - 'polkadot-v**'
     paths-ignore:
       - "**.md"
+  merge_group:
+    branches: master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
