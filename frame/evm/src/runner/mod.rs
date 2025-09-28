@@ -102,4 +102,22 @@ pub trait Runner<T: Config> {
 		proof_size_base_cost: Option<u64>,
 		config: &evm::Config,
 	) -> Result<CreateInfo, RunnerError<Self::Error>>;
+
+	fn create_force_address(
+		source: H160,
+		init: Vec<u8>,
+		value: U256,
+		gas_limit: u64,
+		max_fee_per_gas: Option<U256>,
+		max_priority_fee_per_gas: Option<U256>,
+		nonce: Option<U256>,
+		access_list: Vec<(H160, Vec<H256>)>,
+		authorization_list: AuthorizationList,
+		is_transactional: bool,
+		validate: bool,
+		weight_limit: Option<Weight>,
+		proof_size_base_cost: Option<u64>,
+		config: &evm::Config,
+		contract_address: H160,
+	) -> Result<CreateInfo, RunnerError<Self::Error>>;
 }

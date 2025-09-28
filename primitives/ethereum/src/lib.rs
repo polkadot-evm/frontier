@@ -35,6 +35,7 @@ pub trait ValidatedTransaction {
 	fn apply(
 		source: H160,
 		transaction: Transaction,
+		maybe_force_create_address: Option<H160>,
 	) -> Result<(PostDispatchInfo, CallOrCreateInfo), DispatchErrorWithPostInfo>;
 }
 
