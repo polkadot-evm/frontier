@@ -725,8 +725,8 @@ where
 	Ok(logs)
 }
 
-pub(crate) fn filter_block_logs<'a>(
-	filter: &'a Filter,
+pub(crate) fn filter_block_logs(
+	filter: &Filter,
 	block: EthereumBlock,
 	transaction_statuses: Vec<TransactionStatus>,
 ) -> Vec<Log> {
@@ -756,7 +756,7 @@ pub(crate) fn filter_block_logs<'a>(
 			let address_match = filter
 				.address
 				.as_ref()
-				.map_or(true, |_| params.filter_address(&log.address));
+				.is_none_or(|_| params.filter_address(&log.address));
 			if topics_match && address_match {
 				log.block_hash = Some(block_hash);
 				log.block_number = Some(block.header.number);
