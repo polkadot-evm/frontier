@@ -20,8 +20,8 @@ serde = { workspace = true }
 serde_json = { workspace = true }
 
 # Substrate
-sp-crypto-hashing = { workspace = true, features = ["default"] }
 sp-core = { workspace = true }
+sp-crypto-hashing = { workspace = true, features = ["default"] }
 
 [features]
 txpool = []
