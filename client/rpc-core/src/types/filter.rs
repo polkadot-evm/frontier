@@ -88,10 +88,10 @@ pub type FilterAddress = VariadicValue<H160>;
 ///
 /// ```json
 /// "topics": [
-///		"0xddf252ad...",// topic[0] must match `0xddf252ad...`, Event signature hash (e.g., Transfer(address,address,uint256))
-///		"0xB",        	// topic[1] must match `0xB`
-///  	null,         	// topic[2] the null wildcard can be used to match anything on a topic position
-///  	["0xC", "0xD"]	// topic[3] can be `0xC` OR `0xD`
+///     "0xddf252ad...",   // topic[0] must match `0xddf252ad...`, Event signature hash (e.g., Transfer(address,address,uint256))
+///     "0xB",             // topic[1] must match `0xB`
+///     null,              // topic[2] the null wildcard can be used to match anything on a topic position
+///     ["0xC", "0xD"]     // topic[3] can be `0xC` OR `0xD`
 /// ]
 /// ```
 ///
@@ -107,7 +107,7 @@ impl<T: AsRef<[u8]> + DeserializeOwned> From<&VariadicValue<T>> for BloomFilter 
 				vec![bloom]
 			}
 			VariadicValue::Multiple(items) => items
-				.into_iter()
+				.iter()
 				.map(|item| BloomInput::Raw(item.as_ref()).into())
 				.collect(),
 			_ => vec![],
@@ -269,9 +269,9 @@ impl FilteredParams {
 	}
 
 	pub fn filter_topics(&self, topics: &[H256]) -> bool {
-		let replaced = self.replace(topics, self.filter.topics.clone().into());
+		let replaced = self.replace(topics, self.filter.topics.clone());
 		for (idx, topic) in topics.iter().enumerate() {
-			if !replaced[idx].contains(&topic) {
+			if !replaced[idx].contains(topic) {
 				return false;
 			}
 		}
