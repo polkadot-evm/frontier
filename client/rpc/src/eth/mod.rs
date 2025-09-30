@@ -20,7 +20,7 @@ mod block;
 mod client;
 mod execute;
 mod fee;
-mod filter;
+pub(crate) mod filter;
 pub mod format;
 mod mining;
 pub mod pending;

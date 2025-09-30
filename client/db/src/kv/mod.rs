@@ -113,7 +113,7 @@ impl<Block: BlockT> fc_api::LogIndexerBackend<Block> for LogIndexerBackend<Block
 		_from_block: u64,
 		_to_block: u64,
 		_addresses: Vec<H160>,
-		_topics: Vec<Vec<Option<H256>>>,
+		_topics: Vec<Vec<H256>>,
 	) -> Result<Vec<FilteredLog<Block>>, String> {
 		Err("KeyValue db does not index logs".into())
 	}

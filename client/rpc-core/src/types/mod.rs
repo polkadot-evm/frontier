@@ -53,7 +53,7 @@ pub use self::{
 	fee::{FeeHistory, FeeHistoryCache, FeeHistoryCacheItem, FeeHistoryCacheLimit},
 	filter::{
 		Filter, FilterAddress, FilterChanges, FilterPool, FilterPoolItem, FilterType,
-		FilteredParams, Topic, VariadicValue,
+		FilteredParams, Topics, VariadicValue,
 	},
 	index::Index,
 	log::Log,

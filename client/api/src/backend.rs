@@ -82,6 +82,6 @@ pub trait LogIndexerBackend<Block: BlockT>: Send + Sync {
 		from_block: u64,
 		to_block: u64,
 		addresses: Vec<H160>,
-		topics: Vec<Vec<Option<H256>>>,
+		topics: Vec<Vec<H256>>,
 	) -> Result<Vec<FilteredLog<Block>>, String>;
 }

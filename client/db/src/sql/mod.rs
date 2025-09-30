@@ -43,9 +43,6 @@ use fp_consensus::{FindLogError, Hashes, Log as ConsensusLog, PostLog, PreLog};
 use fp_rpc::EthereumRuntimeRPCApi;
 use fp_storage::EthereumStorageSchema;
 
-/// Maximum number to topics allowed to be filtered upon
-const MAX_TOPIC_COUNT: u16 = 4;
-
 /// Represents a log item.
 #[derive(Debug, Eq, PartialEq)]
 pub struct Log {
@@ -851,7 +848,7 @@ impl<Block: BlockT<Hash = H256>> fc_api::LogIndexerBackend<Block> for Backend<Bl
 		from_block: u64,
 		to_block: u64,
 		addresses: Vec<H160>,
-		topics: Vec<Vec<Option<H256>>>,
+		topics: Vec<Vec<H256>>,
 	) -> Result<Vec<FilteredLog<Block>>, String> {
 		let mut unique_topics: [HashSet<H256>; 4] = [
 			HashSet::new(),
@@ -859,16 +856,8 @@ impl<Block: BlockT<Hash = H256>> fc_api::LogIndexerBackend<Block> for Backend<Bl
 			HashSet::new(),
 			HashSet::new(),
 		];
-		for topic_combination in topics.into_iter() {
-			for (topic_index, topic) in topic_combination.into_iter().enumerate() {
-				if topic_index == MAX_TOPIC_COUNT as usize {
-					return Err("Invalid topic input. Maximum length is 4.".to_string());
-				}
-
-				if let Some(topic) = topic {
-					unique_topics[topic_index].insert(topic);
-				}
-			}
+		for (topic_index, topic_options) in topics.into_iter().enumerate() {
+			unique_topics[topic_index].extend(topic_options);
 		}
 
 		let log_key = format!("{from_block}-{to_block}-{addresses:?}-{unique_topics:?}");
@@ -1045,7 +1034,7 @@ mod test {
 		pub from_block: u64,
 		pub to_block: u64,
 		pub addresses: Vec<H160>,
-		pub topics: Vec<Vec<Option<H256>>>,
+		pub topics: Vec<Vec<H256>>,
 		pub expected_result: Vec<FilteredLog<OpaqueBlock>>,
 	}
 
@@ -1408,31 +1397,11 @@ mod test {
 			from_block: 0,
 			to_block: 0,
 			addresses: vec![],
-			topics: vec![vec![None], vec![None, None, None]],
+			topics: vec![vec![], vec![], vec![], vec![]],
 			expected_result: vec![],
 		};
 		let result = run_test_case(backend, &filter).await.expect("must succeed");
 		assert_eq!(result, filter.expected_result);
-	}
-
-	#[tokio::test]
-	async fn invalid_topic_input_size_fails() {
-		let TestData {
-			backend, topics_a, ..
-		} = prepare().await;
-		let filter = TestFilter {
-			from_block: 0,
-			to_block: 0,
-			addresses: vec![],
-			topics: vec![
-				vec![Some(topics_a), None, None, None, None],
-				vec![Some(topics_a), None, None, None],
-			],
-			expected_result: vec![],
-		};
-		run_test_case(backend, &filter)
-			.await
-			.expect_err("Invalid topic input. Maximum length is 4.");
 	}
 
 	#[tokio::test]
@@ -1451,12 +1420,7 @@ mod test {
 			from_block: 0,
 			to_block: 1,
 			addresses: vec![],
-			topics: vec![
-				vec![Some(topics_a), None, Some(topics_d)],
-				vec![None], // not considered
-				vec![Some(topics_b), Some(topics_a), None],
-				vec![None, None, None, None], // not considered
-			],
+			topics: vec![vec![topics_a, topics_b], vec![topics_a], vec![topics_d]],
 			expected_result: vec![log_1_badc_2_0_alice.into()],
 		};
 		let result = run_test_case(backend, &filter).await.expect("must succeed");
@@ -1533,7 +1497,7 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![],
-			topics: vec![vec![Some(topics_d)]],
+			topics: vec![vec![topics_d]],
 			expected_result: vec![
 				log_1_dcba_1_0_alice.into(),
 				log_2_dcba_1_0_bob.into(),
@@ -1558,7 +1522,7 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![bob],
-			topics: vec![vec![Some(topics_b)]],
+			topics: vec![vec![topics_b]],
 			expected_result: vec![log_2_badc_2_0_bob.into(), log_3_badc_2_0_bob.into()],
 		};
 		let result = run_test_case(backend, &filter).await.expect("must succeed");
@@ -1581,7 +1545,7 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![alice, bob],
-			topics: vec![vec![Some(topics_b)]],
+			topics: vec![vec![topics_b]],
 			expected_result: vec![
 				log_1_badc_2_0_alice.into(),
 				log_2_badc_2_0_bob.into(),
@@ -1609,7 +1573,7 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![alice, bob],
-			topics: vec![vec![Some(topics_a), Some(topics_b)]],
+			topics: vec![vec![topics_a], vec![topics_b]],
 			expected_result: vec![
 				log_1_abcd_0_0_alice.into(),
 				log_2_abcd_0_0_bob.into(),
@@ -1637,7 +1601,7 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![alice, bob],
-			topics: vec![vec![Some(topics_d), None, Some(topics_b)]],
+			topics: vec![vec![topics_d], vec![], vec![topics_b]],
 			expected_result: vec![
 				log_1_dcba_1_0_alice.into(),
 				log_2_dcba_1_0_bob.into(),
@@ -1661,7 +1625,7 @@ mod test {
 			from_block: 0,
 			to_block: 1,
 			addresses: vec![alice],
-			topics: vec![vec![None, None, Some(topics_b), None]],
+			topics: vec![vec![], vec![], vec![topics_b]],
 			expected_result: vec![log_1_dcba_1_0_alice.into()],
 		};
 		let result = run_test_case(backend, &filter).await.expect("must succeed");
@@ -1686,11 +1650,7 @@ mod test {
 			from_block: 0,
 			to_block: 3,
 			addresses: vec![],
-			topics: vec![
-				vec![Some(topics_a)],
-				vec![Some(topics_d)],
-				vec![Some(topics_d)], // duplicate, ignored
-			],
+			topics: vec![vec![topics_a, topics_d]],
 			expected_result: vec![
 				log_1_abcd_0_0_alice.into(),
 				log_1_dcba_1_0_alice.into(),
@@ -1725,10 +1685,10 @@ mod test {
 			addresses: vec![bob],
 			// Product on input [null,null,(b,d),(a,c)].
 			topics: vec![
-				vec![None, None, Some(topics_b), Some(topics_a)],
-				vec![None, None, Some(topics_b), Some(topics_c)],
-				vec![None, None, Some(topics_d), Some(topics_a)],
-				vec![None, None, Some(topics_d), Some(topics_c)],
+				vec![],
+				vec![],
+				vec![topics_b, topics_d],
+				vec![topics_a, topics_c],
 			],
 			expected_result: vec![
 				log_2_dcba_1_0_bob.into(),

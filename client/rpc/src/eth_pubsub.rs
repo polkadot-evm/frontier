@@ -139,16 +139,25 @@ where
 			let substrate_hash = notification.hash;
 
 			let block = self.storage_override.current_block(substrate_hash);
-			let receipts = self.storage_override.current_receipts(substrate_hash);
+			let statuses = self
+				.storage_override
+				.current_transaction_statuses(substrate_hash);
 
-			match (block, receipts) {
-				(Some(block), Some(receipts)) => Some((block, receipts)),
+			match (block, statuses) {
+				(Some(block), Some(statuses)) => Some((block, statuses)),
 				_ => None,
 			}
 		} else {
 			None
 		};
-		future::ready(res.map(|(block, receipts)| PubSubResult::logs(block, receipts, params)))
+
+		future::ready(res.map(|(block, statuses)| {
+			let logs = crate::eth::filter::filter_block_logs(&params.filter, block, statuses);
+
+			logs.clone()
+				.into_iter()
+				.map(|log| PubSubResult::Log(Box::new(log.clone())))
+		}))
 	}
 
 	fn pending_transactions(&self, hash: &TxHash<P>) -> future::Ready<Option<PubSubResult>> {
@@ -230,7 +239,7 @@ where
 {
 	fn subscribe(&self, pending: PendingSubscriptionSink, kind: Kind, params: Option<Params>) {
 		let filtered_params = match params {
-			Some(Params::Logs(filter)) => FilteredParams::new(Some(filter)),
+			Some(Params::Logs(filter)) => FilteredParams::new(filter),
 			_ => FilteredParams::default(),
 		};
 
