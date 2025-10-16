@@ -591,8 +591,8 @@ mod tests {
 		};
 		let filtered_params = FilteredParams::new(filter);
 		// Expected not to match, as the filter has more topics than the log.
-		assert!(!filtered_params.filter_topics(&vec![]));
+		assert!(!filtered_params.filter_topics(&[]));
 		// Expected to match, as the first topic is a wildcard.
-		assert!(filtered_params.filter_topics(&vec![topic1, topic2]));
+		assert!(filtered_params.filter_topics(&[topic1, topic2]));
 	}
 }
