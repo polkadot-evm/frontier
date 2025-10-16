@@ -571,4 +571,28 @@ mod tests {
 			&topics_bloom
 		));
 	}
+
+	#[test]
+	fn filter_topics_should_return_false_when_filter_has_more_topics_than_log() {
+		let topic1 =
+			H256::from_str("1000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let topic2 =
+			H256::from_str("2000000000000000000000000000000000000000000000000000000000000000")
+				.unwrap();
+		let filter = Filter {
+			from_block: None,
+			to_block: None,
+			block_hash: None,
+			address: None,
+			topics: vec![VariadicValue::Null, VariadicValue::Single(topic2)]
+				.try_into()
+				.expect("qed"),
+		};
+		let filtered_params = FilteredParams::new(filter);
+		// Expected not to match, as the filter has more topics than the log.
+		assert!(!filtered_params.filter_topics(&vec![]));
+		// Expected to match, as the first topic is a wildcard.
+		assert!(filtered_params.filter_topics(&vec![topic1, topic2]));
+	}
 }
