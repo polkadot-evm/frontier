@@ -280,7 +280,7 @@ impl FilteredParams {
 		}
 		let replaced = self.prepare_filter_wildcards(topics, &self.filter.topics);
 		for (idx, topic) in topics.iter().enumerate() {
-			if !replaced.get(idx).map_or(false, |v| v.contains(topic)) {
+			if !replaced.get(idx).is_some_and(|v| v.contains(topic)) {
 				return false;
 			}
 		}
