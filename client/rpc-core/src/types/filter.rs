@@ -191,8 +191,12 @@ impl FilteredParams {
 		false
 	}
 
-	/// Replace None values - aka wildcards - for the log input value in that position.
-	pub fn replace(&self, topics: &[H256], input_topics: Topics) -> Vec<Vec<H256>> {
+	/// Prepare the filter topics, taking into account wildcards.
+	pub fn prepare_filter_wildcards(
+		&self,
+		topics: &[H256],
+		input_topics: &Topics,
+	) -> Vec<Vec<H256>> {
 		let mut out: Vec<Vec<H256>> = Vec::new();
 		for (idx, topic) in topics.iter().enumerate() {
 			if let Some(t) = input_topics.get(idx) {
@@ -268,10 +272,15 @@ impl FilteredParams {
 		true
 	}
 
+	/// Returns true if the provided topics match the filter's topics.
 	pub fn filter_topics(&self, topics: &[H256]) -> bool {
-		let replaced = self.replace(topics, self.filter.topics.clone());
+		// If the filter has more topics than the log, it can't match.
+		if self.filter.topics.len() > topics.len() {
+			return false;
+		}
+		let replaced = self.prepare_filter_wildcards(topics, &self.filter.topics);
 		for (idx, topic) in topics.iter().enumerate() {
-			if !replaced[idx].contains(topic) {
+			if !replaced.get(idx).map_or(false, |v| v.contains(topic)) {
 				return false;
 			}
 		}
