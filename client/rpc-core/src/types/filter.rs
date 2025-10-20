@@ -198,24 +198,23 @@ impl FilteredParams {
 		input_topics: &Topics,
 	) -> Vec<Vec<H256>> {
 		let mut out: Vec<Vec<H256>> = Vec::new();
-		for (idx, topic) in topics.iter().enumerate() {
-			if let Some(t) = input_topics.get(idx) {
-				match t {
-					VariadicValue::Single(value) => {
-						out.push(vec![*value]);
+		for (idx, filter_topic) in input_topics.iter().enumerate() {
+			match filter_topic {
+				VariadicValue::Single(value) => {
+					out.push(vec![*value]);
+				}
+				VariadicValue::Multiple(value) => {
+					out.push(value.clone());
+				}
+				VariadicValue::Null => {
+					if let Some(t) = topics.get(idx) {
+						out.push(vec![*t]);
+					} else {
+						out.push(vec![]);
 					}
-					VariadicValue::Multiple(value) => {
-						out.push(value.clone());
-					}
-					_ => {
-						out.push(vec![*topic]);
-					}
-				};
-			} else {
-				out.push(vec![*topic]);
-			}
+				}
+			};
 		}
-
 		out
 	}
 
@@ -274,13 +273,9 @@ impl FilteredParams {
 
 	/// Returns true if the provided topics match the filter's topics.
 	pub fn filter_topics(&self, topics: &[H256]) -> bool {
-		// If the filter has more topics than the log, it can't match.
-		if self.filter.topics.len() > topics.len() {
-			return false;
-		}
 		let replaced = self.prepare_filter_wildcards(topics, &self.filter.topics);
-		for (idx, topic) in topics.iter().enumerate() {
-			if !replaced.get(idx).is_some_and(|v| v.contains(topic)) {
+		for (idx, filter) in replaced.iter().enumerate() {
+			if !topics.get(idx).is_some_and(|v| filter.contains(v)) {
 				return false;
 			}
 		}
