@@ -129,8 +129,13 @@ pub struct Filter {
 	/// Address
 	pub address: Option<FilterAddress>,
 	/// Topics
-	#[serde(default, skip_serializing_if = "Vec::is_empty")]
-	pub topics: Topics,
+	pub topics: Option<Topics>,
+}
+
+impl Filter {
+	pub fn topics(&self) -> Topics {
+		self.topics.clone().unwrap_or_default()
+	}
 }
 
 /// Helper for Filter matching.
@@ -273,7 +278,7 @@ impl FilteredParams {
 
 	/// Returns true if the provided topics match the filter's topics.
 	pub fn filter_topics(&self, topics: &[H256]) -> bool {
-		let replaced = self.prepare_filter_wildcards(topics, &self.filter.topics);
+		let replaced = self.prepare_filter_wildcards(topics, &self.filter.topics());
 		for (idx, filter) in replaced.iter().enumerate() {
 			if !topics.get(idx).is_some_and(|v| filter.contains(v)) {
 				return false;
@@ -396,15 +401,17 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: None,
-			topics: vec![
-				VariadicValue::Single(topic1),
-				VariadicValue::Multiple(vec![topic2, topic3]),
-			]
-			.try_into()
-			.expect("qed"),
+			topics: Some(
+				vec![
+					VariadicValue::Single(topic1),
+					VariadicValue::Multiple(vec![topic2, topic3]),
+				]
+				.try_into()
+				.expect("qed"),
+			),
 		};
 
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		assert!(FilteredParams::topics_in_bloom(
 			block_bloom(),
 			&topics_bloom
@@ -426,14 +433,16 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: None,
-			topics: vec![
-				VariadicValue::Single(topic1),
-				VariadicValue::Multiple(vec![topic2, topic3]),
-			]
-			.try_into()
-			.expect("qed"),
+			topics: Some(
+				vec![
+					VariadicValue::Single(topic1),
+					VariadicValue::Multiple(vec![topic2, topic3]),
+				]
+				.try_into()
+				.expect("qed"),
+			),
 		};
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		assert!(!FilteredParams::topics_in_bloom(
 			block_bloom(),
 			&topics_bloom
@@ -448,7 +457,7 @@ mod tests {
 			address: None,
 			topics: Default::default(),
 		};
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		assert!(FilteredParams::topics_in_bloom(
 			block_bloom(),
 			&topics_bloom
@@ -471,15 +480,17 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: Some(VariadicValue::Single(test_address)),
-			topics: vec![
-				VariadicValue::Single(topic1),
-				VariadicValue::Multiple(vec![topic2, topic3]),
-			]
-			.try_into()
-			.expect("qed"),
+			topics: Some(
+				vec![
+					VariadicValue::Single(topic1),
+					VariadicValue::Multiple(vec![topic2, topic3]),
+				]
+				.try_into()
+				.expect("qed"),
+			),
 		};
 		let address_bloom = FilteredParams::address_bloom_filter(&filter.address);
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		let matches = FilteredParams::address_in_bloom(block_bloom(), &address_bloom)
 			&& FilteredParams::topics_in_bloom(block_bloom(), &topics_bloom);
 		assert!(matches);
@@ -501,15 +512,17 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: Some(VariadicValue::Single(test_address)),
-			topics: vec![
-				VariadicValue::Single(topic1),
-				VariadicValue::Multiple(vec![topic2, topic3]),
-			]
-			.try_into()
-			.expect("qed"),
+			topics: Some(
+				vec![
+					VariadicValue::Single(topic1),
+					VariadicValue::Multiple(vec![topic2, topic3]),
+				]
+				.try_into()
+				.expect("qed"),
+			),
 		};
 		let address_bloom = FilteredParams::address_bloom_filter(&filter.address);
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		let matches = FilteredParams::address_in_bloom(block_bloom(), &address_bloom)
 			&& FilteredParams::topics_in_bloom(block_bloom(), &topics_bloom);
 		assert!(!matches);
@@ -527,14 +540,16 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: None,
-			topics: vec![
-				VariadicValue::Null,
-				VariadicValue::Multiple(vec![topic2, topic3]),
-			]
-			.try_into()
-			.expect("qed"),
+			topics: Some(
+				vec![
+					VariadicValue::Null,
+					VariadicValue::Multiple(vec![topic2, topic3]),
+				]
+				.try_into()
+				.expect("qed"),
+			),
 		};
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		assert!(FilteredParams::topics_in_bloom(
 			block_bloom(),
 			&topics_bloom
@@ -553,14 +568,16 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: None,
-			topics: vec![
-				VariadicValue::Null,
-				VariadicValue::Multiple(vec![topic2, topic3]),
-			]
-			.try_into()
-			.expect("qed"),
+			topics: Some(
+				vec![
+					VariadicValue::Null,
+					VariadicValue::Multiple(vec![topic2, topic3]),
+				]
+				.try_into()
+				.expect("qed"),
+			),
 		};
-		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics);
+		let topics_bloom = FilteredParams::topics_bloom_filter(&filter.topics());
 		assert!(!FilteredParams::topics_in_bloom(
 			block_bloom(),
 			&topics_bloom
@@ -580,9 +597,11 @@ mod tests {
 			to_block: None,
 			block_hash: None,
 			address: None,
-			topics: vec![VariadicValue::Null, VariadicValue::Single(topic2)]
-				.try_into()
-				.expect("qed"),
+			topics: Some(
+				vec![VariadicValue::Null, VariadicValue::Single(topic2)]
+					.try_into()
+					.expect("qed"),
+			),
 		};
 		let filtered_params = FilteredParams::new(filter);
 		// Expected not to match, as the filter has more topics than the log.
