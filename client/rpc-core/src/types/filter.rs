@@ -196,33 +196,6 @@ impl FilteredParams {
 		false
 	}
 
-	/// Prepare the filter topics, taking into account wildcards.
-	pub fn prepare_filter_wildcards(
-		&self,
-		topics: &[H256],
-		input_topics: &Topics,
-	) -> Vec<Vec<H256>> {
-		let mut out: Vec<Vec<H256>> = Vec::new();
-		for (idx, filter_topic) in input_topics.iter().enumerate() {
-			match filter_topic {
-				VariadicValue::Single(value) => {
-					out.push(vec![*value]);
-				}
-				VariadicValue::Multiple(value) => {
-					out.push(value.clone());
-				}
-				VariadicValue::Null => {
-					if let Some(t) = topics.get(idx) {
-						out.push(vec![*t]);
-					} else {
-						out.push(vec![]);
-					}
-				}
-			};
-		}
-		out
-	}
-
 	pub fn filter_block_range(&self, block_number: u64) -> bool {
 		let mut out = true;
 		if let Some(BlockNumberOrHash::Num(from)) = self.filter.from_block {
@@ -276,12 +249,31 @@ impl FilteredParams {
 		true
 	}
 
-	/// Returns true if the provided topics match the filter's topics.
 	pub fn filter_topics(&self, topics: &[H256]) -> bool {
-		let replaced = self.prepare_filter_wildcards(topics, &self.filter.topics());
-		for (idx, filter) in replaced.iter().enumerate() {
-			if !topics.get(idx).is_some_and(|v| filter.contains(v)) {
-				return false;
+		for (idx, topic_filter) in self.filter.topics().iter().enumerate() {
+			let log_topic = topics.get(idx);
+
+			match (log_topic, topic_filter) {
+				// Wildcard matches anything
+				(_, VariadicValue::Null) => {}
+
+				// Single value must match exactly
+				(Some(actual), VariadicValue::Single(expected)) if actual != expected => {
+					return false;
+				}
+
+				// Multiple values must contain the actual topic
+				(Some(actual), VariadicValue::Multiple(options)) if !options.contains(actual) => {
+					return false;
+				}
+
+				// No topic provided for non-wildcard filter
+				(None, VariadicValue::Single(_) | VariadicValue::Multiple(_)) => {
+					return false;
+				}
+
+				// All other combinations are valid
+				_ => {}
 			}
 		}
 
@@ -598,9 +590,13 @@ mod tests {
 			block_hash: None,
 			address: None,
 			topics: Some(
-				vec![VariadicValue::Null, VariadicValue::Single(topic2)]
-					.try_into()
-					.expect("qed"),
+				vec![
+					VariadicValue::Null,
+					VariadicValue::Single(topic2),
+					VariadicValue::Null,
+				]
+				.try_into()
+				.expect("qed"),
 			),
 		};
 		let filtered_params = FilteredParams::new(filter);
