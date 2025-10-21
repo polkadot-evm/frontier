@@ -75,7 +75,7 @@ kvdb-rocksdb = "0.19.0"
 libsecp256k1 = { version = "0.7.2", default-features = false }
 log = { version = "0.4.27", default-features = false }
 num_enum = { version = "0.7.3", default-features = false }
-parity-db = "0.4.13"
+parity-db = "0.5.4"
 parking_lot = "0.12.3"
 proc-macro2 = "1.0.101"
 quote = "1.0.38"
