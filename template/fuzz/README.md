@@ -3,7 +3,7 @@ This fuzzing harness uses a "structure-aware" approach by using [arbitrary](http
 
 The harness has multiple substrate invariants, but two frontier specific ones:
 1. The proof size must never exceed the supplied max proof size
-4. The execution time MUST be within a reasonable thresold.
+4. The execution time MUST be within a reasonable threshold.
 
 Important notes:
 1. Since the fuzzing happens in ``debug`` mode, the EVM execution will be notably slower. Set a reasonably high timeout, five or six seconds is a good starter.

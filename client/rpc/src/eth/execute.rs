@@ -651,7 +651,7 @@ where
 
 		// Create a helper to check if a gas allowance results in an executable transaction.
 		//
-		// A new ApiRef instance needs to be used per execution to avoid the overlayed state to affect
+		// A new ApiRef instance needs to be used per execution to avoid the overlaid state to affect
 		// the estimation result of subsequent calls.
 		//
 		// Note that this would have a performance penalty if we introduce gas estimation for past
