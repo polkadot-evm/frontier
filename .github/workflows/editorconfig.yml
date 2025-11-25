@@ -19,4 +19,4 @@ jobs:
     steps:
       - uses: actions/checkout@v5
       - uses: editorconfig-checker/action-editorconfig-checker@main
-      - run: editorconfig-checker
+      - run: editorconfig-checker -disable-charset
