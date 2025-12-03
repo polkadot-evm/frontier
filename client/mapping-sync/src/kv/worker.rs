@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{collections::HashSet, pin::Pin, sync::Arc, time::Duration};
+use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
 
 use futures::{
 	prelude::*,
@@ -58,10 +58,12 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	pubsub_notification_sinks:
 		Arc<crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>>,
 
-	/// Tracks block hashes that were `is_new_best` at the time of their import notification.
+	/// Tracks block hashes that were `is_new_best` at the time of their import notification,
+	/// along with their block number for pruning purposes.
 	/// This is used to correctly determine `is_new_best` when syncing blocks, avoiding race
 	/// conditions where the best hash may have changed between import and sync time.
-	best_at_import: HashSet<Block::Hash>,
+	/// Entries are pruned when blocks become finalized to prevent unbounded growth.
+	best_at_import: HashMap<Block::Hash, <Block::Header as HeaderT>::Number>,
 }
 
 impl<Block: BlockT, C, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
@@ -99,7 +101,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 
 			sync_oracle,
 			pubsub_notification_sinks,
-			best_at_import: HashSet::new(),
+			best_at_import: HashMap::new(),
 		}
 	}
 }
@@ -124,8 +126,10 @@ where
 					fire = true;
 					// Track blocks that were `is_new_best` at import time to avoid race
 					// conditions when determining `is_new_best` at sync time.
+					// We store the block number to enable pruning of old entries.
 					if notification.is_new_best {
-						self.best_at_import.insert(notification.hash);
+						self.best_at_import
+							.insert(notification.hash, *notification.header.number());
 					}
 				}
 				Poll::Ready(None) => return Poll::Ready(None),

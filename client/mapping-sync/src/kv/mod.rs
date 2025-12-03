@@ -22,7 +22,7 @@ mod worker;
 
 pub use worker::MappingSyncWorker;
 
-use std::{collections::HashSet, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 // Substrate
 use sc_client_api::backend::{Backend, StorageProvider};
@@ -155,7 +155,7 @@ pub fn sync_one_block<Block: BlockT, C, BE>(
 	pubsub_notification_sinks: Arc<
 		EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 	>,
-	best_at_import: &mut HashSet<Block::Hash>,
+	best_at_import: &mut HashMap<Block::Hash, <Block::Header as HeaderT>::Number>,
 ) -> Result<bool, String>
 where
 	C: ProvideRuntimeApi<Block>,
@@ -227,7 +227,8 @@ where
 			// This avoids race conditions where the best hash may have changed
 			// between import and sync time (e.g., during rapid reorgs).
 			// Fall back to current best hash check for blocks synced during catch-up.
-			let is_new_best = best_at_import.remove(&hash) || client.info().best_hash == hash;
+			let is_new_best =
+				best_at_import.remove(&hash).is_some() || client.info().best_hash == hash;
 			sink.unbounded_send(EthereumBlockNotification { is_new_best, hash })
 				.is_ok()
 		} else {
@@ -250,7 +251,7 @@ pub fn sync_blocks<Block: BlockT, C, BE>(
 	pubsub_notification_sinks: Arc<
 		EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 	>,
-	best_at_import: &mut HashSet<Block::Hash>,
+	best_at_import: &mut HashMap<Block::Hash, <Block::Header as HeaderT>::Number>,
 ) -> Result<bool, String>
 where
 	C: ProvideRuntimeApi<Block>,
@@ -274,6 +275,12 @@ where
 				best_at_import,
 			)?;
 	}
+
+	// Prune old entries from best_at_import to prevent unbounded growth.
+	// Entries for finalized blocks are no longer needed since finalized blocks
+	// cannot be reorged and their is_new_best status is irrelevant.
+	let finalized_number = client.info().finalized_number;
+	best_at_import.retain(|_, block_number| *block_number > finalized_number);
 
 	Ok(synced_any)
 }
