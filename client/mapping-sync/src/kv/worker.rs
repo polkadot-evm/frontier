@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{pin::Pin, sync::Arc, time::Duration};
+use std::{collections::HashSet, pin::Pin, sync::Arc, time::Duration};
 
 use futures::{
 	prelude::*,
@@ -57,6 +57,11 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 	pubsub_notification_sinks:
 		Arc<crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>>,
+
+	/// Tracks block hashes that were `is_new_best` at the time of their import notification.
+	/// This is used to correctly determine `is_new_best` when syncing blocks, avoiding race
+	/// conditions where the best hash may have changed between import and sync time.
+	best_at_import: HashSet<Block::Hash>,
 }
 
 impl<Block: BlockT, C, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
@@ -94,6 +99,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 
 			sync_oracle,
 			pubsub_notification_sinks,
+			best_at_import: HashSet::new(),
 		}
 	}
 }
@@ -114,8 +120,13 @@ where
 		loop {
 			match Stream::poll_next(Pin::new(&mut self.import_notifications), cx) {
 				Poll::Pending => break,
-				Poll::Ready(Some(_)) => {
+				Poll::Ready(Some(notification)) => {
 					fire = true;
+					// Track blocks that were `is_new_best` at import time to avoid race
+					// conditions when determining `is_new_best` at sync time.
+					if notification.is_new_best {
+						self.best_at_import.insert(notification.hash);
+					}
 				}
 				Poll::Ready(None) => return Poll::Ready(None),
 			}
@@ -138,7 +149,12 @@ where
 		if fire {
 			self.inner_delay = None;
 
-			match crate::kv::sync_blocks(
+			// Temporarily take ownership of best_at_import to avoid borrow checker issues
+			// (we can't have both an immutable borrow of self.client and a mutable borrow
+			// of self.best_at_import at the same time)
+			let mut best_at_import = std::mem::take(&mut self.best_at_import);
+
+			let result = crate::kv::sync_blocks(
 				self.client.as_ref(),
 				self.substrate_backend.as_ref(),
 				self.storage_override.clone(),
@@ -148,7 +164,13 @@ where
 				self.strategy,
 				self.sync_oracle.clone(),
 				self.pubsub_notification_sinks.clone(),
-			) {
+				&mut best_at_import,
+			);
+
+			// Restore the best_at_import set
+			self.best_at_import = best_at_import;
+
+			match result {
 				Ok(have_next) => {
 					self.have_next = have_next;
 					Poll::Ready(Some(()))
