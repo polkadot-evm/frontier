@@ -47,6 +47,7 @@ fn properties() -> Properties {
 	let mut properties = Properties::new();
 	properties.insert("tokenDecimals".into(), 18.into());
 	properties.insert("ss58Format".into(), SS58Prefix::get().into());
+	properties.insert("isEthereum".into(), true.into());
 	properties
 }
 
