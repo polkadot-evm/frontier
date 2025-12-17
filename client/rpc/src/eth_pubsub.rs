@@ -278,7 +278,9 @@ where
 							pubsub.get_enacted_headers(&reorg_info.enacted)
 						} else {
 							// Normal case: just emit the new block
-							if let Some(block) = pubsub.storage_override.current_block(notification.hash) {
+							if let Some(block) =
+								pubsub.storage_override.current_block(notification.hash)
+							{
 								vec![PubSubResult::header(block)]
 							} else {
 								return future::ready(None);
