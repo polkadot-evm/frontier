@@ -234,4 +234,107 @@ describeWithFrontierWs("Frontier RPC (newHeads Compliance)", (context) => {
 		const duplicateHeights = Object.entries(heightCounts).filter(([_, count]) => count > 1);
 		console.log(`Heights with multiple headers:`, duplicateHeights);
 	}).timeout(80000);
+
+	step("newHeads should handle deep forks with multiple enacted blocks", async function () {
+		// Test a deeper reorg scenario:
+		// Original chain: A1 -> A2 -> A3 -> A4
+		// Fork from A1:   A1 -> B2 -> B3 -> B4 -> B5 -> B6
+		// This retracts 3 blocks (A2, A3, A4) and enacts 5 blocks (B2, B3, B4, B5, B6)
+
+		subscription = context.web3.eth.subscribe("newBlockHeaders", function (error, result) {});
+
+		const headers: any[] = [];
+		let dataResolve = null;
+		let dataPromise = new Promise((resolve) => {
+			dataResolve = resolve;
+		});
+
+		await new Promise<void>((resolve) => {
+			subscription.on("connected", function (d: any) {
+				resolve();
+			});
+		});
+
+		subscription.on("data", function (d: any) {
+			headers.push(d);
+			// Expect: A1, A2, A3, A4 (4 headers)
+			// Then reorg emitting B2, B3, B4, B5, B6 (5 headers)
+			// Total: 9 headers minimum
+			if (headers.length >= 9) {
+				subscription.unsubscribe();
+				dataResolve();
+			}
+		});
+
+		// Create original chain: A1 -> A2 -> A3 -> A4
+		const a1Hash = await createBlock(false);
+		const a2Hash = await createBlock(false);
+		const a3Hash = await createBlock(false);
+		const a4Hash = await createBlock(false);
+
+		// Create competing chain from A1 that's longer
+		// Fork: A1 -> B2 -> B3 -> B4 -> B5 -> B6
+		const b2Hash = await createBlock(false, a1Hash);
+		const b3Hash = await createBlock(false, b2Hash);
+		const b4Hash = await createBlock(false, b3Hash);
+		const b5Hash = await createBlock(false, b4Hash);
+		await createBlock(false, b5Hash); // B6 - this triggers the reorg
+
+		await Promise.race([
+			dataPromise,
+			new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout waiting for deep fork headers")), 20000)),
+		]).catch(() => {
+			subscription.unsubscribe();
+		});
+
+		console.log(
+			`Deep fork test - Received ${headers.length} headers:`,
+			headers.map((h) => ({ number: h.number, hash: h.hash?.slice(0, 10) }))
+		);
+
+		// Count headers at each height
+		const heightCounts: { [key: number]: number } = {};
+		for (const h of headers) {
+			heightCounts[h.number] = (heightCounts[h.number] || 0) + 1;
+		}
+
+		// We should have multiple headers at heights where A-chain and B-chain overlap
+		// A2, A3, A4 are at the same heights as B2, B3, B4
+		const duplicateHeights = Object.entries(heightCounts).filter(([_, count]) => count > 1);
+		console.log(`Heights with multiple headers:`, duplicateHeights);
+
+		// Verify we got headers for all enacted blocks
+		// The reorg should emit B2, B3, B4, B5, B6 (5 blocks)
+		expect(headers.length).to.be.greaterThanOrEqual(9, "Should receive headers for original chain + all enacted blocks");
+
+		// Per Ethereum spec, during a reorg the new chain headers are emitted in ascending order.
+		// However, they may be at heights we already saw (hence "multiple headers at same height").
+		// The overall sequence might look like: 14, 15, 16, 17, [reorg: 15, 16, 17, 18, 19]
+		// So we verify that the enacted blocks (after the reorg point) are in ascending order.
+
+		// Find where heights start decreasing (reorg point)
+		let reorgIndex = -1;
+		for (let i = 1; i < headers.length; i++) {
+			if (headers[i].number < headers[i - 1].number) {
+				reorgIndex = i;
+				break;
+			}
+		}
+
+		if (reorgIndex > 0) {
+			// Verify enacted blocks after reorg are in ascending order
+			for (let i = reorgIndex + 1; i < headers.length; i++) {
+				expect(headers[i].number).to.be.greaterThanOrEqual(
+					headers[i - 1].number,
+					"Enacted blocks during reorg should be in ascending order"
+				);
+			}
+		}
+
+		// Verify we have at least 3 heights with duplicates (A2/B2, A3/B3, A4/B4)
+		expect(duplicateHeights.length).to.be.greaterThanOrEqual(
+			3,
+			"Should have multiple headers at overlapping heights during deep reorg"
+		);
+	}).timeout(120000);
 });
