@@ -33,17 +33,19 @@ use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo
 
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
-pub enum WorkerCommand<Block: BlockT> {
+pub enum WorkerCommand {
 	/// Resume indexing from the last indexed canon block.
 	ResumeSync,
 	/// Index leaves.
 	IndexLeaves(Vec<H256>),
 	/// Index the best block known so far via import notifications.
+	/// When `emit_notification` is true, also sends a pubsub notification.
 	IndexBestBlock {
 		block_hash: H256,
-		reorg_info: Option<ReorgInfo<Block>>,
+		emit_notification: bool,
 	},
 	/// Canonicalize the enacted and retracted blocks reported via import notifications.
+	/// This also triggers pubsub notifications with reorg information.
 	Canonicalize {
 		common: H256,
 		enacted: Vec<H256>,
@@ -83,7 +85,7 @@ where
 		pubsub_notification_sinks: Arc<
 			EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 		>,
-	) -> tokio::sync::mpsc::Sender<WorkerCommand<Block>> {
+	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
 			while let Some(cmd) = rx.recv().await {
@@ -127,7 +129,7 @@ where
 					}
 					WorkerCommand::IndexBestBlock {
 						block_hash,
-						reorg_info,
+						emit_notification,
 					} => {
 						index_canonical_block_and_ancestors(
 							client.clone(),
@@ -136,13 +138,15 @@ where
 							block_hash,
 						)
 						.await;
-						let sinks = &mut pubsub_notification_sinks.lock();
-						for sink in sinks.iter() {
-							let _ = sink.unbounded_send(EthereumBlockNotification {
-								is_new_best: true,
-								hash: block_hash,
-								reorg_info: reorg_info.clone(),
-							});
+						if emit_notification {
+							let sinks = &mut pubsub_notification_sinks.lock();
+							for sink in sinks.iter() {
+								let _ = sink.unbounded_send(EthereumBlockNotification {
+									is_new_best: true,
+									hash: block_hash,
+									reorg_info: None,
+								});
+							}
 						}
 					}
 					WorkerCommand::Canonicalize {
@@ -150,8 +154,28 @@ where
 						enacted,
 						retracted,
 					} => {
-						canonicalize_blocks(indexer_backend.clone(), common, enacted, retracted)
-							.await;
+						canonicalize_blocks(
+							indexer_backend.clone(),
+							common,
+							enacted.clone(),
+							retracted.clone(),
+						)
+						.await;
+						// Emit pubsub notification with reorg info for the new best block
+						if let Some(&new_best) = enacted.last() {
+							let sinks = &mut pubsub_notification_sinks.lock();
+							for sink in sinks.iter() {
+								let _ = sink.unbounded_send(EthereumBlockNotification {
+									is_new_best: true,
+									hash: new_best,
+									reorg_info: Some(ReorgInfo {
+										common_ancestor: common,
+										retracted: retracted.clone(),
+										enacted: enacted.clone(),
+									}),
+								});
+							}
+						}
 					}
 					WorkerCommand::CheckIndexedBlocks => {
 						// Fix any indexed blocks that did not have their logs indexed
@@ -236,8 +260,7 @@ where
 						notification.is_new_best,
 					);
 					if notification.is_new_best {
-						// Extract reorg info from tree_route if present
-						let reorg_info = if let Some(ref tree_route) = notification.tree_route {
+						let has_reorg = if let Some(ref tree_route) = notification.tree_route {
 							log::debug!(
 								target: "frontier-sql",
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
@@ -257,22 +280,19 @@ where
 							let common = tree_route.common_block().hash;
 							tx.send(WorkerCommand::Canonicalize {
 								common,
-								enacted: enacted.clone(),
-								retracted: retracted.clone(),
-							}).await.ok();
-
-							Some(ReorgInfo {
-								common_ancestor: common,
-								retracted,
 								enacted,
-							})
+								retracted,
+							}).await.ok();
+							true
 						} else {
-							None
+							false
 						};
 
+						// Index the best block. Only emit notification if there was no reorg,
+						// since Canonicalize already emits the notification with reorg info.
 						tx.send(WorkerCommand::IndexBestBlock {
 							block_hash: notification.hash,
-							reorg_info,
+							emit_notification: !has_reorg,
 						}).await.ok();
 					}
 				}
