@@ -143,11 +143,15 @@ where
 								.iter()
 								.map(|hash_and_number| hash_and_number.hash)
 								.collect();
-							let enacted = tree_route
+							// tree_route.enacted() returns blocks from common ancestor (exclusive)
+							// to new best (EXCLUSIVE). We need to include the new best block
+							// (notification.hash) to get the complete enacted list.
+							let mut enacted: Vec<_> = tree_route
 								.enacted()
 								.iter()
 								.map(|hash_and_number| hash_and_number.hash)
 								.collect();
+							enacted.push(notification.hash);
 							ReorgInfo {
 								common_ancestor: tree_route.common_block().hash,
 								retracted,

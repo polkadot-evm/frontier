@@ -31,6 +31,14 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy};
 
+/// Reorg information passed between commands.
+#[derive(Debug, Clone)]
+pub struct ReorgData {
+	pub common_ancestor: H256,
+	pub enacted: Vec<H256>,
+	pub retracted: Vec<H256>,
+}
+
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
 pub enum WorkerCommand {
@@ -39,13 +47,13 @@ pub enum WorkerCommand {
 	/// Index leaves.
 	IndexLeaves(Vec<H256>),
 	/// Index the best block known so far via import notifications.
-	/// When `emit_notification` is true, also sends a pubsub notification.
+	/// When `reorg_data` is Some, emits a pubsub notification with reorg info after indexing.
+	/// When `reorg_data` is None, emits a simple new block notification.
 	IndexBestBlock {
 		block_hash: H256,
-		emit_notification: bool,
+		reorg_data: Option<ReorgData>,
 	},
 	/// Canonicalize the enacted and retracted blocks reported via import notifications.
-	/// This also triggers pubsub notifications with reorg information.
 	Canonicalize {
 		common: H256,
 		enacted: Vec<H256>,
@@ -129,7 +137,7 @@ where
 					}
 					WorkerCommand::IndexBestBlock {
 						block_hash,
-						emit_notification,
+						reorg_data,
 					} => {
 						index_canonical_block_and_ancestors(
 							client.clone(),
@@ -138,15 +146,18 @@ where
 							block_hash,
 						)
 						.await;
-						if emit_notification {
-							let sinks = &mut pubsub_notification_sinks.lock();
-							for sink in sinks.iter() {
-								let _ = sink.unbounded_send(EthereumBlockNotification {
-									is_new_best: true,
-									hash: block_hash,
-									reorg_info: None,
-								});
-							}
+						// Emit notification after indexing so blocks are available via storage_override
+						let sinks = &mut pubsub_notification_sinks.lock();
+						for sink in sinks.iter() {
+							let _ = sink.unbounded_send(EthereumBlockNotification {
+								is_new_best: true,
+								hash: block_hash,
+								reorg_info: reorg_data.as_ref().map(|data| ReorgInfo {
+									common_ancestor: data.common_ancestor,
+									retracted: data.retracted.clone(),
+									enacted: data.enacted.clone(),
+								}),
+							});
 						}
 					}
 					WorkerCommand::Canonicalize {
@@ -154,28 +165,9 @@ where
 						enacted,
 						retracted,
 					} => {
-						canonicalize_blocks(
-							indexer_backend.clone(),
-							common,
-							enacted.clone(),
-							retracted.clone(),
-						)
-						.await;
-						// Emit pubsub notification with reorg info for the new best block
-						if let Some(&new_best) = enacted.last() {
-							let sinks = &mut pubsub_notification_sinks.lock();
-							for sink in sinks.iter() {
-								let _ = sink.unbounded_send(EthereumBlockNotification {
-									is_new_best: true,
-									hash: new_best,
-									reorg_info: Some(ReorgInfo {
-										common_ancestor: common,
-										retracted: retracted.clone(),
-										enacted: enacted.clone(),
-									}),
-								});
-							}
-						}
+						canonicalize_blocks(indexer_backend.clone(), common, enacted, retracted)
+							.await;
+						// Notification is emitted by IndexBestBlock after indexing completes
 					}
 					WorkerCommand::CheckIndexedBlocks => {
 						// Fix any indexed blocks that did not have their logs indexed
@@ -260,7 +252,7 @@ where
 						notification.is_new_best,
 					);
 					if notification.is_new_best {
-						let has_reorg = if let Some(ref tree_route) = notification.tree_route {
+						let reorg_data = if let Some(ref tree_route) = notification.tree_route {
 							log::debug!(
 								target: "frontier-sql",
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
@@ -271,28 +263,37 @@ where
 								.iter()
 								.map(|hash_and_number| hash_and_number.hash)
 								.collect::<Vec<_>>();
-							let enacted = tree_route
+							// tree_route.enacted() returns blocks from common ancestor (exclusive)
+							// to new best (exclusive). We need to include the new best block
+							// (notification.hash) to get the complete enacted list.
+							let mut enacted: Vec<_> = tree_route
 								.enacted()
 								.iter()
 								.map(|hash_and_number| hash_and_number.hash)
-								.collect::<Vec<_>>();
+								.collect();
+							enacted.push(notification.hash);
 
 							let common = tree_route.common_block().hash;
 							tx.send(WorkerCommand::Canonicalize {
 								common,
+								enacted: enacted.clone(),
+								retracted: retracted.clone(),
+							}).await.ok();
+							Some(ReorgData {
+								common_ancestor: common,
 								enacted,
 								retracted,
-							}).await.ok();
-							true
+							})
 						} else {
-							false
+							None
 						};
 
-						// Index the best block. Only emit notification if there was no reorg,
-						// since Canonicalize already emits the notification with reorg info.
+						// Index the best block and emit notification after indexing completes.
+						// This ensures blocks are available via storage_override when the
+						// notification is processed.
 						tx.send(WorkerCommand::IndexBestBlock {
 							block_hash: notification.hash,
-							emit_notification: !has_reorg,
+							reorg_data,
 						}).await.ok();
 					}
 				}

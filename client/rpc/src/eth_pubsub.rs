@@ -127,7 +127,6 @@ where
 	/// may see multiple headers emitted with the same height (block number)."
 	///
 	/// Returns headers in ascending order (oldest first).
-	/// Note: `enacted` from tree_route already includes the new best block.
 	fn get_enacted_headers(&self, enacted: &[B::Hash]) -> Vec<PubSubResult> {
 		enacted
 			.iter()
