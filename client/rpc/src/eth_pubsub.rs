@@ -21,6 +21,7 @@ use std::{marker::PhantomData, sync::Arc};
 use ethereum::TransactionV3 as EthereumTransaction;
 use futures::{future, FutureExt as _, StreamExt as _};
 use jsonrpsee::{core::traits::IdProvider, server::PendingSubscriptionSink};
+use log::debug;
 // Substrate
 use sc_client_api::{
 	backend::{Backend, StorageProvider},
@@ -118,16 +119,21 @@ where
 		}
 	}
 
-	fn notify_header(
-		&self,
-		notification: EthereumBlockNotification<B>,
-	) -> future::Ready<Option<PubSubResult>> {
-		let res = if notification.is_new_best {
-			self.storage_override.current_block(notification.hash)
-		} else {
-			None
-		};
-		future::ready(res.map(PubSubResult::header))
+	/// Get headers for enacted blocks during a reorg.
+	///
+	/// Per Ethereum spec (https://github.com/ethereum/go-ethereum/wiki/RPC-PUB-SUB#newheads):
+	/// "When a chain reorganization occurs, this subscription will emit an event
+	/// containing all new headers (blocks) for the new chain. This means that you
+	/// may see multiple headers emitted with the same height (block number)."
+	///
+	/// Returns headers in ascending order (oldest first).
+	/// Note: `enacted` from tree_route already includes the new best block.
+	fn get_enacted_headers(&self, enacted: &[B::Hash]) -> Vec<PubSubResult> {
+		enacted
+			.iter()
+			.filter_map(|hash| self.storage_override.current_block(*hash))
+			.map(PubSubResult::header)
+			.collect()
 	}
 
 	fn notify_logs(
@@ -252,10 +258,45 @@ where
 		let fut = async move {
 			match kind {
 				Kind::NewHeads => {
-					let stream = block_notification_stream
-						.filter_map(move |notification| pubsub.notify_header(notification));
+					// Per Ethereum spec, when a reorg occurs, we must emit all headers
+					// for the new canonical chain. The reorg_info field in the notification
+					// contains the enacted blocks when a reorg occurred.
+					let stream = block_notification_stream.filter_map(move |notification| {
+						if !notification.is_new_best {
+							return future::ready(None);
+						}
+
+						// Check if this block came from a reorg
+						let headers = if let Some(ref reorg_info) = notification.reorg_info {
+							debug!(
+								target: "eth-pubsub",
+								"Reorg detected: {} blocks retracted, {} blocks enacted",
+								reorg_info.retracted.len(),
+								reorg_info.enacted.len()
+							);
+							// Emit all enacted blocks (already includes the new best block)
+							pubsub.get_enacted_headers(&reorg_info.enacted)
+						} else {
+							// Normal case: just emit the new block
+							if let Some(block) = pubsub.storage_override.current_block(notification.hash) {
+								vec![PubSubResult::header(block)]
+							} else {
+								return future::ready(None);
+							}
+						};
+
+						if headers.is_empty() {
+							return future::ready(None);
+						}
+
+						future::ready(Some(headers))
+					});
+
+					// Flatten the Vec<PubSubResult> into individual PubSubResult items
+					let flat_stream = stream.flat_map(futures::stream::iter);
+
 					PendingSubscription::from(pending)
-						.pipe_from_stream(stream, BoundedVecDeque::new(16))
+						.pipe_from_stream(flat_stream, BoundedVecDeque::new(16))
 						.await
 				}
 				Kind::Logs => {

@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{pin::Pin, sync::Arc, time::Duration};
+use std::{collections::HashMap, pin::Pin, sync::Arc, time::Duration};
 
 use futures::{
 	prelude::*,
@@ -37,7 +37,15 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::SyncStrategy;
+use crate::{ReorgInfo, SyncStrategy};
+
+/// Information tracked at import time for a block that was `is_new_best`.
+pub struct BestBlockInfo<Block: BlockT> {
+	/// The block number (for pruning purposes).
+	pub block_number: <Block::Header as HeaderT>::Number,
+	/// Reorg info if this block became best as part of a reorganization.
+	pub reorg_info: Option<ReorgInfo<Block>>,
+}
 
 pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	import_notifications: ImportNotifications<Block>,
@@ -57,6 +65,13 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 	pubsub_notification_sinks:
 		Arc<crate::EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>>,
+
+	/// Tracks block hashes that were `is_new_best` at the time of their import notification,
+	/// along with their block number for pruning purposes and optional reorg info.
+	/// This is used to correctly determine `is_new_best` when syncing blocks, avoiding race
+	/// conditions where the best hash may have changed between import and sync time.
+	/// Entries are pruned when blocks become finalized to prevent unbounded growth.
+	best_at_import: HashMap<Block::Hash, BestBlockInfo<Block>>,
 }
 
 impl<Block: BlockT, C, BE> Unpin for MappingSyncWorker<Block, C, BE> {}
@@ -94,6 +109,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 
 			sync_oracle,
 			pubsub_notification_sinks,
+			best_at_import: HashMap::new(),
 		}
 	}
 }
@@ -114,8 +130,38 @@ where
 		loop {
 			match Stream::poll_next(Pin::new(&mut self.import_notifications), cx) {
 				Poll::Pending => break,
-				Poll::Ready(Some(_)) => {
+				Poll::Ready(Some(notification)) => {
 					fire = true;
+					// Track blocks that were `is_new_best` at import time to avoid race
+					// conditions when determining `is_new_best` at sync time.
+					// We store the block number to enable pruning of old entries,
+					// and reorg info if this block became best as part of a reorg.
+					if notification.is_new_best {
+						let reorg_info = notification.tree_route.as_ref().map(|tree_route| {
+							let retracted = tree_route
+								.retracted()
+								.iter()
+								.map(|hash_and_number| hash_and_number.hash)
+								.collect();
+							let enacted = tree_route
+								.enacted()
+								.iter()
+								.map(|hash_and_number| hash_and_number.hash)
+								.collect();
+							ReorgInfo {
+								common_ancestor: tree_route.common_block().hash,
+								retracted,
+								enacted,
+							}
+						});
+						self.best_at_import.insert(
+							notification.hash,
+							BestBlockInfo {
+								block_number: *notification.header.number(),
+								reorg_info,
+							},
+						);
+					}
 				}
 				Poll::Ready(None) => return Poll::Ready(None),
 			}
@@ -138,7 +184,12 @@ where
 		if fire {
 			self.inner_delay = None;
 
-			match crate::kv::sync_blocks(
+			// Temporarily take ownership of best_at_import to avoid borrow checker issues
+			// (we can't have both an immutable borrow of self.client and a mutable borrow
+			// of self.best_at_import at the same time)
+			let mut best_at_import = std::mem::take(&mut self.best_at_import);
+
+			let result = crate::kv::sync_blocks(
 				self.client.as_ref(),
 				self.substrate_backend.as_ref(),
 				self.storage_override.clone(),
@@ -148,7 +199,13 @@ where
 				self.strategy,
 				self.sync_oracle.clone(),
 				self.pubsub_notification_sinks.clone(),
-			) {
+				&mut best_at_import,
+			);
+
+			// Restore the best_at_import set
+			self.best_at_import = best_at_import;
+
+			match result {
 				Ok(have_next) => {
 					self.have_next = have_next;
 					Poll::Ready(Some(()))

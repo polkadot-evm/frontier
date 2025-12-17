@@ -29,17 +29,20 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, SyncStrategy};
+use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy};
 
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
-pub enum WorkerCommand {
+pub enum WorkerCommand<Block: BlockT> {
 	/// Resume indexing from the last indexed canon block.
 	ResumeSync,
 	/// Index leaves.
 	IndexLeaves(Vec<H256>),
 	/// Index the best block known so far via import notifications.
-	IndexBestBlock(H256),
+	IndexBestBlock {
+		block_hash: H256,
+		reorg_info: Option<ReorgInfo<Block>>,
+	},
 	/// Canonicalize the enacted and retracted blocks reported via import notifications.
 	Canonicalize {
 		common: H256,
@@ -80,7 +83,7 @@ where
 		pubsub_notification_sinks: Arc<
 			EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 		>,
-	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
+	) -> tokio::sync::mpsc::Sender<WorkerCommand<Block>> {
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
 			while let Some(cmd) = rx.recv().await {
@@ -122,7 +125,10 @@ where
 							.await;
 						}
 					}
-					WorkerCommand::IndexBestBlock(block_hash) => {
+					WorkerCommand::IndexBestBlock {
+						block_hash,
+						reorg_info,
+					} => {
 						index_canonical_block_and_ancestors(
 							client.clone(),
 							substrate_backend.clone(),
@@ -135,6 +141,7 @@ where
 							let _ = sink.unbounded_send(EthereumBlockNotification {
 								is_new_best: true,
 								hash: block_hash,
+								reorg_info: reorg_info.clone(),
 							});
 						}
 					}
@@ -229,7 +236,8 @@ where
 						notification.is_new_best,
 					);
 					if notification.is_new_best {
-						if let Some(tree_route) = notification.tree_route {
+						// Extract reorg info from tree_route if present
+						let reorg_info = if let Some(ref tree_route) = notification.tree_route {
 							log::debug!(
 								target: "frontier-sql",
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
@@ -249,12 +257,23 @@ where
 							let common = tree_route.common_block().hash;
 							tx.send(WorkerCommand::Canonicalize {
 								common,
-								enacted,
-								retracted,
+								enacted: enacted.clone(),
+								retracted: retracted.clone(),
 							}).await.ok();
-						}
 
-						tx.send(WorkerCommand::IndexBestBlock(notification.hash)).await.ok();
+							Some(ReorgInfo {
+								common_ancestor: common,
+								retracted,
+								enacted,
+							})
+						} else {
+							None
+						};
+
+						tx.send(WorkerCommand::IndexBestBlock {
+							block_hash: notification.hash,
+							reorg_info,
+						}).await.ok();
 					}
 				}
 			}
