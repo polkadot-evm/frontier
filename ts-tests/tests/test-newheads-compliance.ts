@@ -282,7 +282,9 @@ describeWithFrontierWs("Frontier RPC (newHeads Compliance)", (context) => {
 
 		await Promise.race([
 			dataPromise,
-			new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout waiting for deep fork headers")), 20000)),
+			new Promise((_, reject) =>
+				setTimeout(() => reject(new Error("Timeout waiting for deep fork headers")), 20000)
+			),
 		]).catch(() => {
 			subscription.unsubscribe();
 		});
@@ -305,7 +307,10 @@ describeWithFrontierWs("Frontier RPC (newHeads Compliance)", (context) => {
 
 		// Verify we got headers for all enacted blocks
 		// The reorg should emit B2, B3, B4, B5, B6 (5 blocks)
-		expect(headers.length).to.be.greaterThanOrEqual(9, "Should receive headers for original chain + all enacted blocks");
+		expect(headers.length).to.be.greaterThanOrEqual(
+			9,
+			"Should receive headers for original chain + all enacted blocks"
+		);
 
 		// Per Ethereum spec, during a reorg the new chain headers are emitted in ascending order.
 		// However, they may be at heights we already saw (hence "multiple headers at same height").
