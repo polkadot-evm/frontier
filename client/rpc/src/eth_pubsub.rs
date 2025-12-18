@@ -267,21 +267,9 @@ where
 					// Per Ethereum spec, when a reorg occurs, we must emit all headers
 					// for the new canonical chain. The reorg_info field in the notification
 					// contains the enacted blocks when a reorg occurred.
-					//
-					// IMPORTANT: We send headers sequentially (one at a time, waiting for
-					// each send to complete) to guarantee correct ordering. Using
-					// pipe_from_stream with flat_map can cause race conditions where
-					// multiple items arrive faster than they're sent, leading to
-					// non-deterministic ordering due to future::select behavior.
-					let Ok(sink) = pending.accept().await else {
-						return;
-					};
-					let subscription = Subscription::from(sink);
-
-					let mut stream = block_notification_stream;
-					while let Some(notification) = stream.next().await {
+					let stream = block_notification_stream.filter_map(move |notification| {
 						if !notification.is_new_best {
-							continue;
+							return future::ready(None);
 						}
 
 						// Check if this block came from a reorg
@@ -301,17 +289,23 @@ where
 							{
 								vec![PubSubResult::header(block)]
 							} else {
-								continue;
+								return future::ready(None);
 							}
 						};
 
-						// Send each header sequentially to guarantee order
-						for header in headers {
-							if subscription.send(&header).await.is_err() {
-								return;
-							}
+						if headers.is_empty() {
+							return future::ready(None);
 						}
-					}
+
+						future::ready(Some(headers))
+					});
+
+					// Flatten the Vec<PubSubResult> into individual PubSubResult items
+					let flat_stream = stream.flat_map(futures::stream::iter);
+
+					PendingSubscription::from(pending)
+						.pipe_from_stream(flat_stream, BoundedVecDeque::new(16))
+						.await
 				}
 				Kind::Logs => {
 					let stream = block_notification_stream
