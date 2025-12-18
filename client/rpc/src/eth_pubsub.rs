@@ -129,6 +129,7 @@ where
 	/// Returns headers in ascending order (oldest first).
 	fn get_enacted_headers(&self, enacted: &[B::Hash]) -> Vec<PubSubResult> {
 		// Fetch all blocks and collect them with their block numbers for sorting
+
 		let mut blocks: Vec<_> = enacted
 			.iter()
 			.filter_map(|hash| self.storage_override.current_block(*hash))
