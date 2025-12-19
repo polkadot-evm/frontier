@@ -37,7 +37,7 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{ReorgInfo, SyncStrategy};
+use crate::{extract_reorg_info, ReorgInfo, SyncStrategy};
 
 /// Information tracked at import time for a block that was `is_new_best`.
 pub struct BestBlockInfo<Block: BlockT> {
@@ -138,25 +138,7 @@ where
 					// and reorg info if this block became best as part of a reorg.
 					if notification.is_new_best {
 						let reorg_info = notification.tree_route.as_ref().map(|tree_route| {
-							let retracted = tree_route
-								.retracted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect();
-							// tree_route.enacted() returns blocks from common ancestor (exclusive)
-							// to new best (EXCLUSIVE). We need to include the new best block
-							// (notification.hash) to get the complete enacted list.
-							let mut enacted: Vec<_> = tree_route
-								.enacted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect();
-							enacted.push(notification.hash);
-							ReorgInfo {
-								common_ancestor: tree_route.common_block().hash,
-								retracted,
-								enacted,
-							}
+							extract_reorg_info(tree_route, notification.hash)
 						});
 						self.best_at_import.insert(
 							notification.hash,

@@ -29,29 +29,21 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy};
-
-/// Reorg information passed between commands.
-#[derive(Debug, Clone)]
-pub struct ReorgData {
-	pub common_ancestor: H256,
-	pub enacted: Vec<H256>,
-	pub retracted: Vec<H256>,
-}
+use crate::{extract_reorg_info, EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy};
 
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
-pub enum WorkerCommand {
+pub enum WorkerCommand<Block: BlockT<Hash = H256>> {
 	/// Resume indexing from the last indexed canon block.
 	ResumeSync,
 	/// Index leaves.
 	IndexLeaves(Vec<H256>),
 	/// Index the best block known so far via import notifications.
-	/// When `reorg_data` is Some, emits a pubsub notification with reorg info after indexing.
-	/// When `reorg_data` is None, emits a simple new block notification.
+	/// When `reorg_info` is Some, emits a pubsub notification with reorg info after indexing.
+	/// When `reorg_info` is None, emits a simple new block notification.
 	IndexBestBlock {
 		block_hash: H256,
-		reorg_data: Option<ReorgData>,
+		reorg_info: Option<ReorgInfo<Block>>,
 	},
 	/// Canonicalize the enacted and retracted blocks reported via import notifications.
 	Canonicalize {
@@ -93,7 +85,7 @@ where
 		pubsub_notification_sinks: Arc<
 			EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
 		>,
-	) -> tokio::sync::mpsc::Sender<WorkerCommand> {
+	) -> tokio::sync::mpsc::Sender<WorkerCommand<Block>> {
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
 			while let Some(cmd) = rx.recv().await {
@@ -137,7 +129,7 @@ where
 					}
 					WorkerCommand::IndexBestBlock {
 						block_hash,
-						reorg_data,
+						reorg_info,
 					} => {
 						index_canonical_block_and_ancestors(
 							client.clone(),
@@ -146,19 +138,16 @@ where
 							block_hash,
 						)
 						.await;
-						// Emit notification after indexing so blocks are available via storage_override
+						// Emit notification after indexing so blocks are queryable.
 						let sinks = &mut pubsub_notification_sinks.lock();
-						for sink in sinks.iter() {
-							let _ = sink.unbounded_send(EthereumBlockNotification {
+						sinks.retain(|sink| {
+							sink.unbounded_send(EthereumBlockNotification {
 								is_new_best: true,
 								hash: block_hash,
-								reorg_info: reorg_data.as_ref().map(|data| ReorgInfo {
-									common_ancestor: data.common_ancestor,
-									retracted: data.retracted.clone(),
-									enacted: data.enacted.clone(),
-								}),
-							});
-						}
+								reorg_info: reorg_info.clone(),
+							})
+							.is_ok()
+						});
 					}
 					WorkerCommand::Canonicalize {
 						common,
@@ -252,38 +241,19 @@ where
 						notification.is_new_best,
 					);
 					if notification.is_new_best {
-						let reorg_data = if let Some(ref tree_route) = notification.tree_route {
+						let reorg_info = if let Some(ref tree_route) = notification.tree_route {
 							log::debug!(
 								target: "frontier-sql",
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
 								notification.hash
 							);
-							let retracted = tree_route
-								.retracted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect::<Vec<_>>();
-							// tree_route.enacted() returns blocks from common ancestor (exclusive)
-							// to new best (exclusive). We need to include the new best block
-							// (notification.hash) to get the complete enacted list.
-							let mut enacted: Vec<_> = tree_route
-								.enacted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect();
-							enacted.push(notification.hash);
-
-							let common = tree_route.common_block().hash;
+							let info = extract_reorg_info(tree_route, notification.hash);
 							tx.send(WorkerCommand::Canonicalize {
-								common,
-								enacted: enacted.clone(),
-								retracted: retracted.clone(),
+								common: info.common_ancestor,
+								enacted: info.enacted.clone(),
+								retracted: info.retracted.clone(),
 							}).await.ok();
-							Some(ReorgData {
-								common_ancestor: common,
-								enacted,
-								retracted,
-							})
+							Some(info)
 						} else {
 							None
 						};
@@ -293,7 +263,7 @@ where
 						// notification is processed.
 						tx.send(WorkerCommand::IndexBestBlock {
 							block_hash: notification.hash,
-							reorg_data,
+							reorg_info,
 						}).await.ok();
 					}
 				}

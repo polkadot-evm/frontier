@@ -23,6 +23,7 @@ pub mod kv;
 #[cfg(feature = "sql")]
 pub mod sql;
 
+use sp_blockchain::TreeRoute;
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -56,4 +57,30 @@ pub struct EthereumBlockNotification<Block: BlockT> {
 	pub hash: Block::Hash,
 	/// Optional reorg information. Present when this block became best as part of a reorg.
 	pub reorg_info: Option<ReorgInfo<Block>>,
+}
+
+/// Extract reorg information from a tree route.
+pub fn extract_reorg_info<Block: BlockT>(
+	tree_route: &TreeRoute<Block>,
+	new_best_hash: Block::Hash,
+) -> ReorgInfo<Block> {
+	let retracted = tree_route
+		.retracted()
+		.iter()
+		.map(|hash_and_number| hash_and_number.hash)
+		.collect();
+
+	// enacted() excludes the new best block, so we append it manually.
+	let mut enacted: Vec<_> = tree_route
+		.enacted()
+		.iter()
+		.map(|hash_and_number| hash_and_number.hash)
+		.collect();
+	enacted.push(new_best_hash);
+
+	ReorgInfo {
+		common_ancestor: tree_route.common_block().hash,
+		retracted,
+		enacted,
+	}
 }
