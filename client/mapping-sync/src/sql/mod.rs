@@ -234,8 +234,6 @@ where
 					if let Ok(leaves) = substrate_backend.blockchain().leaves() {
 						tx.send(WorkerCommand::IndexLeaves(leaves)).await.ok();
 					}
-					// Note: is_major_syncing() sink clearing is now handled by
-					// emit_block_notification() for consistency with KV backend.
 				}
 				notification = notifications.next() => if let Some(notification) = notification {
 					log::debug!(
