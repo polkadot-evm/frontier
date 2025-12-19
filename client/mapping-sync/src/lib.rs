@@ -24,6 +24,7 @@ pub mod kv;
 pub mod sql;
 
 use sp_blockchain::TreeRoute;
+use sp_consensus::SyncOracle;
 use sp_runtime::traits::Block as BlockT;
 
 #[derive(Copy, Clone, Eq, PartialEq)]
@@ -83,4 +84,47 @@ pub fn extract_reorg_info<Block: BlockT>(
 		retracted,
 		enacted,
 	}
+}
+
+/// Context for emitting block notifications.
+/// Contains all information needed to emit a notification consistently
+/// across both KV and SQL backends.
+pub struct BlockNotificationContext<Block: BlockT> {
+	/// The block hash being notified about.
+	pub hash: Block::Hash,
+	/// Whether this block is the new best block.
+	pub is_new_best: bool,
+	/// Optional reorg information if this block became best as part of a reorg.
+	pub reorg_info: Option<ReorgInfo<Block>>,
+}
+
+/// Emit block notification to all registered sinks.
+///
+/// This function provides a unified notification mechanism for both KV and SQL backends:
+/// - Clears all sinks when major syncing (to prevent stale subscriptions)
+/// - Sends notification to all sinks and removes closed sinks when not syncing
+///
+/// Both backends should call this function after completing block sync/indexing
+/// to ensure consistent notification behavior regardless of the storage backend used.
+pub fn emit_block_notification<Block: BlockT>(
+	pubsub_notification_sinks: &EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
+	sync_oracle: &dyn SyncOracle,
+	context: BlockNotificationContext<Block>,
+) {
+	let sinks = &mut pubsub_notification_sinks.lock();
+
+	if sync_oracle.is_major_syncing() {
+		// Remove all sinks when major syncing to prevent stale subscriptions
+		sinks.clear();
+		return;
+	}
+
+	sinks.retain(|sink| {
+		sink.unbounded_send(EthereumBlockNotification {
+			is_new_best: context.is_new_best,
+			hash: context.hash,
+			reorg_info: context.reorg_info.clone(),
+		})
+		.is_ok()
+	});
 }

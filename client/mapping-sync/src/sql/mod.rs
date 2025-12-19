@@ -16,7 +16,7 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{ops::DerefMut, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use futures::prelude::*;
 // Substrate
@@ -30,8 +30,8 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	extract_reorg_info, EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo,
-	SyncStrategy,
+	emit_block_notification, extract_reorg_info, BlockNotificationContext,
+	EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy,
 };
 
 /// Defines the commands for the sync worker.
@@ -42,10 +42,12 @@ pub enum WorkerCommand<Block: BlockT<Hash = H256>> {
 	/// Index leaves.
 	IndexLeaves(Vec<H256>),
 	/// Index the best block known so far via import notifications.
-	/// When `reorg_info` is Some, emits a pubsub notification with reorg info after indexing.
-	/// When `reorg_info` is None, emits a simple new block notification.
+	/// Emits a pubsub notification after indexing with the provided `is_new_best` status.
+	/// When `reorg_info` is Some, the notification includes reorg information.
 	IndexBestBlock {
 		block_hash: H256,
+		/// Whether this block was the new best at import time.
+		is_new_best: bool,
 		reorg_info: Option<ReorgInfo<Block>>,
 	},
 	/// Canonicalize the enacted and retracted blocks reported via import notifications.
@@ -86,8 +88,9 @@ where
 		substrate_backend: Arc<Backend>,
 		indexer_backend: Arc<fc_db::sql::Backend<Block>>,
 		pubsub_notification_sinks: Arc<
-			EthereumBlockNotificationSinks<EthereumBlockNotification<Block>>,
+			EthereumBlockNotificationSinks<crate::EthereumBlockNotification<Block>>,
 		>,
+		sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 	) -> tokio::sync::mpsc::Sender<WorkerCommand<Block>> {
 		let (tx, mut rx) = tokio::sync::mpsc::channel(100);
 		tokio::task::spawn(async move {
@@ -132,6 +135,7 @@ where
 					}
 					WorkerCommand::IndexBestBlock {
 						block_hash,
+						is_new_best,
 						reorg_info,
 					} => {
 						index_canonical_block_and_ancestors(
@@ -142,15 +146,17 @@ where
 						)
 						.await;
 						// Emit notification after indexing so blocks are queryable.
-						let sinks = &mut pubsub_notification_sinks.lock();
-						sinks.retain(|sink| {
-							sink.unbounded_send(EthereumBlockNotification {
-								is_new_best: true,
+						// Uses the unified notification mechanism for consistent behavior
+						// with the KV backend.
+						emit_block_notification(
+							pubsub_notification_sinks.as_ref(),
+							sync_oracle.as_ref(),
+							BlockNotificationContext {
 								hash: block_hash,
-								reorg_info: reorg_info.clone(),
-							})
-							.is_ok()
-						});
+								is_new_best,
+								reorg_info,
+							},
+						);
 					}
 					WorkerCommand::Canonicalize {
 						common,
@@ -203,6 +209,7 @@ where
 			substrate_backend.clone(),
 			indexer_backend.clone(),
 			pubsub_notification_sinks.clone(),
+			sync_oracle.clone(),
 		)
 		.await;
 
@@ -227,12 +234,8 @@ where
 					if let Ok(leaves) = substrate_backend.blockchain().leaves() {
 						tx.send(WorkerCommand::IndexLeaves(leaves)).await.ok();
 					}
-					if sync_oracle.is_major_syncing() {
-						let sinks = &mut pubsub_notification_sinks.lock();
-						if !sinks.is_empty() {
-							*sinks.deref_mut() = vec![];
-						}
-					}
+					// Note: is_major_syncing() sink clearing is now handled by
+					// emit_block_notification() for consistency with KV backend.
 				}
 				notification = notifications.next() => if let Some(notification) = notification {
 					log::debug!(
@@ -266,6 +269,7 @@ where
 						// notification is processed.
 						tx.send(WorkerCommand::IndexBestBlock {
 							block_hash: notification.hash,
+							is_new_best: notification.is_new_best,
 							reorg_info,
 						}).await.ok();
 					}
