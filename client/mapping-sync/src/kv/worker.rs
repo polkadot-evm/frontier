@@ -137,9 +137,10 @@ where
 					// We store the block number to enable pruning of old entries,
 					// and reorg info if this block became best as part of a reorg.
 					if notification.is_new_best {
-						let reorg_info = notification.tree_route.as_ref().map(|tree_route| {
-							extract_reorg_info(tree_route, notification.hash)
-						});
+						let reorg_info = notification
+							.tree_route
+							.as_ref()
+							.map(|tree_route| extract_reorg_info(tree_route, notification.hash));
 						self.best_at_import.insert(
 							notification.hash,
 							BestBlockInfo {

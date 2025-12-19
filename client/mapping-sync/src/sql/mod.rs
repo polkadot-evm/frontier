@@ -29,7 +29,10 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{extract_reorg_info, EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy};
+use crate::{
+	extract_reorg_info, EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo,
+	SyncStrategy,
+};
 
 /// Defines the commands for the sync worker.
 #[derive(Debug)]
