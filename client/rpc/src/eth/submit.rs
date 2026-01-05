@@ -179,13 +179,13 @@ where
 
 	pub async fn pending_transactions(&self) -> RpcResult<Vec<Transaction>> {
 		let ready = self
-			.graph
+			.pool
 			.ready()
 			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect::<Vec<_>>();
 
 		let future = self
-			.graph
+			.pool
 			.futures()
 			.iter()
 			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())

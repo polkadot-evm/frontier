@@ -88,7 +88,7 @@ where
 		let client = Arc::clone(&self.client);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let backend = Arc::clone(&self.backend);
-		let graph = Arc::clone(&self.graph);
+		let pool = Arc::clone(&self.pool);
 
 		match frontier_backend_client::native_block_id::<B, C>(
 			client.as_ref(),
@@ -143,16 +143,14 @@ where
 				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
 				// ready validated pool
 				xts.extend(
-					graph
-						.ready()
+					pool.ready()
 						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 
 				// future validated pool
 				xts.extend(
-					graph
-						.futures()
+					pool.futures()
 						.iter()
 						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
@@ -194,7 +192,7 @@ where
 	) -> RpcResult<Option<U256>> {
 		if let BlockNumberOrHash::Pending = number_or_hash {
 			// get the pending transactions count
-			return Ok(Some(U256::from(self.graph.ready().count())));
+			return Ok(Some(U256::from(self.pool.ready().count())));
 		}
 
 		let block_info = self.block_info_by_number(number_or_hash).await?;

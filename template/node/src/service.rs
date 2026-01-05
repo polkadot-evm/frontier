@@ -456,7 +456,6 @@ where
 			let eth_deps = crate::rpc::EthDeps {
 				client: client.clone(),
 				pool: pool.clone(),
-				graph: pool.clone(),
 				converter: Some(TransactionConverter::<B>::default()),
 				is_authority,
 				enable_dev_signer,
