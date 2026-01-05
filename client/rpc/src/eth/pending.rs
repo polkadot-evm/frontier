@@ -121,7 +121,7 @@ where
 
 		// Get all extrinsics from the ready queue.
 		let extrinsics: Vec<<B as BlockT>::Extrinsic> = self
-			.graph
+			.pool
 			.ready()
 			.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 			.collect::<Vec<<B as BlockT>::Extrinsic>>();

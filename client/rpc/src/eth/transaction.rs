@@ -49,7 +49,7 @@ where
 	pub async fn transaction_by_hash(&self, hash: H256) -> RpcResult<Option<Transaction>> {
 		let client = Arc::clone(&self.client);
 		let backend = Arc::clone(&self.backend);
-		let graph = Arc::clone(&self.graph);
+		let pool = Arc::clone(&self.pool);
 
 		let (eth_block_hash, index) = match frontier_backend_client::load_transactions::<B, C>(
 			client.as_ref(),
@@ -77,16 +77,14 @@ where
 				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
 				// Collect transactions in the ready validated pool.
 				xts.extend(
-					graph
-						.ready()
+					pool.ready()
 						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
 				);
 
 				// Collect transactions in the future validated pool.
 				xts.extend(
-					graph
-						.futures()
+					pool.futures()
 						.iter()
 						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
 						.collect::<Vec<<B as BlockT>::Extrinsic>>(),

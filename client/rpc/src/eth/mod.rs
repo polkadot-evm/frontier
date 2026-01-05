@@ -72,7 +72,6 @@ impl<B: BlockT, C> EthConfig<B, C> for () {
 /// Eth API implementation.
 pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	pool: Arc<P>,
-	graph: Arc<P>,
 	client: Arc<C>,
 	convert_transaction: Option<CT>,
 	sync: Arc<SyncingService<B>>,
@@ -104,7 +103,6 @@ where
 	pub fn new(
 		client: Arc<C>,
 		pool: Arc<P>,
-		graph: Arc<P>,
 		convert_transaction: Option<CT>,
 		sync: Arc<SyncingService<B>>,
 		signers: Vec<Box<dyn EthSigner>>,
@@ -122,7 +120,6 @@ where
 		Self {
 			client,
 			pool,
-			graph,
 			convert_transaction,
 			sync,
 			is_authority,
@@ -254,7 +251,6 @@ where
 		let Self {
 			client,
 			pool,
-			graph,
 			convert_transaction,
 			sync,
 			is_authority,
@@ -274,7 +270,6 @@ where
 		Eth {
 			client,
 			pool,
-			graph,
 			convert_transaction,
 			sync,
 			is_authority,
