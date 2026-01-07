@@ -424,6 +424,7 @@ where
 		let is_authority = role.is_authority();
 		let enable_dev_signer = eth_config.enable_dev_signer;
 		let max_past_logs = eth_config.max_past_logs;
+		let max_block_range = eth_config.max_block_range;
 		let execute_gas_limit_multiplier = eth_config.execute_gas_limit_multiplier;
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
@@ -469,6 +470,7 @@ where
 				block_data_cache: block_data_cache.clone(),
 				filter_pool: filter_pool.clone(),
 				max_past_logs,
+				max_block_range,
 				fee_history_cache: fee_history_cache.clone(),
 				fee_history_cache_limit,
 				execute_gas_limit_multiplier,
