@@ -37,7 +37,7 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT};
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{extract_reorg_info, ReorgInfo, SyncStrategy};
+use crate::{ReorgInfo, SyncStrategy};
 
 /// Information tracked at import time for a block that was `is_new_best`.
 pub struct BestBlockInfo<Block: BlockT> {
@@ -137,10 +137,10 @@ where
 					// We store the block number to enable pruning of old entries,
 					// and reorg info if this block became best as part of a reorg.
 					if notification.is_new_best {
-						let reorg_info = notification
-							.tree_route
-							.as_ref()
-							.map(|tree_route| extract_reorg_info(tree_route, notification.hash));
+						// For notification: include new_best_hash per Ethereum spec.
+						let reorg_info = notification.tree_route.as_ref().map(|tree_route| {
+							ReorgInfo::from_tree_route(tree_route, notification.hash)
+						});
 						self.best_at_import.insert(
 							notification.hash,
 							BestBlockInfo {

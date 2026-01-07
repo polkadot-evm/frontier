@@ -48,8 +48,38 @@ pub struct ReorgInfo<Block: BlockT> {
 	pub common_ancestor: Block::Hash,
 	/// Blocks that were removed from the canonical chain (old fork).
 	pub retracted: Vec<Block::Hash>,
-	/// Blocks that were added to the canonical chain (new fork).
+	/// Blocks that were added to the canonical chain (new fork), excluding `new_best`.
 	pub enacted: Vec<Block::Hash>,
+	/// The new best block hash that triggered this reorg.
+	pub new_best: Block::Hash,
+}
+
+impl<Block: BlockT> ReorgInfo<Block> {
+	/// Create reorg info from a tree route and the new best block hash.
+	///
+	/// `tree_route` is "from old best to new best parent", so `enacted()` excludes
+	/// the new best block itself. The `new_best` is stored separately and callers
+	/// should handle emitting it after the enacted blocks.
+	pub fn from_tree_route(tree_route: &TreeRoute<Block>, new_best: Block::Hash) -> Self {
+		let retracted = tree_route
+			.retracted()
+			.iter()
+			.map(|hash_and_number| hash_and_number.hash)
+			.collect();
+
+		let enacted = tree_route
+			.enacted()
+			.iter()
+			.map(|hash_and_number| hash_and_number.hash)
+			.collect();
+
+		Self {
+			common_ancestor: tree_route.common_block().hash,
+			retracted,
+			enacted,
+			new_best,
+		}
+	}
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -58,37 +88,6 @@ pub struct EthereumBlockNotification<Block: BlockT> {
 	pub hash: Block::Hash,
 	/// Optional reorg information. Present when this block became best as part of a reorg.
 	pub reorg_info: Option<ReorgInfo<Block>>,
-}
-
-/// Extract reorg information from a tree route.
-pub fn extract_reorg_info<Block: BlockT>(
-	tree_route: &TreeRoute<Block>,
-	new_best_hash: Block::Hash,
-) -> ReorgInfo<Block> {
-	let retracted = tree_route
-		.retracted()
-		.iter()
-		.map(|hash_and_number| hash_and_number.hash)
-		.collect();
-
-	// tree_route is "from old best to new best parent", so enacted() excludes
-	// the new best block itself. We append it manually, with a defensive check
-	// in case the TreeRoute implementation changes in the future.
-	let mut enacted: Vec<_> = tree_route
-		.enacted()
-		.iter()
-		.map(|hash_and_number| hash_and_number.hash)
-		.collect();
-
-	if enacted.last() != Some(&new_best_hash) {
-		enacted.push(new_best_hash);
-	}
-
-	ReorgInfo {
-		common_ancestor: tree_route.common_block().hash,
-		retracted,
-		enacted,
-	}
 }
 
 /// Context for emitting block notifications.

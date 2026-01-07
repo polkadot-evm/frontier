@@ -119,17 +119,18 @@ where
 		}
 	}
 
-	/// Get headers for enacted blocks during a reorg.
+	/// Get headers for enacted blocks during a reorg, including the new best block.
 	///
 	/// Per Ethereum spec (https://github.com/ethereum/go-ethereum/wiki/RPC-PUB-SUB#newheads):
 	/// "When a chain reorganization occurs, this subscription will emit an event
 	/// containing all new headers (blocks) for the new chain. This means that you
 	/// may see multiple headers emitted with the same height (block number)."
 	///
-	/// Returns headers in ascending order (oldest first).
-	fn get_enacted_headers(&self, enacted: &[B::Hash]) -> Vec<PubSubResult> {
+	/// Returns headers in ascending order (oldest first), with `new_best` last.
+	fn get_reorg_headers(&self, enacted: &[B::Hash], new_best: B::Hash) -> Vec<PubSubResult> {
 		enacted
 			.iter()
+			.chain(std::iter::once(&new_best))
 			.filter_map(|hash| self.storage_override.current_block(*hash))
 			.map(PubSubResult::header)
 			.collect()
@@ -269,12 +270,13 @@ where
 						let headers = if let Some(ref reorg_info) = notification.reorg_info {
 							debug!(
 								target: "eth-pubsub",
-								"Reorg detected: {} blocks retracted, {} blocks enacted",
+								"Reorg detected: new_best={:?}, {} blocks retracted, {} blocks enacted",
+								reorg_info.new_best,
 								reorg_info.retracted.len(),
 								reorg_info.enacted.len()
 							);
-							// Emit all enacted blocks (already includes the new best block)
-							pubsub.get_enacted_headers(&reorg_info.enacted)
+							// Emit all enacted blocks followed by the new best block
+							pubsub.get_reorg_headers(&reorg_info.enacted, reorg_info.new_best)
 						} else {
 							// Normal case: just emit the new block
 							if let Some(block) =

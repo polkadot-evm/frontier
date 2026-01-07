@@ -30,8 +30,8 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto
 use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
-	emit_block_notification, extract_reorg_info, BlockNotificationContext,
-	EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy,
+	emit_block_notification, BlockNotificationContext, EthereumBlockNotification,
+	EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy,
 };
 
 /// Defines the commands for the sync worker.
@@ -251,13 +251,26 @@ where
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
 								notification.hash
 							);
-							let info = extract_reorg_info(tree_route, notification.hash);
+							// For Canonicalize: use tree_route directly (new_best handled by IndexBestBlock).
+							// Note: Including new_best_hash in enacted is harmless (no-op if not indexed,
+							// correct update if indexed) but we keep separation for clarity.
+							let retracted: Vec<_> = tree_route
+								.retracted()
+								.iter()
+								.map(|hash_and_number| hash_and_number.hash)
+								.collect();
+							let enacted: Vec<_> = tree_route
+								.enacted()
+								.iter()
+								.map(|hash_and_number| hash_and_number.hash)
+								.collect();
 							tx.send(WorkerCommand::Canonicalize {
-								common: info.common_ancestor,
-								enacted: info.enacted.clone(),
-								retracted: info.retracted.clone(),
+								common: tree_route.common_block().hash,
+								enacted,
+								retracted,
 							}).await.ok();
-							Some(info)
+							// For notification: include new_best_hash per Ethereum spec.
+							Some(ReorgInfo::from_tree_route(tree_route, notification.hash))
 						} else {
 							None
 						};
