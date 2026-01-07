@@ -47,10 +47,14 @@ build-release:
 test:
 	cargo test --lib --all
 	cargo test --lib --all --features=runtime-benchmarks
+	# Run fc-mapping-sync tests with SQL feature to ensure both backends are tested
+	cargo test --lib -p fc-mapping-sync --features=sql
 # Run all unit tests with release profile
 test-release:
 	cargo test --release --lib --all
 	cargo test --release --lib --all --features=runtime-benchmarks
+	# Run fc-mapping-sync tests with SQL feature to ensure both backends are tested
+	cargo test --release --lib -p fc-mapping-sync --features=sql
 
 .PHONY: integration-test integration-test-lint
 # Check code format and lint of integration tests
