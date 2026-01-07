@@ -71,13 +71,18 @@ pub fn extract_reorg_info<Block: BlockT>(
 		.map(|hash_and_number| hash_and_number.hash)
 		.collect();
 
-	// enacted() excludes the new best block, so we append it manually.
+	// tree_route is "from old best to new best parent", so enacted() excludes
+	// the new best block itself. We append it manually, with a defensive check
+	// in case the TreeRoute implementation changes in the future.
 	let mut enacted: Vec<_> = tree_route
 		.enacted()
 		.iter()
 		.map(|hash_and_number| hash_and_number.hash)
 		.collect();
-	enacted.push(new_best_hash);
+
+	if enacted.last() != Some(&new_best_hash) {
+		enacted.push(new_best_hash);
+	}
 
 	ReorgInfo {
 		common_ancestor: tree_route.common_block().hash,
