@@ -508,7 +508,7 @@ where
 				)));
 			}
 
-			if backend.is_indexed() {
+			logs = if backend.is_indexed() {
 				filter_range_logs_indexed(
 					client.as_ref(),
 					backend.log_indexer(),
