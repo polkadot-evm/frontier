@@ -518,7 +518,7 @@ where
 					from_number,
 					current_number,
 				)
-				.await?;
+				.await?
 			} else {
 				filter_range_logs(
 					client.as_ref(),
