@@ -528,7 +528,7 @@ where
 					from_number,
 					current_number,
 				)
-				.await?;
+				.await?
 			};
 		}
 		Ok(logs)
