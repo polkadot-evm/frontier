@@ -251,26 +251,14 @@ where
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
 								notification.hash
 							);
-							// For Canonicalize: use tree_route directly (new_best handled by IndexBestBlock).
-							// Note: Including new_best_hash in enacted is harmless (no-op if not indexed,
-							// correct update if indexed) but we keep separation for clarity.
-							let retracted: Vec<_> = tree_route
-								.retracted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect();
-							let enacted: Vec<_> = tree_route
-								.enacted()
-								.iter()
-								.map(|hash_and_number| hash_and_number.hash)
-								.collect();
+							let info = ReorgInfo::from_tree_route(tree_route, notification.hash);
+							// Note: new_best is handled separately by IndexBestBlock.
 							tx.send(WorkerCommand::Canonicalize {
-								common: tree_route.common_block().hash,
-								enacted,
-								retracted,
+								common: info.common_ancestor,
+								enacted: info.enacted.clone(),
+								retracted: info.retracted.clone(),
 							}).await.ok();
-							// For notification: include new_best_hash per Ethereum spec.
-							Some(ReorgInfo::from_tree_route(tree_route, notification.hash))
+							Some(info)
 						} else {
 							None
 						};
