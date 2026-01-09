@@ -1701,3 +1701,141 @@ fn metadata_empty_dont_code_gets_cached() {
 		assert!(<AccountCodesMetadata<Test>>::get(address).is_none());
 	});
 }
+
+/// EIP-7939: CLZ (Count Leading Zeros) opcode tests
+///
+/// The CLZ opcode (0x1e) counts the number of leading zero bits in a 256-bit value.
+/// Test vectors from https://eips.ethereum.org/EIPS/eip-7939
+mod eip7939_clz_test {
+	use super::*;
+	use evm::ExitSucceed;
+	use fp_evm::CreateInfo;
+
+	// All contracts use: PUSH<n> value, CLZ, PUSH1 0, MSTORE, PUSH1 32, PUSH1 0, RETURN
+	// For PUSH1 values (11 bytes runtime): PUSH11 pattern with MSTORE
+	// For PUSH32 values (42 bytes runtime): CODECOPY pattern
+
+	// CLZ(0x00) = 256
+	const CLZ_ZERO: &str = "6a60001e60005260206000f3600052600b6015f3";
+
+	// CLZ(0x01) = 255
+	const CLZ_ONE: &str = "6a60011e60005260206000f3600052600b6015f3";
+
+	// CLZ(0x8000...00) = 0 (2^255, MSB set)
+	const CLZ_MSB_SET: &str = "602a600c600039602a6000f37f80000000000000000000000000000000000000000000000000000000000000001e60005260206000f3";
+
+	// CLZ(0xffff...ff) = 0 (MAX_U256, all bits set)
+	const CLZ_MAX_U256: &str = "602a600c600039602a6000f37fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1e60005260206000f3";
+
+	// CLZ(0x4000...00) = 1 (2^254)
+	const CLZ_SECOND_BIT: &str = "602a600c600039602a6000f37f40000000000000000000000000000000000000000000000000000000000000001e60005260206000f3";
+
+	// CLZ(0x7fff...ff) = 1 (2^255 - 1)
+	const CLZ_MSB_UNSET: &str = "602a600c600039602a6000f37f7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1e60005260206000f3";
+
+	fn create_clz_test_contract(
+		contract: &str,
+		gas_limit: u64,
+	) -> Result<CreateInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::create(
+			H160::default(),
+			hex::decode(contract.trim_end()).expect("Failed to decode contract"),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			None,
+			Some(0),
+			<Test as Config>::config(),
+		)
+	}
+
+	fn call_contract(
+		contract_addr: H160,
+		gas_limit: u64,
+	) -> Result<CallInfo, crate::RunnerError<crate::Error<Test>>> {
+		<Test as Config>::Runner::call(
+			H160::default(),
+			contract_addr,
+			Vec::new(),
+			U256::zero(),
+			gas_limit,
+			Some(FixedGasPrice::min_gas_price().0),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			true, // transactional
+			true, // must be validated
+			None,
+			Some(0),
+			<Test as Config>::config(),
+		)
+	}
+
+	fn u256_to_bytes(value: u16) -> Vec<u8> {
+		let mut result = vec![0u8; 32];
+		result[30] = (value >> 8) as u8;
+		result[31] = value as u8;
+		result
+	}
+
+	fn run_clz_test(contract: &str, expected_clz: u16) {
+		new_test_ext().execute_with(|| {
+			let gas_limit: u64 = 1_000_000;
+
+			let result = create_clz_test_contract(contract, gas_limit)
+				.expect("contract deployment should succeed");
+			assert_eq!(
+				result.exit_reason,
+				crate::ExitReason::Succeed(ExitSucceed::Returned)
+			);
+
+			let call_result =
+				call_contract(result.value, gas_limit).expect("contract call should succeed");
+			assert_eq!(
+				call_result.exit_reason,
+				crate::ExitReason::Succeed(ExitSucceed::Returned)
+			);
+
+			assert_eq!(call_result.value, u256_to_bytes(expected_clz));
+		});
+	}
+
+	// EIP-7939 Test Vectors
+
+	#[test]
+	fn clz_of_0x00_returns_256() {
+		run_clz_test(CLZ_ZERO, 256);
+	}
+
+	#[test]
+	fn clz_of_0x01_returns_255() {
+		run_clz_test(CLZ_ONE, 255);
+	}
+
+	#[test]
+	fn clz_of_0x8000_returns_0() {
+		run_clz_test(CLZ_MSB_SET, 0);
+	}
+
+	#[test]
+	fn clz_of_0xffff_returns_0() {
+		run_clz_test(CLZ_MAX_U256, 0);
+	}
+
+	#[test]
+	fn clz_of_0x4000_returns_1() {
+		run_clz_test(CLZ_SECOND_BIT, 1);
+	}
+
+	#[test]
+	fn clz_of_0x7fff_returns_1() {
+		run_clz_test(CLZ_MSB_UNSET, 1);
+	}
+}
