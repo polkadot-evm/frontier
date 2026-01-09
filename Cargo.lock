@@ -2838,7 +2838,7 @@ dependencies = [
 [[package]]
 name = "evm"
 version = "0.43.4"
-source = "git+https://github.com/rust-ethereum/evm.git?branch=v0.x#e3f0e925390188e8d9396a7355fc43d63acbd013"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=manuel%2Fadd-support-for-eip7939#4655d58fb2ef6fc3bb23f9ae01eb164090936c27"
 dependencies = [
  "auto_impl",
  "environmental",
@@ -2858,7 +2858,7 @@ dependencies = [
 [[package]]
 name = "evm-core"
 version = "0.43.0"
-source = "git+https://github.com/rust-ethereum/evm.git?branch=v0.x#e3f0e925390188e8d9396a7355fc43d63acbd013"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=manuel%2Fadd-support-for-eip7939#4655d58fb2ef6fc3bb23f9ae01eb164090936c27"
 dependencies = [
  "parity-scale-codec",
  "primitive-types",
@@ -2869,7 +2869,7 @@ dependencies = [
 [[package]]
 name = "evm-gasometer"
 version = "0.43.0"
-source = "git+https://github.com/rust-ethereum/evm.git?branch=v0.x#e3f0e925390188e8d9396a7355fc43d63acbd013"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=manuel%2Fadd-support-for-eip7939#4655d58fb2ef6fc3bb23f9ae01eb164090936c27"
 dependencies = [
  "environmental",
  "evm-core",
@@ -2880,7 +2880,7 @@ dependencies = [
 [[package]]
 name = "evm-runtime"
 version = "0.43.0"
-source = "git+https://github.com/rust-ethereum/evm.git?branch=v0.x#e3f0e925390188e8d9396a7355fc43d63acbd013"
+source = "git+https://github.com/moonbeam-foundation/evm.git?branch=manuel%2Fadd-support-for-eip7939#4655d58fb2ef6fc3bb23f9ae01eb164090936c27"
 dependencies = [
  "auto_impl",
  "environmental",
