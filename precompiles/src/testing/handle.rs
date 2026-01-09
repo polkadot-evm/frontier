@@ -119,7 +119,7 @@ impl PrecompileHandle for MockHandle {
 		if self
 			.record_cost(crate::evm::costs::call_cost(
 				context.apparent_value,
-				&evm::Config::pectra(),
+				&evm::Config::osaka(),
 			))
 			.is_err()
 		{

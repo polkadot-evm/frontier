@@ -210,7 +210,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&PECTRA_CONFIG
+			&OSAKA_CONFIG
 		}
 	}
 
@@ -939,7 +939,7 @@ where
 	}
 }
 
-static PECTRA_CONFIG: EvmConfig = EvmConfig::pectra();
+static OSAKA_CONFIG: EvmConfig = EvmConfig::osaka();
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.

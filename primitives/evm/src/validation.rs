@@ -322,7 +322,7 @@ mod tests {
 		UnknownError,
 	}
 
-	static PECTRA_CONFIG: evm::Config = evm::Config::pectra();
+	static OSAKA_CONFIG: evm::Config = evm::Config::osaka();
 
 	impl From<TransactionValidationError> for TestError {
 		fn from(e: TransactionValidationError) -> Self {
@@ -402,7 +402,7 @@ mod tests {
 		} = input;
 		CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &PECTRA_CONFIG,
+				evm_config: &OSAKA_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
@@ -920,7 +920,7 @@ mod tests {
 	fn validate_eip7702_empty_authorization_list_fails() {
 		let validator = CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &PECTRA_CONFIG,
+				evm_config: &OSAKA_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
@@ -957,7 +957,7 @@ mod tests {
 
 		let validator = CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &PECTRA_CONFIG,
+				evm_config: &OSAKA_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
@@ -994,7 +994,7 @@ mod tests {
 
 		let validator = CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &PECTRA_CONFIG,
+				evm_config: &OSAKA_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
@@ -1026,7 +1026,7 @@ mod tests {
 		// Empty authorization list should be OK for non-EIP-7702 transactions
 		let validator = CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
-				evm_config: &PECTRA_CONFIG,
+				evm_config: &OSAKA_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
