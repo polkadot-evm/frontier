@@ -228,6 +228,7 @@ impl From<MultiSignature> for EthereumSignature {
 				panic!("Sr25519 not supported for EthereumSignature")
 			}
 			MultiSignature::Ecdsa(sig) => Self(sig),
+			MultiSignature::Eth(sig) => Self(ecdsa::Signature::from(sig.0)),
 		}
 	}
 }
