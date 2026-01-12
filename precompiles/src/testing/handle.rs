@@ -19,7 +19,7 @@
 use crate::testing::PrettyLog;
 use alloc::boxed::Box;
 use evm::{ExitRevert, ExitSucceed};
-use fp_evm::{Context, ExitError, ExitReason, Log, PrecompileHandle, Transfer};
+use fp_evm::{Context, ExitError, ExitReason, Log, PrecompileHandle, Transfer, EVM_CONFIG};
 use sp_core::{H160, H256};
 
 use super::Alice;
@@ -119,7 +119,7 @@ impl PrecompileHandle for MockHandle {
 		if self
 			.record_cost(crate::evm::costs::call_cost(
 				context.apparent_value,
-				&evm::Config::osaka(),
+				&EVM_CONFIG,
 			))
 			.is_err()
 		{

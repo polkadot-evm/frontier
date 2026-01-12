@@ -107,7 +107,7 @@ pub use fp_evm::{
 	Account, AccountProvider, CallInfo, CreateInfo, ExecutionInfoV2 as ExecutionInfo,
 	FeeCalculator, IsPrecompileResult, LinearCostPrecompile, Log, Precompile, PrecompileFailure,
 	PrecompileHandle, PrecompileOutput, PrecompileResult, PrecompileSet,
-	TransactionValidationError, Vicinity,
+	TransactionValidationError, Vicinity, EVM_CONFIG,
 };
 
 pub use self::{
@@ -210,7 +210,7 @@ pub mod pallet {
 
 		/// EVM config used in the module.
 		fn config() -> &'static EvmConfig {
-			&OSAKA_CONFIG
+			&EVM_CONFIG
 		}
 	}
 
@@ -938,8 +938,6 @@ where
 		weight.div(T::WeightPerGas::get().ref_time()).ref_time()
 	}
 }
-
-static OSAKA_CONFIG: EvmConfig = EvmConfig::osaka();
 
 impl<T: Config> Pallet<T> {
 	/// Check whether an account is empty.

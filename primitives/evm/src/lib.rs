@@ -39,6 +39,9 @@ pub use evm::{
 	Config, ExitReason, Opcode,
 };
 
+/// Default EVM configuration.
+pub static EVM_CONFIG: Config = Config::osaka();
+
 pub use self::{
 	account_provider::AccountProvider,
 	precompile::{
