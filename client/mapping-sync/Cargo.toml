@@ -39,7 +39,7 @@ tempfile = "3.21.0"
 tokio = { workspace = true, features = ["sync"] }
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true, features = ["rocksdb"] }
+sc-client-db = { workspace = true }
 sp-consensus = { workspace = true }
 sp-core = { workspace = true, features = ["default"] }
 sp-io = { workspace = true }
