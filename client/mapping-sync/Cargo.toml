@@ -50,7 +50,7 @@ fp-storage = { workspace = true, features = ["default"] }
 frontier-template-runtime = { workspace = true, features = ["default"] }
 
 [features]
-default = ["rocksdb"]
+default = ["sql"]
 rocksdb = ["fc-db/rocksdb"]
 sql = [
 	"tokio",

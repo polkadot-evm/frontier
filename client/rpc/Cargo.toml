@@ -73,7 +73,7 @@ substrate-test-runtime-client = { workspace = true }
 fc-db = { workspace = true }
 
 [features]
-default = ["aura", "rocksdb"]
+default = ["aura"]
 aura = [
 	"sc-consensus-aura",
 	"sp-consensus-aura",

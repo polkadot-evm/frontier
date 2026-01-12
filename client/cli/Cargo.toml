@@ -41,7 +41,7 @@ fc-db = { workspace = true }
 frontier-template-runtime = { workspace = true, features = ["default"] }
 
 [features]
-default = ["rocksdb"]
+default = []
 rocksdb = [
 	"sc-cli/rocksdb",
 	"fc-db/rocksdb",
