@@ -379,10 +379,13 @@ mod tests {
 		Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 			client,
 			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
 				source: sc_client_db::DatabaseSource::RocksDb {
 					path,
 					cache_size: 0,
 				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb { path },
 			},
 		)?))
 	}
