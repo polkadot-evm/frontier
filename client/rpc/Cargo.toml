@@ -66,14 +66,14 @@ pallet-evm = { workspace = true, features = ["default"] }
 tempfile = "3.21.0"
 # Substrate
 sc-block-builder = { workspace = true }
-sc-client-db = { workspace = true, features = ["rocksdb"] }
+sc-client-db = { workspace = true }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 # Frontier
 fc-db = { workspace = true }
 
 [features]
-default = ["aura", "rocksdb"]
+default = ["aura"]
 aura = [
 	"sc-consensus-aura",
 	"sp-consensus-aura",

@@ -47,7 +47,7 @@ sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
 
 [features]
-default = ["rocksdb"]
+default = ["sql"]
 rocksdb = [
 	"kvdb-rocksdb",
 	"sc-client-db/rocksdb",
