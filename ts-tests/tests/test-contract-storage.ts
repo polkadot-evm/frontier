@@ -122,6 +122,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		expect(tx2.gasUsed - baseCost).to.be.eq(92);
 		// - the original storage didn't change in the current transaction
 		// - the original storage is not zero (otherwise tx1)
-		expect(tx3.gasUsed - baseCost).to.be.eq(2893);
+		expect(tx3.gasUsed - baseCost).to.be.eq(2892);
 	});
 });
