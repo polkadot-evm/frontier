@@ -19,13 +19,13 @@ use frame_support::{
 	dispatch::{DispatchInfo, GetDispatchInfo},
 	traits::{InherentBuilder, SignedTransactionBuilder},
 };
-use scale_codec::{Decode, DecodeWithMemTracking, Encode};
+use scale_codec::{Decode, DecodeWithMemTracking, Encode, Error as CodecError};
 use scale_info::TypeInfo;
 use sp_runtime::{
 	generic::{self, Preamble},
 	traits::{
 		self, Checkable, Dispatchable, ExtrinsicCall, ExtrinsicLike, ExtrinsicMetadata,
-		IdentifyAccount, MaybeDisplay, Member, TransactionExtension,
+		IdentifyAccount, LazyExtrinsic, MaybeDisplay, Member, TransactionExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
 	OpaqueExtrinsic, RuntimeDebug,
@@ -169,6 +169,10 @@ where
 	fn call(&self) -> &Self::Call {
 		&self.0.function
 	}
+
+	fn into_call(self) -> Self::Call {
+		self.0.function
+	}
 }
 
 impl<Address, Call, Signature, Extension> GetDispatchInfo
@@ -267,5 +271,15 @@ impl<Address, Call, Signature, Extension>
 {
 	fn from(utx: generic::UncheckedExtrinsic<Address, Call, Signature, Extension>) -> Self {
 		Self(utx)
+	}
+}
+
+impl<Address, Call, Signature, Extension> LazyExtrinsic
+	for UncheckedExtrinsic<Address, Call, Signature, Extension>
+where
+	generic::UncheckedExtrinsic<Address, Call, Signature, Extension>: LazyExtrinsic,
+{
+	fn decode_unprefixed(data: &[u8]) -> Result<Self, CodecError> {
+		Ok(Self(LazyExtrinsic::decode_unprefixed(data)?))
 	}
 }

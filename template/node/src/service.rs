@@ -509,6 +509,7 @@ where
 		tx_handler_controller,
 		sync_service: sync_service.clone(),
 		telemetry: telemetry.as_mut(),
+		tracing_execute_block: None,
 	})?;
 
 	spawn_frontier_tasks(
