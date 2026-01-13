@@ -7327,7 +7327,7 @@ dependencies = [
 name = "pallet-evm-precompile-bls12381"
 version = "1.0.0-dev"
 dependencies = [
- "ark-bls12-381 0.4.0",
+ "ark-bls12-381 0.5.0",
  "ark-ec 0.4.2",
  "ark-ff 0.4.2",
  "ark-std 0.5.0",
