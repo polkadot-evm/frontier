@@ -320,10 +320,9 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 
 #[cfg(test)]
 mod tests {
-	use std::{
-		io::{Read, Write},
-		sync::Arc,
-	};
+	#[cfg(feature = "rocksdb")]
+	use std::io::Read;
+	use std::{io::Write, sync::Arc};
 
 	use futures::executor;
 	use scale_codec::Encode;

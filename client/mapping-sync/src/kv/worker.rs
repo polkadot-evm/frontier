@@ -298,9 +298,14 @@ mod tests {
 			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
+					#[cfg(feature = "rocksdb")]
 					source: sc_client_db::DatabaseSource::RocksDb {
 						path: tmp.path().to_path_buf(),
 						cache_size: 0,
+					},
+					#[cfg(not(feature = "rocksdb"))]
+					source: sc_client_db::DatabaseSource::ParityDb {
+						path: tmp.path().to_path_buf(),
 					},
 				},
 			)
@@ -440,9 +445,14 @@ mod tests {
 			fc_db::kv::Backend::<OpaqueBlock, _>::new(
 				client.clone(),
 				&fc_db::kv::DatabaseSettings {
+					#[cfg(feature = "rocksdb")]
 					source: sc_client_db::DatabaseSource::RocksDb {
 						path: tmp.path().to_path_buf(),
 						cache_size: 0,
+					},
+					#[cfg(not(feature = "rocksdb"))]
+					source: sc_client_db::DatabaseSource::ParityDb {
+						path: tmp.path().to_path_buf(),
 					},
 				},
 			)

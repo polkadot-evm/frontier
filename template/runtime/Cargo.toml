@@ -77,7 +77,7 @@ cumulus-pallet-weight-reclaim = { workspace = true }
 substrate-wasm-builder = { workspace = true, optional = true }
 
 [features]
-default = ["std", "with-rocksdb-weights"]
+default = ["std", "with-paritydb-weights"]
 with-rocksdb-weights = []
 with-paritydb-weights = []
 std = [
