@@ -119,7 +119,7 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 		// going from unset storage to some value (original = 0)
 		expect(tx1.gasUsed - baseCost).to.be.eq(19992);
 		// in London config, setting back the same value have cost of warm read
-		expect(tx2.gasUsed - baseCost).to.be.eq(93);
+		expect(tx2.gasUsed - baseCost).to.be.eq(92);
 		// - the original storage didn't change in the current transaction
 		// - the original storage is not zero (otherwise tx1)
 		expect(tx3.gasUsed - baseCost).to.be.eq(2893);

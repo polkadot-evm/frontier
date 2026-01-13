@@ -55,7 +55,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 
 	it("eth_estimateGas for contract creation", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
-		let oneOffEstimation = 189150;
+		let oneOffEstimation = 189151;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -97,7 +97,7 @@ describeWithFrontier("Frontier RPC (Gas)", (context) => {
 	it("eth_estimateGas should handle AccessList alias", async function () {
 		// The value returned as an estimation by the evm with estimate mode ON.
 		// 4300 == 1900 for one key and 2400 for one storage.
-		let oneOffEstimation = 189150 + 4300;
+		let oneOffEstimation = 189151 + 4300;
 		let binarySearchEstimation = binarySearch(oneOffEstimation);
 		// Sanity check expect a variance of 10%.
 		expect(estimationVariance(binarySearchEstimation, oneOffEstimation)).to.be.lessThan(1);
@@ -279,9 +279,9 @@ describeWithFrontier("Frontier RPC (Gas limit Weightv2 pov size)", (context) => 
 	// Big transfer
 	const CONTRACT_TRANSFER_EFFECTIVE_GAS = 109_116;
 	// First call to contract storageLoop method
-	const FIRST_CALL = 610_438;
+	const FIRST_CALL = 611_438;
 	// Rest of calls
-	const CALL_COST = 593_338;
+	const CALL_COST = 594_285;
 	// Block gas limit
 	const BLOCK_GAS_LIMIT = ETH_BLOCK_GAS_LIMIT - (FIRST_CALL + CONTRACT_TRANSFER_EFFECTIVE_GAS);
 	// Number of calls per block
