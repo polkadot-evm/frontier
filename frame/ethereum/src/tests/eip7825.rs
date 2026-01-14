@@ -116,7 +116,7 @@ fn eip7825_transaction_exceeds_cap_by_one_fails() {
 }
 
 #[test]
-fn eip7825_transaction_well_under_cap_succeeds() {
+fn eip7825_transaction_standard_transfer_gas_succeeds() {
 	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 100_000_000_000_000);
 	let alice = &pairs[0];
 	let bob = &pairs[1];
