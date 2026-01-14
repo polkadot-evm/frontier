@@ -312,8 +312,13 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 	///
 	/// This validation applies independently of block gas limits and ensures
 	/// no single transaction can consume excessive resources.
+	///
+	/// Note: This check only applies to on-chain transactions (`is_transactional == true`).
+	/// Dry-run calls like `eth_call` are exempt to allow simulating expensive transactions.
 	pub fn with_transaction_gas_limit_cap(&self) -> Result<&Self, E> {
-		if self.transaction.gas_limit > U256::from(MAX_TRANSACTION_GAS_LIMIT) {
+		if self.config.is_transactional
+			&& self.transaction.gas_limit > U256::from(MAX_TRANSACTION_GAS_LIMIT)
+		{
 			return Err(TransactionValidationError::TransactionGasLimitExceedsCap.into());
 		}
 		Ok(self)
@@ -1205,5 +1210,38 @@ mod tests {
 		let res = validator.with_transaction_gas_limit_cap();
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::TransactionGasLimitExceedsCap);
+	}
+
+	#[test]
+	fn validate_eip7825_non_transactional_exceeds_cap_succeeds() {
+		// Non-transactional calls (eth_call) exceeding cap should succeed
+		// This allows dry-running expensive transactions for gas estimation
+		let validator = CheckEvmTransaction::<TestError>::new(
+			CheckEvmTransactionConfig {
+				evm_config: &crate::EVM_CONFIG,
+				block_gas_limit: U256::from(50_000_000u64),
+				base_fee: U256::from(1_000_000_000u128),
+				chain_id: 42u64,
+				is_transactional: false, // Non-transactional (dry-run)
+			},
+			CheckEvmTransactionInput {
+				chain_id: Some(42u64),
+				to: Some(H160::default()),
+				input: vec![],
+				nonce: U256::zero(),
+				gas_limit: U256::from(30_000_000u64), // Exceeds cap but should pass
+				gas_price: None,
+				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
+				value: U256::zero(),
+				access_list: vec![],
+				authorization_list: vec![],
+			},
+			None,
+			None,
+		);
+
+		let res = validator.with_transaction_gas_limit_cap();
+		assert!(res.is_ok());
 	}
 }
