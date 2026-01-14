@@ -558,6 +558,7 @@ impl<T: Config> Pallet<T> {
 		.validate_in_pool_for(&who)
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
+		.and_then(|v| v.with_transaction_gas_limit_cap())
 		.and_then(|v| v.with_balance_for(&who))
 		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| e.0)?;
@@ -1007,6 +1008,7 @@ impl<T: Config> Pallet<T> {
 		.validate_in_block_for(&who)
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
+		.and_then(|v| v.with_transaction_gas_limit_cap())
 		.and_then(|v| v.with_balance_for(&who))
 		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| TransactionValidityError::Invalid(e.0))?;
@@ -1121,9 +1123,11 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 			TransactionValidationError::GasLimitTooLow => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooLow as u8),
 			),
-			TransactionValidationError::GasLimitTooHigh => InvalidTransactionWrapper(
-				InvalidTransaction::Custom(TransactionValidationError::GasLimitTooHigh as u8),
-			),
+			TransactionValidationError::GasLimitExceedsBlockLimit => {
+				InvalidTransactionWrapper(InvalidTransaction::Custom(
+					TransactionValidationError::GasLimitExceedsBlockLimit as u8,
+				))
+			}
 			TransactionValidationError::PriorityFeeTooHigh => InvalidTransactionWrapper(
 				InvalidTransaction::Custom(TransactionValidationError::PriorityFeeTooHigh as u8),
 			),
@@ -1156,6 +1160,11 @@ impl From<TransactionValidationError> for InvalidTransactionWrapper {
 			TransactionValidationError::AuthorizationListTooLarge => {
 				InvalidTransactionWrapper(InvalidTransaction::Custom(
 					TransactionValidationError::AuthorizationListTooLarge as u8,
+				))
+			}
+			TransactionValidationError::TransactionGasLimitExceedsCap => {
+				InvalidTransactionWrapper(InvalidTransaction::Custom(
+					TransactionValidationError::TransactionGasLimitExceedsCap as u8,
 				))
 			}
 			TransactionValidationError::UnknownError => InvalidTransactionWrapper(

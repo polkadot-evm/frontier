@@ -599,8 +599,10 @@ pub mod pallet {
 		InvalidNonce,
 		/// Gas limit is too low.
 		GasLimitTooLow,
-		/// Gas limit is too high.
-		GasLimitTooHigh,
+		/// Gas limit exceeds block gas limit.
+		GasLimitExceedsBlockLimit,
+		/// EIP-7825: Transaction gas limit exceeds protocol cap (2^24).
+		TransactionGasLimitExceedsCap,
 		/// The chain id is invalid.
 		InvalidChainId,
 		/// the signature is invalid.
@@ -619,7 +621,9 @@ pub mod pallet {
 		fn from(validation_error: TransactionValidationError) -> Self {
 			match validation_error {
 				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
-				TransactionValidationError::GasLimitTooHigh => Error::<T>::GasLimitTooHigh,
+				TransactionValidationError::GasLimitExceedsBlockLimit => {
+					Error::<T>::GasLimitExceedsBlockLimit
+				}
 				TransactionValidationError::BalanceTooLow => Error::<T>::BalanceLow,
 				TransactionValidationError::TxNonceTooLow => Error::<T>::InvalidNonce,
 				TransactionValidationError::TxNonceTooHigh => Error::<T>::InvalidNonce,
@@ -630,6 +634,9 @@ pub mod pallet {
 				TransactionValidationError::InvalidSignature => Error::<T>::InvalidSignature,
 				TransactionValidationError::EmptyAuthorizationList => Error::<T>::Undefined,
 				TransactionValidationError::AuthorizationListTooLarge => Error::<T>::Undefined,
+				TransactionValidationError::TransactionGasLimitExceedsCap => {
+					Error::<T>::TransactionGasLimitExceedsCap
+				}
 				TransactionValidationError::UnknownError => Error::<T>::Undefined,
 			}
 		}
