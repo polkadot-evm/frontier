@@ -558,7 +558,6 @@ impl<T: Config> Pallet<T> {
 		.validate_in_pool_for(&who)
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_transaction_gas_limit_cap())
 		.and_then(|v| v.with_balance_for(&who))
 		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| e.0)?;
@@ -1008,7 +1007,6 @@ impl<T: Config> Pallet<T> {
 		.validate_in_block_for(&who)
 		.and_then(|v| v.with_chain_id())
 		.and_then(|v| v.with_base_fee())
-		.and_then(|v| v.with_transaction_gas_limit_cap())
 		.and_then(|v| v.with_balance_for(&who))
 		.and_then(|v| v.with_eip7702_authorization_list(is_eip7702))
 		.map_err(|e| TransactionValidityError::Invalid(e.0))?;

@@ -267,6 +267,11 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			if self.transaction.gas_limit > self.config.block_gas_limit {
 				return Err(TransactionValidationError::GasLimitExceedsBlockLimit.into());
 			}
+
+			// EIP-7825: Transaction gas limit is within the protocol cap.
+			if self.transaction.gas_limit > U256::from(MAX_TRANSACTION_GAS_LIMIT) {
+				return Err(TransactionValidationError::TransactionGasLimitExceedsCap.into());
+			}
 		}
 
 		Ok(self)
@@ -304,23 +309,6 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			}
 		}
 
-		Ok(self)
-	}
-
-	/// EIP-7825: Validate that the transaction gas limit does not exceed the
-	/// per-transaction cap (2^24 = 16,777,216).
-	///
-	/// This validation applies independently of block gas limits and ensures
-	/// no single transaction can consume excessive resources.
-	///
-	/// Note: This check only applies to on-chain transactions (`is_transactional == true`).
-	/// Dry-run calls like `eth_call` are exempt to allow simulating expensive transactions.
-	pub fn with_transaction_gas_limit_cap(&self) -> Result<&Self, E> {
-		if self.config.is_transactional
-			&& self.transaction.gas_limit > U256::from(MAX_TRANSACTION_GAS_LIMIT)
-		{
-			return Err(TransactionValidationError::TransactionGasLimitExceedsCap.into());
-		}
 		Ok(self)
 	}
 }
@@ -1110,7 +1098,7 @@ mod tests {
 			None,
 		);
 
-		let res = validator.with_transaction_gas_limit_cap();
+		let res = validator.validate_common();
 		assert!(res.is_ok());
 	}
 
@@ -1142,7 +1130,7 @@ mod tests {
 			None,
 		);
 
-		let res = validator.with_transaction_gas_limit_cap();
+		let res = validator.validate_common();
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::TransactionGasLimitExceedsCap);
 	}
@@ -1175,7 +1163,7 @@ mod tests {
 			None,
 		);
 
-		let res = validator.with_transaction_gas_limit_cap();
+		let res = validator.validate_common();
 		assert!(res.is_ok());
 	}
 
@@ -1207,7 +1195,7 @@ mod tests {
 			None,
 		);
 
-		let res = validator.with_transaction_gas_limit_cap();
+		let res = validator.validate_common();
 		assert!(res.is_err());
 		assert_eq!(res.unwrap_err(), TestError::TransactionGasLimitExceedsCap);
 	}
@@ -1241,7 +1229,7 @@ mod tests {
 			None,
 		);
 
-		let res = validator.with_transaction_gas_limit_cap();
+		let res = validator.validate_common();
 		assert!(res.is_ok());
 	}
 }
