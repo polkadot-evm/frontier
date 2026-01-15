@@ -141,23 +141,42 @@ where
 		&self,
 		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		let id = match frontier_backend_client::native_block_id::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			Some(number_or_hash),
-		)
-		.await?
-		{
-			Some(id) => id,
-			None => return Ok(BlockInfo::default()),
+		// Derive the block number from the BlockNumberOrHash variant
+		let block_number: Option<u64> = match number_or_hash {
+			BlockNumberOrHash::Num(n) => Some(n),
+			BlockNumberOrHash::Latest => {
+				Some(self.client.info().best_number.unique_saturated_into())
+			}
+			BlockNumberOrHash::Earliest => Some(0),
+			BlockNumberOrHash::Safe | BlockNumberOrHash::Finalized => {
+				Some(self.client.info().finalized_number.unique_saturated_into())
+			}
+			BlockNumberOrHash::Pending => {
+				// Pending blocks are not indexed in mapping-sync.
+				// Return empty BlockInfo - pending blocks are handled specially
+				// by methods that need them (e.g., pending_block()).
+				return Ok(BlockInfo::default());
+			}
+			BlockNumberOrHash::Hash { hash, .. } => {
+				// For hash queries, use the existing eth block hash lookup
+				return self.block_info_by_eth_block_hash(hash).await;
+			}
 		};
 
-		let substrate_hash = self
-			.client
-			.expect_block_hash_from_id(&id)
-			.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
+		// Query mapping-sync for the ethereum block hash by block number
+		let eth_block_hash = match block_number {
+			Some(n) => self
+				.backend
+				.block_hash_by_number(n)
+				.await
+				.map_err(|err| internal_err(format!("{err:?}")))?,
+			None => None,
+		};
 
-		self.block_info_by_substrate_hash(substrate_hash).await
+		match eth_block_hash {
+			Some(hash) => self.block_info_by_eth_block_hash(hash).await,
+			None => Ok(BlockInfo::default()),
+		}
 	}
 
 	pub async fn block_info_by_eth_block_hash(

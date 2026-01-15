@@ -49,12 +49,13 @@ pub struct DatabaseSettings {
 }
 
 pub(crate) mod columns {
-	pub const NUM_COLUMNS: u32 = 4;
+	pub const NUM_COLUMNS: u32 = 5;
 
 	pub const META: u32 = 0;
 	pub const BLOCK_MAPPING: u32 = 1;
 	pub const TRANSACTION_MAPPING: u32 = 2;
 	pub const SYNCED_MAPPING: u32 = 3;
+	pub const BLOCK_NUMBER_MAPPING: u32 = 4;
 }
 
 pub mod static_keys {
@@ -76,6 +77,10 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		ethereum_block_hash: &H256,
 	) -> Result<Option<Vec<Block::Hash>>, String> {
 		self.mapping().block_hash(ethereum_block_hash)
+	}
+
+	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
+		self.mapping().block_hash_by_number(block_number)
 	}
 
 	async fn transaction_metadata(
@@ -310,7 +315,11 @@ impl<Block: BlockT> MappingDb<Block> {
 		Ok(())
 	}
 
-	pub fn write_hashes(&self, commitment: MappingCommitment<Block>) -> Result<(), String> {
+	pub fn write_hashes(
+		&self,
+		commitment: MappingCommitment<Block>,
+		block_number: u64,
+	) -> Result<(), String> {
 		let _lock = self.write_lock.lock();
 
 		let mut transaction = sp_database::Transaction::new();
@@ -335,6 +344,13 @@ impl<Block: BlockT> MappingDb<Block> {
 			columns::BLOCK_MAPPING,
 			&commitment.ethereum_block_hash.encode(),
 			&substrate_hashes.encode(),
+		);
+
+		// Write block number -> ethereum block hash mapping
+		transaction.set(
+			columns::BLOCK_NUMBER_MAPPING,
+			&block_number.encode(),
+			&commitment.ethereum_block_hash.encode(),
 		);
 
 		for (i, ethereum_transaction_hash) in commitment
@@ -364,5 +380,17 @@ impl<Block: BlockT> MappingDb<Block> {
 		self.db.commit(transaction).map_err(|e| e.to_string())?;
 
 		Ok(())
+	}
+
+	pub fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
+		match self
+			.db
+			.get(columns::BLOCK_NUMBER_MAPPING, &block_number.encode())
+		{
+			Some(raw) => Ok(Some(
+				H256::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?,
+			)),
+			None => Ok(None),
+		}
 	}
 }

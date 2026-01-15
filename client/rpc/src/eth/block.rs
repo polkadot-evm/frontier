@@ -16,8 +16,6 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::sync::Arc;
-
 use ethereum_types::{H256, U256};
 use jsonrpsee::core::RpcResult;
 // Substrate
@@ -33,7 +31,7 @@ use fp_rpc::EthereumRuntimeRPCApi;
 
 use crate::{
 	eth::{rich_block_build, BlockInfo, Eth},
-	frontier_backend_client, internal_err,
+	internal_err,
 };
 
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
@@ -85,96 +83,86 @@ where
 		number_or_hash: BlockNumberOrHash,
 		full: bool,
 	) -> RpcResult<Option<RichBlock>> {
-		let client = Arc::clone(&self.client);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
-		let backend = Arc::clone(&self.backend);
-		let pool = Arc::clone(&self.pool);
+		// Handle pending blocks specially - they're not in mapping-sync
+		if number_or_hash == BlockNumberOrHash::Pending {
+			return self.pending_block(full).await;
+		}
 
-		match frontier_backend_client::native_block_id::<B, C>(
-			client.as_ref(),
-			backend.as_ref(),
-			Some(number_or_hash),
-		)
-		.await?
-		{
-			Some(id) => {
-				let substrate_hash = client
-					.expect_block_hash_from_id(&id)
-					.map_err(|_| internal_err(format!("Expect block number from id: {id}")))?;
+		// For all other block queries, use mapping-sync via block_info_by_number
+		let BlockInfo {
+			block,
+			statuses,
+			substrate_hash,
+			base_fee,
+			..
+		} = self.block_info_by_number(number_or_hash).await?;
 
-				let block = block_data_cache.current_block(substrate_hash).await;
-				let statuses = block_data_cache
-					.current_transaction_statuses(substrate_hash)
-					.await;
-
-				let base_fee = client.runtime_api().gas_price(substrate_hash).ok();
-
-				match (block, statuses) {
-					(Some(block), Some(statuses)) => {
-						let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
-						let mut rich_block = rich_block_build(
-							block,
-							statuses.into_iter().map(Option::Some).collect(),
-							Some(hash),
-							full,
-							base_fee,
-							false,
-						);
-
-						let substrate_hash = H256::from_slice(substrate_hash.as_ref());
-						if let Some(parent_hash) = self
-							.forced_parent_hashes
-							.as_ref()
-							.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
-						{
-							rich_block.inner.header.parent_hash = parent_hash
-						}
-
-						Ok(Some(rich_block))
-					}
-					_ => Ok(None),
-				}
-			}
-			None if number_or_hash == BlockNumberOrHash::Pending => {
-				let api = client.runtime_api();
-				let best_hash = client.info().best_hash;
-
-				// Get current in-pool transactions
-				let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
-				// ready validated pool
-				xts.extend(
-					pool.ready()
-						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
-						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => {
+				let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
+				let mut rich_block = rich_block_build(
+					block,
+					statuses.into_iter().map(Option::Some).collect(),
+					Some(hash),
+					full,
+					Some(base_fee),
+					false,
 				);
 
-				// future validated pool
-				xts.extend(
-					pool.futures()
-						.iter()
-						.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
-						.collect::<Vec<<B as BlockT>::Extrinsic>>(),
-				);
-
-				let (block, statuses) = api
-					.pending_block(best_hash, xts)
-					.map_err(|_| internal_err(format!("Runtime access error at {best_hash}")))?;
-
-				let base_fee = api.gas_price(best_hash).ok();
-
-				match (block, statuses) {
-					(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
-						block,
-						statuses.into_iter().map(Option::Some).collect(),
-						None,
-						full,
-						base_fee,
-						true,
-					))),
-					_ => Ok(None),
+				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+				if let Some(parent_hash) = self
+					.forced_parent_hashes
+					.as_ref()
+					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+				{
+					rich_block.inner.header.parent_hash = parent_hash
 				}
+
+				Ok(Some(rich_block))
 			}
-			None => Ok(None),
+			_ => Ok(None),
+		}
+	}
+
+	async fn pending_block(&self, full: bool) -> RpcResult<Option<RichBlock>> {
+		let api = self.client.runtime_api();
+		let best_hash = self.client.info().best_hash;
+
+		// Get current in-pool transactions
+		let mut xts: Vec<<B as BlockT>::Extrinsic> = Vec::new();
+		// ready validated pool
+		xts.extend(
+			self.pool
+				.ready()
+				.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		);
+
+		// future validated pool
+		xts.extend(
+			self.pool
+				.futures()
+				.iter()
+				.map(|in_pool_tx| in_pool_tx.data().as_ref().clone())
+				.collect::<Vec<<B as BlockT>::Extrinsic>>(),
+		);
+
+		let (block, statuses) = api
+			.pending_block(best_hash, xts)
+			.map_err(|_| internal_err(format!("Runtime access error at {best_hash}")))?;
+
+		let base_fee = api.gas_price(best_hash).ok();
+
+		match (block, statuses) {
+			(Some(block), Some(statuses)) => Ok(Some(rich_block_build(
+				block,
+				statuses.into_iter().map(Option::Some).collect(),
+				None,
+				full,
+				base_fee,
+				true,
+			))),
+			_ => Ok(None),
 		}
 	}
 
