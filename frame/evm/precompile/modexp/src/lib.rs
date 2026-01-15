@@ -33,10 +33,11 @@ use fp_evm::{
 
 pub struct Modexp;
 
-const MIN_GAS_COST: u64 = 200;
+// EIP-7883: Minimum gas cost
+const MIN_GAS_COST: u64 = 500;
 
-// Calculate gas cost according to EIP 2565:
-// https://eips.ethereum.org/EIPS/eip-2565
+// Calculate gas cost according to EIP-7883:
+// https://eips.ethereum.org/EIPS/eip-7883
 fn calculate_gas_cost(
 	base_length: u64,
 	mod_length: u64,
@@ -44,8 +45,15 @@ fn calculate_gas_cost(
 	exponent_bytes: &[u8],
 	mod_is_even: bool,
 ) -> u64 {
+	// EIP-7883: Introduces minimum complexity floor of 16 and doubles complexity for >32 bytes
 	fn calculate_multiplication_complexity(base_length: u64, mod_length: u64) -> u64 {
 		let max_length = max(base_length, mod_length);
+
+		// EIP-7883: For inputs <= 32 bytes, return minimum complexity of 16
+		if max_length <= 32 {
+			return 16;
+		}
+
 		let mut words = max_length / 8;
 		if max_length % 8 > 0 {
 			words += 1;
@@ -54,8 +62,9 @@ fn calculate_gas_cost(
 		// Note: can't overflow because we take words to be some u64 value / 8, which is
 		// necessarily less than sqrt(u64::MAX).
 		// Additionally, both base_length and mod_length are bounded to 1024, so this has
-		// an upper bound of roughly (1024 / 8) squared
-		words * words
+		// an upper bound of roughly 2 * (1024 / 8) squared
+		// EIP-7883: Double the complexity for inputs > 32 bytes
+		2 * words * words
 	}
 
 	fn calculate_iteration_count(exponent: &BigUint, exponent_bytes: &[u8]) -> u64 {
@@ -68,20 +77,20 @@ fn calculate_gas_cost(
 			iteration_count = exponent.bits() - 1;
 		} else if exp_length > 32 {
 			// from the EIP spec:
-			// (8 * (exp_length - 32)) + ((exponent & (2**256 - 1)).bit_length() - 1)
+			// (16 * (exp_length - 32)) + ((exponent & (2**256 - 1)).bit_length() - 1)
 			//
 			// Notes:
 			// * exp_length is bounded to 1024 and is > 32
 			// * exponent can be zero, so we subtract 1 after adding the other terms (whose sum
 			//   must be > 0)
 			// * the addition can't overflow because the terms are both capped at roughly
-			//   8 * max size of exp_length (1024)
+			//   16 * max size of exp_length (1024)
 			// * the EIP spec is written in python, in which (exponent & (2**256 - 1)) takes the
 			//   FIRST 32 bytes. However this `BigUint` `&` operator takes the LAST 32 bytes.
 			//   We thus instead take the bytes manually.
 			let exponent_head = BigUint::from_bytes_be(&exponent_bytes[..32]);
 
-			iteration_count = (8 * (exp_length - 32)) + exponent_head.bits() - 1;
+			iteration_count = (16 * (exp_length - 32)) + exponent_head.bits() - 1;
 		}
 
 		max(iteration_count, 1)
@@ -89,11 +98,13 @@ fn calculate_gas_cost(
 
 	let multiplication_complexity = calculate_multiplication_complexity(base_length, mod_length);
 	let iteration_count = calculate_iteration_count(exponent, exponent_bytes);
-	max(
-		MIN_GAS_COST,
-		multiplication_complexity * iteration_count / 3,
-	)
-	.saturating_mul(if mod_is_even { 20 } else { 1 })
+	let gas = max(MIN_GAS_COST, multiplication_complexity * iteration_count);
+
+	// CVE-2023-28431: The num-bigint crate uses Montgomery multiplication for odd moduli
+	// (fast) but plain power algorithm for even moduli (~20x slower). This multiplier
+	// compensates for that performance difference to prevent DoS attacks.
+	// See: https://github.com/polkadot-evm/frontier/security/advisories/GHSA-fcmm-54jp-7vf6
+	gas.saturating_mul(if mod_is_even { 20 } else { 1 })
 }
 
 /// Copy bytes from input to target.
@@ -251,7 +262,7 @@ mod tests {
 
 	#[test]
 	fn process_consensus_tests() -> Result<(), String> {
-		test_precompile_test_vectors::<Modexp>("../testdata/modexp_eip2565.json")?;
+		test_precompile_test_vectors::<Modexp>("../testdata/modexp_eip7883.json")?;
 		Ok(())
 	}
 
@@ -519,6 +530,6 @@ mod tests {
 
 		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
 
-		assert_eq!(handle.gas_used, 7104 * 20); // gas used when ran in geth (x20)
+		assert_eq!(handle.gas_used, 56448 * 20);
 	}
 }
