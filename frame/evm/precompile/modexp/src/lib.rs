@@ -61,6 +61,12 @@ const ITERATION_MULTIPLIER: u64 = 16;
 /// See: https://github.com/polkadot-evm/frontier/security/advisories/GHSA-fcmm-54jp-7vf6
 const EVEN_MODULUS_MULTIPLIER: u64 = 20;
 
+/// EIP-7823: Maximum input size limit for MODEXP (8192 bits = 1024 bytes).
+/// Each length field (base, exponent, modulus) MUST not exceed this limit.
+/// Inputs exceeding this limit consume all available gas and return an error.
+/// https://eips.ethereum.org/EIPS/eip-7823
+const EIP7823_INPUT_SIZE_LIMIT: u32 = 1024;
+
 // Calculate gas cost according to EIP-7883:
 // https://eips.ethereum.org/EIPS/eip-7883
 fn calculate_gas_cost(
@@ -176,27 +182,36 @@ impl Precompile for Modexp {
 		let mut mod_len_buf = [0u8; 32];
 		read_input(input, &mut mod_len_buf, &mut input_offset);
 
-		// reasonable assumption: this must fit within the Ethereum EVM's max stack size
-		let max_size_big = BigUint::from_u32(1024).expect("can't create BigUint");
+		// EIP-7823: Maximum input size limit (8192 bits = 1024 bytes)
+		let max_size_big =
+			BigUint::from_u32(EIP7823_INPUT_SIZE_LIMIT).expect("can't create BigUint");
 
 		let base_len_big = BigUint::from_bytes_be(&base_len_buf);
 		if base_len_big > max_size_big {
+			// EIP-7823: Consume all remaining gas before returning error
+			handle.record_cost(handle.remaining_gas())?;
 			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("unreasonably large base length".into()),
+				exit_status: ExitError::Other("EIP-7823: base length exceeds 1024 bytes".into()),
 			});
 		}
 
 		let exp_len_big = BigUint::from_bytes_be(&exp_len_buf);
 		if exp_len_big > max_size_big {
+			// EIP-7823: Consume all remaining gas before returning error
+			handle.record_cost(handle.remaining_gas())?;
 			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("unreasonably large exponent length".into()),
+				exit_status: ExitError::Other(
+					"EIP-7823: exponent length exceeds 1024 bytes".into(),
+				),
 			});
 		}
 
 		let mod_len_big = BigUint::from_bytes_be(&mod_len_buf);
 		if mod_len_big > max_size_big {
+			// EIP-7823: Consume all remaining gas before returning error
+			handle.record_cost(handle.remaining_gas())?;
 			return Err(PrecompileFailure::Error {
-				exit_status: ExitError::Other("unreasonably large modulus length".into()),
+				exit_status: ExitError::Other("EIP-7823: modulus length exceeds 1024 bytes".into()),
 			});
 		}
 
@@ -351,7 +366,7 @@ mod tests {
 		)
 		.expect("Decode failed");
 
-		let cost: u64 = 1;
+		let cost: u64 = 100000;
 
 		let context: Context = Context {
 			address: Default::default(),
@@ -369,9 +384,13 @@ mod tests {
 				assert_eq!(
 					e,
 					PrecompileFailure::Error {
-						exit_status: ExitError::Other("unreasonably large base length".into())
+						exit_status: ExitError::Other(
+							"EIP-7823: base length exceeds 1024 bytes".into()
+						)
 					}
 				);
+				// EIP-7823: Verify all gas was consumed
+				assert_eq!(handle.gas_used, cost, "EIP-7823 requires all gas to be consumed");
 				Ok(())
 			}
 		}
@@ -553,5 +572,153 @@ mod tests {
 		let _ = Modexp::execute(&mut handle).expect("Modexp::execute() returned error");
 
 		assert_eq!(handle.gas_used, 56448 * EVEN_MODULUS_MULTIPLIER);
+	}
+
+	// EIP-7823 Tests: Verify that exceeding the 1024-byte limit consumes all gas
+	// https://eips.ethereum.org/EIPS/eip-7823
+
+	#[test]
+	fn test_eip7823_base_exceeds_limit_consumes_all_gas() {
+		// Input with base_length = 1025 (0x401) - exceeds 1024 byte limit
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000401\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001",
+		)
+		.expect("Decode failed");
+
+		let gas_limit: u64 = 100000;
+		let context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let mut handle = MockHandle::new(input, Some(gas_limit), context);
+
+		let result = Modexp::execute(&mut handle);
+		assert!(result.is_err());
+		assert_eq!(
+			result.unwrap_err(),
+			PrecompileFailure::Error {
+				exit_status: ExitError::Other("EIP-7823: base length exceeds 1024 bytes".into())
+			}
+		);
+		// EIP-7823: All gas should be consumed
+		assert_eq!(
+			handle.gas_used, gas_limit,
+			"EIP-7823 requires all gas to be consumed when base length exceeds limit"
+		);
+	}
+
+	#[test]
+	fn test_eip7823_exp_exceeds_limit_consumes_all_gas() {
+		// Input with exp_length = 1025 (0x401) - exceeds 1024 byte limit
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000401\
+			0000000000000000000000000000000000000000000000000000000000000001",
+		)
+		.expect("Decode failed");
+
+		let gas_limit: u64 = 100000;
+		let context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let mut handle = MockHandle::new(input, Some(gas_limit), context);
+
+		let result = Modexp::execute(&mut handle);
+		assert!(result.is_err());
+		assert_eq!(
+			result.unwrap_err(),
+			PrecompileFailure::Error {
+				exit_status: ExitError::Other(
+					"EIP-7823: exponent length exceeds 1024 bytes".into()
+				)
+			}
+		);
+		// EIP-7823: All gas should be consumed
+		assert_eq!(
+			handle.gas_used, gas_limit,
+			"EIP-7823 requires all gas to be consumed when exponent length exceeds limit"
+		);
+	}
+
+	#[test]
+	fn test_eip7823_mod_exceeds_limit_consumes_all_gas() {
+		// Input with mod_length = 1025 (0x401) - exceeds 1024 byte limit
+		let input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000401",
+		)
+		.expect("Decode failed");
+
+		let gas_limit: u64 = 100000;
+		let context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let mut handle = MockHandle::new(input, Some(gas_limit), context);
+
+		let result = Modexp::execute(&mut handle);
+		assert!(result.is_err());
+		assert_eq!(
+			result.unwrap_err(),
+			PrecompileFailure::Error {
+				exit_status: ExitError::Other("EIP-7823: modulus length exceeds 1024 bytes".into())
+			}
+		);
+		// EIP-7823: All gas should be consumed
+		assert_eq!(
+			handle.gas_used, gas_limit,
+			"EIP-7823 requires all gas to be consumed when modulus length exceeds limit"
+		);
+	}
+
+	#[test]
+	fn test_eip7823_at_limit_succeeds() {
+		// Input with all lengths at exactly 1024 bytes (0x400) - at the limit, should succeed
+		// base_length = 1024, exp_length = 1, mod_length = 1
+		// base = 2, exp = 3, mod = 5
+		// 2^3 % 5 = 3
+		let mut input = hex::decode(
+			"0000000000000000000000000000000000000000000000000000000000000400\
+			0000000000000000000000000000000000000000000000000000000000000001\
+			0000000000000000000000000000000000000000000000000000000000000001",
+		)
+		.expect("Decode failed");
+
+		// Append base (1024 bytes with value 2 at the end)
+		let mut base = vec![0u8; 1023];
+		base.push(2);
+		input.extend(base);
+
+		// Append exponent (1 byte with value 3)
+		input.push(3);
+
+		// Append modulus (1 byte with value 5)
+		input.push(5);
+
+		let gas_limit: u64 = 10000000;
+		let context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+
+		let mut handle = MockHandle::new(input, Some(gas_limit), context);
+
+		let result = Modexp::execute(&mut handle);
+		assert!(result.is_ok(), "Input at exactly 1024 bytes should succeed");
+
+		let output = result.unwrap().output;
+		assert_eq!(output.len(), 1);
+		assert_eq!(output[0], 3, "2^3 % 5 = 3");
 	}
 }

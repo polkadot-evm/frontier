@@ -96,7 +96,7 @@ impl PrecompileHandle for MockHandle {
 	}
 
 	fn remaining_gas(&self) -> u64 {
-		unimplemented!()
+		self.gas_limit.unwrap_or(u64::MAX).saturating_sub(self.gas_used)
 	}
 
 	fn code_address(&self) -> H160 {
