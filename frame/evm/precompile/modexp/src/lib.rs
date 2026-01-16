@@ -390,7 +390,10 @@ mod tests {
 					}
 				);
 				// EIP-7823: Verify all gas was consumed
-				assert_eq!(handle.gas_used, cost, "EIP-7823 requires all gas to be consumed");
+				assert_eq!(
+					handle.gas_used, cost,
+					"EIP-7823 requires all gas to be consumed"
+				);
 				Ok(())
 			}
 		}
