@@ -2,7 +2,13 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, createAndFinalizeBlockNowait, describeWithFrontier, customRequest, waitForBlock } from "./util";
+import {
+	createAndFinalizeBlock,
+	createAndFinalizeBlockNowait,
+	describeWithFrontier,
+	customRequest,
+	waitForBlock,
+} from "./util";
 
 describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	const TEST_CONTRACT_BYTECODE =
