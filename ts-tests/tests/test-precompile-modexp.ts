@@ -224,8 +224,8 @@ describeWithFrontier("Frontier RPC (MODEXP Precompile - EIP-7823)", (context) =>
 			});
 			assert.fail("Expected call to revert");
 		} catch (error: any) {
-			// The call should revert with an error
-			expect(error.message).to.include("revert");
+			// The call should fail with EIP-7823 error
+			expect(error.message).to.include("EIP-7823");
 		}
 	});
 
@@ -246,7 +246,8 @@ describeWithFrontier("Frontier RPC (MODEXP Precompile - EIP-7823)", (context) =>
 			});
 			assert.fail("Expected call to revert");
 		} catch (error: any) {
-			expect(error.message).to.include("revert");
+			// The call should fail with EIP-7823 error
+			expect(error.message).to.include("EIP-7823");
 		}
 	});
 
@@ -267,7 +268,8 @@ describeWithFrontier("Frontier RPC (MODEXP Precompile - EIP-7823)", (context) =>
 			});
 			assert.fail("Expected call to revert");
 		} catch (error: any) {
-			expect(error.message).to.include("revert");
+			// The call should fail with EIP-7823 error
+			expect(error.message).to.include("EIP-7823");
 		}
 	});
 
