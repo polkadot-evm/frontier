@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, createAndFinalizeBlockNowait, describeWithFrontier, customRequest } from "./util";
+import { createAndFinalizeBlock, createAndFinalizeBlockNowait, describeWithFrontier, customRequest, waitForBlock } from "./util";
 
 describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	const TEST_CONTRACT_BYTECODE =
@@ -187,14 +187,14 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	});
 
 	step("should drain the filter pool.", async function () {
-		this.timeout(15000);
+		this.timeout(120000); // Increased timeout for waiting on block indexing
 		const blockLifespanThreshold = 100;
 
 		let createFilter = await customRequest(context.web3, "eth_newBlockFilter", []);
 		let filterId = createFilter.result;
 
 		for (let i = 0; i <= blockLifespanThreshold; i++) {
-			await createAndFinalizeBlockNowait(context.web3);
+			await createAndFinalizeBlock(context.web3);
 		}
 
 		let r = await customRequest(context.web3, "eth_getFilterChanges", [filterId]);

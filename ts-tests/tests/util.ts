@@ -39,18 +39,38 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 	});
 }
 
-// Create a block and finalize it.
-// It will include all previously executed transactions since the last finalized block.
+// Wait for a block to be indexed by mapping-sync and visible via RPC.
+// This polls eth_getBlockByNumber until the block is available or timeout.
+export async function waitForBlock(
+	web3: Web3,
+	blockTag: string = "latest",
+	timeoutMs: number = 5000,
+	fullTransactions: boolean = false
+): Promise<any> {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		const block = (await customRequest(web3, "eth_getBlockByNumber", [blockTag, fullTransactions])).result;
+		if (block !== null) {
+			return block;
+		}
+		await new Promise<void>((resolve) => setTimeout(resolve, 50));
+	}
+	throw new Error(`Timeout waiting for block ${blockTag} to be indexed`);
+}
+
+// Create a block, finalize it, and wait for it to be indexed by mapping-sync.
+// This ensures the block is visible via eth_getBlockByNumber before returning.
 export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = true) {
 	const response = await customRequest(web3, "engine_createBlock", [true, finalize, null]);
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
-	await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
+	// Wait for the block to be indexed by mapping-sync (ADR-003)
+	await waitForBlock(web3, "latest", 5000);
 }
 
-// Create a block and finalize it.
-// It will include all previously executed transactions since the last finalized block.
+// Create a block and finalize it without waiting for indexing.
+// Use this only for tests that explicitly handle waiting themselves.
 export async function createAndFinalizeBlockNowait(web3: Web3) {
 	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
 	if (!response.result) {

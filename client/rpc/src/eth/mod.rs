@@ -163,7 +163,9 @@ where
 			}
 		};
 
-		// Query mapping-sync for the ethereum block hash by block number
+		// Query mapping-sync for the ethereum block hash by block number.
+		// This ensures consistency: if a block is visible, its transaction
+		// receipts are also available.
 		let eth_block_hash = match block_number {
 			Some(n) => self
 				.backend

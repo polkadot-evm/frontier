@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlockNowait, describeWithFrontier, customRequest } from "./util";
+import { createAndFinalizeBlockNowait, describeWithFrontier, customRequest, waitForBlock } from "./util";
 
 /**
  * Test for receipt consistency (ADR-003).
@@ -14,19 +14,6 @@ import { createAndFinalizeBlockNowait, describeWithFrontier, customRequest } fro
  */
 describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
-
-	// Helper: poll until eth_getBlockByNumber returns a non-null block or timeout
-	async function waitForBlock(blockTag: string, timeoutMs: number = 5000): Promise<any> {
-		const start = Date.now();
-		while (Date.now() - start < timeoutMs) {
-			const block = (await customRequest(context.web3, "eth_getBlockByNumber", [blockTag, true])).result;
-			if (block !== null) {
-				return block;
-			}
-			await new Promise((resolve) => setTimeout(resolve, 50));
-		}
-		return null;
-	}
 
 	step("should return receipt immediately after block is visible", async function () {
 		this.timeout(15000);
@@ -48,8 +35,8 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 
 		await createAndFinalizeBlockNowait(context.web3);
 
-		// Wait for block to become visible
-		const block = await waitForBlock("latest");
+		// Wait for block to become visible (with full transaction details)
+		const block = await waitForBlock(context.web3, "latest", 5000, true);
 		expect(block).to.not.be.null;
 		expect(block.transactions).to.be.an("array").with.lengthOf(1);
 		expect(block.transactions[0].hash).to.equal(txHash);
@@ -89,8 +76,8 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 
 		await createAndFinalizeBlockNowait(context.web3);
 
-		// Wait for block to become visible
-		const block = await waitForBlock("latest");
+		// Wait for block to become visible (with full transaction details)
+		const block = await waitForBlock(context.web3, "latest", 5000, true);
 		expect(block).to.not.be.null;
 		expect(block.transactions).to.have.lengthOf(txCount);
 
@@ -124,8 +111,8 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 
 		await createAndFinalizeBlockNowait(context.web3);
 
-		// Wait for block to become visible
-		const block = await waitForBlock("latest");
+		// Wait for block to become visible (with full transaction details)
+		const block = await waitForBlock(context.web3, "latest", 5000, true);
 		expect(block).to.not.be.null;
 		expect(block.transactions).to.be.an("array").with.lengthOf(1);
 
