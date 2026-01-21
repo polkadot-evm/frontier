@@ -100,14 +100,14 @@ pub enum TransactionValidationError {
 	/// This explicit limit is more predictable than implicit limits based on transaction size,
 	/// providing developers with clear boundaries and better DoS protection.
 	AuthorizationListTooLarge,
+	/// Unknown error
+	#[num_enum(default)]
+	UnknownError,
 	/// EIP-7825: Transaction gas limit exceeds per-transaction cap
 	///
 	/// The transaction gas limit exceeds the EIP-7825 per-transaction cap of 16,777,216 (2^24).
 	/// This cap is independent of the block gas limit and applies to all transactions.
 	TransactionGasLimitExceedsCap,
-	/// Unknown error
-	#[num_enum(default)]
-	UnknownError,
 }
 
 impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, E> {
