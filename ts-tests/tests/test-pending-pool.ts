@@ -16,7 +16,6 @@ describeWithFrontierAllPools("Frontier RPC (Pending Pool)", (context) => {
 	});
 
 	it("should return a pending transaction", async function () {
-		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -63,8 +62,6 @@ describeWithFrontierAllPools("Frontier RPC (Pending Transaction Count)", (contex
 	});
 
 	it("should return pending transaction count", async function () {
-		this.timeout(15000);
-
 		// nonce should be 0
 		expect(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "latest")).to.eq(0);
 

@@ -12,7 +12,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	it("eth_getStorageAt", async function () {
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI);
 
-		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -82,8 +81,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("SSTORE cost should properly take into account transaction initial value", async function () {
-		this.timeout(15000);
-
 		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
 
 		await context.web3.eth.accounts.wallet.add(GENESIS_ACCOUNT_PRIVATE_KEY);

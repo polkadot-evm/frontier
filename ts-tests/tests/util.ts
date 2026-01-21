@@ -70,9 +70,9 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
 
-	// Wait for the NEW block (currentNumber + 1) to be indexed by mapping-sync (ADR-003)
+	// Wait for the NEW block to be indexed by mapping-sync
 	const newBlockNumber = "0x" + (currentNumber + 1).toString(16);
-	await waitForBlock(web3, newBlockNumber, 5000);
+	await waitForBlock(web3, newBlockNumber, 3000);
 }
 
 // Create a block and finalize it without waiting for indexing.
@@ -161,27 +161,38 @@ export async function startFrontierNode(
 			}
 			binaryLogs.push(chunk);
 			if (chunk.toString().match(/Manual Seal Ready/)) {
-				if (!provider || provider == "http") {
-					// This is needed as the EVM runtime needs to warmup with a first call
-					await web3.eth.getChainId();
-				}
+				try {
+					// For WebSocket connections, create the instance AFTER the node is ready
+					// This ensures the WebSocket can actually connect
+					if (provider == "ws") {
+						web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
+					}
 
-				clearTimeout(timer);
-				if (!DISPLAY_LOG) {
-					binary.stderr.off("data", onData);
-					binary.stdout.off("data", onData);
+					// Warmup call - needed for both HTTP and WS to ensure connection is ready
+					await web3.eth.getChainId();
+
+					// Wait for genesis block to be indexed by mapping-sync before returning.
+					// This ensures all RPCs that read from mapping-sync can access block 0.
+					await waitForBlock(web3, "0x0", 10000);
+
+					clearTimeout(timer);
+					if (!DISPLAY_LOG) {
+						binary.stderr.off("data", onData);
+						binary.stdout.off("data", onData);
+					}
+					// console.log(`\x1b[31m Starting RPC\x1b[0m`);
+					resolve();
+				} catch (err) {
+					console.error(`\x1b[31m Error during node startup: ${err}\x1b[0m`);
+					clearTimeout(timer);
+					binary.kill();
+					process.exit(1);
 				}
-				// console.log(`\x1b[31m Starting RPC\x1b[0m`);
-				resolve();
 			}
 		};
 		binary.stderr.on("data", onData);
 		binary.stdout.on("data", onData);
 	});
-
-	if (provider == "ws") {
-		web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
-	}
 
 	return { web3, binary, ethersjs };
 }

@@ -13,7 +13,6 @@ describeWithFrontier("Frontier RPC (Revert Reason)", (context) => {
 	const TEST_CONTRACT_ABI = ExplicitRevertReason.abi as AbiItem[];
 
 	before("create the contract", async function () {
-		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,

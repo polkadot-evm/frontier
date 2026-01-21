@@ -16,7 +16,6 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 
 	it("contract creation should return transaction hash", async function () {
 		await createAndFinalizeBlock(context.web3);
-		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,

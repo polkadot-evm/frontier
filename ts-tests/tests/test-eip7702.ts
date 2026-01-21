@@ -26,7 +26,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	let signer: ethers.Wallet;
 
 	// Deploy a test contract first
-	step("should deploy delegate test contract", async () => {
+	step("should deploy delegate test contract", async function () {
 		signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
 
 		const tx = await signer.sendTransaction({
@@ -104,8 +104,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should reject empty authorization list", async function () {
-		this.timeout(15000);
-
 		// Test with empty authorization list - should be rejected by Frontier
 		const tx = {
 			from: GENESIS_ACCOUNT,
@@ -141,8 +139,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle authorization with different chain IDs", async function () {
-		this.timeout(15000);
-
 		// Test authorization with wrong chain ID - should be skipped by Frontier
 		const authorizer = ethers.Wallet.createRandom();
 		const wrongChainAuth = await authorizer.authorize({
@@ -200,8 +196,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle multiple authorizations", async function () {
-		this.timeout(15000);
-
 		// Create multiple authorizations for the same authority
 		const authorizer = ethers.Wallet.createRandom();
 		const auth1 = await authorizer.authorize({
@@ -239,8 +233,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should verify gas cost calculation includes authorization costs", async function () {
-		this.timeout(15000);
-
 		// Validate prerequisites
 		if (!contractAddress) {
 			throw new Error("Contract address is required but not set from previous step");
@@ -296,8 +288,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should apply delegation behavior", async function () {
-		this.timeout(15000);
-
 		const authorizer = ethers.Wallet.createRandom();
 		console.log("Authorizer address:", authorizer.address);
 		console.log("Contract address to delegate to:", contractAddress);
@@ -363,8 +353,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle self delegation", async function () {
-		this.timeout(15000);
-
 		// Test self-delegation (should be prevented by Frontier)
 		const authorizer = ethers.Wallet.createRandom();
 		const selfDelegationAuth = await authorizer.authorize({
@@ -395,8 +383,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle zero-address delegation", async function () {
-		this.timeout(15000);
-
 		// Test self-delegation (should be prevented by Frontier)
 		const authorizer = ethers.Wallet.createRandom();
 		const authorization = await authorizer.authorize({
@@ -547,8 +533,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should estimate gas for EIP-7702 transactions", async function () {
-		this.timeout(15000);
-
 		// Ensure we have a signer
 		if (!signer) {
 			signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);

@@ -16,8 +16,6 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	const TEST_ACCOUNT = "0x1111111111111111111111111111111111111111";
 
 	step("should return receipt immediately after block is visible", async function () {
-		this.timeout(15000);
-
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -33,10 +31,15 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 		const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
 		expect(txHash).to.be.a("string").lengthOf(66);
 
+		// Get current block number before creating the new block
+		const currentBlock = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const currentNumber = currentBlock ? parseInt(currentBlock.number, 16) : 0;
+
 		await createAndFinalizeBlockNowait(context.web3);
 
-		// Wait for block to become visible (with full transaction details)
-		const block = await waitForBlock(context.web3, "latest", 5000, true);
+		// Wait for the NEW block to become visible (with full transaction details)
+		const newBlockNumber = "0x" + (currentNumber + 1).toString(16);
+		const block = await waitForBlock(context.web3, newBlockNumber, 5000, true);
 		expect(block).to.not.be.null;
 		expect(block.transactions).to.be.an("array").with.lengthOf(1);
 		expect(block.transactions[0].hash).to.equal(txHash);
@@ -52,8 +55,6 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	});
 
 	step("should return receipt for multiple transactions in same block", async function () {
-		this.timeout(15000);
-
 		const txCount = 3;
 		const txHashes: string[] = [];
 
@@ -74,10 +75,15 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 			txHashes.push(txHash);
 		}
 
+		// Get current block number before creating the new block
+		const currentBlock = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const currentNumber = currentBlock ? parseInt(currentBlock.number, 16) : 0;
+
 		await createAndFinalizeBlockNowait(context.web3);
 
-		// Wait for block to become visible (with full transaction details)
-		const block = await waitForBlock(context.web3, "latest", 5000, true);
+		// Wait for the NEW block to become visible (with full transaction details)
+		const newBlockNumber = "0x" + (currentNumber + 1).toString(16);
+		const block = await waitForBlock(context.web3, newBlockNumber, 5000, true);
 		expect(block).to.not.be.null;
 		expect(block.transactions).to.have.lengthOf(txCount);
 
@@ -93,8 +99,6 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	});
 
 	step("should return receipt when queried by transaction hash from block", async function () {
-		this.timeout(15000);
-
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -109,10 +113,15 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 
 		await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction]);
 
+		// Get current block number before creating the new block
+		const currentBlock = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const currentNumber = currentBlock ? parseInt(currentBlock.number, 16) : 0;
+
 		await createAndFinalizeBlockNowait(context.web3);
 
-		// Wait for block to become visible (with full transaction details)
-		const block = await waitForBlock(context.web3, "latest", 5000, true);
+		// Wait for the NEW block to become visible (with full transaction details)
+		const newBlockNumber = "0x" + (currentNumber + 1).toString(16);
+		const block = await waitForBlock(context.web3, newBlockNumber, 5000, true);
 		expect(block).to.not.be.null;
 		expect(block.transactions).to.be.an("array").with.lengthOf(1);
 
