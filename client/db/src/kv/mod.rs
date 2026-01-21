@@ -33,7 +33,7 @@ pub use sc_client_db::DatabaseSource;
 use sp_blockchain::HeaderBackend;
 use sp_core::{H160, H256};
 pub use sp_database::Database;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_api::{FilteredLog, TransactionMetadata};
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
@@ -60,6 +60,7 @@ pub(crate) mod columns {
 
 pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
+	pub const LATEST_INDEXED_BLOCK: &[u8] = b"LATEST_INDEXED_BLOCK";
 }
 
 #[derive(Clone)]
@@ -100,7 +101,27 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 	}
 
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
-		Ok(self.client.info().best_hash)
+		// Use the same approach as block_info_by_number("latest") to ensure consistency.
+		// Get best_number from client, then look up in mapping-sync.
+		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
+
+		// Query mapping-sync for the ethereum block hash at best_number
+		if let Some(eth_hash) = self.mapping.block_hash_by_number(best_number)? {
+			// Get the substrate block hash(es) for this ethereum block hash
+			if let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? {
+				if !substrate_hashes.is_empty() {
+					return Ok(substrate_hashes[0]);
+				}
+			}
+		}
+
+		// If best_number is not indexed yet, fall back to the latest indexed block.
+		// This ensures consistency: we use what mapping-sync has indexed rather than
+		// falling back to genesis (which would give stale state).
+		match self.meta.latest_indexed_block()? {
+			Some((_, substrate_hash)) => Ok(substrate_hash),
+			None => Ok(self.client.info().genesis_hash),
+		}
 	}
 }
 
@@ -247,6 +268,46 @@ impl<Block: BlockT> MetaDb<Block> {
 
 		Ok(())
 	}
+
+	/// Get the latest indexed block info (block_number, substrate_block_hash).
+	pub fn latest_indexed_block(&self) -> Result<Option<(u64, Block::Hash)>, String> {
+		match self
+			.db
+			.get(columns::META, static_keys::LATEST_INDEXED_BLOCK)
+		{
+			Some(raw) => Ok(Some(
+				<(u64, Block::Hash)>::decode(&mut &raw[..]).map_err(|e| e.to_string())?,
+			)),
+			None => Ok(None),
+		}
+	}
+
+	/// Update the latest indexed block if the new block number is >= the current one.
+	/// This ensures we track the most recently indexed block at the highest block number.
+	pub fn update_latest_indexed_block(
+		&self,
+		block_number: u64,
+		substrate_block_hash: Block::Hash,
+	) -> Result<(), String> {
+		// Only update if the new block is at the same height or higher.
+		// This handles both normal sync and reorgs correctly.
+		let should_update = match self.latest_indexed_block()? {
+			Some((current_number, _)) => block_number >= current_number,
+			None => true,
+		};
+
+		if should_update {
+			let mut transaction = sp_database::Transaction::new();
+			transaction.set(
+				columns::META,
+				static_keys::LATEST_INDEXED_BLOCK,
+				&(block_number, substrate_block_hash).encode(),
+			);
+			self.db.commit(transaction).map_err(|e| e.to_string())?;
+		}
+
+		Ok(())
+	}
 }
 
 #[derive(Debug)]
@@ -376,6 +437,28 @@ impl<Block: BlockT> MappingDb<Block> {
 			&commitment.block_hash.encode(),
 			&true.encode(),
 		);
+
+		// Update latest indexed block tracking atomically in the same transaction.
+		// Only update if block_number >= current to handle reorgs correctly.
+		let should_update_latest = match self
+			.db
+			.get(columns::META, static_keys::LATEST_INDEXED_BLOCK)
+		{
+			Some(raw) => {
+				let (current_number, _): (u64, Block::Hash) =
+					Decode::decode(&mut &raw[..]).map_err(|e| e.to_string())?;
+				block_number >= current_number
+			}
+			None => true,
+		};
+
+		if should_update_latest {
+			transaction.set(
+				columns::META,
+				static_keys::LATEST_INDEXED_BLOCK,
+				&(block_number, commitment.block_hash).encode(),
+			);
+		}
 
 		self.db.commit(transaction).map_err(|e| e.to_string())?;
 
