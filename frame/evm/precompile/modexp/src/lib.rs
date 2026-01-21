@@ -24,7 +24,7 @@ extern crate alloc;
 use alloc::{vec, vec::Vec};
 use core::cmp::max;
 
-use num::{BigUint, FromPrimitive, Integer, One, ToPrimitive, Zero};
+use num::{BigUint, Integer, One, ToPrimitive, Zero};
 
 use fp_evm::{
 	ExitError, ExitSucceed, Precompile, PrecompileFailure, PrecompileHandle, PrecompileOutput,
