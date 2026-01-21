@@ -601,8 +601,6 @@ pub mod pallet {
 		GasLimitTooLow,
 		/// Gas limit exceeds block gas limit.
 		GasLimitExceedsBlockLimit,
-		/// EIP-7825: Transaction gas limit exceeds protocol cap (2^24).
-		TransactionGasLimitExceedsCap,
 		/// The chain id is invalid.
 		InvalidChainId,
 		/// the signature is invalid.
@@ -615,6 +613,8 @@ pub mod pallet {
 		Undefined,
 		/// Address not allowed to deploy contracts either via CREATE or CALL(CREATE).
 		CreateOriginNotAllowed,
+		/// EIP-7825: Transaction gas limit exceeds protocol cap (2^24).
+		TransactionGasLimitExceedsCap,
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
