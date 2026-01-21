@@ -65,7 +65,7 @@ fn eip7825_transaction_at_exactly_cap_succeeds() {
 		// Transaction at exactly the EIP-7825 cap should pass validation
 		let transaction = legacy_transaction_with_gas_limit(
 			U256::zero(),
-			U256::from(MAX_TRANSACTION_GAS_LIMIT), // Exactly at cap (16,777,216)
+			MAX_TRANSACTION_GAS_LIMIT, // Exactly at cap (16,777,216)
 			bob.address,
 			U256::from(1000),
 		)
@@ -91,7 +91,7 @@ fn eip7825_transaction_exceeds_cap_by_one_fails() {
 		// Transaction exceeding cap by 1 gas should fail
 		let transaction = legacy_transaction_with_gas_limit(
 			U256::zero(),
-			U256::from(MAX_TRANSACTION_GAS_LIMIT + 1), // 1 over cap
+			MAX_TRANSACTION_GAS_LIMIT + 1, // 1 over cap
 			bob.address,
 			U256::from(1000),
 		)
@@ -185,7 +185,7 @@ fn eip7825_eip1559_transaction_exceeds_cap_fails() {
 		// EIP-1559 transaction exceeding cap should also fail
 		let transaction = eip1559_transaction_with_gas_limit(
 			U256::zero(),
-			U256::from(MAX_TRANSACTION_GAS_LIMIT + 1),
+			MAX_TRANSACTION_GAS_LIMIT + 1,
 			bob.address,
 			U256::from(1000),
 		)
@@ -219,7 +219,7 @@ fn eip7825_block_validation_rejects_exceeding_cap() {
 		// Transaction exceeding cap should fail block validation
 		let transaction = legacy_transaction_with_gas_limit(
 			U256::zero(),
-			U256::from(MAX_TRANSACTION_GAS_LIMIT + 1),
+			MAX_TRANSACTION_GAS_LIMIT + 1,
 			bob.address,
 			U256::from(1000),
 		)
@@ -247,6 +247,6 @@ fn eip7825_block_validation_rejects_exceeding_cap() {
 #[test]
 fn eip7825_constant_value_is_correct() {
 	// Verify the constant is correctly set to 2^24
-	assert_eq!(MAX_TRANSACTION_GAS_LIMIT, 16_777_216);
-	assert_eq!(MAX_TRANSACTION_GAS_LIMIT, 1 << 24);
+	assert_eq!(MAX_TRANSACTION_GAS_LIMIT, U256::from(16_777_216u64));
+	assert_eq!(MAX_TRANSACTION_GAS_LIMIT, U256::from(1u64 << 24));
 }

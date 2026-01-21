@@ -269,7 +269,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 			}
 
 			// EIP-7825: Transaction gas limit is within the protocol cap.
-			if self.transaction.gas_limit > U256::from(MAX_TRANSACTION_GAS_LIMIT) {
+			if self.transaction.gas_limit > MAX_TRANSACTION_GAS_LIMIT {
 				return Err(TransactionValidationError::TransactionGasLimitExceedsCap.into());
 			}
 		}
@@ -1086,7 +1086,7 @@ mod tests {
 				to: Some(H160::default()),
 				input: vec![],
 				nonce: U256::zero(),
-				gas_limit: U256::from(MAX_TRANSACTION_GAS_LIMIT), // Exactly at cap
+				gas_limit: MAX_TRANSACTION_GAS_LIMIT, // Exactly at cap
 				gas_price: None,
 				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),
@@ -1118,7 +1118,7 @@ mod tests {
 				to: Some(H160::default()),
 				input: vec![],
 				nonce: U256::zero(),
-				gas_limit: U256::from(MAX_TRANSACTION_GAS_LIMIT + 1), // 1 over cap
+				gas_limit: MAX_TRANSACTION_GAS_LIMIT + 1, // 1 over cap
 				gas_price: None,
 				max_fee_per_gas: Some(U256::from(1_000_000_000u128)),
 				max_priority_fee_per_gas: Some(U256::from(1_000_000_000u128)),

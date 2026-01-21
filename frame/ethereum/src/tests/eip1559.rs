@@ -52,14 +52,14 @@ fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
 		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
 
 	// EIP-7825: The effective max gas is the minimum of max_extrinsic_gas and the protocol cap
-	let effective_max_gas = max_extrinsic_gas.min(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
+	let effective_max_gas = U256::from(max_extrinsic_gas).min(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
 
 	ext.execute_with(|| {
 		let transaction = EIP1559UnsignedTransaction {
 			nonce: U256::zero(),
 			max_priority_fee_per_gas: U256::from(1),
 			max_fee_per_gas: U256::from(1),
-			gas_limit: U256::from(effective_max_gas),
+			gas_limit: effective_max_gas,
 			action: ethereum::TransactionAction::Call(bob.address),
 			value: U256::from(1),
 			input: Default::default(),
