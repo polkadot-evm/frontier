@@ -183,8 +183,7 @@ impl Precompile for Modexp {
 		read_input(input, &mut mod_len_buf, &mut input_offset);
 
 		// EIP-7823: Maximum input size limit (8192 bits = 1024 bytes)
-		let max_size_big =
-			BigUint::from_u32(EIP7823_INPUT_SIZE_LIMIT).expect("can't create BigUint");
+		let max_size_big = BigUint::from(EIP7823_INPUT_SIZE_LIMIT);
 
 		let base_len_big = BigUint::from_bytes_be(&base_len_buf);
 		if base_len_big > max_size_big {
