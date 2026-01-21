@@ -341,7 +341,7 @@ fn contract_creation_fails_with_not_allowed_address() {
 				},
 				error: DispatchError::Module(ModuleError {
 					index: 3,
-					error: [14, 0, 0, 0],
+					error: [13, 0, 0, 0],
 					message: Some("CreateOriginNotAllowed")
 				})
 			})
