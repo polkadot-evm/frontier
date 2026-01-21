@@ -115,7 +115,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [], // Empty authorization list
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
 		};
 
 		// Frontier should reject empty authorization lists during validation
