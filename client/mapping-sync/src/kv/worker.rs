@@ -171,12 +171,6 @@ where
 		if fire {
 			self.inner_delay = None;
 
-			// TEMPORARY DELAY FOR TESTING RACE CONDITION - REMOVE BEFORE MERGING
-			// This delay simulates the race condition where eth_getBlockByNumber returns
-			// a block but eth_getTransactionReceipt returns null because mapping-sync
-			// hasn't completed yet.
-			std::thread::sleep(std::time::Duration::from_secs(2));
-
 			// Temporarily take ownership of best_at_import to avoid borrow checker issues
 			// (we can't have both an immutable borrow of self.client and a mutable borrow
 			// of self.best_at_import at the same time)
