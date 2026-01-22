@@ -2279,7 +2279,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d162beedaa69905488a8da94f5ac3edb4dd4788b732fadb7bd120b2625c1976"
 dependencies = [
  "data-encoding",
- "syn 2.0.104",
+ "syn 1.0.109",
 ]
 
 [[package]]
@@ -2422,7 +2422,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.104",
- "unicode-xid",
 ]
 
 [[package]]
@@ -8634,7 +8633,7 @@ dependencies = [
 name = "precompile-utils"
 version = "0.1.0"
 dependencies = [
- "derive_more 1.0.0",
+ "derive_more 2.1.1",
  "environmental",
  "evm",
  "fp-evm",
