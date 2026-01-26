@@ -141,15 +141,20 @@ where
 		&self,
 		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		// Derive the block number from the BlockNumberOrHash variant
-		let block_number: Option<u64> = match number_or_hash {
-			BlockNumberOrHash::Num(n) => Some(n),
-			BlockNumberOrHash::Latest => {
-				Some(self.client.info().best_number.unique_saturated_into())
-			}
-			BlockNumberOrHash::Earliest => Some(0),
+		let finalized_number: u64 = self.client.info().finalized_number.unique_saturated_into();
+
+		// Derive the block number and whether canonical verification is needed.
+		// Finalized blocks cannot be reorged, so they don't need verification.
+		let (block_number, needs_canonical_verification): (Option<u64>, bool) = match number_or_hash
+		{
+			BlockNumberOrHash::Num(n) => (Some(n), n > finalized_number),
+			BlockNumberOrHash::Latest => (
+				Some(self.client.info().best_number.unique_saturated_into()),
+				true, // Latest is always non-finalized
+			),
+			BlockNumberOrHash::Earliest => (Some(0), false), // Genesis is immutable
 			BlockNumberOrHash::Safe | BlockNumberOrHash::Finalized => {
-				Some(self.client.info().finalized_number.unique_saturated_into())
+				(Some(finalized_number), false) // Finalized blocks can't be reorged
 			}
 			BlockNumberOrHash::Pending => {
 				// Pending blocks are not indexed in mapping-sync.
@@ -175,10 +180,41 @@ where
 			None => None,
 		};
 
-		match eth_block_hash {
-			Some(hash) => self.block_info_by_eth_block_hash(hash).await,
-			None => Ok(BlockInfo::default()),
+		let Some(eth_hash) = eth_block_hash else {
+			return Ok(BlockInfo::default());
+		};
+
+		// Get substrate hash(es) for this ethereum block hash
+		let substrate_hashes = frontier_backend_client::load_hash::<B, C>(
+			self.client.as_ref(),
+			self.backend.as_ref(),
+			eth_hash,
+		)
+		.await
+		.map_err(|err| internal_err(format!("{err:?}")))?;
+
+		let Some(substrate_hash) = substrate_hashes else {
+			return Ok(BlockInfo::default());
+		};
+
+		// Verify the substrate hash is on the canonical chain.
+		// During a reorg, the mapping may point to a reorged-out block.
+		// This follows Geth's approach (PR #28865) of validating cached data.
+		if needs_canonical_verification {
+			if let Some(block_num) = block_number {
+				let canonical_hash = self
+					.client
+					.hash(block_num.unique_saturated_into())
+					.map_err(|e| internal_err(format!("{e:?}")))?;
+
+				if canonical_hash != Some(substrate_hash) {
+					// Mapping is stale (reorg happened) - treat as not indexed yet
+					return Ok(BlockInfo::default());
+				}
+			}
 		}
+
+		self.block_info_by_substrate_hash(substrate_hash).await
 	}
 
 	pub async fn block_info_by_eth_block_hash(

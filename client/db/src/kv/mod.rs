@@ -101,25 +101,46 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 	}
 
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
-		// Use the same approach as block_info_by_number("latest") to ensure consistency.
-		// Get best_number from client, then look up in mapping-sync.
+		// Return the latest block hash that is both indexed AND on the canonical chain.
+		// This prevents returning stale data during reorgs.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
+
+		// Get the canonical hash for verification.
+		let canonical_hash = self
+			.client
+			.hash(best_number.unique_saturated_into())
+			.map_err(|e| format!("{e:?}"))?;
 
 		// Query mapping-sync for the ethereum block hash at best_number
 		if let Some(eth_hash) = self.mapping.block_hash_by_number(best_number)? {
 			// Get the substrate block hash(es) for this ethereum block hash
 			if let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? {
-				if !substrate_hashes.is_empty() {
-					return Ok(substrate_hashes[0]);
+				// Verify the mapped hash is on the canonical chain.
+				// During a reorg, the mapping may point to a reorged-out block.
+				if let Some(canonical) = canonical_hash {
+					if substrate_hashes.contains(&canonical) {
+						return Ok(canonical);
+					}
 				}
+				// Mapping exists but is stale (reorg happened) - treat as not indexed
 			}
 		}
 
-		// If best_number is not indexed yet, fall back to the latest indexed block.
-		// This ensures consistency: we use what mapping-sync has indexed rather than
-		// falling back to genesis (which would give stale state).
+		// If best_number is not indexed yet (or mapping is stale due to reorg),
+		// fall back to the latest indexed block that IS on the canonical chain.
 		match self.meta.latest_indexed_block()? {
-			Some((_, substrate_hash)) => Ok(substrate_hash),
+			Some((indexed_number, indexed_hash)) => {
+				// Verify this fallback is also canonical
+				let indexed_canonical = self
+					.client
+					.hash(indexed_number.unique_saturated_into())
+					.map_err(|e| format!("{e:?}"))?;
+				if indexed_canonical == Some(indexed_hash) {
+					return Ok(indexed_hash);
+				}
+				// Even fallback is stale - return genesis
+				Ok(self.client.info().genesis_hash)
+			}
 			None => Ok(self.client.info().genesis_hash),
 		}
 	}
