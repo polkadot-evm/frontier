@@ -585,7 +585,11 @@ mod tests {
 		);
 
 		// Verify it's a reasonable size for a minimal transaction
-		assert!(size < 200, "Size {} should be reasonable for minimal tx", size);
+		assert!(
+			size < 200,
+			"Size {} should be reasonable for minimal tx",
+			size
+		);
 	}
 
 	#[test]
