@@ -23,7 +23,7 @@ use serde::Deserialize;
 // Substrate
 use sp_api::ProvideRuntimeApi;
 use sp_blockchain::HeaderBackend;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto};
 // Frontier
 use fp_rpc::EthereumRuntimeRPCApi;
 
@@ -103,7 +103,17 @@ where
 							ethereum_transaction_hashes: existing_transaction_hashes,
 						};
 
-						self.backend.mapping().write_hashes(commitment)?;
+						// Get block number from header
+						let block_number: u64 = self
+							.client
+							.header(*substrate_block_hash)
+							.map_err(|e| format!("{e:?}"))?
+							.map(|h| (*h.number()).unique_saturated_into())
+							.unwrap_or(0);
+
+						self.backend
+							.mapping()
+							.write_hashes(commitment, block_number)?;
 					} else {
 						return Err(self.key_not_empty_error(key));
 					}
@@ -161,7 +171,17 @@ where
 							ethereum_transaction_hashes: existing_transaction_hashes,
 						};
 
-						self.backend.mapping().write_hashes(commitment)?;
+						// Get block number from header
+						let block_number: u64 = self
+							.client
+							.header(*substrate_block_hash)
+							.map_err(|e| format!("{e:?}"))?
+							.map(|h| (*h.number()).unique_saturated_into())
+							.unwrap_or(0);
+
+						self.backend
+							.mapping()
+							.write_hashes(commitment, block_number)?;
 					}
 				}
 				_ => return Err(self.key_value_error(key, value)),

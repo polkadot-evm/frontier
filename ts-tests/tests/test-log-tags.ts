@@ -28,6 +28,7 @@ describeWithFrontier("Frontier RPC (Log BlockNumber tags)", (context) => {
 	}
 
 	before("Send some transactions across blocks", async function () {
+		this.timeout(30000);
 		for (var i = 0; i < EXPECTED_LOGS; i++) {
 			await sendTransaction(context);
 			await createAndFinalizeBlock(context.web3);

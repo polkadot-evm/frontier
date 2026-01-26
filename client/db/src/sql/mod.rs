@@ -782,6 +782,18 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 		Ok(res)
 	}
 
+	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
+		let block_number = block_number as i64;
+		sqlx::query(
+			"SELECT ethereum_block_hash FROM blocks WHERE block_number = ? AND is_canon = 1",
+		)
+		.bind(block_number)
+		.fetch_optional(&self.pool)
+		.await
+		.map(|maybe_row| maybe_row.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..])))
+		.map_err(|e| format!("Failed to fetch block hash by number: {e}"))
+	}
+
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
