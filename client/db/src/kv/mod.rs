@@ -60,7 +60,6 @@ pub(crate) mod columns {
 
 pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
-	pub const LATEST_INDEXED_BLOCK: &[u8] = b"LATEST_INDEXED_BLOCK";
 }
 
 #[derive(Clone)]
@@ -126,23 +125,8 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			}
 		}
 
-		// If best_number is not indexed yet (or mapping is stale due to reorg),
-		// fall back to the latest indexed block that IS on the canonical chain.
-		match self.meta.latest_indexed_block()? {
-			Some((indexed_number, indexed_hash)) => {
-				// Verify this fallback is also canonical
-				let indexed_canonical = self
-					.client
-					.hash(indexed_number.unique_saturated_into())
-					.map_err(|e| format!("{e:?}"))?;
-				if indexed_canonical == Some(indexed_hash) {
-					return Ok(indexed_hash);
-				}
-				// Even fallback is stale - return genesis
-				Ok(self.client.info().genesis_hash)
-			}
-			None => Ok(self.client.info().genesis_hash),
-		}
+		// Block not indexed yet or stale - return genesis
+		Ok(self.client.info().genesis_hash)
 	}
 }
 
@@ -289,46 +273,6 @@ impl<Block: BlockT> MetaDb<Block> {
 
 		Ok(())
 	}
-
-	/// Get the latest indexed block info (block_number, substrate_block_hash).
-	pub fn latest_indexed_block(&self) -> Result<Option<(u64, Block::Hash)>, String> {
-		match self
-			.db
-			.get(columns::META, static_keys::LATEST_INDEXED_BLOCK)
-		{
-			Some(raw) => Ok(Some(
-				<(u64, Block::Hash)>::decode(&mut &raw[..]).map_err(|e| e.to_string())?,
-			)),
-			None => Ok(None),
-		}
-	}
-
-	/// Update the latest indexed block if the new block number is >= the current one.
-	/// This ensures we track the most recently indexed block at the highest block number.
-	pub fn update_latest_indexed_block(
-		&self,
-		block_number: u64,
-		substrate_block_hash: Block::Hash,
-	) -> Result<(), String> {
-		// Only update if the new block is at the same height or higher.
-		// This handles both normal sync and reorgs correctly.
-		let should_update = match self.latest_indexed_block()? {
-			Some((current_number, _)) => block_number >= current_number,
-			None => true,
-		};
-
-		if should_update {
-			let mut transaction = sp_database::Transaction::new();
-			transaction.set(
-				columns::META,
-				static_keys::LATEST_INDEXED_BLOCK,
-				&(block_number, substrate_block_hash).encode(),
-			);
-			self.db.commit(transaction).map_err(|e| e.to_string())?;
-		}
-
-		Ok(())
-	}
 }
 
 #[derive(Debug)]
@@ -458,28 +402,6 @@ impl<Block: BlockT> MappingDb<Block> {
 			&commitment.block_hash.encode(),
 			&true.encode(),
 		);
-
-		// Update latest indexed block tracking atomically in the same transaction.
-		// Only update if block_number >= current to handle reorgs correctly.
-		let should_update_latest = match self
-			.db
-			.get(columns::META, static_keys::LATEST_INDEXED_BLOCK)
-		{
-			Some(raw) => {
-				let (current_number, _): (u64, Block::Hash) =
-					Decode::decode(&mut &raw[..]).map_err(|e| e.to_string())?;
-				block_number >= current_number
-			}
-			None => true,
-		};
-
-		if should_update_latest {
-			transaction.set(
-				columns::META,
-				static_keys::LATEST_INDEXED_BLOCK,
-				&(block_number, commitment.block_hash).encode(),
-			);
-		}
 
 		self.db.commit(transaction).map_err(|e| e.to_string())?;
 
