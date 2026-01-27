@@ -26,18 +26,10 @@ use serde::{Deserialize, Deserializer};
 use crate::types::Bytes;
 
 /// The default byte size of a transaction slot (32 KiB).
-///
-/// Reference:
-/// - geth: <https://github.com/ethereum/go-ethereum/blob/master/core/txpool/legacypool/legacypool.go> (`txSlotSize`)
-/// - reth: <https://github.com/paradigmxyz/reth/blob/main/crates/transaction-pool/src/validate/constants.rs#L4>
 pub const TX_SLOT_BYTE_SIZE: usize = 32 * 1024;
 
 /// The default maximum size a single transaction can have (128 KiB).
 /// This is the RLP-encoded size of the signed transaction.
-///
-/// Reference:
-/// - geth: <https://github.com/ethereum/go-ethereum/blob/master/core/txpool/legacypool/legacypool.go> (`txMaxSize`)
-/// - reth: <https://github.com/paradigmxyz/reth/blob/main/crates/transaction-pool/src/validate/constants.rs#L11>
 pub const DEFAULT_MAX_TX_INPUT_BYTES: usize = 4 * TX_SLOT_BYTE_SIZE;
 
 /// Transaction request from the RPC.
@@ -195,11 +187,6 @@ impl TransactionRequest {
 	/// This mirrors geth's `tx.Size()` and reth's `transaction.encoded_length()` which use
 	/// actual RLP encoding to determine transaction size. We convert the request to its
 	/// transaction message type and use the `encoded_len()` method from the ethereum crate.
-	///
-	/// Reference:
-	/// - geth: <https://github.com/ethereum/go-ethereum/blob/master/core/types/transaction.go> (`tx.Size()`)
-	/// - reth: <https://github.com/paradigmxyz/reth/blob/main/crates/transaction-pool/src/traits.rs> (`PoolTransaction::encoded_length()`)
-	/// - alloy: <https://github.com/alloy-rs/alloy/blob/main/crates/consensus/src/transaction/eip1559.rs> (`rlp_encoded_fields_length()`)
 	pub fn encoded_length(&self) -> usize {
 		// Convert to transaction message and use the ethereum crate's encoded_len()
 		let message: Option<TransactionMessage> = self.clone().into();
