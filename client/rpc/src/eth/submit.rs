@@ -166,16 +166,12 @@ where
 
 		// Validate transaction size to prevent DoS attacks.
 		// This matches geth/reth pool validation which rejects transactions > 128 KB.
-		// Reference:
-		// - geth: https://github.com/ethereum/go-ethereum/blob/master/core/txpool/validation.go
-		// - reth: https://github.com/paradigmxyz/reth/blob/main/crates/transaction-pool/src/validate/eth.rs#L342-L363
 		if bytes.len() > DEFAULT_MAX_TX_INPUT_BYTES {
 			return Err(crate::err(
 				jsonrpsee::types::error::INVALID_PARAMS_CODE,
-				&format!(
-					"oversized data: transaction size {} exceeds limit {}",
-					bytes.len(),
-					DEFAULT_MAX_TX_INPUT_BYTES
+				format!(
+					"oversized data: transaction size {} exceeds limit {DEFAULT_MAX_TX_INPUT_BYTES}",
+					bytes.len()
 				),
 				None,
 			));
