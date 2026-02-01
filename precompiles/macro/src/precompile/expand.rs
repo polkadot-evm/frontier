@@ -276,12 +276,33 @@ impl Precompile {
 					::precompile_utils::solidity::encode_return_value(output?)
 				);
 
-				quote!(
-					let output = <#impl_type>::#variant_ident(
+				let call = quote!(
+					<#impl_type>::#variant_ident(
 						#opt_discriminant_arg
 						handle,
 						#(#arguments),*
-					);
+					)
+				);
+
+				let call = match variant.modifier {
+					Modifier::View => quote!(
+						::precompile_utils::substrate::transactional::with_transaction(|| {
+							let output = #call;
+							::precompile_utils::substrate::TransactionOutcome::Rollback(
+								Ok::<_, ::sp_runtime::DispatchError>(output),
+							)
+						})
+						.map_err(|_| {
+							::precompile_utils::solidity::revert::revert(
+								"View call exceeded transactional storage layer limit",
+							)
+						})?
+					),
+					_ => call,
+				};
+
+				quote!(
+					let output = #call;
 					#write_output
 				)
 			});

@@ -35,6 +35,16 @@ use pallet_evm::GasWeightMapping;
 
 use crate::{evm::handle::using_precompile_handle, solidity::revert::revert};
 
+/// Re-export Substrate's transactional storage helpers.
+///
+/// This is used by the `#[precompile]` macro to ensure `#[precompile::view]` calls
+/// do not leave persistent storage side effects while staying compatible with
+/// non-STATICCALL callers.
+///
+/// See: https://github.com/paritytech/polkadot-sdk/blob/master/substrate/frame/support/src/storage/transactional.rs#L106
+pub use frame_support::storage::transactional;
+pub use sp_runtime::TransactionOutcome;
+
 #[derive(Debug)]
 pub enum TryDispatchError {
 	Evm(ExitError),
@@ -153,5 +163,211 @@ where
 		<Runtime as pallet_evm::Config>::GasWeightMapping::weight_to_gas(
 			<Runtime as frame_system::Config>::DbWeight::get().reads(1),
 		)
+	}
+}
+
+#[cfg(all(test, feature = "testing"))]
+mod transactional_view_tests {
+	use crate::substrate::transactional;
+	use crate::{prelude::*, testing::PrecompileTesterExt, EvmResult};
+	use fp_evm::{Precompile, PrecompileFailure};
+	use sp_core::H160;
+	use sp_runtime::codec::Encode;
+
+	const STORAGE_KEY: &[u8] = b"view-rollback-test-key";
+
+	// ========================================================================
+	// Test 1: Simple Precompile with a view function that modifies storage
+	// ========================================================================
+
+	pub struct SimplePrecompile;
+
+	#[precompile_utils_macro::precompile]
+	impl SimplePrecompile {
+		#[precompile::public("viewThatWritesStorage()")]
+		#[precompile::view]
+		fn view_that_writes_storage(_handle: &mut impl PrecompileHandle) -> EvmResult {
+			// This write should be rolled back because the function is marked as view
+			sp_io::storage::set(STORAGE_KEY, b"modified-by-view");
+			Ok(())
+		}
+
+		#[precompile::public("nonViewThatWritesStorage()")]
+		fn non_view_that_writes_storage(_handle: &mut impl PrecompileHandle) -> EvmResult {
+			// This write should persist because the function is NOT marked as view
+			sp_io::storage::set(STORAGE_KEY, b"modified-by-non-view");
+			Ok(())
+		}
+	}
+
+	#[test]
+	fn simple_precompile_view_rolls_back_storage() {
+		let mut ext = sp_io::TestExternalities::default();
+		ext.execute_with(|| {
+			sp_io::storage::set(STORAGE_KEY, b"original");
+
+			// Call the view function - storage changes should be rolled back
+			let mut handle = crate::testing::MockHandle::new(
+				H160::zero(),
+				fp_evm::Context {
+					address: H160::zero(),
+					caller: H160::zero(),
+					apparent_value: sp_core::U256::zero(),
+				},
+			);
+			handle.input = SimplePrecompileCall::view_that_writes_storage {}.encode();
+
+			let result = SimplePrecompile::execute(&mut handle);
+
+			assert!(result.is_ok());
+			assert_eq!(
+				sp_io::storage::get(STORAGE_KEY).map(|b| b.to_vec()),
+				Some(b"original".to_vec()),
+				"View function should have rolled back the storage write"
+			);
+		});
+	}
+
+	#[test]
+	fn simple_precompile_non_view_persists_storage() {
+		let mut ext = sp_io::TestExternalities::default();
+		ext.execute_with(|| {
+			sp_io::storage::set(STORAGE_KEY, b"original");
+
+			// Call the non-view function - storage changes should persist
+			let mut handle = crate::testing::MockHandle::new(
+				H160::zero(),
+				fp_evm::Context {
+					address: H160::zero(),
+					caller: H160::zero(),
+					apparent_value: sp_core::U256::zero(),
+				},
+			);
+			handle.input = SimplePrecompileCall::non_view_that_writes_storage {}.encode();
+
+			let result = SimplePrecompile::execute(&mut handle);
+
+			assert!(result.is_ok());
+			assert_eq!(
+				sp_io::storage::get(STORAGE_KEY).map(|b| b.to_vec()),
+				Some(b"modified-by-non-view".to_vec()),
+				"Non-view function should have persisted the storage write"
+			);
+		});
+	}
+
+	#[test]
+	fn simple_precompile_view_reverts_when_transactional_limit_is_reached() {
+		let mut ext = sp_io::TestExternalities::default();
+		ext.execute_with(|| {
+			sp_io::storage::set(
+				transactional::TRANSACTION_LEVEL_KEY,
+				&transactional::TRANSACTIONAL_LIMIT.encode(),
+			);
+
+			let mut handle = crate::testing::MockHandle::new(
+				H160::zero(),
+				fp_evm::Context {
+					address: H160::zero(),
+					caller: H160::zero(),
+					apparent_value: sp_core::U256::zero(),
+				},
+			);
+			handle.input = SimplePrecompileCall::view_that_writes_storage {}.encode();
+
+			let result = SimplePrecompile::execute(&mut handle);
+
+			assert!(matches!(result, Err(PrecompileFailure::Revert { .. })));
+		});
+	}
+
+	// ========================================================================
+	// Test 2: PrecompileSet with a view function
+	// ========================================================================
+
+	pub struct TxPrecompileSet;
+
+	#[precompile_utils_macro::precompile]
+	#[precompile::precompile_set]
+	impl TxPrecompileSet {
+		#[precompile::discriminant]
+		fn discriminant(_: H160, _: u64) -> DiscriminantResult<()> {
+			DiscriminantResult::Some((), 0)
+		}
+
+		#[precompile::public("writeThenRollback()")]
+		#[precompile::view]
+		fn write_then_rollback(_: (), _: &mut impl PrecompileHandle) -> EvmResult {
+			sp_io::storage::set(STORAGE_KEY, b"mutated-by-set");
+			Ok(())
+		}
+	}
+
+	#[test]
+	fn precompile_set_view_rolls_back_storage() {
+		let mut ext = sp_io::TestExternalities::default();
+		ext.execute_with(|| {
+			sp_io::storage::set(STORAGE_KEY, b"original");
+
+			TxPrecompileSet
+				.prepare_test(
+					[0u8; 20],
+					[0u8; 20],
+					TxPrecompileSetCall::write_then_rollback {},
+				)
+				.execute_returns(());
+
+			assert_eq!(
+				sp_io::storage::get(STORAGE_KEY).map(|b| b.to_vec()),
+				Some(b"original".to_vec()),
+				"PrecompileSet view function should have rolled back the storage write"
+			);
+		});
+	}
+
+	// ========================================================================
+	// Test 3: Fallback function tagged as view
+	// ========================================================================
+
+	pub struct FallbackPrecompile;
+
+	#[precompile_utils_macro::precompile]
+	impl FallbackPrecompile {
+		#[precompile::fallback]
+		#[precompile::view]
+		fn fallback(_handle: &mut impl PrecompileHandle) -> EvmResult {
+			// This write should be rolled back because fallback is marked as view
+			sp_io::storage::set(STORAGE_KEY, b"modified-by-fallback");
+			Ok(())
+		}
+	}
+
+	#[test]
+	fn fallback_view_rolls_back_storage() {
+		let mut ext = sp_io::TestExternalities::default();
+		ext.execute_with(|| {
+			sp_io::storage::set(STORAGE_KEY, b"original");
+
+			// Call with unknown selector to trigger fallback
+			let mut handle = crate::testing::MockHandle::new(
+				H160::zero(),
+				fp_evm::Context {
+					address: H160::zero(),
+					caller: H160::zero(),
+					apparent_value: sp_core::U256::zero(),
+				},
+			);
+			// Use a random selector that doesn't match any public function
+			handle.input = vec![0xde, 0xad, 0xbe, 0xef];
+
+			let result = FallbackPrecompile::execute(&mut handle);
+
+			assert!(result.is_ok());
+			assert_eq!(
+				sp_io::storage::get(STORAGE_KEY).map(|b| b.to_vec()),
+				Some(b"original".to_vec()),
+				"Fallback view function should have rolled back the storage write"
+			);
+		});
 	}
 }
