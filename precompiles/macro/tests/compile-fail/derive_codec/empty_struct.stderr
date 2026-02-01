@@ -1,17 +1,17 @@
 error: Codec can only be derived for structs with named fields
-  --> tests/compile-fail/derive_codec/empty_struct.rs:20:8
+  --> tests/compile-fail/derive_codec/empty_struct.rs:22:8
    |
-20 | struct Empty1;
+22 | struct Empty1;
    |        ^^^^^^
 
 error: Codec can only be derived for structs with at least one field
-  --> tests/compile-fail/derive_codec/empty_struct.rs:23:8
+  --> tests/compile-fail/derive_codec/empty_struct.rs:25:8
    |
-23 | struct Empty2 {}
+25 | struct Empty2 {}
    |        ^^^^^^
 
 error: Codec can only be derived for structs with named fields
-  --> tests/compile-fail/derive_codec/empty_struct.rs:26:8
+  --> tests/compile-fail/derive_codec/empty_struct.rs:28:8
    |
-26 | struct Empty3 ();
+28 | struct Empty3();
    |        ^^^^^^

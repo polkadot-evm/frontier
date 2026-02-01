@@ -16,30 +16,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::marker::PhantomData;
 use precompile_utils::{prelude::*, testing::PrecompileTesterExt, EvmResult};
 use sp_core::H160;
 
 // Based on Erc20AssetsPrecompileSet with stripped code.
+// Simplified to use concrete types for proper macro expansion testing.
 
-struct PrecompileSet<Runtime>(PhantomData<Runtime>);
+struct PrecompileSet;
 
 type Discriminant = u32;
-type GetAssetsStringLimit<R> = R;
-type MockRuntime = ConstU32<42>;
+type StringLimit = ConstU32<42>;
 
 #[precompile_utils_macro::precompile]
 #[precompile::precompile_set]
-#[precompile::test_concrete_types(MockRuntime)]
-impl<Runtime> PrecompileSet<Runtime>
-where
-	Runtime: Get<u32>,
-{
-	/// PrecompileSet discrimiant. Allows to knows if the address maps to an asset id,
+impl PrecompileSet {
+	/// PrecompileSet discriminant. Allows to know if the address maps to an asset id,
 	/// and if this is the case which one.
 	#[precompile::discriminant]
-	fn discriminant(address: H160) -> Option<Discriminant> {
-		todo!("discriminant")
+	fn discriminant(address: H160, gas: u64) -> DiscriminantResult<Discriminant> {
+		DiscriminantResult::Some(1u32, gas)
 	}
 
 	#[precompile::public("totalSupply()")]
@@ -74,16 +69,6 @@ where
 		value: U256,
 	) -> EvmResult<bool> {
 		todo!("approve")
-	}
-
-	fn approve_inner(
-		asset_id: Discriminant,
-		handle: &mut impl PrecompileHandle,
-		owner: H160,
-		spender: H160,
-		value: U256,
-	) -> EvmResult {
-		todo!("approve_inner")
 	}
 
 	#[precompile::public("transfer(address,uint256)")]
@@ -128,7 +113,6 @@ where
 		todo!("decimals")
 	}
 
-	// From here: only for locals, we need to check whether we are in local assets otherwise fail
 	#[precompile::public("mint(address,uint256)")]
 	fn mint(
 		asset_id: Discriminant,
@@ -206,8 +190,8 @@ where
 	fn set_metadata(
 		asset_id: Discriminant,
 		handle: &mut impl PrecompileHandle,
-		name: BoundedString<GetAssetsStringLimit<Runtime>>,
-		symbol: BoundedString<GetAssetsStringLimit<Runtime>>,
+		name: BoundedString<StringLimit>,
+		symbol: BoundedString<StringLimit>,
 		decimals: u8,
 	) -> EvmResult<bool> {
 		todo!("set_metadata")

@@ -8671,6 +8671,7 @@ dependencies = [
  "prettyplease",
  "proc-macro2",
  "quote",
+ "sp-core",
  "sp-crypto-hashing 0.1.0 (git+https://github.com/paritytech/polkadot-sdk?branch=stable2512)",
  "syn 2.0.104",
  "trybuild",

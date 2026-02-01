@@ -1,5 +1,5 @@
-error: All discriminants must have the same type (found u64 before)
-  --> tests/compile-fail/precompile/discriminant/type-mismatch-1.rs:30:24
+error: The discriminant function must only take code address (H160) and remaining gas (u64) as parameters.
+  --> tests/compile-fail/precompile/discriminant/type-mismatch-1.rs:27:2
    |
-30 |     fn foo(_discriminant: u32, test: &mut impl PrecompileHandle) -> EvmResult {
-   |                           ^^^
+27 |     fn discriminant(address: H160) -> Option<u64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

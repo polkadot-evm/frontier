@@ -1,5 +1,5 @@
-error: The discriminant function must only take the code address (H160) as parameter.
-  --> tests/compile-fail/precompile/discriminant/missing-param.rs:25:2
+error: The discriminant function must only take code address (H160) and remaining gas (u64) as parameters.
+  --> tests/compile-fail/precompile/discriminant/missing-param.rs:27:2
    |
-25 |     fn discriminant() -> Option<u64> {
-   |     ^^
+27 |     fn discriminant() -> Option<u64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

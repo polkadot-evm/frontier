@@ -1,5 +1,5 @@
-error: The discriminant function must return an Option<_> (no type alias)
-  --> tests/compile-fail/precompile/discriminant/dont-return-option.rs:25:36
+error: The discriminant function must only take code address (H160) and remaining gas (u64) as parameters.
+  --> tests/compile-fail/precompile/discriminant/dont-return-option.rs:27:2
    |
-25 |     fn discriminant(address: H160) -> u32 {
-   |                                       ^^^
+27 |     fn discriminant(address: H160) -> u32 {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

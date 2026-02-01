@@ -420,7 +420,7 @@ impl Precompile {
 						let discriminant = match discriminant {
 							DiscriminantResult::Some(d, _) => d,
 							DiscriminantResult::None(cost) => return None,
-							DiscriminantResult::OutOfGas => return Some(Err(ExitError::OutOfGas.into()))
+							DiscriminantResult::OutOfGas => return Some(Err(::fp_evm::ExitError::OutOfGas.into()))
 						};
 
 						#opt_pre_check

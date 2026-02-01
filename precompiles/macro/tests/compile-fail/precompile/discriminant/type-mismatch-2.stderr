@@ -1,5 +1,5 @@
-error: All discriminants must have the same type (found u32 before)
-  --> tests/compile-fail/precompile/discriminant/type-mismatch-2.rs:30:43
+error: The discriminant function must only take code address (H160) and remaining gas (u64) as parameters.
+  --> tests/compile-fail/precompile/discriminant/type-mismatch-2.rs:32:2
    |
-30 |     fn discriminant(address: H160) -> Option<u64> {
-   |                                              ^^^
+32 |     fn discriminant(address: H160) -> Option<u64> {
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
