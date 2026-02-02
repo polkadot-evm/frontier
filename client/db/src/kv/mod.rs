@@ -102,6 +102,12 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
 		// Return the latest block hash that is both indexed AND on the canonical chain.
 		// This prevents returning stale data during reorgs.
+		//
+		// Note: During initial sync or after restart while mapping-sync catches up,
+		// this returns the genesis block hash. This is consistent with Geth's behavior
+		// where eth_getBlockByNumber("latest") returns block 0 during initial sync.
+		// Users can check sync status via eth_syncing to determine if the node is
+		// still catching up.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
 
 		// Get the canonical hash for verification.
