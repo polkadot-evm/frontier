@@ -146,10 +146,10 @@ jobs:
         run: make setup
 
       - name: Install nightly Rust toolchain
-        run: rustup install nightly
+        run: rustup install nightly-2026-01-31
 
       - name: Install cargo-expand
-        run: cargo +nightly install cargo-expand --force --locked || true
+        run: cargo +nightly-2026-01-31 install cargo-expand --force --locked || true
 
       - name: Run precompile-utils-macro tests
-        run: cargo +nightly test -p precompile-utils-macro
+        run: cargo +nightly-2026-01-31 test -p precompile-utils-macro
