@@ -48,14 +48,21 @@ export async function waitForBlock(
 	fullTransactions: boolean = false
 ): Promise<any> {
 	const start = Date.now();
+	let lastError: Error | null = null;
 	while (Date.now() - start < timeoutMs) {
-		const block = (await customRequest(web3, "eth_getBlockByNumber", [blockTag, fullTransactions])).result;
-		if (block !== null) {
-			return block;
+		try {
+			const block = (await customRequest(web3, "eth_getBlockByNumber", [blockTag, fullTransactions])).result;
+			if (block !== null) {
+				return block;
+			}
+		} catch (error) {
+			// Store the error but continue polling - the RPC might be temporarily unavailable
+			lastError = error instanceof Error ? error : new Error(String(error));
 		}
 		await new Promise<void>((resolve) => setTimeout(resolve, 50));
 	}
-	throw new Error(`Timeout waiting for block ${blockTag} to be indexed`);
+	const errorSuffix = lastError ? ` (last error: ${lastError.message})` : "";
+	throw new Error(`Timeout waiting for block ${blockTag} to be indexed${errorSuffix}`);
 }
 
 // Create a block, finalize it, and wait for it to be indexed by mapping-sync.
