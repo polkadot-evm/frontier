@@ -104,12 +104,15 @@ where
 						};
 
 						// Get block number from header
-						let block_number: u64 = self
+						let block_number: u64 = (*self
 							.client
 							.header(*substrate_block_hash)
 							.map_err(|e| format!("{e:?}"))?
-							.map(|h| (*h.number()).unique_saturated_into())
-							.unwrap_or(0);
+							.ok_or_else(|| {
+								format!("Header not found for block {substrate_block_hash:?}")
+							})?
+							.number())
+						.unique_saturated_into();
 
 						self.backend
 							.mapping()
@@ -172,12 +175,15 @@ where
 						};
 
 						// Get block number from header
-						let block_number: u64 = self
+						let block_number: u64 = (*self
 							.client
 							.header(*substrate_block_hash)
 							.map_err(|e| format!("{e:?}"))?
-							.map(|h| (*h.number()).unique_saturated_into())
-							.unwrap_or(0);
+							.ok_or_else(|| {
+								format!("Header not found for block {substrate_block_hash:?}")
+							})?
+							.number())
+						.unique_saturated_into();
 
 						self.backend
 							.mapping()
