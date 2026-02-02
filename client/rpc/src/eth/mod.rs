@@ -141,20 +141,15 @@ where
 		&self,
 		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		let finalized_number: u64 = self.client.info().finalized_number.unique_saturated_into();
-
-		// Derive the block number and whether canonical verification is needed.
-		// Finalized blocks cannot be reorged, so they don't need verification.
-		let (block_number, needs_canonical_verification): (Option<u64>, bool) = match number_or_hash
-		{
-			BlockNumberOrHash::Num(n) => (Some(n), n > finalized_number),
-			BlockNumberOrHash::Latest => (
-				Some(self.client.info().best_number.unique_saturated_into()),
-				true, // Latest is always non-finalized
-			),
-			BlockNumberOrHash::Earliest => (Some(0), false), // Genesis is immutable
+		// Derive the block number from the request.
+		let block_number: Option<u64> = match number_or_hash {
+			BlockNumberOrHash::Num(n) => Some(n),
+			BlockNumberOrHash::Latest => {
+				Some(self.client.info().best_number.unique_saturated_into())
+			}
+			BlockNumberOrHash::Earliest => Some(0),
 			BlockNumberOrHash::Safe | BlockNumberOrHash::Finalized => {
-				(Some(finalized_number), false) // Finalized blocks can't be reorged
+				Some(self.client.info().finalized_number.unique_saturated_into())
 			}
 			BlockNumberOrHash::Pending => {
 				// Pending blocks are not indexed in mapping-sync.
@@ -197,18 +192,20 @@ where
 			return Ok(BlockInfo::default());
 		};
 
-		// Verify the substrate hash is on the canonical chain.
-		// During a reorg, the mapping may point to a reorged-out block.
-		// This follows Geth's approach (PR #28865) of validating cached data.
-		if needs_canonical_verification {
-			if let Some(block_num) = block_number {
+		// Verify the substrate hash is on the canonical chain for all non-genesis blocks.
+		// The mapping is written at block import time, not finalization. If mapping-sync
+		// is lagging or processed an orphan block, the mapping could be stale even for
+		// finalized block numbers. We always verify against the canonical chain to ensure
+		// consistency, with genesis (block 0) as the only exception since it's immutable.
+		if let Some(block_num) = block_number {
+			if block_num > 0 {
 				let canonical_hash = self
 					.client
 					.hash(block_num.unique_saturated_into())
 					.map_err(|e| internal_err(format!("{e:?}")))?;
 
 				if canonical_hash != Some(substrate_hash) {
-					// Mapping is stale (reorg happened) - treat as not indexed yet
+					// Mapping is stale - treat as not indexed yet
 					return Ok(BlockInfo::default());
 				}
 			}
