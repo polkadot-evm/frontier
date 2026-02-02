@@ -187,7 +187,9 @@ impl TransactionRequest {
 	/// This mirrors geth's `tx.Size()` and reth's `transaction.encoded_length()` which use
 	/// actual RLP encoding to determine transaction size. We convert the request to its
 	/// transaction message type and use the `encoded_len()` method from the ethereum crate.
-	pub fn encoded_length(&self) -> usize {
+	///
+	/// Returns an error if the transaction request cannot be converted to a valid message type.
+	pub fn encoded_length(&self) -> Result<usize, String> {
 		// Convert to transaction message and use the ethereum crate's encoded_len()
 		let message: Option<TransactionMessage> = self.clone().into();
 
@@ -195,25 +197,23 @@ impl TransactionRequest {
 			Some(TransactionMessage::Legacy(msg)) => {
 				// Legacy: RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
 				// v is variable (27/28 or chainId*2+35/36), r and s are 32 bytes each
-				msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+				Ok(msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
 			}
 			Some(TransactionMessage::EIP2930(msg)) => {
 				// EIP-2930: 0x01 || RLP([chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, yParity, r, s])
-				1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+				Ok(1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
 			}
 			Some(TransactionMessage::EIP1559(msg)) => {
 				// EIP-1559: 0x02 || RLP([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, yParity, r, s])
-				1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+				Ok(1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
 			}
 			Some(TransactionMessage::EIP7702(msg)) => {
 				// EIP-7702: 0x04 || RLP([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, authorizationList, yParity, r, s])
-				1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+				Ok(1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
 			}
-			None => {
-				// Fallback for invalid/incomplete requests - use conservative estimate
-				// This shouldn't happen in normal operation as validation should catch it
-				Self::DEFAULT_FALLBACK_SIZE
-			}
+			None => Err(
+				"invalid transaction parameters: unable to determine transaction type".to_string(),
+			),
 		}
 	}
 
@@ -223,15 +223,12 @@ impl TransactionRequest {
 	/// - s: typically 33 bytes (0x80 + 32 bytes, or less if leading zeros)
 	const SIGNATURE_RLP_OVERHEAD: usize = 1 + 33 + 33;
 
-	/// Fallback size for invalid requests that can't be converted to a message
-	const DEFAULT_FALLBACK_SIZE: usize = 256;
-
 	/// Validates that the estimated signed transaction size is within limits.
 	///
 	/// This prevents DoS attacks via oversized transactions before they enter the pool.
 	/// The limit matches geth's `txMaxSize` and reth's `DEFAULT_MAX_TX_INPUT_BYTES`.
 	pub fn validate_size(&self) -> Result<(), String> {
-		let size = self.encoded_length();
+		let size = self.encoded_length()?;
 
 		if size > DEFAULT_MAX_TX_INPUT_BYTES {
 			return Err(format!(
@@ -554,7 +551,7 @@ mod tests {
 		// A minimal EIP-1559 transaction should include signature overhead
 		// Default TransactionRequest converts to EIP-1559 (no gas_price, no access_list)
 		let request = TransactionRequest::default();
-		let size = request.encoded_length();
+		let size = request.encoded_length().unwrap();
 
 		// EIP-1559 message RLP: ~11 bytes for minimal fields (all zeros/empty)
 		// + 1 byte type prefix + 67 bytes signature overhead = ~79 bytes minimum
@@ -587,14 +584,14 @@ mod tests {
 			}]),
 			..Default::default()
 		};
-		let typed_size = request.encoded_length();
+		let typed_size = request.encoded_length().unwrap();
 
 		// Legacy transaction
 		let legacy_request = TransactionRequest {
 			gas_price: Some(U256::from(1000)),
 			..Default::default()
 		};
-		let legacy_size = legacy_request.encoded_length();
+		let legacy_size = legacy_request.encoded_length().unwrap();
 
 		// Typed transaction should be larger due to:
 		// - Type byte (+1)
@@ -630,8 +627,8 @@ mod tests {
 			..Default::default()
 		};
 
-		let size_10 = request_10.encoded_length();
-		let size_100 = request_100.encoded_length();
+		let size_10 = request_10.encoded_length().unwrap();
+		let size_100 = request_100.encoded_length().unwrap();
 
 		// Size should scale roughly linearly with storage keys
 		// 90 additional keys * ~34 bytes each ≈ 3060 bytes difference
@@ -648,5 +645,18 @@ mod tests {
 		assert_eq!(TX_SLOT_BYTE_SIZE, 32 * 1024); // 32 KiB
 		assert_eq!(DEFAULT_MAX_TX_INPUT_BYTES, 128 * 1024); // 128 KiB
 		assert_eq!(DEFAULT_MAX_TX_INPUT_BYTES, 4 * TX_SLOT_BYTE_SIZE);
+	}
+
+	#[test]
+	fn test_encoded_length_invalid_parameters() {
+		// Transaction with both max_fee_per_gas and gas_price set (invalid combination)
+		let request = TransactionRequest {
+			max_fee_per_gas: Some(U256::from(1000)),
+			gas_price: Some(U256::from(500)),
+			..Default::default()
+		};
+
+		assert!(request.encoded_length().is_err());
+		assert!(request.validate_size().is_err());
 	}
 }
