@@ -241,7 +241,10 @@ pub mod pallet {
 			<Pallet<T>>::store_block(
 				match fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
 					Ok(_) => None,
-					Err(_) => Some(T::PostLogContent::get()),
+					Err(fp_consensus::FindLogError::NotFound) => Some(T::PostLogContent::get()),
+					Err(fp_consensus::FindLogError::MultipleLogs) => {
+						panic!("multiple pre-runtime Frontier logs; block is invalid")
+					}
 				},
 				U256::from(UniqueSaturatedInto::<u128>::unique_saturated_into(
 					frame_system::Pallet::<T>::block_number(),
@@ -263,23 +266,31 @@ pub mod pallet {
 		fn on_initialize(_: BlockNumberFor<T>) -> Weight {
 			let mut weight = T::SystemWeightInfo::kill_storage(1);
 
-			// If the digest contain an existing ethereum block(encoded as PreLog), If contains,
-			// execute the imported block firstly and disable transact dispatch function.
-			if let Ok(log) = fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
-				let PreLog::Block(block) = log;
+			// If the digest contains an existing ethereum block (encoded as PreLog),
+			// execute the imported block first and disable transact dispatch function.
+			match fp_consensus::find_pre_log(&frame_system::Pallet::<T>::digest()) {
+				Ok(log) => {
+					let PreLog::Block(block) = log;
 
-				for transaction in block.transactions {
-					let source = Self::recover_signer(&transaction).expect(
-						"pre-block transaction signature invalid; the block cannot be built",
-					);
+					for transaction in block.transactions {
+						let source = Self::recover_signer(&transaction).expect(
+							"pre-block transaction signature invalid; the block cannot be built",
+						);
 
-					Self::validate_transaction_in_block(source, &transaction).expect(
-						"pre-block transaction verification failed; the block cannot be built",
-					);
-					let (r, _) = Self::apply_validated_transaction(source, transaction, None)
-						.expect("pre-block apply transaction failed; the block cannot be built");
+						Self::validate_transaction_in_block(source, &transaction).expect(
+							"pre-block transaction verification failed; the block cannot be built",
+						);
+						let (r, _) = Self::apply_validated_transaction(source, transaction, None)
+							.expect(
+								"pre-block apply transaction failed; the block cannot be built",
+							);
 
-					weight = weight.saturating_add(r.actual_weight.unwrap_or_default());
+						weight = weight.saturating_add(r.actual_weight.unwrap_or_default());
+					}
+				}
+				Err(fp_consensus::FindLogError::NotFound) => {}
+				Err(fp_consensus::FindLogError::MultipleLogs) => {
+					panic!("multiple pre-runtime Frontier logs; block is invalid")
 				}
 			}
 			// Account for `on_finalize` weight:
