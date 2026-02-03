@@ -216,6 +216,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "ark-bls12-377"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bfedac3173d12820a5e0d6cd4de31b49719a74f4a41dc09b6652d0276a3b2cd4"
+dependencies = [
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
+ "ark-std 0.5.0",
+]
+
+[[package]]
 name = "ark-bls12-381"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -241,14 +252,14 @@ dependencies = [
 
 [[package]]
 name = "ark-bw6-761"
-version = "0.4.0"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e0605daf0cc5aa2034b78d008aaf159f56901d92a52ee4f6ecdfdac4f426700"
+checksum = "1cc9cae367e0c3c0b52e3ef13371122752654f45d0212ec7306fb0c1c012cd98"
 dependencies = [
- "ark-bls12-377",
- "ark-ec 0.4.2",
- "ark-ff 0.4.2",
- "ark-std 0.4.0",
+ "ark-bls12-377 0.5.0",
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
+ "ark-std 0.5.0",
 ]
 
 [[package]]
@@ -7345,9 +7356,9 @@ dependencies = [
 name = "pallet-evm-precompile-bls12377"
 version = "1.0.0-dev"
 dependencies = [
- "ark-bls12-377",
- "ark-ec 0.4.2",
- "ark-ff 0.4.2",
+ "ark-bls12-377 0.5.0",
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
  "ark-std 0.5.0",
  "fp-evm",
  "pallet-evm-test-vector-support",
@@ -7358,9 +7369,9 @@ dependencies = [
 name = "pallet-evm-precompile-bls12381"
 version = "1.0.0-dev"
 dependencies = [
- "ark-bls12-381 0.4.0",
- "ark-ec 0.4.2",
- "ark-ff 0.4.2",
+ "ark-bls12-381 0.5.0",
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
  "ark-std 0.5.0",
  "fp-evm",
  "pallet-evm-test-vector-support",
@@ -7381,8 +7392,8 @@ name = "pallet-evm-precompile-bw6761"
 version = "1.0.0-dev"
 dependencies = [
  "ark-bw6-761",
- "ark-ec 0.4.2",
- "ark-ff 0.4.2",
+ "ark-ec 0.5.0",
+ "ark-ff 0.5.0",
  "ark-std 0.5.0",
  "fp-evm",
  "pallet-evm-test-vector-support",
@@ -13955,7 +13966,7 @@ version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e6bfb937b3d12077654a9e43e32a4e9c20177dd9fea0f3aba673e7840bb54f32"
 dependencies = [
- "ark-bls12-377",
+ "ark-bls12-377 0.4.0",
  "ark-bls12-381 0.4.0",
  "ark-ec 0.4.2",
  "ark-ff 0.4.2",
