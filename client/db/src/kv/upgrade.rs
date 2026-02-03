@@ -384,7 +384,10 @@ pub(crate) fn migrate_2_to_3_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 				for substrate_hash in substrate_hashes {
 					if let Ok(Some(number)) = client.number(substrate_hash) {
 						// Write block_number -> ethereum_block_hash mapping
-						let block_number: u64 = number.try_into().unwrap_or(0);
+						let Ok(block_number): Result<u64, _> = number.try_into() else {
+							res.skipped += 1;
+							continue;
+						};
 						let eth_hash = H256::from_slice(ethereum_hash);
 						transaction.put_vec(
 							super::columns::BLOCK_NUMBER_MAPPING,
@@ -464,7 +467,10 @@ pub(crate) fn migrate_2_to_3_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 				for substrate_hash in substrate_hashes {
 					if let Ok(Some(number)) = client.number(substrate_hash) {
 						// Write block_number -> ethereum_block_hash mapping
-						let block_number: u64 = number.try_into().unwrap_or(0);
+						let Ok(block_number): Result<u64, _> = number.try_into() else {
+							res.skipped += 1;
+							continue;
+						};
 						let eth_hash = H256::from_slice(ethereum_hash);
 						transaction.push((
 							super::columns::BLOCK_NUMBER_MAPPING as u8,
