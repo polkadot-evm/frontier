@@ -29,7 +29,7 @@ use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_consensus::SyncOracle;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, Zero};
+use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero};
 // Frontier
 use fc_storage::StorageOverride;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
@@ -47,6 +47,8 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	header: &Block::Header,
 ) -> Result<(), String> {
 	let substrate_block_hash = header.hash();
+	let block_number: u64 = (*header.number()).unique_saturated_into();
+
 	match fp_consensus::find_log(header.digest()) {
 		Ok(log) => {
 			let gen_from_hashes = |hashes: Hashes| -> fc_db::kv::MappingCommitment<Block> {
@@ -64,16 +66,22 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 			match log {
 				Log::Pre(PreLog::Block(block)) => {
 					let mapping_commitment = gen_from_block(block);
-					backend.mapping().write_hashes(mapping_commitment)
+					backend
+						.mapping()
+						.write_hashes(mapping_commitment, block_number)
 				}
 				Log::Post(post_log) => match post_log {
 					PostLog::Hashes(hashes) => {
 						let mapping_commitment = gen_from_hashes(hashes);
-						backend.mapping().write_hashes(mapping_commitment)
+						backend
+							.mapping()
+							.write_hashes(mapping_commitment, block_number)
 					}
 					PostLog::Block(block) => {
 						let mapping_commitment = gen_from_block(block);
-						backend.mapping().write_hashes(mapping_commitment)
+						backend
+							.mapping()
+							.write_hashes(mapping_commitment, block_number)
 					}
 					PostLog::BlockHash(expect_eth_block_hash) => {
 						let ethereum_block = storage_override.current_block(substrate_block_hash);
@@ -88,7 +96,9 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 									))
 								} else {
 									let mapping_commitment = gen_from_block(block);
-									backend.mapping().write_hashes(mapping_commitment)
+									backend
+										.mapping()
+										.write_hashes(mapping_commitment, block_number)
 								}
 							}
 							None => backend.mapping().write_none(substrate_block_hash),
@@ -112,6 +122,7 @@ where
 	C::Api: EthereumRuntimeRPCApi<Block>,
 {
 	let substrate_block_hash = header.hash();
+	let block_number: u64 = (*header.number()).unique_saturated_into();
 
 	if let Some(api_version) = client
 		.runtime_api()
@@ -140,7 +151,9 @@ where
 			ethereum_block_hash: block_hash,
 			ethereum_transaction_hashes: Vec::new(),
 		};
-		backend.mapping().write_hashes(mapping_commitment)?;
+		backend
+			.mapping()
+			.write_hashes(mapping_commitment, block_number)?;
 	} else {
 		backend.mapping().write_none(substrate_block_hash)?;
 	};

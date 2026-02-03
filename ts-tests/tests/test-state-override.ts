@@ -17,7 +17,6 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 	let contract;
 	let contractAddress;
 	before("create the contract", async function () {
-		this.timeout(15000);
 		contract = new context.web3.eth.Contract(StateOverrideTest.abi as AbiItem[]);
 		const data = contract
 			.deploy({

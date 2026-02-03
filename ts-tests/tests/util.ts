@@ -39,18 +39,51 @@ export async function customRequest(web3: Web3, method: string, params: any[]) {
 	});
 }
 
-// Create a block and finalize it.
-// It will include all previously executed transactions since the last finalized block.
+// Wait for a block to be indexed by mapping-sync and visible via RPC.
+// This polls eth_getBlockByNumber until the block is available or timeout.
+export async function waitForBlock(
+	web3: Web3,
+	blockTag: string = "latest",
+	timeoutMs: number = 5000,
+	fullTransactions: boolean = false
+): Promise<any> {
+	const start = Date.now();
+	let lastError: Error | null = null;
+	while (Date.now() - start < timeoutMs) {
+		try {
+			const block = (await customRequest(web3, "eth_getBlockByNumber", [blockTag, fullTransactions])).result;
+			if (block !== null) {
+				return block;
+			}
+		} catch (error) {
+			// Store the error but continue polling - the RPC might be temporarily unavailable
+			lastError = error instanceof Error ? error : new Error(String(error));
+		}
+		await new Promise<void>((resolve) => setTimeout(resolve, 50));
+	}
+	const errorSuffix = lastError ? ` (last error: ${lastError.message})` : "";
+	throw new Error(`Timeout waiting for block ${blockTag} to be indexed${errorSuffix}`);
+}
+
+// Create a block, finalize it, and wait for it to be indexed by mapping-sync.
+// This ensures the block is visible via eth_getBlockByNumber before returning.
 export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = true) {
+	// Get current indexed block number before creating
+	const currentBlock = (await customRequest(web3, "eth_getBlockByNumber", ["latest", false])).result;
+	const currentNumber = currentBlock ? parseInt(currentBlock.number, 16) : 0;
+
 	const response = await customRequest(web3, "engine_createBlock", [true, finalize, null]);
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
-	await new Promise<void>((resolve) => setTimeout(() => resolve(), 500));
+
+	// Wait for the NEW block to be indexed by mapping-sync
+	const newBlockNumber = "0x" + (currentNumber + 1).toString(16);
+	await waitForBlock(web3, newBlockNumber, 3000);
 }
 
-// Create a block and finalize it.
-// It will include all previously executed transactions since the last finalized block.
+// Create a block and finalize it without waiting for indexing.
+// Use this only for tests that explicitly handle waiting themselves.
 export async function createAndFinalizeBlockNowait(web3: Web3) {
 	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
 	if (!response.result) {
@@ -135,27 +168,38 @@ export async function startFrontierNode(
 			}
 			binaryLogs.push(chunk);
 			if (chunk.toString().match(/Manual Seal Ready/)) {
-				if (!provider || provider == "http") {
-					// This is needed as the EVM runtime needs to warmup with a first call
-					await web3.eth.getChainId();
-				}
+				try {
+					// For WebSocket connections, create the instance AFTER the node is ready
+					// This ensures the WebSocket can actually connect
+					if (provider == "ws") {
+						web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
+					}
 
-				clearTimeout(timer);
-				if (!DISPLAY_LOG) {
-					binary.stderr.off("data", onData);
-					binary.stdout.off("data", onData);
+					// Warmup call - needed for both HTTP and WS to ensure connection is ready
+					await web3.eth.getChainId();
+
+					// Wait for genesis block to be indexed by mapping-sync before returning.
+					// This ensures all RPCs that read from mapping-sync can access block 0.
+					await waitForBlock(web3, "0x0", 10000);
+
+					clearTimeout(timer);
+					if (!DISPLAY_LOG) {
+						binary.stderr.off("data", onData);
+						binary.stdout.off("data", onData);
+					}
+					// console.log(`\x1b[31m Starting RPC\x1b[0m`);
+					resolve();
+				} catch (err) {
+					console.error(`\x1b[31m Error during node startup: ${err}\x1b[0m`);
+					clearTimeout(timer);
+					binary.kill();
+					process.exit(1);
 				}
-				// console.log(`\x1b[31m Starting RPC\x1b[0m`);
-				resolve();
 			}
 		};
 		binary.stderr.on("data", onData);
 		binary.stdout.on("data", onData);
 	});
-
-	if (provider == "ws") {
-		web3 = new Web3(`ws://127.0.0.1:${RPC_PORT}`);
-	}
 
 	return { web3, binary, ethersjs };
 }

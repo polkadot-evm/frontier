@@ -57,7 +57,6 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 
 	let firstBlockCreated = false;
 	step("should be at block 1 after block production", async function () {
-		this.timeout(15000);
 		await createAndFinalizeBlock(context.web3);
 		expect(await context.web3.eth.getBlockNumber()).to.equal(1);
 		firstBlockCreated = true;
@@ -138,7 +137,6 @@ describeWithFrontier("Frontier RPC (Block)", (context) => {
 	});
 
 	it.skip("should include previous block hash as parent", async function () {
-		this.timeout(15000);
 		await createAndFinalizeBlock(context.web3);
 		const block = await context.web3.eth.getBlock("latest");
 		expect(block.hash).to.not.equal(previousBlock.hash);

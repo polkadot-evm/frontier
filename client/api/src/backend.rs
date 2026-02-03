@@ -39,6 +39,9 @@ pub trait Backend<Block: BlockT>: Send + Sync {
 		ethereum_block_hash: &H256,
 	) -> Result<Option<Vec<Block::Hash>>, String>;
 
+	/// Get the ethereum block hash for a given block number.
+	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String>;
+
 	/// Get the transaction metadata with the given ethereum block hash.
 	async fn transaction_metadata(
 		&self,

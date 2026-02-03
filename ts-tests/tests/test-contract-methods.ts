@@ -9,7 +9,7 @@ import {
 	BLOCK_HASH_COUNT,
 	ETH_BLOCK_GAS_LIMIT,
 } from "./config";
-import { createAndFinalizeBlock, createAndFinalizeBlockNowait, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
 
 describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
@@ -19,7 +19,6 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 	// to spin up a frontier node, it saves a lot of time.
 
 	before("create the contract", async function () {
-		this.timeout(15000);
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -65,7 +64,7 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 	});
 
 	it("should get correct environmental block hash", async function () {
-		this.timeout(20000);
+		this.timeout(300000); // Increased timeout for waiting on block indexing
 		// Solidity `blockhash` is expected to return the ethereum block hash at a given height.
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
@@ -74,10 +73,9 @@ describeWithFrontier("Frontier RPC (Contract Methods)", (context) => {
 		let number = (await context.web3.eth.getBlock("latest")).number;
 		let last = number + BLOCK_HASH_COUNT;
 		for (let i = number; i <= last; i++) {
-			await new Promise((resolve) => setTimeout(resolve, 60));
 			let hash = (await context.web3.eth.getBlock("latest")).hash;
 			expect(await contract.methods.blockHash(i).call()).to.eq(hash);
-			await createAndFinalizeBlockNowait(context.web3);
+			await createAndFinalizeBlock(context.web3);
 		}
 		// should not store more than `BLOCK_HASH_COUNT` hashes
 		expect(await contract.methods.blockHash(number).call()).to.eq(

@@ -26,7 +26,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	let signer: ethers.Wallet;
 
 	// Deploy a test contract first
-	step("should deploy delegate test contract", async () => {
+	step("should deploy delegate test contract", async function () {
 		signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
 
 		const tx = await signer.sendTransaction({
@@ -104,20 +104,22 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should reject empty authorization list", async function () {
-		this.timeout(15000);
-
 		// Test with empty authorization list - should be rejected by Frontier
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce = parseInt(nonceHex, 16);
+
 		const tx = {
 			from: GENESIS_ACCOUNT,
 			to: "0x1000000000000000000000000000000000000001",
 			value: "0x00",
+			nonce: nonce,
 			maxFeePerGas: "0x3B9ACA00",
 			maxPriorityFeePerGas: "0x01",
 			type: 4,
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [], // Empty authorization list
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
 		};
 
 		// Frontier should reject empty authorization lists during validation
@@ -141,8 +143,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle authorization with different chain IDs", async function () {
-		this.timeout(15000);
-
 		// Test authorization with wrong chain ID - should be skipped by Frontier
 		const authorizer = ethers.Wallet.createRandom();
 		const wrongChainAuth = await authorizer.authorize({
@@ -150,6 +150,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			nonce: 0,
 			chainId: 999,
 		});
+
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex1 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce1 = parseInt(nonceHex1, 16);
 
 		const tx1 = {
 			from: GENESIS_ACCOUNT,
@@ -161,7 +165,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [wrongChainAuth],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce1,
 		};
 
 		const signedTx1 = await signer.sendTransaction(tx1);
@@ -178,6 +182,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			chainId: 0,
 		});
 
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex2 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce2 = parseInt(nonceHex2, 16);
+
 		const tx2 = {
 			from: GENESIS_ACCOUNT,
 			to: "0x1000000000000000000000000000000000000001",
@@ -188,7 +196,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [universalAuth],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce2,
 		};
 
 		const signedTx2 = await signer.sendTransaction(tx2);
@@ -200,8 +208,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle multiple authorizations", async function () {
-		this.timeout(15000);
-
 		// Create multiple authorizations for the same authority
 		const authorizer = ethers.Wallet.createRandom();
 		const auth1 = await authorizer.authorize({
@@ -239,8 +245,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should verify gas cost calculation includes authorization costs", async function () {
-		this.timeout(15000);
-
 		// Validate prerequisites
 		if (!contractAddress) {
 			throw new Error("Contract address is required but not set from previous step");
@@ -256,6 +260,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		// Instead of using estimateGas (which might fail), execute actual transactions
 		// and compare their gas usage
 
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex1 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce1 = parseInt(nonceHex1, 16);
+
 		// Execute regular transaction
 		const regularTx = {
 			from: GENESIS_ACCOUNT,
@@ -266,12 +274,16 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			type: 2, // EIP-1559 transaction
 			gasLimit: "0x5208", // 21000 gas
 			chainId: CHAIN_ID,
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce1,
 		};
 
 		const regularSignedTx = await signer.sendTransaction(regularTx);
 		await createAndFinalizeBlock(context.web3);
 		const regularReceipt = await context.ethersjs.getTransactionReceipt(regularSignedTx.hash);
+
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex2 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce2 = parseInt(nonceHex2, 16);
 
 		// Execute EIP-7702 transaction
 		const eip7702Tx = {
@@ -284,7 +296,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			authorizationList: [authorization],
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce2,
 		};
 
 		const eip7702SignedTx = await signer.sendTransaction(eip7702Tx);
@@ -296,8 +308,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should apply delegation behavior", async function () {
-		this.timeout(15000);
-
 		const authorizer = ethers.Wallet.createRandom();
 		console.log("Authorizer address:", authorizer.address);
 		console.log("Contract address to delegate to:", contractAddress);
@@ -312,6 +322,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			JSON.stringify(authorization, (key, value) => (typeof value === "bigint" ? value.toString() : value), 2)
 		);
 
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce = parseInt(nonceHex, 16);
+
 		// Set up delegation with a simple call
 		const delegationTx = {
 			from: GENESIS_ACCOUNT,
@@ -324,7 +338,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [authorization],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce,
 		};
 		console.log(
 			"Delegation transaction:",
@@ -363,8 +377,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle self delegation", async function () {
-		this.timeout(15000);
-
 		// Test self-delegation (should be prevented by Frontier)
 		const authorizer = ethers.Wallet.createRandom();
 		const selfDelegationAuth = await authorizer.authorize({
@@ -372,6 +384,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			nonce: 0,
 			chainId: CHAIN_ID,
 		});
+
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex1 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce1 = parseInt(nonceHex1, 16);
 
 		const tx1 = {
 			from: GENESIS_ACCOUNT,
@@ -383,7 +399,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [selfDelegationAuth],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce1,
 		};
 
 		const signedTx1 = await signer.sendTransaction(tx1);
@@ -395,8 +411,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should handle zero-address delegation", async function () {
-		this.timeout(15000);
-
 		// Test self-delegation (should be prevented by Frontier)
 		const authorizer = ethers.Wallet.createRandom();
 		const authorization = await authorizer.authorize({
@@ -404,6 +418,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			nonce: 0,
 			chainId: CHAIN_ID,
 		});
+
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex1 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce1 = parseInt(nonceHex1, 16);
 
 		const tx1 = {
 			from: GENESIS_ACCOUNT,
@@ -415,7 +433,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [authorization],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce1,
 		};
 
 		const signedTx1 = await signer.sendTransaction(tx1);
@@ -432,6 +450,10 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			chainId: CHAIN_ID,
 		});
 
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex2 = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce2 = parseInt(nonceHex2, 16);
+
 		const tx2 = {
 			from: GENESIS_ACCOUNT,
 			to: authorizer.address,
@@ -442,7 +464,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [zeroAddressAuth],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce2,
 		};
 
 		const signedTx2 = await signer.sendTransaction(tx2);
@@ -497,6 +519,11 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 
 		// Submit the delegation transaction (first transaction - simple transfer)
 		const randomRecipient = ethers.Wallet.createRandom().address;
+
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce = parseInt(nonceHex, 16);
+
 		const delegationTx = {
 			from: GENESIS_ACCOUNT,
 			to: randomRecipient, // Send to a random account
@@ -507,7 +534,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			gasLimit: "0x100000",
 			chainId: CHAIN_ID,
 			authorizationList: [authorization],
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce,
 		};
 
 		const signedDelegationTx = await signer.sendTransaction(delegationTx);
@@ -529,11 +556,16 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 		expect(delegationInfo.address.toLowerCase()).to.equal(contractAddress.toLowerCase());
 
 		// Step 5: Call the delegated contract (second transaction - invoke code at address with delegation indicator)
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const callNonceHex = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const callNonce = parseInt(callNonceHex, 16);
+
 		const callTx = await signer.sendTransaction({
 			to: delegatorAddress,
 			data: "0x", // Empty data for simple contract call
 			gasLimit: "0x100000",
 			gasPrice: "0x3B9ACA00",
+			nonce: callNonce,
 		});
 
 		await createAndFinalizeBlock(context.web3);
@@ -547,8 +579,6 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 	});
 
 	step("should estimate gas for EIP-7702 transactions", async function () {
-		this.timeout(15000);
-
 		// Ensure we have a signer
 		if (!signer) {
 			signer = new ethers.Wallet(GENESIS_ACCOUNT_PRIVATE_KEY, context.ethersjs);
@@ -589,6 +619,11 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 
 		// Let's first try to send the actual transaction to see if it works
 		console.log("Sending actual EIP-7702 transaction first to verify it works...");
+
+		// Fetch nonce directly via RPC to bypass any ethers.js caching
+		const nonceHex = await context.ethersjs.send("eth_getTransactionCount", [GENESIS_ACCOUNT, "latest"]);
+		const nonce = parseInt(nonceHex, 16);
+
 		const actualTx = {
 			from: GENESIS_ACCOUNT,
 			to: "0x1000000000000000000000000000000000000001",
@@ -599,7 +634,7 @@ describeWithFrontier("Frontier RPC (EIP-7702 Set Code Authorization)", (context:
 			maxPriorityFeePerGas: "0x01",
 			chainId: CHAIN_ID,
 			gasLimit: "0x100000", // Use explicit gas limit
-			nonce: await context.ethersjs.getTransactionCount(GENESIS_ACCOUNT),
+			nonce: nonce,
 		};
 
 		const sentTx = await signer.sendTransaction(actualTx);

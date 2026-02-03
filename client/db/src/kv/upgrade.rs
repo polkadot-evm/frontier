@@ -34,11 +34,12 @@ use sp_runtime::traits::Block as BlockT;
 const VERSION_FILE_NAME: &str = "db_version";
 
 /// Current db version.
-const CURRENT_VERSION: u32 = 2;
+const CURRENT_VERSION: u32 = 3;
 
 /// Number of columns in each version.
 const _V1_NUM_COLUMNS: u32 = 4;
-const V2_NUM_COLUMNS: u32 = 4;
+const _V2_NUM_COLUMNS: u32 = 4;
+const V3_NUM_COLUMNS: u32 = 5;
 
 /// Database upgrade errors.
 #[derive(Debug)]
@@ -58,6 +59,11 @@ pub(crate) type UpgradeResult<T> = Result<T, UpgradeError>;
 pub(crate) struct UpgradeVersion1To2Summary {
 	pub success: u32,
 	pub error: Vec<H256>,
+}
+
+pub(crate) struct UpgradeVersion2To3Summary {
+	pub success: u32,
+	pub skipped: u32,
 }
 
 impl From<io::Error> for UpgradeError {
@@ -95,30 +101,57 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 	db_path: &Path,
 	source: &DatabaseSource,
 ) -> UpgradeResult<()> {
-	let db_version = current_version(db_path)?;
-	match db_version {
-		0 => return Err(UpgradeError::UnsupportedVersion(db_version)),
-		1 => {
-			let summary: UpgradeVersion1To2Summary = match source {
-				DatabaseSource::ParityDb { .. } => {
-					migrate_1_to_2_parity_db::<Block, C>(client, db_path)?
-				}
-				#[cfg(feature = "rocksdb")]
-				DatabaseSource::RocksDb { .. } => migrate_1_to_2_rocks_db::<Block, C>(client, db_path)?,
-				_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
-			};
-			if !summary.error.is_empty() {
-				panic!(
-					"Inconsistent migration from version 1 to 2. Failed on {:?}",
-					summary.error
-				);
-			} else {
-				log::info!("✔️ Successful Frontier DB migration from version 1 to version 2 ({:?} entries).", summary.success);
-			}
-		}
-		CURRENT_VERSION => (),
-		_ => return Err(UpgradeError::FutureDatabaseVersion(db_version)),
+	let mut db_version = current_version(db_path)?;
+	if db_version == 0 {
+		return Err(UpgradeError::UnsupportedVersion(db_version));
 	}
+
+	// Version 1 -> 2: Migrate block mapping from One-to-one to One-to-many
+	if db_version == 1 {
+		let summary: UpgradeVersion1To2Summary = match source {
+			DatabaseSource::ParityDb { .. } => {
+				migrate_1_to_2_parity_db::<Block, C>(client.clone(), db_path)?
+			}
+			#[cfg(feature = "rocksdb")]
+			DatabaseSource::RocksDb { .. } => migrate_1_to_2_rocks_db::<Block, C>(client.clone(), db_path)?,
+			_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
+		};
+		if !summary.error.is_empty() {
+			panic!(
+				"Inconsistent migration from version 1 to 2. Failed on {:?}",
+				summary.error
+			);
+		} else {
+			log::info!(
+				"✔️ Successful Frontier DB migration from version 1 to version 2 ({:?} entries).",
+				summary.success
+			);
+		}
+		db_version = 2;
+	}
+
+	// Version 2 -> 3: Backfill block_number -> ethereum_block_hash mapping
+	if db_version == 2 {
+		let summary: UpgradeVersion2To3Summary = match source {
+			DatabaseSource::ParityDb { .. } => {
+				migrate_2_to_3_parity_db::<Block, C>(client.clone(), db_path)?
+			}
+			#[cfg(feature = "rocksdb")]
+			DatabaseSource::RocksDb { .. } => migrate_2_to_3_rocks_db::<Block, C>(client.clone(), db_path)?,
+			_ => panic!("DatabaseSource required for upgrade ParityDb | RocksDb"),
+		};
+		log::info!(
+			"✔️ Successful Frontier DB migration from version 2 to version 3 ({} entries migrated, {} skipped).",
+			summary.success,
+			summary.skipped
+		);
+		db_version = 3;
+	}
+
+	if db_version != CURRENT_VERSION {
+		return Err(UpgradeError::FutureDatabaseVersion(db_version));
+	}
+
 	update_version(db_path)?;
 	Ok(())
 }
@@ -220,7 +253,9 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 		Ok(())
 	};
 
-	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V2_NUM_COLUMNS);
+	// Open with V3_NUM_COLUMNS to handle both v1 DBs (will create missing columns)
+	// and test DBs that were created with 5 columns.
+	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V3_NUM_COLUMNS);
 	let db = kvdb_rocksdb::Database::open(&db_cfg, db_path)?;
 
 	// Get all the block hashes we need to update
@@ -292,7 +327,9 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 		Ok(())
 	};
 
-	let mut db_cfg = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
+	// Open with V3_NUM_COLUMNS to handle both v1 DBs (will create missing columns)
+	// and test DBs that were created with 5 columns.
+	let mut db_cfg = parity_db::Options::with_columns(db_path, V3_NUM_COLUMNS as u8);
 	db_cfg.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
 	let db = parity_db::Db::open_or_create(&db_cfg)
@@ -312,6 +349,179 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	// Read and update each entry in db transaction batches
 	const CHUNK_SIZE: usize = 10_000;
 	let chunks = ethereum_hashes.chunks(CHUNK_SIZE);
+	let all_len = ethereum_hashes.len();
+	for (i, chunk) in chunks.enumerate() {
+		process_chunk(&db, chunk)?;
+		log::debug!(
+			target: "fc-db-upgrade",
+			"🔨 Processed {} of {} entries.",
+			(CHUNK_SIZE * (i + 1)),
+			all_len
+		);
+	}
+	Ok(res)
+}
+
+/// Migration from version 2 to version 3:
+/// - Backfill the block_number -> ethereum_block_hash mapping for existing blocks.
+/// - This enables efficient lookups by block number without iterating through all mappings.
+#[cfg(feature = "rocksdb")]
+pub(crate) fn migrate_2_to_3_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
+	client: Arc<C>,
+	db_path: &Path,
+) -> UpgradeResult<UpgradeVersion2To3Summary> {
+	log::info!("🔨 Running Frontier DB migration from version 2 to version 3. Please wait.");
+	let mut res = UpgradeVersion2To3Summary {
+		success: 0,
+		skipped: 0,
+	};
+
+	// Process a batch of entries in a single db transaction
+	#[rustfmt::skip]
+	let mut process_chunk = |
+		db: &kvdb_rocksdb::Database,
+		entries: &[(smallvec::SmallVec<[u8; 32]>, Vec<u8>)]
+	| -> UpgradeResult<()> {
+		let mut transaction = db.transaction();
+		for (ethereum_hash, substrate_hashes_raw) in entries {
+			// Decode the Vec<Block::Hash> from the BLOCK_MAPPING value
+			if let Ok(substrate_hashes) = Vec::<Block::Hash>::decode(&mut &substrate_hashes_raw[..]) {
+				// Try to find a block number for any of the substrate hashes
+				let mut found = false;
+				for substrate_hash in substrate_hashes {
+					if let Ok(Some(number)) = client.number(substrate_hash) {
+						// Write block_number -> ethereum_block_hash mapping
+						let Ok(block_number): Result<u64, _> = number.try_into() else {
+							res.skipped += 1;
+							continue;
+						};
+						let eth_hash = H256::from_slice(ethereum_hash);
+						transaction.put_vec(
+							super::columns::BLOCK_NUMBER_MAPPING,
+							&block_number.encode(),
+							eth_hash.encode(),
+						);
+						res.success += 1;
+						found = true;
+						break;
+					}
+				}
+				if !found {
+					res.skipped += 1;
+				}
+			} else {
+				res.skipped += 1;
+			}
+		}
+		db.write(transaction)
+			.map_err(|_| io::Error::other("Failed to commit on migrate_2_to_3"))?;
+		log::debug!(
+			target: "fc-db-upgrade",
+			"🔨 Migration 2->3: Success {}, skipped {}.",
+			res.success,
+			res.skipped
+		);
+		Ok(())
+	};
+
+	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V3_NUM_COLUMNS);
+	let db = kvdb_rocksdb::Database::open(&db_cfg, db_path)?;
+
+	// Get all the block mapping entries
+	let entries: Vec<_> = db
+		.iter(super::columns::BLOCK_MAPPING)
+		.filter_map(|entry| entry.ok())
+		.collect();
+
+	// Read and update each entry in db transaction batches
+	const CHUNK_SIZE: usize = 10_000;
+	let chunks = entries.chunks(CHUNK_SIZE);
+	let all_len = entries.len();
+	for (i, chunk) in chunks.enumerate() {
+		process_chunk(&db, chunk)?;
+		log::debug!(
+			target: "fc-db-upgrade",
+			"🔨 Processed {} of {} entries.",
+			(CHUNK_SIZE * (i + 1)).min(all_len),
+			all_len
+		);
+	}
+	Ok(res)
+}
+
+pub(crate) fn migrate_2_to_3_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
+	client: Arc<C>,
+	db_path: &Path,
+) -> UpgradeResult<UpgradeVersion2To3Summary> {
+	log::info!("🔨 Running Frontier DB migration from version 2 to version 3. Please wait.");
+	let mut res = UpgradeVersion2To3Summary {
+		success: 0,
+		skipped: 0,
+	};
+
+	// Process a batch of entries in a single db transaction
+	#[rustfmt::skip]
+	let mut process_chunk = |
+		db: &parity_db::Db,
+		entries: &[(Vec<u8>, Vec<u8>)]
+	| -> UpgradeResult<()> {
+		let mut transaction = vec![];
+		for (ethereum_hash, substrate_hashes_raw) in entries {
+			// Decode the Vec<Block::Hash> from the BLOCK_MAPPING value
+			if let Ok(substrate_hashes) = Vec::<Block::Hash>::decode(&mut &substrate_hashes_raw[..]) {
+				// Try to find a block number for any of the substrate hashes
+				let mut found = false;
+				for substrate_hash in substrate_hashes {
+					if let Ok(Some(number)) = client.number(substrate_hash) {
+						// Write block_number -> ethereum_block_hash mapping
+						let Ok(block_number): Result<u64, _> = number.try_into() else {
+							res.skipped += 1;
+							continue;
+						};
+						let eth_hash = H256::from_slice(ethereum_hash);
+						transaction.push((
+							super::columns::BLOCK_NUMBER_MAPPING as u8,
+							block_number.encode(),
+							Some(eth_hash.encode()),
+						));
+						res.success += 1;
+						found = true;
+						break;
+					}
+				}
+				if !found {
+					res.skipped += 1;
+				}
+			} else {
+				res.skipped += 1;
+			}
+		}
+		db.commit(transaction)
+			.map_err(|_| io::Error::other("Failed to commit on migrate_2_to_3"))?;
+		Ok(())
+	};
+
+	let mut db_cfg = parity_db::Options::with_columns(db_path, V3_NUM_COLUMNS as u8);
+	db_cfg.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
+
+	let db = parity_db::Db::open_or_create(&db_cfg)
+		.map_err(|_| io::Error::other("Failed to open db"))?;
+
+	// Get all the block mapping entries
+	let entries: Vec<_> = match db.iter(super::columns::BLOCK_MAPPING as u8) {
+		Ok(mut iter) => {
+			let mut items = vec![];
+			while let Ok(Some((k, v))) = iter.next() {
+				items.push((k, v));
+			}
+			items
+		}
+		Err(_) => vec![],
+	};
+
+	// Read and update each entry in db transaction batches
+	const CHUNK_SIZE: usize = 10_000;
+	let chunks = entries.chunks(CHUNK_SIZE);
 	for chunk in chunks {
 		process_chunk(&db, chunk)?;
 	}
@@ -354,7 +564,7 @@ mod tests {
 
 	#[cfg_attr(not(feature = "rocksdb"), ignore)]
 	#[test]
-	fn upgrade_1_to_2_works() {
+	fn upgrade_1_to_current_works() {
 		let settings: Vec<crate::kv::DatabaseSettings> = vec![
 			// Rocks db
 			#[cfg(feature = "rocksdb")]
@@ -403,6 +613,7 @@ mod tests {
 			let mut ethereum_hashes = vec![];
 			let mut substrate_hashes = vec![];
 			let mut transaction_hashes = vec![];
+			let mut block_numbers = vec![];
 			{
 				// Create a temporary frontier secondary DB.
 				let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), &setting)
@@ -440,6 +651,7 @@ mod tests {
 					// Track canon hash
 					ethereum_hashes.push(ethhash);
 					substrate_hashes.push(next_canon_block_hash);
+					block_numbers.push(next_canon_block_number);
 					// Set orphan hash block mapping
 					transaction.set(
 						crate::kv::columns::BLOCK_MAPPING,
@@ -480,7 +692,7 @@ mod tests {
 				.write_all(format!("{}", 1).as_bytes())
 				.expect("write version 1");
 
-			// Upgrade database from version 1 to 2
+			// Upgrade database from version 1 to current
 			let _ = super::upgrade_db::<OpaqueBlock, _>(client.clone(), path, &setting.source);
 
 			// Check data after migration
@@ -488,6 +700,7 @@ mod tests {
 				.expect("a temporary db was created");
 			for (i, original_ethereum_hash) in ethereum_hashes.iter().enumerate() {
 				let canon_substrate_block_hash = substrate_hashes.get(i).expect("Block hash");
+				let block_number = *block_numbers.get(i).expect("Block number");
 				let mapped_block = backend
 					.mapping()
 					.block_hash(original_ethereum_hash)
@@ -505,10 +718,16 @@ mod tests {
 				assert!(mapped_transaction
 					.into_iter()
 					.any(|tx| tx.substrate_block_hash == *canon_substrate_block_hash));
+				// Verify block_number -> ethereum_hash mapping (v2->v3 migration)
+				let mapped_eth_hash = backend
+					.mapping()
+					.block_hash_by_number(block_number)
+					.unwrap();
+				assert_eq!(mapped_eth_hash, Some(*original_ethereum_hash));
 			}
 
 			// Upgrade db version file
-			assert_eq!(super::current_version(path).expect("version"), 2u32);
+			assert_eq!(super::current_version(path).expect("version"), 3u32);
 		}
 	}
 
@@ -537,6 +756,6 @@ mod tests {
 
 		let mut s = String::new();
 		file.read_to_string(&mut s).expect("read file contents");
-		assert_eq!(s.parse::<u32>().expect("parse file contents"), 2u32);
+		assert_eq!(s.parse::<u32>().expect("parse file contents"), 3u32);
 	}
 }

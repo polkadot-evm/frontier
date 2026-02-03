@@ -782,6 +782,18 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 		Ok(res)
 	}
 
+	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
+		let block_number = block_number as i64;
+		sqlx::query(
+			"SELECT ethereum_block_hash FROM blocks WHERE block_number = ? AND is_canon = 1",
+		)
+		.bind(block_number)
+		.fetch_optional(&self.pool)
+		.await
+		.map(|maybe_row| maybe_row.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..])))
+		.map_err(|e| format!("Failed to fetch block hash by number: {e}"))
+	}
+
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
@@ -828,12 +840,22 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 	}
 
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
-		// Retrieves the block hash for the latest indexed block, maybe it's not canon.
-		sqlx::query("SELECT substrate_block_hash FROM blocks ORDER BY block_number DESC LIMIT 1")
-			.fetch_one(self.pool())
-			.await
-			.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
-			.map_err(|e| format!("Failed to fetch best hash: {e}"))
+		// Return the latest indexed canonical block hash.
+		// This prevents returning stale data during reorgs.
+		//
+		// Note: During initial sync or after restart while mapping-sync catches up,
+		// this returns the genesis block hash (first indexed block). This is consistent
+		// with Geth's behavior where eth_getBlockByNumber("latest") returns block 0
+		// during initial sync. Users can check sync status via eth_syncing to determine
+		// if the node is still catching up.
+		sqlx::query(
+			"SELECT substrate_block_hash FROM blocks WHERE is_canon = 1 ORDER BY block_number DESC LIMIT 1",
+		)
+		.fetch_optional(self.pool())
+		.await
+		.map_err(|e| format!("Failed to fetch best hash: {e}"))?
+		.map(|row| H256::from_slice(&row.get::<Vec<u8>, _>(0)[..]))
+		.ok_or_else(|| "No canonical blocks indexed yet".to_string())
 	}
 }
 

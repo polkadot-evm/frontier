@@ -33,7 +33,7 @@ pub use sc_client_db::DatabaseSource;
 use sp_blockchain::HeaderBackend;
 use sp_core::{H160, H256};
 pub use sp_database::Database;
-use sp_runtime::traits::Block as BlockT;
+use sp_runtime::traits::{Block as BlockT, UniqueSaturatedInto};
 // Frontier
 use fc_api::{FilteredLog, TransactionMetadata};
 use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
@@ -49,12 +49,13 @@ pub struct DatabaseSettings {
 }
 
 pub(crate) mod columns {
-	pub const NUM_COLUMNS: u32 = 4;
+	pub const NUM_COLUMNS: u32 = 5;
 
 	pub const META: u32 = 0;
 	pub const BLOCK_MAPPING: u32 = 1;
 	pub const TRANSACTION_MAPPING: u32 = 2;
 	pub const SYNCED_MAPPING: u32 = 3;
+	pub const BLOCK_NUMBER_MAPPING: u32 = 4;
 }
 
 pub mod static_keys {
@@ -78,6 +79,10 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		self.mapping().block_hash(ethereum_block_hash)
 	}
 
+	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
+		self.mapping().block_hash_by_number(block_number)
+	}
+
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,
@@ -95,7 +100,39 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 	}
 
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
-		Ok(self.client.info().best_hash)
+		// Return the latest block hash that is both indexed AND on the canonical chain.
+		// This prevents returning stale data during reorgs.
+		//
+		// Note: During initial sync or after restart while mapping-sync catches up,
+		// this returns the genesis block hash. This is consistent with Geth's behavior
+		// where eth_getBlockByNumber("latest") returns block 0 during initial sync.
+		// Users can check sync status via eth_syncing to determine if the node is
+		// still catching up.
+		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
+
+		// Get the canonical hash for verification.
+		let canonical_hash = self
+			.client
+			.hash(best_number.unique_saturated_into())
+			.map_err(|e| format!("{e:?}"))?;
+
+		// Query mapping-sync for the ethereum block hash at best_number
+		if let Some(eth_hash) = self.mapping.block_hash_by_number(best_number)? {
+			// Get the substrate block hash(es) for this ethereum block hash
+			if let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? {
+				// Verify the mapped hash is on the canonical chain.
+				// During a reorg, the mapping may point to a reorged-out block.
+				if let Some(canonical) = canonical_hash {
+					if substrate_hashes.contains(&canonical) {
+						return Ok(canonical);
+					}
+				}
+				// Mapping exists but is stale (reorg happened) - treat as not indexed
+			}
+		}
+
+		// Block not indexed yet or stale - return genesis
+		Ok(self.client.info().genesis_hash)
 	}
 }
 
@@ -310,7 +347,11 @@ impl<Block: BlockT> MappingDb<Block> {
 		Ok(())
 	}
 
-	pub fn write_hashes(&self, commitment: MappingCommitment<Block>) -> Result<(), String> {
+	pub fn write_hashes(
+		&self,
+		commitment: MappingCommitment<Block>,
+		block_number: u64,
+	) -> Result<(), String> {
 		let _lock = self.write_lock.lock();
 
 		let mut transaction = sp_database::Transaction::new();
@@ -335,6 +376,13 @@ impl<Block: BlockT> MappingDb<Block> {
 			columns::BLOCK_MAPPING,
 			&commitment.ethereum_block_hash.encode(),
 			&substrate_hashes.encode(),
+		);
+
+		// Write block number -> ethereum block hash mapping
+		transaction.set(
+			columns::BLOCK_NUMBER_MAPPING,
+			&block_number.encode(),
+			&commitment.ethereum_block_hash.encode(),
 		);
 
 		for (i, ethereum_transaction_hash) in commitment
@@ -364,5 +412,17 @@ impl<Block: BlockT> MappingDb<Block> {
 		self.db.commit(transaction).map_err(|e| e.to_string())?;
 
 		Ok(())
+	}
+
+	pub fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
+		match self
+			.db
+			.get(columns::BLOCK_NUMBER_MAPPING, &block_number.encode())
+		{
+			Some(raw) => Ok(Some(
+				H256::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?,
+			)),
+			None => Ok(None),
+		}
 	}
 }
