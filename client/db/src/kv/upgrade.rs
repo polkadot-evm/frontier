@@ -349,8 +349,15 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	// Read and update each entry in db transaction batches
 	const CHUNK_SIZE: usize = 10_000;
 	let chunks = ethereum_hashes.chunks(CHUNK_SIZE);
-	for chunk in chunks {
+	let all_len = ethereum_hashes.len();
+	for (i, chunk) in chunks.enumerate() {
 		process_chunk(&db, chunk)?;
+		log::debug!(
+			target: "fc-db-upgrade",
+			"🔨 Processed {} of {} entries.",
+			(CHUNK_SIZE * (i + 1)),
+			all_len
+		);
 	}
 	Ok(res)
 }
