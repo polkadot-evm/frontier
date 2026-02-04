@@ -37,8 +37,8 @@ const VERSION_FILE_NAME: &str = "db_version";
 const CURRENT_VERSION: u32 = 3;
 
 /// Number of columns in each version.
-const _V1_NUM_COLUMNS: u32 = 4;
-const _V2_NUM_COLUMNS: u32 = 4;
+const V1_NUM_COLUMNS: u32 = 4;
+const V2_NUM_COLUMNS: u32 = 4;
 const V3_NUM_COLUMNS: u32 = 5;
 
 /// Database upgrade errors.
@@ -101,7 +101,16 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 	db_path: &Path,
 	source: &DatabaseSource,
 ) -> UpgradeResult<()> {
-	let mut db_version = current_version(db_path)?;
+	let mut db_version = match current_version(db_path) {
+		Ok(version) => version,
+		Err(UpgradeError::UnknownDatabaseVersion) => {
+			let detected =
+				detect_version_without_version_file::<Block, C>(client.clone(), db_path, source)?;
+			write_version(db_path, detected)?;
+			detected
+		}
+		Err(err) => return Err(err),
+	};
 	if db_version == 0 {
 		return Err(UpgradeError::UnsupportedVersion(db_version));
 	}
@@ -132,6 +141,11 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 
 	// Version 2 -> 3: Backfill block_number -> ethereum_block_hash mapping
 	if db_version == 2 {
+		// ParityDB schema change: v2 had 4 columns, v3 requires 5.
+		// Add the column while DB is closed, then re-open and backfill.
+		if matches!(source, DatabaseSource::ParityDb { .. }) {
+			ensure_paritydb_has_v3_columns(db_path)?;
+		}
 		let summary: UpgradeVersion2To3Summary = match source {
 			DatabaseSource::ParityDb { .. } => {
 				migrate_2_to_3_parity_db::<Block, C>(client.clone(), db_path)?
@@ -161,10 +175,20 @@ pub(crate) fn upgrade_db<Block: BlockT, C: HeaderBackend<Block>>(
 pub(crate) fn current_version(path: &Path) -> UpgradeResult<u32> {
 	match fs::File::open(version_file_path(path)) {
 		Err(ref err) if err.kind() == ErrorKind::NotFound => {
-			fs::create_dir_all(path)?;
-			let mut file = fs::File::create(version_file_path(path))?;
-			file.write_all(format!("{CURRENT_VERSION}").as_bytes())?;
-			Ok(CURRENT_VERSION)
+			// If the directory is empty, treat it as a fresh DB directory.
+			// If it's non-empty, we can't assume a version without inspecting the DB.
+			let is_empty = fs::read_dir(path)
+				.map(|mut it| it.next().is_none())
+				.unwrap_or(true);
+
+			if is_empty {
+				fs::create_dir_all(path)?;
+				let mut file = fs::File::create(version_file_path(path))?;
+				file.write_all(format!("{CURRENT_VERSION}").as_bytes())?;
+				Ok(CURRENT_VERSION)
+			} else {
+				Err(UpgradeError::UnknownDatabaseVersion)
+			}
 		}
 		Err(_) => Err(UpgradeError::UnknownDatabaseVersion),
 		Ok(mut file) => {
@@ -175,6 +199,13 @@ pub(crate) fn current_version(path: &Path) -> UpgradeResult<u32> {
 				.map_err(|_| UpgradeError::UnknownDatabaseVersion)
 		}
 	}
+}
+
+fn write_version(path: &Path, version: u32) -> io::Result<()> {
+	fs::create_dir_all(path)?;
+	let mut file = fs::File::create(version_file_path(path))?;
+	file.write_all(format!("{version}").as_bytes())?;
+	Ok(())
 }
 
 /// Writes current database version to the file.
@@ -191,6 +222,108 @@ fn version_file_path(path: &Path) -> PathBuf {
 	let mut file_path = path.to_owned();
 	file_path.push(VERSION_FILE_NAME);
 	file_path
+}
+
+fn detect_version_without_version_file<Block: BlockT, C: HeaderBackend<Block>>(
+	client: Arc<C>,
+	db_path: &Path,
+	source: &DatabaseSource,
+) -> UpgradeResult<u32> {
+	match source {
+		DatabaseSource::ParityDb { .. } => {
+			detect_version_without_version_file_paritydb::<Block, C>(client, db_path)
+		}
+		#[cfg(feature = "rocksdb")]
+		DatabaseSource::RocksDb { .. } => {
+			detect_version_without_version_file_rocksdb::<Block, C>(client, db_path)
+		}
+		_ => Err(UpgradeError::UnknownDatabaseVersion),
+	}
+}
+
+fn detect_version_without_version_file_paritydb<Block: BlockT, C: HeaderBackend<Block>>(
+	_client: Arc<C>,
+	db_path: &Path,
+) -> UpgradeResult<u32> {
+	// If a v3 DB exists already, opening with 4 columns will fail. Try v3 first.
+	{
+		let mut opts_v3 = parity_db::Options::with_columns(db_path, V3_NUM_COLUMNS as u8);
+		opts_v3.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
+		if parity_db::Db::open(&opts_v3).is_ok() {
+			return Ok(3);
+		}
+	}
+
+	let mut opts = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
+	opts.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
+
+	let db = parity_db::Db::open(&opts).map_err(|err| {
+		io::Error::other(format!("Failed to open paritydb to detect version: {err}"))
+	})?;
+
+	let mut it = db.iter(super::columns::BLOCK_MAPPING as u8).map_err(|err| {
+		io::Error::other(format!("Failed to iterate paritydb to detect version: {err}"))
+	})?;
+
+	let maybe_first = it.next().map_err(|err| {
+		io::Error::other(format!("Failed to read paritydb iterator: {err}"))
+	})?;
+
+	let Some((_k, v)) = maybe_first else {
+		// Empty DB; default to v2 (safe: avoids v1->v2 panic heuristics).
+		return Ok(2);
+	};
+
+	// v2 encodes Vec<Block::Hash>. v1 encodes Block::Hash directly.
+	match Vec::<Block::Hash>::decode(&mut &v[..]) {
+		Ok(vec) if !vec.is_empty() => Ok(2),
+		_ => Ok(1),
+	}
+}
+
+#[cfg(feature = "rocksdb")]
+fn detect_version_without_version_file_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
+	_client: Arc<C>,
+	db_path: &Path,
+) -> UpgradeResult<u32> {
+	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V2_NUM_COLUMNS);
+	let db = kvdb_rocksdb::Database::open(&db_cfg, db_path)?;
+	let mut iter = db.iter(super::columns::BLOCK_MAPPING)?;
+	let Some((_k, v)) = iter.next().ok().flatten() else {
+		return Ok(2);
+	};
+
+	match Vec::<Block::Hash>::decode(&mut &v[..]) {
+		Ok(vec) if !vec.is_empty() => Ok(2),
+		_ => Ok(1),
+	}
+}
+
+fn ensure_paritydb_has_v3_columns(db_path: &Path) -> UpgradeResult<()> {
+	let mut opts_v3 = parity_db::Options::with_columns(db_path, V3_NUM_COLUMNS as u8);
+	opts_v3.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
+
+	// If this opens, the DB is already compatible with v3.
+	if parity_db::Db::open_or_create(&opts_v3).is_ok() {
+		return Ok(());
+	}
+
+	// Otherwise, attempt to add the missing column to an existing v2 (4-column) DB.
+	let mut opts_v2 = parity_db::Options::with_columns(db_path, V2_NUM_COLUMNS as u8);
+	opts_v2.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
+
+	{
+		// Ensure the DB can be opened (and is closed before add_column).
+		let _db = parity_db::Db::open_or_create(&opts_v2).map_err(|err| {
+			io::Error::other(format!("Failed to open paritydb before add_column: {err}"))
+		})?;
+	}
+
+	parity_db::Db::add_column(&mut opts_v2, parity_db::ColumnOptions::default()).map_err(
+		|err| io::Error::other(format!("Failed to add paritydb column (v2->v3): {err}")),
+	)?;
+
+	Ok(())
 }
 
 /// Migration from version1 to version2:
@@ -217,18 +350,22 @@ pub(crate) fn migrate_1_to_2_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 			let mut maybe_error = true;
 			if let Some(substrate_hash) = db.get(super::columns::BLOCK_MAPPING, ethereum_hash)? {
 				// Only update version1 data
-				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
-				if decoded.is_err() || decoded.unwrap().is_empty() {
+				let is_v2_vec = Vec::<Block::Hash>::decode(&mut &substrate_hash[..])
+					.map(|v| !v.is_empty())
+					.unwrap_or(false);
+				if !is_v2_vec {
 					// Verify the substrate hash is part of the canonical chain.
-					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(hash)) = client.hash(number) {
-							transaction.put_vec(
-								super::columns::BLOCK_MAPPING,
-								ethereum_hash,
-								vec![hash].encode(),
-							);
-							res.success += 1;
-							maybe_error = false;
+					if let Ok(decoded_hash) = Block::Hash::decode(&mut &substrate_hash[..]) {
+						if let Ok(Some(number)) = client.number(decoded_hash) {
+							if let Ok(Some(hash)) = client.hash(number) {
+								transaction.put_vec(
+									super::columns::BLOCK_MAPPING,
+									ethereum_hash,
+									vec![hash].encode(),
+								);
+								res.success += 1;
+								maybe_error = false;
+							}
 						}
 					}
 				} else {
@@ -302,18 +439,22 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 				io::Error::other("Key does not exist")
 			)? {
 				// Only update version1 data
-				let decoded = Vec::<Block::Hash>::decode(&mut &substrate_hash[..]);
-				if decoded.is_err() || decoded.unwrap().is_empty() {
+				let is_v2_vec = Vec::<Block::Hash>::decode(&mut &substrate_hash[..])
+					.map(|v| !v.is_empty())
+					.unwrap_or(false);
+				if !is_v2_vec {
 					// Verify the substrate hash is part of the canonical chain.
-					if let Ok(Some(number)) = client.number(Block::Hash::decode(&mut &substrate_hash[..]).unwrap()) {
-						if let Ok(Some(hash)) = client.hash(number) {
-							transaction.push((
-								super::columns::BLOCK_MAPPING as u8,
-								ethereum_hash,
-								Some(vec![hash].encode()),
-							));
-							res.success += 1;
-							maybe_error = false;
+					if let Ok(decoded_hash) = Block::Hash::decode(&mut &substrate_hash[..]) {
+						if let Ok(Some(number)) = client.number(decoded_hash) {
+							if let Ok(Some(hash)) = client.hash(number) {
+								transaction.push((
+									super::columns::BLOCK_MAPPING as u8,
+									ethereum_hash,
+									Some(vec![hash].encode()),
+								));
+								res.success += 1;
+								maybe_error = false;
+							}
 						}
 					}
 				}
@@ -329,7 +470,7 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 
 	// Open with V3_NUM_COLUMNS to handle both v1 DBs (will create missing columns)
 	// and test DBs that were created with 5 columns.
-	let mut db_cfg = parity_db::Options::with_columns(db_path, V3_NUM_COLUMNS as u8);
+	let mut db_cfg = parity_db::Options::with_columns(db_path, V1_NUM_COLUMNS as u8);
 	db_cfg.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
 	let db = parity_db::Db::open_or_create(&db_cfg)
@@ -454,6 +595,7 @@ pub(crate) fn migrate_2_to_3_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	db_path: &Path,
 ) -> UpgradeResult<UpgradeVersion2To3Summary> {
 	log::info!("🔨 Running Frontier DB migration from version 2 to version 3. Please wait.");
+	ensure_paritydb_has_v3_columns(db_path)?;
 	let mut res = UpgradeVersion2To3Summary {
 		success: 0,
 		skipped: 0,
@@ -497,7 +639,7 @@ pub(crate) fn migrate_2_to_3_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 			}
 		}
 		db.commit(transaction)
-			.map_err(|_| io::Error::other("Failed to commit on migrate_2_to_3"))?;
+			.map_err(|err| io::Error::other(format!("Failed to commit on migrate_2_to_3: {err}")))?;
 		Ok(())
 	};
 
@@ -505,7 +647,7 @@ pub(crate) fn migrate_2_to_3_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	db_cfg.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;
 
 	let db = parity_db::Db::open_or_create(&db_cfg)
-		.map_err(|_| io::Error::other("Failed to open db"))?;
+		.map_err(|err| io::Error::other(format!("Failed to open db: {err}")))?;
 
 	// Get all the block mapping entries
 	let entries: Vec<_> = match db.iter(super::columns::BLOCK_MAPPING as u8) {
@@ -601,14 +743,17 @@ mod tests {
 				.on_parent_block(chain_info.best_hash)
 				.with_parent_block_number(chain_info.best_number)
 				.build()
-				.unwrap();
-			builder.push_storage_change(vec![1], None).unwrap();
-			let block = builder.build().unwrap().block;
+				.expect("build genesis block");
+			builder
+				.push_storage_change(vec![1], None)
+				.expect("push genesis storage change");
+			let block = builder.build().expect("build genesis").block;
 			let mut previous_canon_block_hash = block.header.hash();
 			let mut previous_canon_block_number = *block.header.number();
-			executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+			executor::block_on(client.import(BlockOrigin::Own, block))
+				.expect("import genesis block");
 
-			let path = setting.source.path().unwrap();
+			let path = setting.source.path().expect("db path");
 
 			let mut ethereum_hashes = vec![];
 			let mut substrate_hashes = vec![];
@@ -631,22 +776,28 @@ mod tests {
 						.on_parent_block(previous_canon_block_hash)
 						.with_parent_block_number(previous_canon_block_number)
 						.build()
-						.unwrap();
-					builder.push_storage_change(vec![1], None).unwrap();
-					let block = builder.build().unwrap().block;
+						.expect("build A1");
+					builder
+						.push_storage_change(vec![1], None)
+						.expect("push A1 storage change");
+					let block = builder.build().expect("build A1 block").block;
 					let next_canon_block_hash = block.header.hash();
 					let next_canon_block_number = *block.header.number();
-					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+					executor::block_on(client.import(BlockOrigin::Own, block))
+						.expect("import A1");
 					// A2
 					let mut builder = BlockBuilderBuilder::new(&*client)
 						.on_parent_block(previous_canon_block_hash)
 						.with_parent_block_number(previous_canon_block_number)
 						.build()
-						.unwrap();
-					builder.push_storage_change(vec![2], None).unwrap();
-					let block = builder.build().unwrap().block;
+						.expect("build A2");
+					builder
+						.push_storage_change(vec![2], None)
+						.expect("push A2 storage change");
+					let block = builder.build().expect("build A2 block").block;
 					let orphan_block_hash = block.header.hash();
-					executor::block_on(client.import(BlockOrigin::Own, block)).unwrap();
+					executor::block_on(client.import(BlockOrigin::Own, block))
+						.expect("import A2");
 
 					// Track canon hash
 					ethereum_hashes.push(ethhash);
@@ -704,8 +855,8 @@ mod tests {
 				let mapped_block = backend
 					.mapping()
 					.block_hash(original_ethereum_hash)
-					.unwrap()
-					.unwrap();
+					.expect("block_hash")
+					.expect("mapped block");
 				// All entries now hold a single element Vec
 				assert_eq!(mapped_block.len(), 1);
 				// The Vec holds the canon block hash
@@ -714,7 +865,7 @@ mod tests {
 				let mapped_transaction = backend
 					.mapping()
 					.transaction_metadata(transaction_hashes.get(i).expect("Transaction hash"))
-					.unwrap();
+					.expect("transaction_metadata");
 				assert!(mapped_transaction
 					.into_iter()
 					.any(|tx| tx.substrate_block_hash == *canon_substrate_block_hash));
@@ -722,7 +873,7 @@ mod tests {
 				let mapped_eth_hash = backend
 					.mapping()
 					.block_hash_by_number(block_number)
-					.unwrap();
+					.expect("block_hash_by_number");
 				assert_eq!(mapped_eth_hash, Some(*original_ethereum_hash));
 			}
 
@@ -748,7 +899,7 @@ mod tests {
 				cache_size: 0,
 			},
 		};
-		let path = setting.source.path().unwrap();
+		let path = setting.source.path().expect("db path");
 		let _ = super::upgrade_db::<OpaqueBlock, _>(client, path, &setting.source);
 
 		let mut file =
