@@ -657,7 +657,7 @@ fn proof_size_weight_limit_validation_works() {
 		let transaction_hash = tx.hash();
 
 		// Execute - transaction is applied but execution fails with OutOfGas
-		assert_ok!(Ethereum::apply_validated_transaction(alice.address, tx));
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, tx, None));
 		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
 			from: alice.address,
 			to: alice.address,
