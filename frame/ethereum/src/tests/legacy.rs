@@ -18,7 +18,7 @@
 //! Consensus extension module tests for BABE consensus.
 
 use super::*;
-use evm::{ExitReason, ExitRevert, ExitSucceed};
+use evm::{ExitError, ExitReason, ExitRevert, ExitSucceed};
 use fp_ethereum::{TransactionData, ValidatedTransaction};
 use frame_support::{
 	dispatch::{DispatchClass, GetDispatchInfo, Pays, PostDispatchInfo},
@@ -634,6 +634,8 @@ fn proof_size_weight_limit_validation_works() {
 	let alice = &pairs[0];
 
 	ext.execute_with(|| {
+		System::set_block_number(1);
+
 		let mut tx = LegacyUnsignedTransaction {
 			nonce: U256::from(2),
 			gas_price: U256::from(1),
@@ -652,11 +654,17 @@ fn proof_size_weight_limit_validation_works() {
 		// Gas limit cannot afford the extra byte and thus is expected to exhaust.
 		tx.input = vec![0u8; (weight_limit.proof_size() + 1) as usize];
 		let tx = tx.sign(&alice.private_key);
+		let transaction_hash = tx.hash();
 
-		// Execute
-		assert!(
-			Ethereum::transact(RawOrigin::EthereumTransaction(alice.address).into(), tx,).is_err()
-		);
+		// Execute - transaction is applied but execution fails with OutOfGas
+		assert_ok!(Ethereum::apply_validated_transaction(alice.address, tx));
+		System::assert_last_event(RuntimeEvent::Ethereum(Event::Executed {
+			from: alice.address,
+			to: alice.address,
+			transaction_hash,
+			exit_reason: ExitReason::Error(ExitError::OutOfGas),
+			extra_data: vec![],
+		}));
 	});
 }
 
