@@ -29,3 +29,4 @@ precompile-utils = { path = "../", features = ["testing"] }
 
 fp-evm = { workspace = true }
 frame-support = { workspace = true }
+sp-core = { workspace = true }

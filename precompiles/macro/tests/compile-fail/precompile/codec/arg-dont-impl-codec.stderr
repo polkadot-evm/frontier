@@ -1,9 +1,10 @@
 error[E0277]: the trait bound `String: Codec` is not satisfied
-  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:26:43
+  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:28:43
    |
-26 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
+28 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
    |                                              ^^^ the trait `Codec` is not implemented for `String`
    |
+   = note: `String` implements similarly named trait `parity_scale_codec::codec::Codec`, but not `Codec`
    = help: the following other types implement trait `Codec`:
              ()
              (TupleElement0, TupleElement1)
@@ -15,17 +16,18 @@ error[E0277]: the trait bound `String: Codec` is not satisfied
              (TupleElement0, TupleElement1, TupleElement2, TupleElement3, TupleElement4, TupleElement5, TupleElement6, TupleElement7)
            and $N others
 note: required by a bound in `Reader::<'inner>::read`
-  --> $WORKSPACE/precompiles/utils/src/solidity/codec/mod.rs
+  --> $WORKSPACE/precompiles/src/solidity/codec/mod.rs
    |
    |     pub fn read<T: Codec>(&mut self) -> MayRevert<T> {
    |                    ^^^^^ required by this bound in `Reader::<'inner>::read`
 
 error[E0277]: the trait bound `String: Codec` is not satisfied
-  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:26:43
+  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:28:43
    |
-26 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
+28 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
    |                                              ^^^ the trait `Codec` is not implemented for `String`
    |
+   = note: `String` implements similarly named trait `parity_scale_codec::codec::Codec`, but not `Codec`
    = help: the following other types implement trait `Codec`:
              ()
              (TupleElement0, TupleElement1)
@@ -36,18 +38,19 @@ error[E0277]: the trait bound `String: Codec` is not satisfied
              (TupleElement0, TupleElement1, TupleElement2, TupleElement3, TupleElement4, TupleElement5, TupleElement6)
              (TupleElement0, TupleElement1, TupleElement2, TupleElement3, TupleElement4, TupleElement5, TupleElement6, TupleElement7)
            and $N others
-note: required by a bound in `precompile_utils::solidity::codec::Writer::write`
-  --> $WORKSPACE/precompiles/utils/src/solidity/codec/mod.rs
+note: required by a bound in `Writer::write`
+  --> $WORKSPACE/precompiles/src/solidity/codec/mod.rs
    |
    |     pub fn write<T: Codec>(mut self, value: T) -> Self {
    |                     ^^^^^ required by this bound in `Writer::write`
 
 error[E0277]: the trait bound `String: Codec` is not satisfied
-  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:26:5
+  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:28:5
    |
-26 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
+28 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
    |        ^^^ the trait `Codec` is not implemented for `String`
    |
+   = note: `String` implements similarly named trait `parity_scale_codec::codec::Codec`, but not `Codec`
    = help: the following other types implement trait `Codec`:
              ()
              (TupleElement0, TupleElement1)
@@ -59,3 +62,17 @@ error[E0277]: the trait bound `String: Codec` is not satisfied
              (TupleElement0, TupleElement1, TupleElement2, TupleElement3, TupleElement4, TupleElement5, TupleElement6, TupleElement7)
            and $N others
    = note: required for `(String,)` to implement `Codec`
+
+warning: unused variable: `test`
+  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:28:9
+   |
+28 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
+   |            ^^^^ help: if this is intentional, prefix it with an underscore: `_test`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `arg`
+  --> tests/compile-fail/precompile/codec/arg-dont-impl-codec.rs:28:43
+   |
+28 |     fn foo(test: &mut impl PrecompileHandle, arg: String) -> EvmResult {
+   |                                              ^^^ help: if this is intentional, prefix it with an underscore: `_arg`

@@ -1,7 +1,32 @@
 error[E0277]: the `?` operator can only be applied to values that implement `Try`
-  --> tests/compile-fail/precompile/codec/output-not-result.rs:25:46
+  --> tests/compile-fail/precompile/codec/output-not-result.rs:27:46
    |
-25 |     fn foo(test: &mut impl PrecompileHandle) -> String {
+27 |     fn foo(test: &mut impl PrecompileHandle) -> String {
    |                                                 ^^^^^^ the `?` operator cannot be applied to type `String`
    |
-   = help: the trait `Try` is not implemented for `String`
+   = help: the nightly-only, unstable trait `Try` is not implemented for `String`
+
+error: this function depends on never type fallback being `()`
+  --> tests/compile-fail/precompile/codec/output-not-result.rs:24:1
+   |
+24 | #[precompile_utils_macro::precompile]
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = warning: this was previously accepted by the compiler but is being phased out; it will become a hard error in Rust 2024 and in a future release in all editions!
+   = note: for more information, see <https://doc.rust-lang.org/edition-guide/rust-2024/never-type-fallback.html>
+   = help: specify the types explicitly
+note: in edition 2024, the requirement `!: Codec` will fail
+  --> tests/compile-fail/precompile/codec/output-not-result.rs:27:46
+   |
+27 |     fn foo(test: &mut impl PrecompileHandle) -> String {
+   |                                                 ^^^^^^
+   = note: `#[deny(dependency_on_unit_never_type_fallback)]` (part of `#[deny(rust_2024_compatibility)]`) on by default
+   = note: this error originates in the attribute macro `precompile_utils_macro::precompile` (in Nightly builds, run with -Z macro-backtrace for more info)
+
+warning: unused variable: `test`
+  --> tests/compile-fail/precompile/codec/output-not-result.rs:27:9
+   |
+27 |     fn foo(test: &mut impl PrecompileHandle) -> String {
+   |            ^^^^ help: if this is intentional, prefix it with an underscore: `_test`
+   |
+   = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default

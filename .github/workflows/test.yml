@@ -22,6 +22,25 @@ env:
   SCCACHE_GHA_ENABLED: "true"
 
 jobs:
+  changes:
+    name: Detect Changes
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+    outputs:
+      precompile-macro: ${{ steps.filter.outputs.precompile-macro }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Detect changed paths
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            precompile-macro:
+              - 'precompiles/macro/**'
+
   unit-test:
     name: Run Unit Tests
     runs-on: ubuntu-latest
@@ -97,3 +116,40 @@ jobs:
 
       - name: Run integration tests
         run: make integration-test
+
+  precompile-macro-test:
+    name: Run Precompile Macro Tests
+    needs: changes
+    if: ${{ needs.changes.outputs.precompile-macro == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+
+      - name: Cache cargo registry & git sources
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-precompile-macro-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-precompile-macro-${{ hashFiles('**/Cargo.lock') }}
+            ${{ runner.os }}-cargo-precompile-macro-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Install stable Rust toolchain
+        run: make setup
+
+      - name: Install nightly Rust toolchain
+        run: rustup install nightly-2026-01-31
+
+      - name: Install cargo-expand
+        run: cargo +nightly-2026-01-31 install cargo-expand --force --locked || true
+
+      - name: Run precompile-utils-macro tests
+        run: cargo +nightly-2026-01-31 test -p precompile-utils-macro

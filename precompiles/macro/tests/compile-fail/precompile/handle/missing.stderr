@@ -1,5 +1,5 @@
 error: Precompile methods must have at least 1 parameter (the PrecompileHandle)
-  --> tests/compile-fail/precompile/handle/missing.rs:24:2
+  --> tests/compile-fail/precompile/handle/missing.rs:26:2
    |
-24 |     fn foo() {
-   |     ^^
+26 |     fn foo() {
+   |     ^^^^^^^^

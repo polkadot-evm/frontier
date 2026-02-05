@@ -20,8 +20,8 @@ pub struct PrecompileSet;
 #[precompile::precompile_set]
 impl PrecompileSet {
 	#[precompile::discriminant]
-	fn discriminant(_: H160) -> Option<()> {
-		Some(())
+	fn discriminant(_: H160, _: u64) -> DiscriminantResult<()> {
+		DiscriminantResult::Some((), 0)
 	}
 
 	#[precompile::public("default()")]

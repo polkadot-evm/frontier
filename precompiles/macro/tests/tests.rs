@@ -35,7 +35,6 @@ fn test_keccak256() {
 }
 
 #[test]
-#[ignore]
 fn ui() {
 	let t = trybuild::TestCases::new();
 	t.compile_fail("tests/compile-fail/**/*.rs");
@@ -44,7 +43,6 @@ fn ui() {
 
 // Cargo expand is not supported on stable rust
 #[test]
-#[ignore]
 fn expand() {
 	// Use `expand` to update the expansions
 	// Replace it with `expand_without_refresh` afterward so that
