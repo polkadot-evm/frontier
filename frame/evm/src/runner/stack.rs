@@ -490,6 +490,7 @@ where
 				base_fee,
 				chain_id: T::ChainId::get(),
 				is_transactional,
+				allow_unprotected_txs: true,
 			},
 			fp_evm::CheckEvmTransactionInput {
 				chain_id: Some(T::ChainId::get()),

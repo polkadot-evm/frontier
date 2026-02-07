@@ -66,6 +66,10 @@ pub struct EthConfiguration {
 	#[arg(long, default_value = "10")]
 	pub execute_gas_limit_multiplier: u64,
 
+	/// Allow RPC submission of unprotected legacy transactions (without EIP-155 chain id).
+	#[arg(long, default_value_t = false)]
+	pub rpc_allow_unprotected_txs: bool,
+
 	/// Size in bytes of the LRU cache for block data.
 	#[arg(long, default_value = "50")]
 	pub eth_log_block_cache: usize,

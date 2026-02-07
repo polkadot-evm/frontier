@@ -85,6 +85,8 @@ pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	/// When using eth_call/eth_estimateGas, the maximum allowed gas limit will be
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
+	/// Whether RPC submission accepts legacy transactions without EIP-155 chain id.
+	rpc_allow_unprotected_txs: bool,
 	forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 	/// Something that can create the inherent data providers for pending state.
 	pending_create_inherent_data_providers: CIDP,
@@ -113,6 +115,7 @@ where
 		fee_history_cache: FeeHistoryCache,
 		fee_history_cache_limit: FeeHistoryCacheLimit,
 		execute_gas_limit_multiplier: u64,
+		rpc_allow_unprotected_txs: bool,
 		forced_parent_hashes: Option<BTreeMap<H256, H256>>,
 		pending_create_inherent_data_providers: CIDP,
 		pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
@@ -130,6 +133,7 @@ where
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			rpc_allow_unprotected_txs,
 			forced_parent_hashes,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
@@ -315,6 +319,7 @@ where
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			rpc_allow_unprotected_txs,
 			forced_parent_hashes,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
@@ -334,6 +339,7 @@ where
 			fee_history_cache,
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
+			rpc_allow_unprotected_txs,
 			forced_parent_hashes,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
