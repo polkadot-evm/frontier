@@ -189,12 +189,21 @@ where
 	{
 		// Used to record the external costs in the evm through the StackState implementation
 		let maybe_weight_info =
-			WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost).map_err(
-				|_| RunnerError {
-					error: Error::<T>::GasLimitTooLow,
-					weight,
-				},
-			)?;
+			match WeightInfo::new_from_weight_limit(weight_limit, proof_size_base_cost) {
+				Ok(weight_info) => weight_info,
+				Err(_) => {
+					return Ok(ExecutionInfoV2 {
+						exit_reason: ExitError::OutOfGas.into(),
+						value: Default::default(),
+						used_gas: fp_evm::UsedGas {
+							standard: gas_limit.into(),
+							effective: gas_limit.into(),
+						},
+						weight_info: None,
+						logs: Default::default(),
+					})
+				}
+			};
 		// The precompile check is only used for transactional invocations. However, here we always
 		// execute the check, because the check has side effects.
 		match precompiles.is_precompile(source, gas_limit) {
