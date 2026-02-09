@@ -94,6 +94,10 @@ pub struct EthConfiguration {
 	/// Default value is 200MB.
 	#[arg(long, default_value = "209715200")]
 	pub frontier_sql_backend_cache_size: u64,
+
+	/// Maximum pending pubsub notifications per subscriber before it is dropped.
+	#[arg(long, default_value = "512")]
+	pub pubsub_max_pending_notifications: usize,
 }
 
 pub struct FrontierPartialComponents {

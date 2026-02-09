@@ -48,7 +48,7 @@ pub enum WorkerCommand<Block: BlockT<Hash = H256>> {
 		block_hash: H256,
 		/// Whether this block was the new best at import time.
 		is_new_best: bool,
-		reorg_info: Option<ReorgInfo<Block>>,
+		reorg_info: Option<Arc<ReorgInfo<Block>>>,
 	},
 	/// Canonicalize the enacted and retracted blocks reported via import notifications.
 	Canonicalize {
@@ -251,7 +251,7 @@ where
 								"🔀  Re-org happened at new best {}, proceeding to canonicalize db",
 								notification.hash
 							);
-							let info = ReorgInfo::from_tree_route(tree_route, notification.hash);
+							let info = Arc::new(ReorgInfo::from_tree_route(tree_route, notification.hash));
 							// Note: new_best is handled separately by IndexBestBlock.
 							tx.send(WorkerCommand::Canonicalize {
 								common: info.common_ancestor,

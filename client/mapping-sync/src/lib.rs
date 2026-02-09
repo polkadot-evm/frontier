@@ -26,6 +26,10 @@ pub mod sql;
 use sp_blockchain::TreeRoute;
 use sp_consensus::SyncOracle;
 use sp_runtime::traits::Block as BlockT;
+use std::sync::{
+	atomic::{AtomicUsize, Ordering},
+	Arc,
+};
 
 #[derive(Copy, Clone, Eq, PartialEq)]
 pub enum SyncStrategy {
@@ -35,6 +39,18 @@ pub enum SyncStrategy {
 
 pub type EthereumBlockNotificationSinks<T> =
 	parking_lot::Mutex<Vec<sc_utils::mpsc::TracingUnboundedSender<T>>>;
+
+/// Default hard cap for pending notifications per subscriber channel.
+/// Subscribers above this threshold are considered lagging and are dropped.
+const DEFAULT_MAX_PENDING_NOTIFICATIONS_PER_SUBSCRIBER: usize = 512;
+
+static MAX_PENDING_NOTIFICATIONS_PER_SUBSCRIBER: AtomicUsize =
+	AtomicUsize::new(DEFAULT_MAX_PENDING_NOTIFICATIONS_PER_SUBSCRIBER);
+
+/// Configure the hard cap for pending notifications per subscriber channel.
+pub fn set_max_pending_notifications_per_subscriber(max_pending: usize) {
+	MAX_PENDING_NOTIFICATIONS_PER_SUBSCRIBER.store(max_pending.max(1), Ordering::Relaxed);
+}
 
 /// Information about a chain reorganization.
 ///
@@ -87,7 +103,7 @@ pub struct EthereumBlockNotification<Block: BlockT> {
 	pub is_new_best: bool,
 	pub hash: Block::Hash,
 	/// Optional reorg information. Present when this block became best as part of a reorg.
-	pub reorg_info: Option<ReorgInfo<Block>>,
+	pub reorg_info: Option<Arc<ReorgInfo<Block>>>,
 }
 
 /// Context for emitting block notifications.
@@ -99,7 +115,7 @@ pub struct BlockNotificationContext<Block: BlockT> {
 	/// Whether this block is the new best block.
 	pub is_new_best: bool,
 	/// Optional reorg information if this block became best as part of a reorg.
-	pub reorg_info: Option<ReorgInfo<Block>>,
+	pub reorg_info: Option<Arc<ReorgInfo<Block>>>,
 }
 
 /// Emit block notification to all registered sinks.
@@ -124,6 +140,18 @@ pub fn emit_block_notification<Block: BlockT>(
 	}
 
 	sinks.retain(|sink| {
+		let max_pending = MAX_PENDING_NOTIFICATIONS_PER_SUBSCRIBER.load(Ordering::Relaxed);
+		if sink.len() >= max_pending {
+			log::debug!(
+				target: "mapping-sync",
+				"Dropping lagging pubsub subscriber (pending={}, max={})",
+				sink.len(),
+				max_pending,
+			);
+			let _ = sink.close();
+			return false;
+		}
+
 		sink.unbounded_send(EthereumBlockNotification {
 			is_new_best: context.is_new_best,
 			hash: context.hash,
