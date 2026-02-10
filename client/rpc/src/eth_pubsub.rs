@@ -19,7 +19,7 @@
 use std::{marker::PhantomData, sync::Arc};
 
 use ethereum::TransactionV3 as EthereumTransaction;
-use futures::{future, FutureExt as _, StreamExt as _};
+use futures::{future, stream::BoxStream, FutureExt as _, StreamExt as _};
 use jsonrpsee::{core::traits::IdProvider, server::PendingSubscriptionSink};
 use log::debug;
 // Substrate
@@ -119,21 +119,43 @@ where
 		}
 	}
 
-	/// Get headers for enacted blocks during a reorg, including the new best block.
-	///
-	/// Per Ethereum spec (https://github.com/ethereum/go-ethereum/wiki/RPC-PUB-SUB#newheads):
-	/// "When a chain reorganization occurs, this subscription will emit an event
-	/// containing all new headers (blocks) for the new chain. This means that you
-	/// may see multiple headers emitted with the same height (block number)."
-	///
-	/// Returns headers in ascending order (oldest first), with `new_best` last.
-	fn get_reorg_headers(&self, enacted: &[B::Hash], new_best: B::Hash) -> Vec<PubSubResult> {
-		enacted
-			.iter()
-			.chain(std::iter::once(&new_best))
-			.filter_map(|hash| self.storage_override.current_block(*hash))
-			.map(PubSubResult::header)
-			.collect()
+	/// Convert a block notification into a stream of `newHeads` items.
+	/// For reorgs this emits enacted headers followed by the new best block.
+	fn new_heads_from_notification(
+		&self,
+		notification: EthereumBlockNotification<B>,
+	) -> BoxStream<'static, PubSubResult> {
+		if !notification.is_new_best {
+			return futures::stream::empty().boxed();
+		}
+
+		if let Some(reorg_info) = notification.reorg_info {
+			debug!(
+				target: "eth-pubsub",
+				"Reorg detected: new_best={:?}, {} blocks retracted, {} blocks enacted",
+				reorg_info.new_best,
+				reorg_info.retracted.len(),
+				reorg_info.enacted.len()
+			);
+
+			let pubsub = self.clone();
+			let enacted = reorg_info.enacted.clone();
+			let new_best = reorg_info.new_best;
+			return futures::stream::iter(
+				enacted
+					.into_iter()
+					.chain(std::iter::once(new_best))
+					.filter_map(move |hash| pubsub.storage_override.current_block(hash))
+					.map(PubSubResult::header),
+			)
+			.boxed();
+		}
+
+		let maybe_header = self
+			.storage_override
+			.current_block(notification.hash)
+			.map(PubSubResult::header);
+		futures::stream::iter(maybe_header).boxed()
 	}
 
 	fn notify_logs(
@@ -261,42 +283,9 @@ where
 					// Per Ethereum spec, when a reorg occurs, we must emit all headers
 					// for the new canonical chain. The reorg_info field in the notification
 					// contains the enacted blocks when a reorg occurred.
-					let stream = block_notification_stream.filter_map(move |notification| {
-						if !notification.is_new_best {
-							return future::ready(None);
-						}
-
-						// Check if this block came from a reorg
-						let headers = if let Some(ref reorg_info) = notification.reorg_info {
-							debug!(
-								target: "eth-pubsub",
-								"Reorg detected: new_best={:?}, {} blocks retracted, {} blocks enacted",
-								reorg_info.new_best,
-								reorg_info.retracted.len(),
-								reorg_info.enacted.len()
-							);
-							// Emit all enacted blocks followed by the new best block
-							pubsub.get_reorg_headers(&reorg_info.enacted, reorg_info.new_best)
-						} else {
-							// Normal case: just emit the new block
-							if let Some(block) =
-								pubsub.storage_override.current_block(notification.hash)
-							{
-								vec![PubSubResult::header(block)]
-							} else {
-								return future::ready(None);
-							}
-						};
-
-						if headers.is_empty() {
-							return future::ready(None);
-						}
-
-						future::ready(Some(headers))
+					let flat_stream = block_notification_stream.flat_map(move |notification| {
+						pubsub.new_heads_from_notification(notification)
 					});
-
-					// Flatten the Vec<PubSubResult> into individual PubSubResult items
-					let flat_stream = stream.flat_map(futures::stream::iter);
 
 					PendingSubscription::from(pending)
 						.pipe_from_stream(flat_stream, BoundedVecDeque::new(16))
@@ -330,9 +319,13 @@ where
 					// in case of reorg, the first event is emitted right away.
 					let syncing_status = pubsub.syncing_status().await;
 					let subscription = Subscription::from(sink);
-					let _ = subscription
+					if subscription
 						.send(&PubSubResult::SyncingStatus(syncing_status))
-						.await;
+						.await
+						.is_err()
+					{
+						return;
+					}
 
 					// When the node is not under a major syncing (i.e. from genesis), react
 					// normally to import notifications.
@@ -344,9 +337,13 @@ where
 						let syncing_status = pubsub.sync.is_major_syncing();
 						if syncing_status != last_syncing_status {
 							let syncing_status = pubsub.syncing_status().await;
-							let _ = subscription
+							if subscription
 								.send(&PubSubResult::SyncingStatus(syncing_status))
-								.await;
+								.await
+								.is_err()
+							{
+								break;
+							}
 						}
 						last_syncing_status = syncing_status;
 					}

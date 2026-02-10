@@ -44,7 +44,7 @@ pub struct BestBlockInfo<Block: BlockT> {
 	/// The block number (for pruning purposes).
 	pub block_number: <Block::Header as HeaderT>::Number,
 	/// Reorg info if this block became best as part of a reorganization.
-	pub reorg_info: Option<ReorgInfo<Block>>,
+	pub reorg_info: Option<Arc<ReorgInfo<Block>>>,
 }
 
 pub struct MappingSyncWorker<Block: BlockT, C, BE> {
@@ -139,7 +139,7 @@ where
 					if notification.is_new_best {
 						// For notification: include new_best_hash per Ethereum spec.
 						let reorg_info = notification.tree_route.as_ref().map(|tree_route| {
-							ReorgInfo::from_tree_route(tree_route, notification.hash)
+							Arc::new(ReorgInfo::from_tree_route(tree_route, notification.hash))
 						});
 						self.best_at_import.insert(
 							notification.hash,
