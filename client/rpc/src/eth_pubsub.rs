@@ -319,9 +319,13 @@ where
 					// in case of reorg, the first event is emitted right away.
 					let syncing_status = pubsub.syncing_status().await;
 					let subscription = Subscription::from(sink);
-					let _ = subscription
+					if subscription
 						.send(&PubSubResult::SyncingStatus(syncing_status))
-						.await;
+						.await
+						.is_err()
+					{
+						return;
+					}
 
 					// When the node is not under a major syncing (i.e. from genesis), react
 					// normally to import notifications.
@@ -333,9 +337,13 @@ where
 						let syncing_status = pubsub.sync.is_major_syncing();
 						if syncing_status != last_syncing_status {
 							let syncing_status = pubsub.syncing_status().await;
-							let _ = subscription
+							if subscription
 								.send(&PubSubResult::SyncingStatus(syncing_status))
-								.await;
+								.await
+								.is_err()
+							{
+								break;
+							}
 						}
 						last_syncing_status = syncing_status;
 					}
