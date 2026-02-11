@@ -87,6 +87,26 @@ where
 	C: HeaderBackend<B> + 'static,
 	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
+	/// Returns the latest indexed block number.
+	/// This ensures consistency with other RPCs that use mapping-sync.
+	async fn latest_indexed_block_number(&self) -> RpcResult<NumberFor<B>> {
+		let hash = self
+			.backend
+			.latest_block_hash()
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		let Some(number) = self
+			.client
+			.number(hash)
+			.map_err(|err| internal_err(format!("{err:?}")))?
+		else {
+			return Err(internal_err(
+				"Block number not found for latest indexed block",
+			));
+		};
+		Ok(number)
+	}
+
 	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let info = self.client.info();
 		let best_hash = info.best_hash;
@@ -197,6 +217,9 @@ where
 		let info = self.client.info();
 		let best_hash = info.best_hash;
 		let best_number = UniqueSaturatedInto::<u64>::unique_saturated_into(info.best_number);
+		// Get latest indexed block number before acquiring the lock to avoid
+		// holding the lock across an await point.
+		let latest_indexed_number = self.latest_indexed_block_number().await?;
 		let pool = self.filter_pool.clone();
 		// Try to lock.
 		let path = if let Ok(locked) = &mut pool.lock() {
@@ -269,16 +292,16 @@ where
 							},
 						);
 
-						// Either the filter-specific `to` block or best block.
-						let best_number = self.client.info().best_number;
+						// Either the filter-specific `to` block or latest indexed block.
+						// Use latest indexed block to ensure consistency with other RPCs.
 						let mut current_number = filter
 							.to_block
 							.and_then(|v| v.to_min_block_num())
 							.map(|s| s.unique_saturated_into())
-							.unwrap_or(best_number);
+							.unwrap_or(latest_indexed_number);
 
-						if current_number > best_number {
-							current_number = best_number;
+						if current_number > latest_indexed_number {
+							current_number = latest_indexed_number;
 						}
 
 						// The from clause is the max(last_poll, filter_from).
@@ -397,22 +420,23 @@ where
 
 		let filter = filter_result?;
 
-		let best_number = client.info().best_number;
+		// Use latest indexed block to ensure consistency with other RPCs.
+		let latest_number = self.latest_indexed_block_number().await?;
 		let mut current_number = filter
 			.to_block
 			.and_then(|v| v.to_min_block_num())
 			.map(|s| s.unique_saturated_into())
-			.unwrap_or(best_number);
+			.unwrap_or(latest_number);
 
-		if current_number > best_number {
-			current_number = best_number;
+		if current_number > latest_number {
+			current_number = latest_number;
 		}
 
 		let from_number = filter
 			.from_block
 			.and_then(|v| v.to_min_block_num())
 			.map(|s| s.unique_saturated_into())
-			.unwrap_or(best_number);
+			.unwrap_or(latest_number);
 
 		let logs = if backend.is_indexed() {
 			filter_range_logs_indexed(
@@ -483,22 +507,23 @@ where
 				logs = filter_block_logs(&filter, block, statuses);
 			}
 		} else {
-			let best_number = client.info().best_number;
+			// Use latest indexed block to ensure consistency with other RPCs.
+			let latest_number = self.latest_indexed_block_number().await?;
 			let mut current_number = filter
 				.to_block
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
-				.unwrap_or(best_number);
+				.unwrap_or(latest_number);
 
-			if current_number > best_number {
-				current_number = best_number;
+			if current_number > latest_number {
+				current_number = latest_number;
 			}
 
 			let from_number = filter
 				.from_block
 				.and_then(|v| v.to_min_block_num())
 				.map(|s| s.unique_saturated_into())
-				.unwrap_or(best_number);
+				.unwrap_or(latest_number);
 
 			let block_range = current_number.saturating_sub(from_number);
 			if block_range > self.max_block_range.into() {
