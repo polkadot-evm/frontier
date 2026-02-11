@@ -739,7 +739,7 @@ mod tests {
 			.expect("push storage change");
 		let block = builder.build().expect("build").block;
 		let substrate_hash = block.header.hash();
-		let block_number_u64: u64 = (*block.header.number()).into();
+		let block_number_u64: u64 = *block.header.number();
 		executor::block_on(client.import(BlockOrigin::Own, block)).expect("import block");
 
 		// Create an "old" ParityDB (v2) with 4 columns and a v2-style BLOCK_MAPPING entry.
@@ -836,7 +836,7 @@ mod tests {
 			.expect("push storage change");
 		let block = builder.build().expect("build").block;
 		let substrate_hash = block.header.hash();
-		let block_number_u64: u64 = (*block.header.number()).into();
+		let block_number_u64: u64 = *block.header.number();
 		executor::block_on(client.import(BlockOrigin::Own, block)).expect("import block");
 
 		// Create an "old" ParityDB (v2) with 4 columns and a v2-style BLOCK_MAPPING entry.
