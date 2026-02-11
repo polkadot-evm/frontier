@@ -115,14 +115,16 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
-		let (block_number, from_cached_meta) = match self.mapping.latest_canonical_indexed_block_number()? {
-			Some(n) => (n, true),
-			None => (best_number, false),
-		};
+		let (block_number, from_cached_meta) =
+			match self.mapping.latest_canonical_indexed_block_number()? {
+				Some(n) => (n, true),
+				None => (best_number, false),
+			};
 
 		if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 			if !from_cached_meta {
-				self.mapping.set_latest_canonical_indexed_block(block_number)?;
+				self.mapping
+					.set_latest_canonical_indexed_block(block_number)?;
 			}
 			return Ok(canonical_hash);
 		}
