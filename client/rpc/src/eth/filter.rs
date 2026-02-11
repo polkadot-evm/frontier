@@ -281,17 +281,6 @@ where
 					}
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
-						// Update filter `last_poll`.
-						locked.insert(
-							key,
-							FilterPoolItem {
-								last_poll: BlockNumberOrHash::Num(best_number + 1),
-								filter_type: pool_item.filter_type.clone(),
-								at_block: pool_item.at_block,
-								pending_transaction_hashes: HashSet::new(),
-							},
-						);
-
 						// Either the filter-specific `to` block or latest indexed block.
 						// Use latest indexed block to ensure consistency with other RPCs.
 						let mut current_number = filter
@@ -318,6 +307,21 @@ where
 							.unwrap_or(last_poll);
 
 						let from_number = std::cmp::max(last_poll, filter_from);
+
+						// Update filter `last_poll` based on the same capped head we query.
+						// This avoids skipping blocks when best_number is ahead of indexed data.
+						let next_last_poll =
+							UniqueSaturatedInto::<u64>::unique_saturated_into(current_number)
+								.saturating_add(1);
+						locked.insert(
+							key,
+							FilterPoolItem {
+								last_poll: BlockNumberOrHash::Num(next_last_poll),
+								filter_type: pool_item.filter_type.clone(),
+								at_block: pool_item.at_block,
+								pending_transaction_hashes: HashSet::new(),
+							},
+						);
 
 						// Build the response.
 						FuturePath::Log {

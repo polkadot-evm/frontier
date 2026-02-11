@@ -2,7 +2,13 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlock, createAndFinalizeBlockNowait, describeWithFrontier, customRequest } from "./util";
+import {
+	createAndFinalizeBlock,
+	createAndFinalizeBlockNowait,
+	describeWithFrontier,
+	customRequest,
+	waitForBlock,
+} from "./util";
 
 describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	const TEST_CONTRACT_BYTECODE =
@@ -140,6 +146,41 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 		expect(poll.result.length).to.be.eq(0);
 	});
 
+	step("should not skip log filter changes when best head is ahead of indexed head", async function () {
+		const startIndexed = Number(await context.web3.eth.getBlockNumber());
+		const filterId = (
+			await customRequest(context.web3, "eth_newFilter", [
+				{
+					fromBlock: "latest",
+					toBlock: "latest",
+				},
+			])
+		).result;
+
+		const tx = await sendTransaction(context);
+
+		// Advance best head without waiting for indexing to force a lag window.
+		await createAndFinalizeBlockNowait(context.web3);
+		await createAndFinalizeBlockNowait(context.web3);
+		await createAndFinalizeBlockNowait(context.web3);
+
+		const firstPoll = await customRequest(context.web3, "eth_getFilterChanges", [filterId]);
+
+		// Wait for indexing to catch up to the produced blocks.
+		const expectedIndexed = "0x" + (startIndexed + 3).toString(16);
+		await waitForBlock(context.web3, expectedIndexed, 10000);
+
+		const secondPoll = await customRequest(context.web3, "eth_getFilterChanges", [filterId]);
+		const allLogs = [...(firstPoll.result as any[]), ...(secondPoll.result as any[])];
+		const foundTx = allLogs.some(
+			(log) =>
+				typeof log?.transactionHash === "string" &&
+				log.transactionHash.toLowerCase() === tx.transactionHash.toLowerCase()
+		);
+
+		expect(foundTx).to.be.true;
+	});
+
 	step("should return response for raw Log filter request.", async function () {
 		// Create contract.
 		let tx = await sendTransaction(context);
@@ -182,7 +223,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 		// Should return error if does not exist.
 		let r = await customRequest(context.web3, "eth_uninstallFilter", [filterId]);
 		expect(r.error).to.include({
-			message: "Filter id 7 does not exist.",
+			message: `Filter id ${parseInt(filterId, 16)} does not exist.`,
 		});
 	});
 
@@ -199,7 +240,7 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 
 		let r = await customRequest(context.web3, "eth_getFilterChanges", [filterId]);
 		expect(r.error).to.include({
-			message: "Filter id 7 does not exist.",
+			message: `Filter id ${parseInt(filterId, 16)} does not exist.`,
 		});
 	});
 
