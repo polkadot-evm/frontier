@@ -68,8 +68,15 @@ where
 		}
 	}
 
-	pub fn author(&self) -> RpcResult<H160> {
-		let hash = self.client.info().best_hash;
+	pub async fn author(&self) -> RpcResult<H160> {
+		// Use the latest indexed block hash to ensure consistency with other RPCs.
+		// This avoids returning data from a block that isn't visible via
+		// eth_getBlockByNumber("latest").
+		let hash = self
+			.backend
+			.latest_block_hash()
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
 		let current_block = self
 			.storage_override
 			.current_block(hash)
@@ -85,10 +92,22 @@ where
 			.collect::<Vec<_>>())
 	}
 
-	pub fn block_number(&self) -> RpcResult<U256> {
-		let best_number = self.client.info().best_number;
-		let best_number = UniqueSaturatedInto::<u128>::unique_saturated_into(best_number);
-		Ok(U256::from(best_number))
+	pub async fn block_number(&self) -> RpcResult<U256> {
+		// Use the latest indexed block hash to ensure consistency with other RPCs.
+		// This avoids returning a block number that isn't yet visible via
+		// eth_getBlockByNumber("latest").
+		let hash = self
+			.backend
+			.latest_block_hash()
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		let number = self
+			.client
+			.number(hash)
+			.map_err(|err| internal_err(format!("{err:?}")))?
+			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?;
+		let number = UniqueSaturatedInto::<u128>::unique_saturated_into(number);
+		Ok(U256::from(number))
 	}
 
 	pub fn chain_id(&self) -> RpcResult<Option<U64>> {

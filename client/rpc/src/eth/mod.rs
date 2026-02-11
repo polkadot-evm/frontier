@@ -378,16 +378,16 @@ where
 		self.syncing().await
 	}
 
-	fn author(&self) -> RpcResult<H160> {
-		self.author()
+	async fn author(&self) -> RpcResult<H160> {
+		self.author().await
 	}
 
 	fn accounts(&self) -> RpcResult<Vec<H160>> {
 		self.accounts()
 	}
 
-	fn block_number(&self) -> RpcResult<U256> {
-		self.block_number()
+	async fn block_number(&self) -> RpcResult<U256> {
+		self.block_number().await
 	}
 
 	fn chain_id(&self) -> RpcResult<Option<U64>> {

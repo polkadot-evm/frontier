@@ -42,7 +42,7 @@ pub trait EthApi {
 
 	/// Returns block author.
 	#[method(name = "eth_coinbase")]
-	fn author(&self) -> RpcResult<H160>;
+	async fn author(&self) -> RpcResult<H160>;
 
 	/// Returns accounts list.
 	#[method(name = "eth_accounts")]
@@ -50,7 +50,7 @@ pub trait EthApi {
 
 	/// Returns highest block number.
 	#[method(name = "eth_blockNumber")]
-	fn block_number(&self) -> RpcResult<U256>;
+	async fn block_number(&self) -> RpcResult<U256>;
 
 	/// Returns the chain ID used for transaction signing at the
 	/// current best block. None is returned if not
