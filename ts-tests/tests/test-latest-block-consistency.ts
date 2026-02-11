@@ -1,13 +1,29 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import { createAndFinalizeBlock, describeWithFrontier, customRequest } from "./util";
+import {
+	createAndFinalizeBlock,
+	createAndFinalizeBlockNowait,
+	describeWithFrontier,
+	customRequest,
+	waitForBlock,
+} from "./util";
 
 // Consistency tests for "latest" RPC responses. This suite validates that
 // eth_getBlockByNumber("latest") remains non-null and consistent with related RPCs.
 // Note: this harness uses --tmp nodes, so it cannot fully simulate an upgrade with
 // an existing DB; these checks focus on externally visible consistency guarantees.
 describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
+	const RECOVERY_LIMIT = 6;
+
+	async function createBlock(finalize: boolean = true, parentHash: string | null = null): Promise<string> {
+		const response = await customRequest(context.web3, "engine_createBlock", [true, finalize, parentHash]);
+		if (!response.result?.hash) {
+			throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
+		}
+		return response.result.hash;
+	}
+
 	step("eth_getBlockByNumber('latest') should return a non-null block after node start", async function () {
 		const block = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
 
@@ -73,5 +89,63 @@ describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
 
 		expect(result.error).to.be.undefined;
 		expect(result.result).to.be.an("array");
+	});
+
+	step("latest RPCs should stay consistent during indexing lag beyond recovery limit", async function () {
+		const startIndexed = Number(await context.web3.eth.getBlockNumber());
+		const lagBlocks = RECOVERY_LIMIT + 4;
+
+		for (let i = 0; i < lagBlocks; i++) {
+			await createAndFinalizeBlockNowait(context.web3);
+		}
+
+		// During lag, latest should still be non-null and internally consistent.
+		const latestDuringLag = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const numberDuringLag = Number(await context.web3.eth.getBlockNumber());
+		expect(latestDuringLag).to.not.be.null;
+		expect(parseInt(latestDuringLag.number, 16)).to.equal(numberDuringLag);
+
+		// Once indexing catches up, latest should advance to the produced height.
+		const expectedIndexed = "0x" + (startIndexed + lagBlocks).toString(16);
+		await waitForBlock(context.web3, expectedIndexed, 15000);
+
+		const latestAfterCatchup = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		expect(parseInt(latestAfterCatchup.number, 16)).to.equal(startIndexed + lagBlocks);
+	});
+
+	step("latest, blockNumber, and logs should remain consistent after a reorg", async function () {
+		const tip = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		expect(tip).to.not.be.null;
+		const tipNumber = parseInt(tip.number, 16);
+
+		// Create an anchor block via manual-seal RPC and fork from it.
+		const anchor = await createBlock(false);
+
+		// Build chain A from the anchor.
+		const a1 = await createBlock(false, anchor);
+		await createBlock(false, a1);
+
+		// Build longer chain B from the same anchor to force reorg.
+		const b1 = await createBlock(false, anchor);
+		const b2 = await createBlock(false, b1);
+		await createBlock(false, b2);
+
+		const expectedReorgHead = "0x" + (tipNumber + 4).toString(16);
+		await waitForBlock(context.web3, expectedReorgHead, 15000);
+
+		const latest = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const blockNumber = Number(await context.web3.eth.getBlockNumber());
+		expect(latest).to.not.be.null;
+		expect(parseInt(latest.number, 16)).to.equal(blockNumber);
+		expect(parseInt(latest.number, 16)).to.equal(tipNumber + 4);
+
+		const logs = await customRequest(context.web3, "eth_getLogs", [
+			{
+				fromBlock: tip.number,
+				toBlock: "latest",
+			},
+		]);
+		expect(logs.error).to.be.undefined;
+		expect(logs.result).to.be.an("array");
 	});
 });
