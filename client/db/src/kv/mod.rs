@@ -114,36 +114,31 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// where eth_getBlockByNumber("latest") returns block 0 during initial sync.
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
-
-		let Some(block_number) = self.mapping.latest_canonical_indexed_block_number()? else {
-			return Ok(self.client.info().genesis_hash);
+		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
+		let (block_number, from_cached_meta) = match self.mapping.latest_canonical_indexed_block_number()? {
+			Some(n) => (n, true),
+			None => (best_number, false),
 		};
 
-		// Get the canonical hash for this block number
-		let Some(canonical_hash) = self
-			.client
-			.hash(block_number.unique_saturated_into())
-			.map_err(|e| format!("{e:?}"))?
-		else {
-			return Ok(self.client.info().genesis_hash);
-		};
-
-		// Verify it's indexed
-		let Some(eth_hash) = self.mapping.block_hash_by_number(block_number)? else {
-			return Ok(self.client.info().genesis_hash);
-		};
-
-		let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? else {
-			return Ok(self.client.info().genesis_hash);
-		};
-
-		if substrate_hashes.contains(&canonical_hash) {
+		if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
+			if !from_cached_meta {
+				self.mapping.set_latest_canonical_indexed_block(block_number)?;
+			}
 			return Ok(canonical_hash);
 		}
 
-		// Cached canonical block is stale (reorg happened).
-		// Walk back to find the prior indexed canonical block instead of returning genesis.
-		self.find_latest_indexed_canonical_block(block_number.saturating_sub(1))
+		// Cached canonical block is stale (reorg happened), or meta key was absent
+		// and best block is not indexed yet. Walk back to the latest indexed
+		// canonical block and persist the recovered pointer.
+		if let Some((recovered_number, recovered_hash)) =
+			self.find_latest_indexed_canonical_block(block_number.saturating_sub(1))?
+		{
+			self.mapping
+				.set_latest_canonical_indexed_block(recovered_number)?;
+			return Ok(recovered_hash);
+		}
+
+		Ok(self.client.info().genesis_hash)
 	}
 }
 
@@ -231,39 +226,46 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 		&self.meta
 	}
 
-	/// Finds the latest indexed block that is on the canonical chain by walking backwards
-	/// from `start_block`. Returns genesis hash if no indexed canonical block is found
-	/// within `MAX_WALKBACK_DEPTH` blocks.
-	fn find_latest_indexed_canonical_block(&self, start_block: u64) -> Result<Block::Hash, String> {
+	/// Returns the canonical hash at `block_number` if it is indexed.
+	fn indexed_canonical_hash_at(&self, block_number: u64) -> Result<Option<Block::Hash>, String> {
+		let Some(eth_hash) = self.mapping.block_hash_by_number(block_number)? else {
+			return Ok(None);
+		};
+
+		let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? else {
+			return Ok(None);
+		};
+
+		let Some(canonical_hash) = self
+			.client
+			.hash(block_number.unique_saturated_into())
+			.map_err(|e| format!("{e:?}"))?
+		else {
+			return Ok(None);
+		};
+
+		if substrate_hashes.contains(&canonical_hash) {
+			return Ok(Some(canonical_hash));
+		}
+
+		Ok(None)
+	}
+
+	/// Finds the latest indexed block that is on the canonical chain by walking
+	/// backwards from `start_block`. Returns `None` if no indexed canonical block
+	/// is found within `MAX_WALKBACK_DEPTH` blocks.
+	fn find_latest_indexed_canonical_block(
+		&self,
+		start_block: u64,
+	) -> Result<Option<(u64, Block::Hash)>, String> {
 		let min_block = start_block.saturating_sub(MAX_WALKBACK_DEPTH);
 		for block_number in (min_block..=start_block).rev() {
-			// Check if this block number has an ethereum block hash mapping
-			let Some(eth_hash) = self.mapping.block_hash_by_number(block_number)? else {
-				continue;
-			};
-
-			// Get the substrate block hashes for this ethereum block
-			let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? else {
-				continue;
-			};
-
-			// Get the canonical hash for this block number
-			let Some(canonical_hash) = self
-				.client
-				.hash(block_number.unique_saturated_into())
-				.map_err(|e| format!("{e:?}"))?
-			else {
-				continue;
-			};
-
-			// Check if the canonical hash is among the indexed substrate hashes
-			if substrate_hashes.contains(&canonical_hash) {
-				return Ok(canonical_hash);
+			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
+				return Ok(Some((block_number, canonical_hash)));
 			}
 		}
 
-		// No indexed canonical block found - return genesis
-		Ok(self.client.info().genesis_hash)
+		Ok(None)
 	}
 }
 
