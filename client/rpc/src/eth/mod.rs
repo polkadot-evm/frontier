@@ -141,16 +141,8 @@ where
 		&self,
 		number_or_hash: BlockNumberOrHash,
 	) -> RpcResult<BlockInfo<B::Hash>> {
-		// Derive the block number from the request.
-		let block_number: Option<u64> = match number_or_hash {
-			BlockNumberOrHash::Num(n) => Some(n),
-			BlockNumberOrHash::Latest => {
-				Some(self.client.info().best_number.unique_saturated_into())
-			}
-			BlockNumberOrHash::Earliest => Some(0),
-			BlockNumberOrHash::Safe | BlockNumberOrHash::Finalized => {
-				Some(self.client.info().finalized_number.unique_saturated_into())
-			}
+		// Handle special cases that don't use block number lookup
+		match number_or_hash {
 			BlockNumberOrHash::Pending => {
 				// Pending blocks are not indexed in mapping-sync.
 				// Return empty BlockInfo - pending blocks are handled specially
@@ -161,21 +153,42 @@ where
 				// For hash queries, use the existing eth block hash lookup
 				return self.block_info_by_eth_block_hash(hash).await;
 			}
+			BlockNumberOrHash::Latest => {
+				// For "latest", use backend.latest_block_hash() which returns the latest
+				// indexed block. This avoids a race condition where the best block from
+				// the client may not yet be indexed by mapping-sync.
+				let substrate_hash = self
+					.backend
+					.latest_block_hash()
+					.await
+					.map_err(|err| internal_err(format!("{err:?}")))?;
+				return self.block_info_by_substrate_hash(substrate_hash).await;
+			}
+			_ => {}
+		}
+
+		// Derive the block number from the request.
+		let block_number: u64 = match number_or_hash {
+			BlockNumberOrHash::Num(n) => n,
+			BlockNumberOrHash::Earliest => 0,
+			BlockNumberOrHash::Safe | BlockNumberOrHash::Finalized => {
+				self.client.info().finalized_number.unique_saturated_into()
+			}
+			// Already handled above
+			BlockNumberOrHash::Latest
+			| BlockNumberOrHash::Pending
+			| BlockNumberOrHash::Hash { .. } => unreachable!(),
 		};
 
 		// Query mapping-sync for the ethereum block hash by block number.
 		// This ensures consistency: if a block is visible, its transaction
 		// receipts are also available.
-		let eth_block_hash = match block_number {
-			Some(n) => self
-				.backend
-				.block_hash_by_number(n)
-				.await
-				.map_err(|err| internal_err(format!("{err:?}")))?,
-			None => None,
-		};
-
-		let Some(eth_hash) = eth_block_hash else {
+		let Some(eth_hash) = self
+			.backend
+			.block_hash_by_number(block_number)
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?
+		else {
 			return Ok(BlockInfo::default());
 		};
 
@@ -197,17 +210,15 @@ where
 		// is lagging or processed an orphan block, the mapping could be stale even for
 		// finalized block numbers. We always verify against the canonical chain to ensure
 		// consistency, with genesis (block 0) as the only exception since it's immutable.
-		if let Some(block_num) = block_number {
-			if block_num > 0 {
-				let canonical_hash = self
-					.client
-					.hash(block_num.unique_saturated_into())
-					.map_err(|e| internal_err(format!("{e:?}")))?;
+		if block_number > 0 {
+			let canonical_hash = self
+				.client
+				.hash(block_number.unique_saturated_into())
+				.map_err(|e| internal_err(format!("{e:?}")))?;
 
-				if canonical_hash != Some(substrate_hash) {
-					// Mapping is stale - treat as not indexed yet
-					return Ok(BlockInfo::default());
-				}
+			if canonical_hash != Some(substrate_hash) {
+				// Mapping is stale - treat as not indexed yet
+				return Ok(BlockInfo::default());
 			}
 		}
 
