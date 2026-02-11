@@ -115,45 +115,26 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
 
-		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
-
-		let block_number = match self.mapping.latest_canonical_indexed_block_number()? {
-			Some(n) => n,
-			None => {
-				// Meta key not set (e.g., after upgrade from older version).
-				// Backfill by finding the latest indexed canonical block.
-				return self.find_latest_indexed_canonical_block(best_number);
-			}
+		let Some(block_number) = self.mapping.latest_canonical_indexed_block_number()? else {
+			return Ok(self.client.info().genesis_hash);
 		};
 
 		// Get the canonical hash for this block number
-		let canonical_hash = match self
+		let Some(canonical_hash) = self
 			.client
 			.hash(block_number.unique_saturated_into())
 			.map_err(|e| format!("{e:?}"))?
-		{
-			Some(h) => h,
-			None => {
-				// Block doesn't exist - walk back to find valid indexed block
-				return self.find_latest_indexed_canonical_block(block_number.saturating_sub(1));
-			}
+		else {
+			return Ok(self.client.info().genesis_hash);
 		};
 
 		// Verify it's indexed
-		let eth_hash = match self.mapping.block_hash_by_number(block_number)? {
-			Some(h) => h,
-			None => {
-				// Not indexed - walk back to find valid indexed block
-				return self.find_latest_indexed_canonical_block(block_number.saturating_sub(1));
-			}
+		let Some(eth_hash) = self.mapping.block_hash_by_number(block_number)? else {
+			return Ok(self.client.info().genesis_hash);
 		};
 
-		let substrate_hashes = match self.mapping.block_hash(&eth_hash)? {
-			Some(h) => h,
-			None => {
-				// Mapping inconsistency - walk back to find valid indexed block
-				return self.find_latest_indexed_canonical_block(block_number.saturating_sub(1));
-			}
+		let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? else {
+			return Ok(self.client.info().genesis_hash);
 		};
 
 		if substrate_hashes.contains(&canonical_hash) {
