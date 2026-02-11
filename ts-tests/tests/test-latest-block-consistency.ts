@@ -109,7 +109,8 @@ describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
 		const expectedIndexed = "0x" + (startIndexed + lagBlocks).toString(16);
 		await waitForBlock(context.web3, expectedIndexed, 15000);
 
-		const latestAfterCatchup = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const latestAfterCatchup = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false]))
+			.result;
 		expect(parseInt(latestAfterCatchup.number, 16)).to.equal(startIndexed + lagBlocks);
 	});
 
