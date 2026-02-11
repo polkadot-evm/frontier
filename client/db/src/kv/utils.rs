@@ -64,7 +64,7 @@ fn open_kvdb_rocksdb<Block: BlockT, C: HeaderBackend<Block>>(
 	#[cfg(not(test))]
 	match super::upgrade::upgrade_db::<Block, C>(client, path, _source) {
 		Ok(_) => (),
-		Err(_) => return Err("Frontier DB upgrade error".to_string()),
+		Err(err) => return Err(err.to_string()),
 	}
 
 	let mut db_config = kvdb_rocksdb::DatabaseConfig::with_columns(super::columns::NUM_COLUMNS);
@@ -97,7 +97,7 @@ fn open_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	#[cfg(not(test))]
 	match super::upgrade::upgrade_db::<Block, C>(client, path, _source) {
 		Ok(_) => (),
-		Err(_) => return Err("Frontier DB upgrade error".to_string()),
+		Err(err) => return Err(err.to_string()),
 	}
 	let mut config = parity_db::Options::with_columns(path, super::columns::NUM_COLUMNS as u8);
 	config.columns[super::columns::BLOCK_MAPPING as usize].btree_index = true;

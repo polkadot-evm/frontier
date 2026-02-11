@@ -42,6 +42,11 @@ const DB_HASH_LEN: usize = 32;
 /// Hash type that this backend uses for the database.
 pub type DbHash = [u8; DB_HASH_LEN];
 
+/// Maximum number of blocks to walk back when searching for an indexed canonical block.
+/// This limits the search depth when the cached `LATEST_CANONICAL_INDEXED_BLOCK` is stale
+/// (e.g., after a reorg or if it points to an unindexed block).
+const MAX_WALKBACK_DEPTH: u64 = 16;
+
 /// Database settings.
 pub struct DatabaseSettings {
 	/// Where to find the database.
@@ -60,6 +65,7 @@ pub(crate) mod columns {
 
 pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
+	pub const LATEST_CANONICAL_INDEXED_BLOCK: &[u8] = b"LATEST_CANONICAL_INDEXED_BLOCK";
 }
 
 #[derive(Clone)]
@@ -101,7 +107,7 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 
 	async fn latest_block_hash(&self) -> Result<Block::Hash, String> {
 		// Return the latest block hash that is both indexed AND on the canonical chain.
-		// This prevents returning stale data during reorgs.
+		// The canonical indexed block is tracked by mapping-sync when blocks are synced.
 		//
 		// Note: During initial sync or after restart while mapping-sync catches up,
 		// this returns the genesis block hash. This is consistent with Geth's behavior
@@ -109,29 +115,34 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
-
-		// Get the canonical hash for verification.
-		let canonical_hash = self
-			.client
-			.hash(best_number.unique_saturated_into())
-			.map_err(|e| format!("{e:?}"))?;
-
-		// Query mapping-sync for the ethereum block hash at best_number
-		if let Some(eth_hash) = self.mapping.block_hash_by_number(best_number)? {
-			// Get the substrate block hash(es) for this ethereum block hash
-			if let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? {
-				// Verify the mapped hash is on the canonical chain.
-				// During a reorg, the mapping may point to a reorged-out block.
-				if let Some(canonical) = canonical_hash {
-					if substrate_hashes.contains(&canonical) {
-						return Ok(canonical);
-					}
+		let (block_number, should_persist_on_hit) =
+			match self.mapping.latest_canonical_indexed_block_number()? {
+				Some(cached) => {
+					let clamped = cached.min(best_number);
+					(clamped, clamped != cached)
 				}
-				// Mapping exists but is stale (reorg happened) - treat as not indexed
+				None => (best_number, true),
+			};
+
+		if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
+			if should_persist_on_hit {
+				self.mapping
+					.set_latest_canonical_indexed_block(block_number)?;
 			}
+			return Ok(canonical_hash);
 		}
 
-		// Block not indexed yet or stale - return genesis
+		// Cached canonical block is stale (reorg happened), or meta key was absent
+		// and best block is not indexed yet. Walk back to the latest indexed
+		// canonical block and persist the recovered pointer.
+		if let Some((recovered_number, recovered_hash)) =
+			self.find_latest_indexed_canonical_block(block_number.saturating_sub(1))?
+		{
+			self.mapping
+				.set_latest_canonical_indexed_block(recovered_number)?;
+			return Ok(recovered_hash);
+		}
+
 		Ok(self.client.info().genesis_hash)
 	}
 }
@@ -218,6 +229,48 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 
 	pub fn meta(&self) -> &Arc<MetaDb<Block>> {
 		&self.meta
+	}
+
+	/// Returns the canonical hash at `block_number` if it is indexed.
+	fn indexed_canonical_hash_at(&self, block_number: u64) -> Result<Option<Block::Hash>, String> {
+		let Some(eth_hash) = self.mapping.block_hash_by_number(block_number)? else {
+			return Ok(None);
+		};
+
+		let Some(substrate_hashes) = self.mapping.block_hash(&eth_hash)? else {
+			return Ok(None);
+		};
+
+		let Some(canonical_hash) = self
+			.client
+			.hash(block_number.unique_saturated_into())
+			.map_err(|e| format!("{e:?}"))?
+		else {
+			return Ok(None);
+		};
+
+		if substrate_hashes.contains(&canonical_hash) {
+			return Ok(Some(canonical_hash));
+		}
+
+		Ok(None)
+	}
+
+	/// Finds the latest indexed block that is on the canonical chain by walking
+	/// backwards from `start_block`. Returns `None` if no indexed canonical block
+	/// is found within `MAX_WALKBACK_DEPTH` blocks.
+	fn find_latest_indexed_canonical_block(
+		&self,
+		start_block: u64,
+	) -> Result<Option<(u64, Block::Hash)>, String> {
+		let min_block = start_block.saturating_sub(MAX_WALKBACK_DEPTH);
+		for block_number in (min_block..=start_block).rev() {
+			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
+				return Ok(Some((block_number, canonical_hash)));
+			}
+		}
+
+		Ok(None)
 	}
 }
 
@@ -424,5 +477,29 @@ impl<Block: BlockT> MappingDb<Block> {
 			)),
 			None => Ok(None),
 		}
+	}
+
+	/// Returns the latest canonical indexed block number, or None if not set.
+	pub fn latest_canonical_indexed_block_number(&self) -> Result<Option<u64>, String> {
+		match self
+			.db
+			.get(columns::META, static_keys::LATEST_CANONICAL_INDEXED_BLOCK)
+		{
+			Some(raw) => Ok(Some(
+				u64::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?,
+			)),
+			None => Ok(None),
+		}
+	}
+
+	/// Sets the latest canonical indexed block number.
+	pub fn set_latest_canonical_indexed_block(&self, block_number: u64) -> Result<(), String> {
+		let mut transaction = sp_database::Transaction::new();
+		transaction.set(
+			columns::META,
+			static_keys::LATEST_CANONICAL_INDEXED_BLOCK,
+			&block_number.encode(),
+		);
+		self.db.commit(transaction).map_err(|e| e.to_string())
 	}
 }
