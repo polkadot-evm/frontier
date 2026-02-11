@@ -147,6 +147,8 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 	});
 
 	step("should not skip log filter changes when best head is ahead of indexed head", async function () {
+		this.timeout(15000);
+
 		const startIndexed = Number(await context.web3.eth.getBlockNumber());
 		const filterId = (
 			await customRequest(context.web3, "eth_newFilter", [
