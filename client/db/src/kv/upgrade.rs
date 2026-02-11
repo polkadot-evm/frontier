@@ -456,6 +456,11 @@ pub(crate) fn migrate_1_to_2_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 							}
 						}
 					}
+				} else {
+					// If version 2 data, we just consider this hash a success.
+					// This can happen if the process was closed in the middle of the migration.
+					res.success += 1;
+					maybe_error = false;
 				}
 			}
 			if maybe_error {
