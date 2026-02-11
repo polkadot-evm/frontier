@@ -244,6 +244,16 @@ where
 	let is_new_best = best_info.is_some() || client.info().best_hash == hash;
 	let reorg_info = best_info.and_then(|info| info.reorg_info);
 
+	// Update the latest canonical indexed block when this block is the new best.
+	// This is the authoritative place to track canonical blocks since we know
+	// at sync time whether the block is on the canonical chain.
+	if is_new_best {
+		let block_number: u64 = (*operating_header.number()).unique_saturated_into();
+		frontier_backend
+			.mapping()
+			.set_latest_canonical_indexed_block(block_number)?;
+	}
+
 	emit_block_notification(
 		pubsub_notification_sinks.as_ref(),
 		sync_oracle.as_ref(),
