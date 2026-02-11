@@ -50,16 +50,20 @@ pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 	client: Arc<C>,
 	path: PathBuf,
 ) -> Result<Arc<fc_db::kv::Backend<Block, C>>, String> {
+	// Keep the DB isolated from any other temp files (e.g. JSON inputs) that the tests
+	// may write into `path`.
+	let db_path = path.join("frontier_db");
+	std::fs::create_dir_all(&db_path).map_err(|e| e.to_string())?;
 	Ok(Arc::new(fc_db::kv::Backend::<Block, C>::new(
 		client,
 		&fc_db::kv::DatabaseSettings {
 			#[cfg(feature = "rocksdb")]
 			source: sc_client_db::DatabaseSource::RocksDb {
-				path,
+				path: db_path,
 				cache_size: 0,
 			},
 			#[cfg(not(feature = "rocksdb"))]
-			source: sc_client_db::DatabaseSource::ParityDb { path },
+			source: sc_client_db::DatabaseSource::ParityDb { path: db_path },
 		},
 	)?))
 }
