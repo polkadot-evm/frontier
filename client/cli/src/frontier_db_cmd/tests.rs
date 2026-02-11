@@ -63,7 +63,7 @@ pub fn open_frontier_backend<Block: BlockT, C: HeaderBackend<Block>>(
 				cache_size: 0,
 			},
 			#[cfg(not(feature = "rocksdb"))]
-			source: sc_client_db::DatabaseSource::ParityDb { path },
+			source: sc_client_db::DatabaseSource::ParityDb { path: db_path },
 		},
 	)?))
 }
