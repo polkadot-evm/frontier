@@ -151,5 +151,4 @@ describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
 			.result;
 		expect(parseInt(latestAfterCatchup.number, 16)).to.be.gte(startIndexed + lagBlocks);
 	});
-
 });
