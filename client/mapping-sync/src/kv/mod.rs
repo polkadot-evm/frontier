@@ -231,14 +231,17 @@ pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Bl
 		.min(best_number);
 
 	let mut repaired = 0u64;
+	let mut first_unresolved = None;
 	for number in cursor..=end {
 		let Some(canonical_hash) = client
 			.hash(number.unique_saturated_into())
 			.map_err(|e| format!("{e:?}"))?
 		else {
+			first_unresolved.get_or_insert(number);
 			continue;
 		};
 		let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
+			first_unresolved.get_or_insert(number);
 			continue;
 		};
 		let canonical_eth_hash = ethereum_block.header.hash();
@@ -252,7 +255,9 @@ pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Bl
 		}
 	}
 
-	let next_cursor = if end >= best_number {
+	let next_cursor = if let Some(unresolved) = first_unresolved {
+		unresolved
+	} else if end >= best_number {
 		best_number
 	} else {
 		end.saturating_add(1)
@@ -263,7 +268,7 @@ pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Bl
 
 	log::debug!(
 		target: "mapping-sync",
-		"canonical number repair scanned #{cursor}..#{end}, repaired {repaired}, next cursor #{next_cursor}",
+		"canonical number repair scanned #{cursor}..#{end}, repaired {repaired}, first unresolved {first_unresolved:?}, next cursor #{next_cursor}",
 	);
 
 	Ok(())
@@ -524,8 +529,9 @@ where
 
 #[cfg(test)]
 mod tests {
-	use std::sync::Arc;
+	use std::{collections::HashMap, sync::Arc};
 
+	use ethereum::PartialHeader;
 	use ethereum_types::{Address, H256, U256};
 	use fc_storage::StorageOverride;
 	use fp_rpc::TransactionStatus;
@@ -542,7 +548,7 @@ mod tests {
 	};
 	use tempfile::tempdir;
 
-	use super::repair_new_best_number_mappings;
+	use super::{repair_canonical_number_mappings_batch, repair_new_best_number_mappings};
 
 	type OpaqueBlock = sp_runtime::generic::Block<
 		Header<u64, BlakeTwo256>,
@@ -571,6 +577,74 @@ mod tests {
 
 		fn current_block(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<ethereum::BlockV3> {
 			None
+		}
+
+		fn current_receipts(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+		) -> Option<Vec<ethereum::ReceiptV4>> {
+			None
+		}
+
+		fn current_transaction_statuses(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+		) -> Option<Vec<TransactionStatus>> {
+			None
+		}
+
+		fn elasticity(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<Permill> {
+			None
+		}
+
+		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
+			false
+		}
+	}
+
+	fn make_ethereum_block(seed: u64) -> ethereum::BlockV3 {
+		let partial_header = PartialHeader {
+			parent_hash: H256::from_low_u64_be(seed),
+			beneficiary: ethereum_types::H160::from_low_u64_be(seed),
+			state_root: H256::from_low_u64_be(seed.saturating_add(1)),
+			receipts_root: H256::from_low_u64_be(seed.saturating_add(2)),
+			logs_bloom: ethereum_types::Bloom::default(),
+			difficulty: U256::from(seed),
+			number: U256::from(seed),
+			gas_limit: U256::from(seed.saturating_add(100)),
+			gas_used: U256::from(seed.saturating_add(50)),
+			timestamp: seed,
+			extra_data: Vec::new(),
+			mix_hash: H256::from_low_u64_be(seed.saturating_add(3)),
+			nonce: ethereum_types::H64::from_low_u64_be(seed),
+		};
+		ethereum::Block::new(partial_header, vec![], vec![])
+	}
+
+	struct SelectiveStorageOverride {
+		blocks: HashMap<<OpaqueBlock as BlockT>::Hash, ethereum::BlockV3>,
+	}
+
+	impl StorageOverride<OpaqueBlock> for SelectiveStorageOverride {
+		fn account_code_at(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+			_address: Address,
+		) -> Option<Vec<u8>> {
+			None
+		}
+
+		fn account_storage_at(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+			_address: Address,
+			_index: U256,
+		) -> Option<H256> {
+			None
+		}
+
+		fn current_block(&self, at: <OpaqueBlock as BlockT>::Hash) -> Option<ethereum::BlockV3> {
+			self.blocks.get(&at).cloned()
 		}
 
 		fn current_receipts(
@@ -684,5 +758,98 @@ mod tests {
 				.expect("pointer read"),
 			Some(1)
 		);
+	}
+
+	#[test]
+	fn canonical_number_repair_retries_unresolved_blocks_without_skipping_cursor() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change for block 1");
+		let block_1 = builder.build().expect("build block 1").block;
+		futures::executor::block_on(client.import(BlockOrigin::Own, block_1))
+			.expect("import block 1");
+
+		let best_after_1 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_1.best_hash)
+			.with_parent_block_number(best_after_1.best_number)
+			.build()
+			.expect("build block 2");
+		builder
+			.push_storage_change(vec![2], None)
+			.expect("push storage change for block 2");
+		let block_2 = builder.build().expect("build block 2").block;
+		futures::executor::block_on(client.import(BlockOrigin::Own, block_2))
+			.expect("import block 2");
+
+		let canonical_hash_1 = client
+			.hash(1)
+			.expect("query canonical hash for #1")
+			.expect("canonical hash for #1");
+		let canonical_hash_2 = client
+			.hash(2)
+			.expect("query canonical hash for #2")
+			.expect("canonical hash for #2");
+		let eth_block_2 = make_ethereum_block(2);
+		let eth_hash_2 = eth_block_2.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([(canonical_hash_2, eth_block_2)]),
+		};
+
+		repair_canonical_number_mappings_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			1,
+			2,
+		)
+		.expect("run repair batch");
+
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(None),
+			"block #1 remains unresolved"
+		);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(2),
+			Ok(Some(eth_hash_2)),
+			"block #2 can still be repaired in the same pass"
+		);
+		assert_eq!(
+			frontier_backend.mapping().canonical_number_repair_cursor(),
+			Ok(Some(1)),
+			"cursor must stay at first unresolved block for retry"
+		);
+
+		assert!(storage_override.current_block(canonical_hash_1).is_none());
 	}
 }
