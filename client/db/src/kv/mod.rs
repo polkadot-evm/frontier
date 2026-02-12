@@ -155,8 +155,7 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// rescanning the same millions of heights.
 		let fallback = block_number.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
 		if fallback < block_number {
-			self.mapping
-				.set_latest_canonical_indexed_block(fallback)?;
+			self.mapping.set_latest_canonical_indexed_block(fallback)?;
 		}
 
 		Ok(self.client.info().genesis_hash)
