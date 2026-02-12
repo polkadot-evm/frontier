@@ -74,22 +74,28 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 			match log {
 				Log::Pre(PreLog::Block(block)) => {
 					let mapping_commitment = gen_from_block(block);
-					backend
-						.mapping()
-						.write_hashes(mapping_commitment, block_number, number_mapping_write)
+					backend.mapping().write_hashes(
+						mapping_commitment,
+						block_number,
+						number_mapping_write,
+					)
 				}
 				Log::Post(post_log) => match post_log {
 					PostLog::Hashes(hashes) => {
 						let mapping_commitment = gen_from_hashes(hashes);
-						backend
-							.mapping()
-							.write_hashes(mapping_commitment, block_number, number_mapping_write)
+						backend.mapping().write_hashes(
+							mapping_commitment,
+							block_number,
+							number_mapping_write,
+						)
 					}
 					PostLog::Block(block) => {
 						let mapping_commitment = gen_from_block(block);
-						backend
-							.mapping()
-							.write_hashes(mapping_commitment, block_number, number_mapping_write)
+						backend.mapping().write_hashes(
+							mapping_commitment,
+							block_number,
+							number_mapping_write,
+						)
 					}
 					PostLog::BlockHash(expect_eth_block_hash) => {
 						let ethereum_block = storage_override.current_block(substrate_block_hash);
@@ -104,9 +110,11 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 									))
 								} else {
 									let mapping_commitment = gen_from_block(block);
-									backend
-										.mapping()
-										.write_hashes(mapping_commitment, block_number, number_mapping_write)
+									backend.mapping().write_hashes(
+										mapping_commitment,
+										block_number,
+										number_mapping_write,
+									)
 								}
 							}
 							None => backend.mapping().write_none(substrate_block_hash),
@@ -159,13 +167,11 @@ where
 			ethereum_block_hash: block_hash,
 			ethereum_transaction_hashes: Vec::new(),
 		};
-		backend
-			.mapping()
-			.write_hashes(
-				mapping_commitment,
-				block_number,
-				fc_db::kv::NumberMappingWrite::Write,
-			)?;
+		backend.mapping().write_hashes(
+			mapping_commitment,
+			block_number,
+			fc_db::kv::NumberMappingWrite::Write,
+		)?;
 	} else {
 		backend.mapping().write_none(substrate_block_hash)?;
 	};

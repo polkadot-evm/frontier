@@ -582,7 +582,10 @@ mod tests {
 			.write_hashes(first_commitment, 1, fc_db::kv::NumberMappingWrite::Write)
 			.expect("write first mapping");
 		assert_eq!(
-			frontier_backend.mapping().block_hash_by_number(1).expect("read number"),
+			frontier_backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read number"),
 			Some(first_hash)
 		);
 		frontier_backend
@@ -590,7 +593,10 @@ mod tests {
 			.write_hashes(second_commitment, 1, fc_db::kv::NumberMappingWrite::Skip)
 			.expect("write second mapping");
 		assert_eq!(
-			frontier_backend.mapping().block_hash_by_number(1).expect("read number"),
+			frontier_backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read number"),
 			Some(first_hash)
 		);
 
