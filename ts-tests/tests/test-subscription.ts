@@ -53,21 +53,36 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		expect(subscriptionId).not.empty;
 	}).timeout(20000);
 
-	step("should get newHeads stream", async function (done) {
+	step("should get newHeads stream", async function () {
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function (error, result) {});
-		let data = null;
-		let dataResolve = null;
-		let dataPromise = new Promise((resolve) => {
-			dataResolve = resolve;
+
+		await new Promise<void>((resolve, reject) => {
+			const timer = setTimeout(() => reject(new Error("Timed out waiting for subscription connection")), 10000);
+			subscription.on("connected", function () {
+				clearTimeout(timer);
+				resolve();
+			});
+			subscription.on("error", function (error: any) {
+				clearTimeout(timer);
+				reject(error);
+			});
 		});
-		subscription.on("data", function (d: any) {
-			data = d;
-			subscription.unsubscribe();
-			dataResolve();
+
+		const dataPromise = new Promise<any>((resolve, reject) => {
+			const timer = setTimeout(() => reject(new Error("Timed out waiting for newHeads data")), 30000);
+			subscription.on("data", function (d: any) {
+				clearTimeout(timer);
+				resolve(d);
+			});
+			subscription.on("error", function (error: any) {
+				clearTimeout(timer);
+				reject(error);
+			});
 		});
 
 		await createAndFinalizeBlock(context.web3);
-		await dataPromise;
+		const data = await dataPromise;
+		subscription.unsubscribe();
 
 		expect(data).to.include({
 			author: "0x0000000000000000000000000000000000000000",
@@ -82,8 +97,6 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
 		});
 		expect(data.nonce).to.eql("0x0000000000000000");
-
-		done();
 	}).timeout(40000);
 
 	step("should get newPendingTransactions stream", async function (done) {
