@@ -122,40 +122,28 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
-		let (block_number, should_persist_on_hit) =
-			match self.mapping.latest_canonical_indexed_block_number()? {
-				Some(cached) => {
-					let clamped = cached.min(best_number);
-					(clamped, clamped != cached)
-				}
-				None => (best_number, true),
-			};
 
-		if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
-			if should_persist_on_hit {
-				self.mapping
-					.set_latest_canonical_indexed_block(block_number)?;
-			}
+		// Fast path: if best is already indexed and canonical, use it directly.
+		if let Some(canonical_hash) = self.indexed_canonical_hash_at(best_number)? {
+			self.mapping
+				.set_latest_canonical_indexed_block(best_number)?;
 			return Ok(canonical_hash);
 		}
 
-		// Cached canonical block is stale (reorg happened), or meta key was absent
-		// and best block is not indexed yet. Walk back to the latest indexed
-		// canonical block and persist the recovered pointer.
+		// Use cached pointer only as a lower bound hint for recovery scan.
+		let min_block_hint = self
+			.mapping
+			.latest_canonical_indexed_block_number()?
+			.map(|cached| cached.min(best_number));
+
+		// Best block is not indexed yet or mapping is stale (reorg). Walk back to
+		// the latest indexed canonical block and persist the recovered pointer.
 		if let Some((recovered_number, recovered_hash)) =
-			self.find_latest_indexed_canonical_block(block_number.saturating_sub(1))?
+			self.find_latest_indexed_canonical_block(best_number.saturating_sub(1), min_block_hint)?
 		{
 			self.mapping
 				.set_latest_canonical_indexed_block(recovered_number)?;
 			return Ok(recovered_hash);
-		}
-
-		// Keep recovery bounded per call: move the pointer back by one recovery
-		// window so subsequent calls continue searching older ranges without
-		// rescanning the same millions of heights.
-		let fallback = block_number.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
-		if fallback < block_number {
-			self.mapping.set_latest_canonical_indexed_block(fallback)?;
 		}
 
 		Ok(self.client.info().genesis_hash)
@@ -277,9 +265,12 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 	fn find_latest_indexed_canonical_block(
 		&self,
 		start_block: u64,
+		min_block_hint: Option<u64>,
 	) -> Result<Option<(u64, Block::Hash)>, String> {
 		let scan_limit = INDEXED_RECOVERY_SCAN_LIMIT.saturating_sub(1);
-		let min_block = start_block.saturating_sub(scan_limit);
+		let min_block = start_block
+			.saturating_sub(scan_limit)
+			.max(min_block_hint.unwrap_or(0));
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 				return Ok(Some((block_number, canonical_hash)));
