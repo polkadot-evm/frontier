@@ -235,10 +235,8 @@ pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Bl
 			continue;
 		};
 		let canonical_eth_hash = ethereum_block.header.hash();
-		let should_repair = frontier_backend
-			.mapping()
-			.block_hash_by_number(number)?
-			.map_or(true, |mapped| mapped != canonical_eth_hash);
+		let should_repair =
+			frontier_backend.mapping().block_hash_by_number(number)? != Some(canonical_eth_hash);
 		if should_repair {
 			frontier_backend
 				.mapping()
@@ -401,8 +399,7 @@ where
 		}
 		log::debug!(
 			target: "mapping-sync",
-			"Reorg canonical remap touched {reorg_remapped} blocks at new best {:?}",
-			hash,
+			"Reorg canonical remap touched {reorg_remapped} blocks at new best {hash:?}",
 		);
 	}
 
