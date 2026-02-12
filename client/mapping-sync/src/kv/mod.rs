@@ -281,7 +281,7 @@ fn advance_latest_canonical_indexed_block<Block: BlockT, C: HeaderBackend<Block>
 	let latest_indexed = frontier_backend
 		.mapping()
 		.latest_canonical_indexed_block_number()?;
-	if latest_indexed.map_or(true, |current| block_number > current) {
+	if latest_indexed.is_none_or(|current| block_number > current) {
 		frontier_backend
 			.mapping()
 			.set_latest_canonical_indexed_block(block_number)?;
