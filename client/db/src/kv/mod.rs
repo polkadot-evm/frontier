@@ -64,6 +64,7 @@ pub(crate) mod columns {
 pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
 	pub const LATEST_CANONICAL_INDEXED_BLOCK: &[u8] = b"LATEST_CANONICAL_INDEXED_BLOCK";
+	pub const CANONICAL_NUMBER_REPAIR_CURSOR: &[u8] = b"CANONICAL_NUMBER_REPAIR_CURSOR";
 }
 
 #[derive(Clone)]
@@ -348,6 +349,12 @@ pub struct MappingCommitment<Block: BlockT> {
 	pub ethereum_transaction_hashes: Vec<H256>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NumberMappingWrite {
+	Write,
+	Skip,
+}
+
 pub struct MappingDb<Block> {
 	db: Arc<dyn Database<DbHash>>,
 	write_lock: Arc<Mutex<()>>,
@@ -411,6 +418,7 @@ impl<Block: BlockT> MappingDb<Block> {
 		&self,
 		commitment: MappingCommitment<Block>,
 		block_number: u64,
+		number_mapping_write: NumberMappingWrite,
 	) -> Result<(), String> {
 		let _lock = self.write_lock.lock();
 
@@ -438,12 +446,13 @@ impl<Block: BlockT> MappingDb<Block> {
 			&substrate_hashes.encode(),
 		);
 
-		// Write block number -> ethereum block hash mapping
-		transaction.set(
-			columns::BLOCK_NUMBER_MAPPING,
-			&block_number.encode(),
-			&commitment.ethereum_block_hash.encode(),
-		);
+		if number_mapping_write == NumberMappingWrite::Write {
+			transaction.set(
+				columns::BLOCK_NUMBER_MAPPING,
+				&block_number.encode(),
+				&commitment.ethereum_block_hash.encode(),
+			);
+		}
 
 		for (i, ethereum_transaction_hash) in commitment
 			.ethereum_transaction_hashes
@@ -521,6 +530,30 @@ impl<Block: BlockT> MappingDb<Block> {
 		transaction.set(
 			columns::META,
 			static_keys::LATEST_CANONICAL_INDEXED_BLOCK,
+			&block_number.encode(),
+		);
+		self.db.commit(transaction).map_err(|e| e.to_string())
+	}
+
+	/// Returns the canonical number-repair cursor, or None if not set.
+	pub fn canonical_number_repair_cursor(&self) -> Result<Option<u64>, String> {
+		match self
+			.db
+			.get(columns::META, static_keys::CANONICAL_NUMBER_REPAIR_CURSOR)
+		{
+			Some(raw) => Ok(Some(
+				u64::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?,
+			)),
+			None => Ok(None),
+		}
+	}
+
+	/// Sets the canonical number-repair cursor.
+	pub fn set_canonical_number_repair_cursor(&self, block_number: u64) -> Result<(), String> {
+		let mut transaction = sp_database::Transaction::new();
+		transaction.set(
+			columns::META,
+			static_keys::CANONICAL_NUMBER_REPAIR_CURSOR,
 			&block_number.encode(),
 		);
 		self.db.commit(transaction).map_err(|e| e.to_string())

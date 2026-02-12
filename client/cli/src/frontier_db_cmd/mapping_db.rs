@@ -114,9 +114,11 @@ where
 							.number())
 						.unique_saturated_into();
 
-						self.backend
-							.mapping()
-							.write_hashes(commitment, block_number)?;
+						self.backend.mapping().write_hashes(
+							commitment,
+							block_number,
+							fc_db::kv::NumberMappingWrite::Write,
+						)?;
 					} else {
 						return Err(self.key_not_empty_error(key));
 					}
@@ -185,9 +187,11 @@ where
 							.number())
 						.unique_saturated_into();
 
-						self.backend
-							.mapping()
-							.write_hashes(commitment, block_number)?;
+						self.backend.mapping().write_hashes(
+							commitment,
+							block_number,
+							fc_db::kv::NumberMappingWrite::Write,
+						)?;
 					}
 				}
 				_ => return Err(self.key_value_error(key, value)),

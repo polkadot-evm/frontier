@@ -41,13 +41,21 @@ use crate::{
 };
 use worker::BestBlockInfo;
 
+pub const CANONICAL_NUMBER_REPAIR_BATCH_SIZE: u64 = 2048;
+
 pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	storage_override: Arc<dyn StorageOverride<Block>>,
 	backend: &fc_db::kv::Backend<Block, C>,
 	header: &Block::Header,
+	write_number_mapping: bool,
 ) -> Result<(), String> {
 	let substrate_block_hash = header.hash();
 	let block_number: u64 = (*header.number()).unique_saturated_into();
+	let number_mapping_write = if write_number_mapping {
+		fc_db::kv::NumberMappingWrite::Write
+	} else {
+		fc_db::kv::NumberMappingWrite::Skip
+	};
 
 	match fp_consensus::find_log(header.digest()) {
 		Ok(log) => {
@@ -68,20 +76,20 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 					let mapping_commitment = gen_from_block(block);
 					backend
 						.mapping()
-						.write_hashes(mapping_commitment, block_number)
+						.write_hashes(mapping_commitment, block_number, number_mapping_write)
 				}
 				Log::Post(post_log) => match post_log {
 					PostLog::Hashes(hashes) => {
 						let mapping_commitment = gen_from_hashes(hashes);
 						backend
 							.mapping()
-							.write_hashes(mapping_commitment, block_number)
+							.write_hashes(mapping_commitment, block_number, number_mapping_write)
 					}
 					PostLog::Block(block) => {
 						let mapping_commitment = gen_from_block(block);
 						backend
 							.mapping()
-							.write_hashes(mapping_commitment, block_number)
+							.write_hashes(mapping_commitment, block_number, number_mapping_write)
 					}
 					PostLog::BlockHash(expect_eth_block_hash) => {
 						let ethereum_block = storage_override.current_block(substrate_block_hash);
@@ -98,7 +106,7 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 									let mapping_commitment = gen_from_block(block);
 									backend
 										.mapping()
-										.write_hashes(mapping_commitment, block_number)
+										.write_hashes(mapping_commitment, block_number, number_mapping_write)
 								}
 							}
 							None => backend.mapping().write_none(substrate_block_hash),
@@ -153,10 +161,99 @@ where
 		};
 		backend
 			.mapping()
-			.write_hashes(mapping_commitment, block_number)?;
+			.write_hashes(
+				mapping_commitment,
+				block_number,
+				fc_db::kv::NumberMappingWrite::Write,
+			)?;
 	} else {
 		backend.mapping().write_none(substrate_block_hash)?;
 	};
+
+	Ok(())
+}
+
+fn repair_canonical_number_mapping_for_hash<Block: BlockT, C: HeaderBackend<Block>>(
+	client: &C,
+	storage_override: &dyn StorageOverride<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	hash: Block::Hash,
+) -> Result<Option<u64>, String> {
+	let Some(header) = client.header(hash).map_err(|e| format!("{e:?}"))? else {
+		return Ok(None);
+	};
+	let block_number: u64 = (*header.number()).unique_saturated_into();
+	let Some(ethereum_block) = storage_override.current_block(hash) else {
+		return Ok(None);
+	};
+	frontier_backend
+		.mapping()
+		.set_block_hash_by_number(block_number, ethereum_block.header.hash())?;
+	Ok(Some(block_number))
+}
+
+pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Block>>(
+	client: &C,
+	storage_override: &dyn StorageOverride<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	sync_from: <Block::Header as HeaderT>::Number,
+	max_blocks: u64,
+) -> Result<(), String> {
+	if max_blocks == 0 {
+		return Ok(());
+	}
+
+	let best_number: u64 = client.info().best_number.unique_saturated_into();
+	let sync_from_number: u64 =
+		UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from).min(best_number);
+	let cursor = frontier_backend
+		.mapping()
+		.canonical_number_repair_cursor()?
+		.unwrap_or(sync_from_number)
+		.max(sync_from_number)
+		.min(best_number);
+
+	let end = cursor
+		.saturating_add(max_blocks.saturating_sub(1))
+		.min(best_number);
+
+	let mut repaired = 0u64;
+	for number in cursor..=end {
+		let Some(canonical_hash) = client
+			.hash(number.unique_saturated_into())
+			.map_err(|e| format!("{e:?}"))?
+		else {
+			continue;
+		};
+		let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
+			continue;
+		};
+		let canonical_eth_hash = ethereum_block.header.hash();
+		let should_repair = frontier_backend
+			.mapping()
+			.block_hash_by_number(number)?
+			.map_or(true, |mapped| mapped != canonical_eth_hash);
+		if should_repair {
+			frontier_backend
+				.mapping()
+				.set_block_hash_by_number(number, canonical_eth_hash)?;
+			repaired = repaired.saturating_add(1);
+		}
+	}
+
+	let next_cursor = if end >= best_number {
+		best_number
+	} else {
+		end.saturating_add(1)
+	};
+	frontier_backend
+		.mapping()
+		.set_canonical_number_repair_cursor(next_cursor)?;
+
+	log::debug!(
+		target: "mapping-sync",
+		"canonical number repair scanned #{cursor}..#{end}, repaired {repaired}, next cursor #{next_cursor}",
+	);
 
 	Ok(())
 }
@@ -227,7 +324,25 @@ where
 		{
 			return Ok(false);
 		}
-		sync_block(storage_override, frontier_backend, &operating_header)?;
+		let block_number: u64 = (*operating_header.number()).unique_saturated_into();
+		let is_canonical_now = client
+			.hash(block_number.unique_saturated_into())
+			.map_err(|e| format!("{e:?}"))?
+			== Some(operating_header.hash());
+		if !is_canonical_now {
+			log::debug!(
+				target: "mapping-sync",
+				"Skipping block-number mapping write for non-canonical block #{} ({:?})",
+				operating_header.number(),
+				operating_header.hash(),
+			);
+		}
+		sync_block(
+			storage_override.clone(),
+			frontier_backend,
+			&operating_header,
+			is_canonical_now,
+		)?;
 
 		current_syncing_tips.push(*operating_header.parent_hash());
 		frontier_backend
@@ -252,6 +367,37 @@ where
 		frontier_backend
 			.mapping()
 			.set_latest_canonical_indexed_block(block_number)?;
+
+		let mut reorg_remapped = 0u64;
+		if repair_canonical_number_mapping_for_hash(
+			client,
+			storage_override.as_ref(),
+			frontier_backend,
+			hash,
+		)?
+		.is_some()
+		{
+			reorg_remapped = reorg_remapped.saturating_add(1);
+		}
+		if let Some(info) = reorg_info.as_ref() {
+			for enacted_hash in &info.enacted {
+				if repair_canonical_number_mapping_for_hash(
+					client,
+					storage_override.as_ref(),
+					frontier_backend,
+					*enacted_hash,
+				)?
+				.is_some()
+				{
+					reorg_remapped = reorg_remapped.saturating_add(1);
+				}
+			}
+		}
+		log::debug!(
+			target: "mapping-sync",
+			"Reorg canonical remap touched {reorg_remapped} blocks at new best {:?}",
+			hash,
+		);
 	}
 
 	emit_block_notification(
