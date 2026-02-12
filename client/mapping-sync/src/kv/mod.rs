@@ -189,6 +189,13 @@ fn repair_canonical_number_mapping_for_hash<Block: BlockT, C: HeaderBackend<Bloc
 		return Ok(None);
 	};
 	let block_number: u64 = (*header.number()).unique_saturated_into();
+	let is_canonical_now = client
+		.hash(block_number.unique_saturated_into())
+		.map_err(|e| format!("{e:?}"))?
+		== Some(hash);
+	if !is_canonical_now {
+		return Ok(None);
+	}
 	let Some(ethereum_block) = storage_override.current_block(hash) else {
 		return Ok(None);
 	};
@@ -347,6 +354,17 @@ where
 			&operating_header,
 			is_canonical_now,
 		)?;
+		if is_canonical_now {
+			let latest_indexed = frontier_backend
+				.mapping()
+				.latest_canonical_indexed_block_number()?
+				.unwrap_or(block_number);
+			if block_number > latest_indexed {
+				frontier_backend
+					.mapping()
+					.set_latest_canonical_indexed_block(block_number)?;
+			}
+		}
 
 		current_syncing_tips.push(*operating_header.parent_hash());
 		frontier_backend
@@ -364,54 +382,42 @@ where
 	let reorg_info = best_info.and_then(|info| info.reorg_info);
 
 	// `is_new_best` can come from import-time state and may be stale by sync time.
-	// Only update canonical pointers and repair number mappings if this block is
-	// still canonical at sync time.
+	// Number mapping repairs are canonical-gated in `repair_canonical_number_mapping_for_hash`.
 	if is_new_best {
 		let block_number: u64 = (*operating_header.number()).unique_saturated_into();
-		let is_canonical_now = client
-			.hash(block_number.unique_saturated_into())
-			.map_err(|e| format!("{e:?}"))?
-			== Some(hash);
-		if is_canonical_now {
-			frontier_backend
-				.mapping()
-				.set_latest_canonical_indexed_block(block_number)?;
+		frontier_backend
+			.mapping()
+			.set_latest_canonical_indexed_block(block_number)?;
 
-			let mut reorg_remapped = 0u64;
-			if repair_canonical_number_mapping_for_hash(
-				client,
-				storage_override.as_ref(),
-				frontier_backend,
-				hash,
-			)?
-			.is_some()
-			{
-				reorg_remapped = reorg_remapped.saturating_add(1);
-			}
-			if let Some(info) = reorg_info.as_ref() {
-				for enacted_hash in &info.enacted {
-					if repair_canonical_number_mapping_for_hash(
-						client,
-						storage_override.as_ref(),
-						frontier_backend,
-						*enacted_hash,
-					)?
-					.is_some()
-					{
-						reorg_remapped = reorg_remapped.saturating_add(1);
-					}
+		let mut reorg_remapped = 0u64;
+		if repair_canonical_number_mapping_for_hash(
+			client,
+			storage_override.as_ref(),
+			frontier_backend,
+			hash,
+		)?
+		.is_some()
+		{
+			reorg_remapped = reorg_remapped.saturating_add(1);
+		}
+		if let Some(info) = reorg_info.as_ref() {
+			for enacted_hash in &info.enacted {
+				if repair_canonical_number_mapping_for_hash(
+					client,
+					storage_override.as_ref(),
+					frontier_backend,
+					*enacted_hash,
+				)?
+				.is_some()
+				{
+					reorg_remapped = reorg_remapped.saturating_add(1);
 				}
 			}
-			log::debug!(
-				target: "mapping-sync",
-				"Reorg canonical remap touched {reorg_remapped} blocks at new best {hash:?}",
-			);
-		} else {
-			log::debug!(
-				target: "mapping-sync",
-				"Skipping canonical pointer/remap for non-canonical import-time best block #{block_number} ({hash:?})",
-			);
 		}
+		log::debug!(
+			target: "mapping-sync",
+			"Reorg canonical remap touched {reorg_remapped} blocks at new best {hash:?}",
+		);
 	}
 
 	emit_block_notification(

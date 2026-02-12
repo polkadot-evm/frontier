@@ -271,7 +271,8 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 		let scan_limit = INDEXED_RECOVERY_SCAN_LIMIT.saturating_sub(1);
 		let min_block = start_block
 			.saturating_sub(scan_limit)
-			.max(min_block_hint.unwrap_or(0));
+			.max(min_block_hint.unwrap_or(0))
+			.min(start_block);
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 				return Ok(Some((block_number, canonical_hash)));
