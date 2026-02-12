@@ -42,6 +42,17 @@ pub trait Backend<Block: BlockT>: Send + Sync {
 	/// Get the ethereum block hash for a given block number.
 	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String>;
 
+	/// Persist or repair the ethereum block hash for a given block number.
+	///
+	/// Backends that cannot mutate mappings can rely on the default no-op.
+	async fn set_block_hash_by_number(
+		&self,
+		_block_number: u64,
+		_ethereum_block_hash: H256,
+	) -> Result<(), String> {
+		Ok(())
+	}
+
 	/// Get the transaction metadata with the given ethereum block hash.
 	async fn transaction_metadata(
 		&self,

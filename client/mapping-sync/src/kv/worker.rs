@@ -194,6 +194,20 @@ where
 
 			match result {
 				Ok(have_next) => {
+					if !have_next {
+						if let Err(e) = crate::kv::repair_canonical_number_mappings_batch(
+							self.client.as_ref(),
+							self.storage_override.as_ref(),
+							self.frontier_backend.as_ref(),
+							self.sync_from,
+							crate::kv::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
+						) {
+							debug!(
+								target: "mapping-sync",
+								"Canonical number mapping repair failed with error {e:?}, retrying."
+							);
+						}
+					}
 					self.have_next = have_next;
 					Poll::Ready(Some(()))
 				}
@@ -520,5 +534,134 @@ mod tests {
 			let sinks = pubsub_notification_sinks.lock();
 			assert_eq!(sinks.len(), 0);
 		}
+	}
+
+	#[tokio::test]
+	async fn sync_block_can_skip_number_mapping_write() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let backend = builder.backend();
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		let frontier_backend = Arc::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
+				client.clone(),
+				&fc_db::kv::DatabaseSettings {
+					#[cfg(feature = "rocksdb")]
+					source: sc_client_db::DatabaseSource::RocksDb {
+						path: tmp.path().to_path_buf(),
+						cache_size: 0,
+					},
+					#[cfg(not(feature = "rocksdb"))]
+					source: sc_client_db::DatabaseSource::ParityDb {
+						path: tmp.path().to_path_buf(),
+					},
+				},
+			)
+			.expect("frontier backend"),
+		);
+
+		let first_hash = H256::repeat_byte(0xAA);
+		let second_hash = H256::repeat_byte(0xBB);
+		let first_commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
+			block_hash: H256::repeat_byte(0x01),
+			ethereum_block_hash: first_hash,
+			ethereum_transaction_hashes: vec![],
+		};
+		let second_commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
+			block_hash: H256::repeat_byte(0x02),
+			ethereum_block_hash: second_hash,
+			ethereum_transaction_hashes: vec![],
+		};
+
+		frontier_backend
+			.mapping()
+			.write_hashes(first_commitment, 1, fc_db::kv::NumberMappingWrite::Write)
+			.expect("write first mapping");
+		assert_eq!(
+			frontier_backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read number"),
+			Some(first_hash)
+		);
+		frontier_backend
+			.mapping()
+			.write_hashes(second_commitment, 1, fc_db::kv::NumberMappingWrite::Skip)
+			.expect("write second mapping");
+		assert_eq!(
+			frontier_backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read number"),
+			Some(first_hash)
+		);
+
+		// Keep backend alive in this scope.
+		drop(backend);
+	}
+
+	#[tokio::test]
+	async fn repair_batch_advances_cursor_when_runtime_block_is_unavailable() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let backend = builder.backend();
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let client = Arc::new(client);
+		let storage_override = Arc::new(SchemaV3StorageOverride::new(client.clone()));
+		let frontier_backend = Arc::new(
+			fc_db::kv::Backend::<OpaqueBlock, _>::new(
+				client.clone(),
+				&fc_db::kv::DatabaseSettings {
+					#[cfg(feature = "rocksdb")]
+					source: sc_client_db::DatabaseSource::RocksDb {
+						path: tmp.path().to_path_buf(),
+						cache_size: 0,
+					},
+					#[cfg(not(feature = "rocksdb"))]
+					source: sc_client_db::DatabaseSource::ParityDb {
+						path: tmp.path().to_path_buf(),
+					},
+				},
+			)
+			.expect("frontier backend"),
+		);
+
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(0, H256::repeat_byte(0x11))
+			.expect("seed stale mapping");
+		assert_eq!(
+			frontier_backend.mapping().canonical_number_repair_cursor(),
+			Ok(None)
+		);
+
+		crate::kv::repair_canonical_number_mappings_batch(
+			client.as_ref(),
+			storage_override.as_ref(),
+			frontier_backend.as_ref(),
+			0,
+			16,
+		)
+		.expect("repair batch");
+
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(0),
+			Ok(Some(H256::repeat_byte(0x11)))
+		);
+		assert_eq!(
+			frontier_backend.mapping().canonical_number_repair_cursor(),
+			Ok(Some(0))
+		);
+
+		drop(backend);
 	}
 }

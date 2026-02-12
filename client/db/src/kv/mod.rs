@@ -41,11 +41,9 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 const DB_HASH_LEN: usize = 32;
 /// Hash type that this backend uses for the database.
 pub type DbHash = [u8; DB_HASH_LEN];
-
-/// Maximum number of blocks to walk back when searching for an indexed canonical block.
-/// This limits the search depth when the cached `LATEST_CANONICAL_INDEXED_BLOCK` is stale
-/// (e.g., after a reorg or if it points to an unindexed block).
-const MAX_WALKBACK_DEPTH: u64 = 16;
+/// Maximum number of blocks inspected in a single recovery pass when the
+/// latest indexed canonical pointer is stale or missing.
+const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8192;
 
 /// Database settings.
 pub struct DatabaseSettings {
@@ -66,6 +64,7 @@ pub(crate) mod columns {
 pub mod static_keys {
 	pub const CURRENT_SYNCING_TIPS: &[u8] = b"CURRENT_SYNCING_TIPS";
 	pub const LATEST_CANONICAL_INDEXED_BLOCK: &[u8] = b"LATEST_CANONICAL_INDEXED_BLOCK";
+	pub const CANONICAL_NUMBER_REPAIR_CURSOR: &[u8] = b"CANONICAL_NUMBER_REPAIR_CURSOR";
 }
 
 #[derive(Clone)]
@@ -87,6 +86,15 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 
 	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
 		self.mapping().block_hash_by_number(block_number)
+	}
+
+	async fn set_block_hash_by_number(
+		&self,
+		block_number: u64,
+		ethereum_block_hash: H256,
+	) -> Result<(), String> {
+		self.mapping()
+			.set_block_hash_by_number(block_number, ethereum_block_hash)
 	}
 
 	async fn transaction_metadata(
@@ -115,28 +123,24 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
-		let (block_number, should_persist_on_hit) =
-			match self.mapping.latest_canonical_indexed_block_number()? {
-				Some(cached) => {
-					let clamped = cached.min(best_number);
-					(clamped, clamped != cached)
-				}
-				None => (best_number, true),
-			};
 
-		if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
-			if should_persist_on_hit {
-				self.mapping
-					.set_latest_canonical_indexed_block(block_number)?;
-			}
+		// Fast path: if best is already indexed and canonical, use it directly.
+		if let Some(canonical_hash) = self.indexed_canonical_hash_at(best_number)? {
+			self.mapping
+				.set_latest_canonical_indexed_block(best_number)?;
 			return Ok(canonical_hash);
 		}
 
-		// Cached canonical block is stale (reorg happened), or meta key was absent
-		// and best block is not indexed yet. Walk back to the latest indexed
-		// canonical block and persist the recovered pointer.
+		// Use cached pointer only as a lower bound hint for recovery scan.
+		let min_block_hint = self
+			.mapping
+			.latest_canonical_indexed_block_number()?
+			.map(|cached| cached.min(best_number));
+
+		// Best block is not indexed yet or mapping is stale (reorg). Walk back to
+		// the latest indexed canonical block and persist the recovered pointer.
 		if let Some((recovered_number, recovered_hash)) =
-			self.find_latest_indexed_canonical_block(block_number.saturating_sub(1))?
+			self.find_latest_indexed_canonical_block(best_number.saturating_sub(1), min_block_hint)?
 		{
 			self.mapping
 				.set_latest_canonical_indexed_block(recovered_number)?;
@@ -257,13 +261,18 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 	}
 
 	/// Finds the latest indexed block that is on the canonical chain by walking
-	/// backwards from `start_block`. Returns `None` if no indexed canonical block
-	/// is found within `MAX_WALKBACK_DEPTH` blocks.
+	/// backwards from `start_block`, bounded to `INDEXED_RECOVERY_SCAN_LIMIT`
+	/// probes to keep lookups fast on long chains.
 	fn find_latest_indexed_canonical_block(
 		&self,
 		start_block: u64,
+		min_block_hint: Option<u64>,
 	) -> Result<Option<(u64, Block::Hash)>, String> {
-		let min_block = start_block.saturating_sub(MAX_WALKBACK_DEPTH);
+		let scan_limit = INDEXED_RECOVERY_SCAN_LIMIT.saturating_sub(1);
+		let min_block = start_block
+			.saturating_sub(scan_limit)
+			.max(min_block_hint.unwrap_or(0))
+			.min(start_block);
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 				return Ok(Some((block_number, canonical_hash)));
@@ -341,6 +350,12 @@ pub struct MappingCommitment<Block: BlockT> {
 	pub ethereum_transaction_hashes: Vec<H256>,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum NumberMappingWrite {
+	Write,
+	Skip,
+}
+
 pub struct MappingDb<Block> {
 	db: Arc<dyn Database<DbHash>>,
 	write_lock: Arc<Mutex<()>>,
@@ -404,6 +419,7 @@ impl<Block: BlockT> MappingDb<Block> {
 		&self,
 		commitment: MappingCommitment<Block>,
 		block_number: u64,
+		number_mapping_write: NumberMappingWrite,
 	) -> Result<(), String> {
 		let _lock = self.write_lock.lock();
 
@@ -431,12 +447,13 @@ impl<Block: BlockT> MappingDb<Block> {
 			&substrate_hashes.encode(),
 		);
 
-		// Write block number -> ethereum block hash mapping
-		transaction.set(
-			columns::BLOCK_NUMBER_MAPPING,
-			&block_number.encode(),
-			&commitment.ethereum_block_hash.encode(),
-		);
+		if number_mapping_write == NumberMappingWrite::Write {
+			transaction.set(
+				columns::BLOCK_NUMBER_MAPPING,
+				&block_number.encode(),
+				&commitment.ethereum_block_hash.encode(),
+			);
+		}
 
 		for (i, ethereum_transaction_hash) in commitment
 			.ethereum_transaction_hashes
@@ -479,6 +496,22 @@ impl<Block: BlockT> MappingDb<Block> {
 		}
 	}
 
+	pub fn set_block_hash_by_number(
+		&self,
+		block_number: u64,
+		ethereum_block_hash: H256,
+	) -> Result<(), String> {
+		let _lock = self.write_lock.lock();
+
+		let mut transaction = sp_database::Transaction::new();
+		transaction.set(
+			columns::BLOCK_NUMBER_MAPPING,
+			&block_number.encode(),
+			&ethereum_block_hash.encode(),
+		);
+		self.db.commit(transaction).map_err(|e| e.to_string())
+	}
+
 	/// Returns the latest canonical indexed block number, or None if not set.
 	pub fn latest_canonical_indexed_block_number(&self) -> Result<Option<u64>, String> {
 		match self
@@ -498,6 +531,30 @@ impl<Block: BlockT> MappingDb<Block> {
 		transaction.set(
 			columns::META,
 			static_keys::LATEST_CANONICAL_INDEXED_BLOCK,
+			&block_number.encode(),
+		);
+		self.db.commit(transaction).map_err(|e| e.to_string())
+	}
+
+	/// Returns the canonical number-repair cursor, or None if not set.
+	pub fn canonical_number_repair_cursor(&self) -> Result<Option<u64>, String> {
+		match self
+			.db
+			.get(columns::META, static_keys::CANONICAL_NUMBER_REPAIR_CURSOR)
+		{
+			Some(raw) => Ok(Some(
+				u64::decode(&mut &raw[..]).map_err(|e| format!("{e:?}"))?,
+			)),
+			None => Ok(None),
+		}
+	}
+
+	/// Sets the canonical number-repair cursor.
+	pub fn set_canonical_number_repair_cursor(&self, block_number: u64) -> Result<(), String> {
+		let mut transaction = sp_database::Transaction::new();
+		transaction.set(
+			columns::META,
+			static_keys::CANONICAL_NUMBER_REPAIR_CURSOR,
 			&block_number.encode(),
 		);
 		self.db.commit(transaction).map_err(|e| e.to_string())

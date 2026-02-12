@@ -68,18 +68,19 @@ export async function waitForBlock(
 // Create a block, finalize it, and wait for it to be indexed by mapping-sync.
 // This ensures the block is visible via eth_getBlockByNumber before returning.
 export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = true) {
-	// Get current indexed block number before creating
-	const currentBlock = (await customRequest(web3, "eth_getBlockByNumber", ["latest", false])).result;
-	const currentNumber = currentBlock ? parseInt(currentBlock.number, 16) : 0;
-
 	const response = await customRequest(web3, "engine_createBlock", [true, finalize, null]);
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
 
-	// Wait for the NEW block to be indexed by mapping-sync
-	const newBlockNumber = "0x" + (currentNumber + 1).toString(16);
-	await waitForBlock(web3, newBlockNumber, 3000);
+	// Use chain head as source of truth for the new block height, then wait until
+	// mapping-sync exposes that exact block via eth RPC.
+	const head = (await customRequest(web3, "chain_getHeader", [])).result;
+	if (!head?.number) {
+		throw new Error(`Unexpected chain head response: ${JSON.stringify(head)}`);
+	}
+
+	await waitForBlock(web3, head.number, 5000);
 }
 
 // Create a block and finalize it without waiting for indexing.
