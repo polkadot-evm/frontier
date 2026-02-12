@@ -794,6 +794,14 @@ impl<Block: BlockT<Hash = H256>> fc_api::Backend<Block> for Backend<Block> {
 		.map_err(|e| format!("Failed to fetch block hash by number: {e}"))
 	}
 
+	async fn set_block_hash_by_number(
+		&self,
+		_block_number: u64,
+		_ethereum_block_hash: H256,
+	) -> Result<(), String> {
+		Ok(())
+	}
+
 	async fn transaction_metadata(
 		&self,
 		ethereum_transaction_hash: &H256,

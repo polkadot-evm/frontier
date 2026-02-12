@@ -183,46 +183,50 @@ where
 		// Query mapping-sync for the ethereum block hash by block number.
 		// This ensures consistency: if a block is visible, its transaction
 		// receipts are also available.
-		let Some(eth_hash) = self
+		let canonical_hash = self
+			.client
+			.hash(block_number.unique_saturated_into())
+			.map_err(|e| internal_err(format!("{e:?}")))?;
+		let Some(canonical_hash) = canonical_hash else {
+			return Ok(BlockInfo::default());
+		};
+
+		if let Some(eth_hash) = self
 			.backend
 			.block_hash_by_number(block_number)
 			.await
 			.map_err(|err| internal_err(format!("{err:?}")))?
-		else {
-			return Ok(BlockInfo::default());
-		};
-
-		// Get substrate hash(es) for this ethereum block hash
-		let substrate_hashes = frontier_backend_client::load_hash::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			eth_hash,
-		)
-		.await
-		.map_err(|err| internal_err(format!("{err:?}")))?;
-
-		let Some(substrate_hash) = substrate_hashes else {
-			return Ok(BlockInfo::default());
-		};
-
-		// Verify the substrate hash is on the canonical chain for all non-genesis blocks.
-		// The mapping is written at block import time, not finalization. If mapping-sync
-		// is lagging or processed an orphan block, the mapping could be stale even for
-		// finalized block numbers. We always verify against the canonical chain to ensure
-		// consistency, with genesis (block 0) as the only exception since it's immutable.
-		if block_number > 0 {
-			let canonical_hash = self
-				.client
-				.hash(block_number.unique_saturated_into())
-				.map_err(|e| internal_err(format!("{e:?}")))?;
-
-			if canonical_hash != Some(substrate_hash) {
-				// Mapping is stale - treat as not indexed yet
-				return Ok(BlockInfo::default());
+		{
+			// Verify the mapped hash resolves to the canonical block at this number.
+			let substrate_hash = frontier_backend_client::load_hash::<B, C>(
+				self.client.as_ref(),
+				self.backend.as_ref(),
+				eth_hash,
+			)
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+			if substrate_hash == Some(canonical_hash) {
+				return self.block_info_by_substrate_hash(canonical_hash).await;
 			}
 		}
 
-		self.block_info_by_substrate_hash(substrate_hash).await
+		// Self-heal missing or stale block-number mappings from canonical runtime state.
+		let Some(ethereum_block) = self.storage_override.current_block(canonical_hash) else {
+			return Ok(BlockInfo::default());
+		};
+		let repaired_eth_hash = ethereum_block.header.hash();
+		if let Err(err) = self
+			.backend
+			.set_block_hash_by_number(block_number, repaired_eth_hash)
+			.await
+		{
+			log::warn!(
+				target: "rpc",
+				"Failed to repair block number mapping for #{block_number} ({repaired_eth_hash:?}): {err:?}",
+			);
+		}
+
+		self.block_info_by_substrate_hash(canonical_hash).await
 	}
 
 	pub async fn block_info_by_eth_block_hash(

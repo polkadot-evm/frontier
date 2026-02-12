@@ -41,11 +41,9 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA_CACHE};
 const DB_HASH_LEN: usize = 32;
 /// Hash type that this backend uses for the database.
 pub type DbHash = [u8; DB_HASH_LEN];
-
-/// Maximum number of blocks to walk back when searching for an indexed canonical block.
-/// This limits the search depth when the cached `LATEST_CANONICAL_INDEXED_BLOCK` is stale
-/// (e.g., after a reorg or if it points to an unindexed block).
-const MAX_WALKBACK_DEPTH: u64 = 16;
+/// Maximum number of blocks inspected in a single recovery pass when the
+/// latest indexed canonical pointer is stale or missing.
+const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8192;
 
 /// Database settings.
 pub struct DatabaseSettings {
@@ -87,6 +85,15 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 
 	async fn block_hash_by_number(&self, block_number: u64) -> Result<Option<H256>, String> {
 		self.mapping().block_hash_by_number(block_number)
+	}
+
+	async fn set_block_hash_by_number(
+		&self,
+		block_number: u64,
+		ethereum_block_hash: H256,
+	) -> Result<(), String> {
+		self.mapping()
+			.set_block_hash_by_number(block_number, ethereum_block_hash)
 	}
 
 	async fn transaction_metadata(
@@ -141,6 +148,15 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			self.mapping
 				.set_latest_canonical_indexed_block(recovered_number)?;
 			return Ok(recovered_hash);
+		}
+
+		// Keep recovery bounded per call: move the pointer back by one recovery
+		// window so subsequent calls continue searching older ranges without
+		// rescanning the same millions of heights.
+		let fallback = block_number.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
+		if fallback < block_number {
+			self.mapping
+				.set_latest_canonical_indexed_block(fallback)?;
 		}
 
 		Ok(self.client.info().genesis_hash)
@@ -257,13 +273,14 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 	}
 
 	/// Finds the latest indexed block that is on the canonical chain by walking
-	/// backwards from `start_block`. Returns `None` if no indexed canonical block
-	/// is found within `MAX_WALKBACK_DEPTH` blocks.
+	/// backwards from `start_block`, bounded to `INDEXED_RECOVERY_SCAN_LIMIT`
+	/// probes to keep lookups fast on long chains.
 	fn find_latest_indexed_canonical_block(
 		&self,
 		start_block: u64,
 	) -> Result<Option<(u64, Block::Hash)>, String> {
-		let min_block = start_block.saturating_sub(MAX_WALKBACK_DEPTH);
+		let scan_limit = INDEXED_RECOVERY_SCAN_LIMIT.saturating_sub(1);
+		let min_block = start_block.saturating_sub(scan_limit);
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 				return Ok(Some((block_number, canonical_hash)));
@@ -477,6 +494,22 @@ impl<Block: BlockT> MappingDb<Block> {
 			)),
 			None => Ok(None),
 		}
+	}
+
+	pub fn set_block_hash_by_number(
+		&self,
+		block_number: u64,
+		ethereum_block_hash: H256,
+	) -> Result<(), String> {
+		let _lock = self.write_lock.lock();
+
+		let mut transaction = sp_database::Transaction::new();
+		transaction.set(
+			columns::BLOCK_NUMBER_MAPPING,
+			&block_number.encode(),
+			&ethereum_block_hash.encode(),
+		);
+		self.db.commit(transaction).map_err(|e| e.to_string())
 	}
 
 	/// Returns the latest canonical indexed block number, or None if not set.
