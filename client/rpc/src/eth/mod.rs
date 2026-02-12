@@ -92,6 +92,53 @@ pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	_marker: PhantomData<(BE, EC)>,
 }
 
+async fn resolve_canonical_substrate_hash_by_number<B, C>(
+	client: &C,
+	storage_override: &dyn StorageOverride<B>,
+	backend: &dyn fc_api::Backend<B>,
+	block_number: u64,
+) -> RpcResult<Option<B::Hash>>
+where
+	B: BlockT,
+	C: HeaderBackend<B> + 'static,
+{
+	let canonical_hash = client
+		.hash(block_number.unique_saturated_into())
+		.map_err(|e| internal_err(format!("{e:?}")))?;
+	let Some(canonical_hash) = canonical_hash else {
+		return Ok(None);
+	};
+
+	if let Some(eth_hash) = backend
+		.block_hash_by_number(block_number)
+		.await
+		.map_err(|err| internal_err(format!("{err:?}")))?
+	{
+		let substrate_hash = frontier_backend_client::load_hash::<B, C>(client, backend, eth_hash)
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		if substrate_hash == Some(canonical_hash) {
+			return Ok(Some(canonical_hash));
+		}
+	}
+
+	let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
+		return Ok(None);
+	};
+	let repaired_eth_hash = ethereum_block.header.hash();
+	if let Err(err) = backend
+		.set_block_hash_by_number(block_number, repaired_eth_hash)
+		.await
+	{
+		log::warn!(
+			target: "rpc",
+			"Failed to repair block number mapping for #{block_number} ({repaired_eth_hash:?}): {err:?}",
+		);
+	}
+
+	Ok(Some(canonical_hash))
+}
+
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
@@ -180,51 +227,16 @@ where
 			| BlockNumberOrHash::Hash { .. } => unreachable!(),
 		};
 
-		// Query mapping-sync for the ethereum block hash by block number.
-		// This ensures consistency: if a block is visible, its transaction
-		// receipts are also available.
-		let canonical_hash = self
-			.client
-			.hash(block_number.unique_saturated_into())
-			.map_err(|e| internal_err(format!("{e:?}")))?;
-		let Some(canonical_hash) = canonical_hash else {
+		let Some(canonical_hash) = resolve_canonical_substrate_hash_by_number::<B, C>(
+			self.client.as_ref(),
+			self.storage_override.as_ref(),
+			self.backend.as_ref(),
+			block_number,
+		)
+		.await?
+		else {
 			return Ok(BlockInfo::default());
 		};
-
-		if let Some(eth_hash) = self
-			.backend
-			.block_hash_by_number(block_number)
-			.await
-			.map_err(|err| internal_err(format!("{err:?}")))?
-		{
-			// Verify the mapped hash resolves to the canonical block at this number.
-			let substrate_hash = frontier_backend_client::load_hash::<B, C>(
-				self.client.as_ref(),
-				self.backend.as_ref(),
-				eth_hash,
-			)
-			.await
-			.map_err(|err| internal_err(format!("{err:?}")))?;
-			if substrate_hash == Some(canonical_hash) {
-				return self.block_info_by_substrate_hash(canonical_hash).await;
-			}
-		}
-
-		// Self-heal missing or stale block-number mappings from canonical runtime state.
-		let Some(ethereum_block) = self.storage_override.current_block(canonical_hash) else {
-			return Ok(BlockInfo::default());
-		};
-		let repaired_eth_hash = ethereum_block.header.hash();
-		if let Err(err) = self
-			.backend
-			.set_block_hash_by_number(block_number, repaired_eth_hash)
-			.await
-		{
-			log::warn!(
-				target: "rpc",
-				"Failed to repair block number mapping for #{block_number} ({repaired_eth_hash:?}): {err:?}",
-			);
-		}
 
 		self.block_info_by_substrate_hash(canonical_hash).await
 	}
@@ -762,5 +774,224 @@ impl<H> BlockInfo<H> {
 			is_eip1559,
 			base_fee,
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::{collections::HashMap, path::PathBuf, sync::Arc};
+
+	use ethereum::PartialHeader;
+	use ethereum_types::{Address, Bloom, H160, H256, H64, U256};
+	use fp_rpc::TransactionStatus;
+	use sc_block_builder::BlockBuilderBuilder;
+	use sp_consensus::BlockOrigin;
+	use sp_runtime::{
+		generic::{Block, Header},
+		traits::{BlakeTwo256, Block as BlockT},
+		Permill,
+	};
+	use substrate_test_runtime_client::{
+		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
+	use tempfile::tempdir;
+
+	use super::resolve_canonical_substrate_hash_by_number;
+
+	type OpaqueBlock =
+		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
+
+	fn open_frontier_backend<Block: BlockT, C: sp_blockchain::HeaderBackend<Block>>(
+		client: Arc<C>,
+		path: PathBuf,
+	) -> Arc<fc_db::kv::Backend<Block, C>> {
+		Arc::new(
+			fc_db::kv::Backend::<Block, C>::new(
+				client,
+				&fc_db::kv::DatabaseSettings {
+					#[cfg(feature = "rocksdb")]
+					source: sc_client_db::DatabaseSource::RocksDb {
+						path,
+						cache_size: 0,
+					},
+					#[cfg(not(feature = "rocksdb"))]
+					source: sc_client_db::DatabaseSource::ParityDb { path },
+				},
+			)
+			.expect("frontier backend"),
+		)
+	}
+
+	fn make_ethereum_block(seed: u64) -> ethereum::BlockV3 {
+		let partial_header = PartialHeader {
+			parent_hash: H256::from_low_u64_be(seed),
+			beneficiary: H160::from_low_u64_be(seed),
+			state_root: H256::from_low_u64_be(seed.saturating_add(1)),
+			receipts_root: H256::from_low_u64_be(seed.saturating_add(2)),
+			logs_bloom: Bloom::default(),
+			difficulty: U256::from(seed),
+			number: U256::from(seed),
+			gas_limit: U256::from(seed.saturating_add(100)),
+			gas_used: U256::from(seed.saturating_add(50)),
+			timestamp: seed,
+			extra_data: Vec::new(),
+			mix_hash: H256::from_low_u64_be(seed.saturating_add(3)),
+			nonce: H64::from_low_u64_be(seed),
+		};
+		ethereum::Block::new(partial_header, vec![], vec![])
+	}
+
+	struct TestStorageOverride {
+		blocks: HashMap<<OpaqueBlock as BlockT>::Hash, ethereum::BlockV3>,
+	}
+
+	impl fc_storage::StorageOverride<OpaqueBlock> for TestStorageOverride {
+		fn account_code_at(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+			_address: Address,
+		) -> Option<Vec<u8>> {
+			None
+		}
+
+		fn account_storage_at(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+			_address: Address,
+			_index: U256,
+		) -> Option<H256> {
+			None
+		}
+
+		fn current_block(&self, at: <OpaqueBlock as BlockT>::Hash) -> Option<ethereum::BlockV3> {
+			self.blocks.get(&at).cloned()
+		}
+
+		fn current_receipts(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+		) -> Option<Vec<ethereum::ReceiptV4>> {
+			None
+		}
+
+		fn current_transaction_statuses(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+		) -> Option<Vec<TransactionStatus>> {
+			None
+		}
+
+		fn elasticity(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<Permill> {
+			None
+		}
+
+		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
+			false
+		}
+	}
+
+	#[test]
+	fn resolve_canonical_substrate_hash_repairs_missing_and_stale_number_mapping() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+		let backend = open_frontier_backend::<OpaqueBlock, _>(client.clone(), tmp.keep());
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change");
+		let block = builder.build().expect("build block").block;
+		let canonical_hash = block.header.hash();
+		futures::executor::block_on(client.import(BlockOrigin::Own, block)).expect("import block");
+
+		let ethereum_block = make_ethereum_block(1);
+		let canonical_eth_hash = ethereum_block.header.hash();
+		let storage_override = TestStorageOverride {
+			blocks: HashMap::from([(canonical_hash, ethereum_block)]),
+		};
+
+		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
+			block_hash: canonical_hash,
+			ethereum_block_hash: canonical_eth_hash,
+			ethereum_transaction_hashes: vec![],
+		};
+		backend
+			.mapping()
+			.write_hashes(commitment, 1, fc_db::kv::NumberMappingWrite::Skip)
+			.expect("seed hash mapping only");
+		assert_eq!(
+			backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read number mapping"),
+			None
+		);
+		assert_eq!(
+			backend
+				.mapping()
+				.block_hash(&canonical_eth_hash)
+				.expect("read hash mapping"),
+			Some(vec![canonical_hash])
+		);
+
+		let resolved = futures::executor::block_on(resolve_canonical_substrate_hash_by_number::<
+			OpaqueBlock,
+			_,
+		>(
+			client.as_ref(),
+			&storage_override,
+			backend.as_ref(),
+			1,
+		))
+		.expect("resolve missing mapping");
+		assert_eq!(resolved, Some(canonical_hash));
+		assert_eq!(
+			backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read repaired number mapping"),
+			Some(canonical_eth_hash)
+		);
+
+		let stale_hash = H256::repeat_byte(0x42);
+		backend
+			.mapping()
+			.set_block_hash_by_number(1, stale_hash)
+			.expect("seed stale number mapping");
+		assert_eq!(
+			backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read stale number mapping"),
+			Some(stale_hash)
+		);
+
+		let resolved = futures::executor::block_on(resolve_canonical_substrate_hash_by_number::<
+			OpaqueBlock,
+			_,
+		>(
+			client.as_ref(),
+			&storage_override,
+			backend.as_ref(),
+			1,
+		))
+		.expect("resolve stale mapping");
+		assert_eq!(resolved, Some(canonical_hash));
+		assert_eq!(
+			backend
+				.mapping()
+				.block_hash_by_number(1)
+				.expect("read repaired stale mapping"),
+			Some(canonical_eth_hash)
+		);
 	}
 }

@@ -269,6 +269,60 @@ pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Bl
 	Ok(())
 }
 
+fn advance_latest_canonical_indexed_block<Block: BlockT, C: HeaderBackend<Block>>(
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	block_number: u64,
+) -> Result<(), String> {
+	let latest_indexed = frontier_backend
+		.mapping()
+		.latest_canonical_indexed_block_number()?
+		.unwrap_or(block_number);
+	if block_number > latest_indexed {
+		frontier_backend
+			.mapping()
+			.set_latest_canonical_indexed_block(block_number)?;
+	}
+	Ok(())
+}
+
+fn repair_new_best_number_mappings<Block: BlockT, C: HeaderBackend<Block>>(
+	client: &C,
+	storage_override: &dyn StorageOverride<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	hash: Block::Hash,
+	reorg_info: Option<&crate::ReorgInfo<Block>>,
+) -> Result<u64, String> {
+	// `is_new_best` can come from import-time state and may be stale by sync time.
+	// Number mapping repairs are canonical-gated in `repair_canonical_number_mapping_for_hash`.
+	let mut reorg_remapped = 0u64;
+	if let Some(repaired_number) =
+		repair_canonical_number_mapping_for_hash(client, storage_override, frontier_backend, hash)?
+	{
+		advance_latest_canonical_indexed_block(frontier_backend, repaired_number)?;
+		reorg_remapped = reorg_remapped.saturating_add(1);
+	} else {
+		log::debug!(
+			target: "mapping-sync",
+			"Skipping canonical pointer update for non-canonical new-best candidate {hash:?}",
+		);
+	}
+	if let Some(info) = reorg_info {
+		for enacted_hash in &info.enacted {
+			if let Some(repaired_number) = repair_canonical_number_mapping_for_hash(
+				client,
+				storage_override,
+				frontier_backend,
+				*enacted_hash,
+			)? {
+				advance_latest_canonical_indexed_block(frontier_backend, repaired_number)?;
+				reorg_remapped = reorg_remapped.saturating_add(1);
+			}
+		}
+	}
+
+	Ok(reorg_remapped)
+}
+
 pub fn sync_one_block<Block: BlockT, C, BE>(
 	client: &C,
 	substrate_backend: &BE,
@@ -355,15 +409,7 @@ where
 			is_canonical_now,
 		)?;
 		if is_canonical_now {
-			let latest_indexed = frontier_backend
-				.mapping()
-				.latest_canonical_indexed_block_number()?
-				.unwrap_or(block_number);
-			if block_number > latest_indexed {
-				frontier_backend
-					.mapping()
-					.set_latest_canonical_indexed_block(block_number)?;
-			}
+			advance_latest_canonical_indexed_block(frontier_backend, block_number)?;
 		}
 
 		current_syncing_tips.push(*operating_header.parent_hash());
@@ -381,39 +427,14 @@ where
 	let is_new_best = best_info.is_some() || client.info().best_hash == hash;
 	let reorg_info = best_info.and_then(|info| info.reorg_info);
 
-	// `is_new_best` can come from import-time state and may be stale by sync time.
-	// Number mapping repairs are canonical-gated in `repair_canonical_number_mapping_for_hash`.
 	if is_new_best {
-		let block_number: u64 = (*operating_header.number()).unique_saturated_into();
-		frontier_backend
-			.mapping()
-			.set_latest_canonical_indexed_block(block_number)?;
-
-		let mut reorg_remapped = 0u64;
-		if repair_canonical_number_mapping_for_hash(
+		let reorg_remapped = repair_new_best_number_mappings(
 			client,
 			storage_override.as_ref(),
 			frontier_backend,
 			hash,
-		)?
-		.is_some()
-		{
-			reorg_remapped = reorg_remapped.saturating_add(1);
-		}
-		if let Some(info) = reorg_info.as_ref() {
-			for enacted_hash in &info.enacted {
-				if repair_canonical_number_mapping_for_hash(
-					client,
-					storage_override.as_ref(),
-					frontier_backend,
-					*enacted_hash,
-				)?
-				.is_some()
-				{
-					reorg_remapped = reorg_remapped.saturating_add(1);
-				}
-			}
-		}
+			reorg_info.as_deref(),
+		)?;
 		log::debug!(
 			target: "mapping-sync",
 			"Reorg canonical remap touched {reorg_remapped} blocks at new best {hash:?}",
@@ -499,5 +520,170 @@ where
 		}
 		Ok(Some(_)) => Ok(None),
 		Ok(None) | Err(_) => Err("Header not found".to_string()),
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use std::sync::Arc;
+
+	use ethereum_types::{Address, H256, U256};
+	use fc_storage::StorageOverride;
+	use fp_rpc::TransactionStatus;
+	use sc_block_builder::BlockBuilderBuilder;
+	use sp_blockchain::HeaderBackend as _;
+	use sp_consensus::BlockOrigin;
+	use sp_runtime::{
+		generic::Header,
+		traits::{BlakeTwo256, Block as BlockT},
+		Permill,
+	};
+	use substrate_test_runtime_client::{
+		BlockBuilderExt, ClientBlockImportExt, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
+	use tempfile::tempdir;
+
+	use super::repair_new_best_number_mappings;
+
+	type OpaqueBlock = sp_runtime::generic::Block<
+		Header<u64, BlakeTwo256>,
+		substrate_test_runtime_client::runtime::Extrinsic,
+	>;
+
+	struct NoopStorageOverride;
+
+	impl StorageOverride<OpaqueBlock> for NoopStorageOverride {
+		fn account_code_at(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+			_address: Address,
+		) -> Option<Vec<u8>> {
+			None
+		}
+
+		fn account_storage_at(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+			_address: Address,
+			_index: U256,
+		) -> Option<H256> {
+			None
+		}
+
+		fn current_block(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<ethereum::BlockV3> {
+			None
+		}
+
+		fn current_receipts(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+		) -> Option<Vec<ethereum::ReceiptV4>> {
+			None
+		}
+
+		fn current_transaction_statuses(
+			&self,
+			_at: <OpaqueBlock as BlockT>::Hash,
+		) -> Option<Vec<TransactionStatus>> {
+			None
+		}
+
+		fn elasticity(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<Permill> {
+			None
+		}
+
+		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
+			false
+		}
+	}
+
+	#[test]
+	fn non_canonical_new_best_candidate_does_not_advance_pointer() {
+		let tmp = tempdir().expect("create temp dir");
+		let builder = TestClientBuilder::new();
+		let (client, _) = builder
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+				None,
+			);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build A1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change for A1");
+		let a1 = builder.build().expect("build A1 block").block;
+		let a1_hash = a1.header.hash();
+		futures::executor::block_on(client.import(BlockOrigin::Own, a1)).expect("import A1");
+
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(a1_hash)
+			.fetch_parent_block_number(client.as_ref())
+			.expect("fetch A1 number")
+			.build()
+			.expect("build A2");
+		builder
+			.push_storage_change(vec![2], None)
+			.expect("push storage change for A2");
+		let a2 = builder.build().expect("build A2 block").block;
+		futures::executor::block_on(client.import(BlockOrigin::Own, a2)).expect("import A2");
+
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build B1");
+		builder
+			.push_storage_change(vec![3], None)
+			.expect("push storage change for B1");
+		let b1 = builder.build().expect("build B1 block").block;
+		let b1_hash = b1.header.hash();
+		futures::executor::block_on(client.import(BlockOrigin::Own, b1)).expect("import B1");
+
+		assert_eq!(client.hash(1).expect("hash query"), Some(a1_hash));
+		assert_ne!(client.hash(1).expect("hash query"), Some(b1_hash));
+
+		frontier_backend
+			.mapping()
+			.set_latest_canonical_indexed_block(1)
+			.expect("seed pointer");
+
+		let repaired = repair_new_best_number_mappings(
+			client.as_ref(),
+			&NoopStorageOverride,
+			&frontier_backend,
+			b1_hash,
+			None,
+		)
+		.expect("repair pass");
+
+		assert_eq!(repaired, 0);
+		assert_eq!(
+			frontier_backend
+				.mapping()
+				.latest_canonical_indexed_block_number()
+				.expect("pointer read"),
+			Some(1)
+		);
 	}
 }
