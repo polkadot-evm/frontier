@@ -54,6 +54,9 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 	}).timeout(20000);
 
 	step("should get newHeads stream", async function () {
+		const latestBefore = Number((await context.web3.eth.getBlock("latest")).number);
+		const expectedNumber = latestBefore + 1;
+
 		subscription = context.web3.eth.subscribe("newBlockHeaders", function (error, result) {});
 
 		await new Promise<void>((resolve, reject) => {
@@ -71,6 +74,10 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		const dataPromise = new Promise<any>((resolve, reject) => {
 			const timer = setTimeout(() => reject(new Error("Timed out waiting for newHeads data")), 30000);
 			subscription.on("data", function (d: any) {
+				// Some providers may emit a stale first header right after subscribing.
+				if (Number(d.number) < expectedNumber) {
+					return;
+				}
 				clearTimeout(timer);
 				resolve(d);
 			});
@@ -84,6 +91,8 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		const data = await dataPromise;
 		subscription.unsubscribe();
 
+		const block = await context.web3.eth.getBlock(expectedNumber);
+
 		expect(data).to.include({
 			author: "0x0000000000000000000000000000000000000000",
 			difficulty: "0",
@@ -91,12 +100,13 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			logsBloom:
 				"0x00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
 			miner: "0x0000000000000000000000000000000000000000",
-			number: 2,
+			number: expectedNumber,
 			receiptsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
 			sha3Uncles: "0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347",
 			transactionsRoot: "0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
 		});
 		expect(data.nonce).to.eql("0x0000000000000000");
+		expect(data.hash).to.eq(block.hash);
 	}).timeout(40000);
 
 	step("should get newPendingTransactions stream", async function (done) {
