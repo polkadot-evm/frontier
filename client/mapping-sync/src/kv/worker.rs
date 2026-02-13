@@ -195,18 +195,18 @@ where
 			match result {
 				Ok(have_next) => {
 					if !have_next {
-					if let Err(e) = super::canonical_reconciler::reconcile_from_cursor_batch(
-						self.client.as_ref(),
-						self.storage_override.as_ref(),
-						self.frontier_backend.as_ref(),
-						self.sync_from,
-						super::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
-					) {
-						debug!(
-							target: "reconcile",
-							"Batch canonical reconcile failed with error {e:?}, retrying."
-						);
-					}
+						if let Err(e) = super::canonical_reconciler::reconcile_from_cursor_batch(
+							self.client.as_ref(),
+							self.storage_override.as_ref(),
+							self.frontier_backend.as_ref(),
+							self.sync_from,
+							super::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
+						) {
+							debug!(
+								target: "reconcile",
+								"Batch canonical reconcile failed with error {e:?}, retrying."
+							);
+						}
 					}
 					self.have_next = have_next;
 					Poll::Ready(Some(()))

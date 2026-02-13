@@ -178,8 +178,8 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 			continue;
 		};
 		let canonical_eth_hash = ethereum_block.header.hash();
-		let should_update = frontier_backend.mapping().block_hash_by_number(number)?
-			!= Some(canonical_eth_hash);
+		let should_update =
+			frontier_backend.mapping().block_hash_by_number(number)? != Some(canonical_eth_hash);
 		if should_update {
 			frontier_backend
 				.mapping()
@@ -244,7 +244,9 @@ fn update_repair_cursor<Block: BlockT, C: HeaderBackend<Block>>(
 	strategy: CursorUpdateStrategy,
 ) -> Result<(), String> {
 	let candidate_next = candidate_next.max(sync_from_number);
-	let current = frontier_backend.mapping().canonical_number_repair_cursor()?;
+	let current = frontier_backend
+		.mapping()
+		.canonical_number_repair_cursor()?;
 
 	let next = match (strategy, current) {
 		(CursorUpdateStrategy::Replace, _) => candidate_next,
@@ -308,7 +310,11 @@ fn validate_latest_pointer_invariant<Block: BlockT, C: HeaderBackend<Block>>(
 	else {
 		return Ok(());
 	};
-	if frontier_backend.mapping().block_hash_by_number(latest_indexed)? != Some(canonical_eth_hash) {
+	if frontier_backend
+		.mapping()
+		.block_hash_by_number(latest_indexed)?
+		!= Some(canonical_eth_hash)
+	{
 		log::warn!(
 			target: "reconcile",
 			"invariant mismatch at latest pointer #{}: expected {:?}",

@@ -18,8 +18,8 @@
 
 #![allow(clippy::too_many_arguments)]
 
-mod worker;
 mod canonical_reconciler;
+mod worker;
 
 pub use worker::MappingSyncWorker;
 
@@ -611,15 +611,18 @@ mod tests {
 		)
 		.expect("repair pass");
 
-		assert_eq!(repaired, Some(canonical_reconciler::ReconcileStats {
-			scanned: 1,
-			updated: 0,
-			first_unresolved: Some(1),
-			highest_reconciled: None,
-			next_cursor: 1,
-			lag_blocks: 1,
-			window: canonical_reconciler::ReconcileWindow { start: 1, end: 1 },
-		}));
+		assert_eq!(
+			repaired,
+			Some(canonical_reconciler::ReconcileStats {
+				scanned: 1,
+				updated: 0,
+				first_unresolved: Some(1),
+				highest_reconciled: None,
+				next_cursor: 1,
+				lag_blocks: 1,
+				window: canonical_reconciler::ReconcileWindow { start: 1, end: 1 },
+			})
+		);
 		assert_eq!(
 			frontier_backend
 				.mapping()

@@ -904,11 +904,7 @@ mod tests {
 		let resolved = futures::executor::block_on(resolve_canonical_substrate_hash_by_number::<
 			OpaqueBlock,
 			_,
-		>(
-			client.as_ref(),
-			backend.as_ref(),
-			1,
-		))
+		>(client.as_ref(), backend.as_ref(), 1))
 		.expect("resolve missing mapping without repair");
 		assert_eq!(resolved, Some(canonical_hash));
 		assert_eq!(
@@ -935,11 +931,7 @@ mod tests {
 		let resolved = futures::executor::block_on(resolve_canonical_substrate_hash_by_number::<
 			OpaqueBlock,
 			_,
-		>(
-			client.as_ref(),
-			backend.as_ref(),
-			1,
-		))
+		>(client.as_ref(), backend.as_ref(), 1))
 		.expect("resolve stale mapping without repair");
 		assert_eq!(resolved, Some(canonical_hash));
 		assert_eq!(
