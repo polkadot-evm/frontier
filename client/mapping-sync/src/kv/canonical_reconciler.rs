@@ -98,12 +98,14 @@ pub fn reconcile_reorg_window<Block: BlockT, C: HeaderBackend<Block>>(
 
 	let sync_from_number = UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from);
 	let best_number: u64 = client.info().best_number.unique_saturated_into();
+	let start = window.start.max(sync_from_number);
+	let end = window.end.max(sync_from_number);
 	let stats = reconcile_range_internal(
 		client,
 		storage_override,
 		frontier_backend,
-		window.start,
-		window.end,
+		start,
+		end,
 		sync_from_number,
 		best_number,
 		ScanDirection::Ascending,

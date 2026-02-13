@@ -100,36 +100,36 @@ pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	_marker: PhantomData<(BE, EC)>,
 }
 
-fn find_readable_hash_within_limit<H, FReadable, FHashAt>(
-	start_hash: H,
+fn find_readable_hash_from_number_desc<H, FReadable, FHashAt>(
 	start_number: u64,
-	scan_limit: u64,
+	stop_number: Option<u64>,
 	is_readable: &mut FReadable,
 	hash_at_number: &mut FHashAt,
 ) -> (Option<H>, u64)
 where
-	H: Clone,
 	FReadable: FnMut(&H) -> bool,
 	FHashAt: FnMut(u64) -> Option<H>,
 {
-	if is_readable(&start_hash) {
-		return (Some(start_hash), 0);
+	let lower_bound = stop_number.unwrap_or(0);
+	if start_number < lower_bound {
+		return (None, 0);
 	}
 
 	let mut current_number = start_number;
 	let mut scanned_hops: u64 = 0;
-	for _ in 0..scan_limit {
-		if current_number == 0 {
+
+	loop {
+		let Some(hash) = hash_at_number(current_number) else {
+			break;
+		};
+		if is_readable(&hash) {
+			return (Some(hash), scanned_hops);
+		}
+		if current_number == lower_bound || current_number == 0 {
 			break;
 		}
 		current_number = current_number.saturating_sub(1);
-		let Some(previous_hash) = hash_at_number(current_number) else {
-			break;
-		};
 		scanned_hops = scanned_hops.saturating_add(1);
-		if is_readable(&previous_hash) {
-			return (Some(previous_hash), scanned_hops);
-		}
 	}
 
 	(None, scanned_hops)
@@ -221,7 +221,7 @@ where
 	) -> RpcResult<bool> {
 		let Some(cached_number) = self
 			.client
-			.number(cached_hash.clone())
+			.number(*cached_hash)
 			.map_err(|err| internal_err(format!("{err:?}")))?
 		else {
 			return Ok(false);
@@ -235,14 +235,11 @@ where
 			.client
 			.hash(cached_number.unique_saturated_into())
 			.map_err(|err| internal_err(format!("{err:?}")))?;
-		if canonical_hash != Some(cached_hash.clone()) {
+		if canonical_hash != Some(*cached_hash) {
 			return Ok(false);
 		}
 
-		Ok(self
-			.storage_override
-			.current_block(cached_hash.clone())
-			.is_some())
+		Ok(self.storage_override.current_block(*cached_hash).is_some())
 	}
 
 	async fn latest_indexed_hash_with_block(&self) -> RpcResult<B::Hash> {
@@ -253,28 +250,31 @@ where
 			.map_err(|err| internal_err(format!("{err:?}")))?;
 		let latest_indexed_number: u64 = self
 			.client
-			.number(latest_indexed_hash.clone())
+			.number(latest_indexed_hash)
 			.map_err(|err| internal_err(format!("{err:?}")))?
 			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?
 			.unique_saturated_into();
 
-		let cached_hash = self
+		let cached_hash = *self
 			.last_readable_latest
 			.lock()
-			.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
-			.clone();
+			.map_err(|_| internal_err("last_readable_latest lock poisoned"))?;
 		if let Some(cached_hash) = cached_hash {
 			if self.cached_latest_hash_is_usable(&cached_hash, latest_indexed_number)? {
-				log::debug!(target: "rpc", "latest readable cache hit");
+				log::debug!(
+					target: "rpc",
+					"latest readable selection cache_hit=true bounded_hit=false exhaustive_hit=false full_miss=false bounded_scanned_hops=0 exhaustive_scanned_hops=0 limit={}",
+					self.latest_readable_scan_limit,
+				);
 				return Ok(cached_hash);
 			}
 		}
 
-		let (resolved_hash, scanned_hops) = find_readable_hash_within_limit(
-			latest_indexed_hash.clone(),
+		let bounded_lower = latest_indexed_number.saturating_sub(self.latest_readable_scan_limit);
+		let (bounded_resolved_hash, bounded_scanned_hops) = find_readable_hash_from_number_desc(
 			latest_indexed_number,
-			self.latest_readable_scan_limit,
-			&mut |hash: &B::Hash| self.storage_override.current_block(hash.clone()).is_some(),
+			Some(bounded_lower),
+			&mut |hash: &B::Hash| self.storage_override.current_block(*hash).is_some(),
 			&mut |number: u64| {
 				self.client
 					.hash(number.unique_saturated_into())
@@ -284,31 +284,59 @@ where
 			},
 		);
 
-		let selected_hash = if let Some(resolved_hash) = resolved_hash {
+		let (selected_hash, bounded_hit, exhaustive_hit, full_miss, exhaustive_scanned_hops) =
+			if let Some(resolved_hash) = bounded_resolved_hash {
+				(resolved_hash, true, false, false, 0)
+			} else {
+				let exhaustive_start = bounded_lower.checked_sub(1);
+				let (exhaustive_resolved_hash, exhaustive_scanned_hops) =
+					if let Some(exhaustive_start) = exhaustive_start {
+						find_readable_hash_from_number_desc(
+							exhaustive_start,
+							Some(0),
+							&mut |hash: &B::Hash| {
+								self.storage_override.current_block(*hash).is_some()
+							},
+							&mut |number: u64| {
+								self.client
+									.hash(number.unique_saturated_into())
+									.map_err(|err| internal_err(format!("{err:?}")))
+									.ok()
+									.flatten()
+							},
+						)
+					} else {
+						(None, 0)
+					};
+
+				if let Some(resolved_hash) = exhaustive_resolved_hash {
+					(resolved_hash, false, true, false, exhaustive_scanned_hops)
+				} else {
+					(
+						latest_indexed_hash,
+						false,
+						false,
+						true,
+						exhaustive_scanned_hops,
+					)
+				}
+			};
+
+		if !full_miss {
 			self.last_readable_latest
 				.lock()
 				.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
-				.replace(resolved_hash.clone());
-			resolved_hash
-		} else if let Some(cached_hash) = self
-			.last_readable_latest
-			.lock()
-			.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
-			.clone()
-		{
-			if self.cached_latest_hash_is_usable(&cached_hash, latest_indexed_number)? {
-				cached_hash
-			} else {
-				latest_indexed_hash
-			}
-		} else {
-			latest_indexed_hash
-		};
+				.replace(selected_hash);
+		}
 
 		log::debug!(
 			target: "rpc",
-			"latest readable selection scanned_hops {}, limit {}",
-			scanned_hops,
+			"latest readable selection cache_hit=false bounded_hit={} exhaustive_hit={} full_miss={} bounded_scanned_hops={} exhaustive_scanned_hops={} limit={}",
+			bounded_hit,
+			exhaustive_hit,
+			full_miss,
+			bounded_scanned_hops,
+			exhaustive_scanned_hops,
 			self.latest_readable_scan_limit,
 		);
 
@@ -912,28 +940,43 @@ fn test_only_select_latest_readable_hash(
 	latest_number: u64,
 	scan_limit: u64,
 	cached_hash: Option<u64>,
-	readable_from: u64,
+	readable_at_or_below: Option<u64>,
 	cached_usable: bool,
-) -> (u64, Option<u64>, u64) {
-	let (resolved, scanned_hops) = find_readable_hash_within_limit(
-		latest_hash,
-		latest_number,
-		scan_limit,
-		&mut |hash: &u64| *hash <= readable_from,
-		&mut |number: u64| Some(number),
-	);
-
-	if let Some(resolved) = resolved {
-		return (resolved, Some(resolved), scanned_hops);
-	}
-
+) -> (u64, Option<u64>, u64, u64) {
 	if let Some(cached_hash) = cached_hash {
 		if cached_usable {
-			return (cached_hash, Some(cached_hash), scanned_hops);
+			return (cached_hash, Some(cached_hash), 0, 0);
 		}
 	}
 
-	(latest_hash, None, scanned_hops)
+	let bounded_lower = latest_number.saturating_sub(scan_limit);
+	let (bounded_resolved, bounded_hops) = find_readable_hash_from_number_desc(
+		latest_number,
+		Some(bounded_lower),
+		&mut |hash: &u64| readable_at_or_below.is_some_and(|limit| *hash <= limit),
+		&mut |number: u64| Some(number),
+	);
+
+	if let Some(resolved) = bounded_resolved {
+		return (resolved, Some(resolved), bounded_hops, 0);
+	}
+
+	let (exhaustive_resolved, exhaustive_hops) = if bounded_lower == 0 {
+		(None, 0)
+	} else {
+		find_readable_hash_from_number_desc(
+			bounded_lower.saturating_sub(1),
+			Some(0),
+			&mut |hash: &u64| readable_at_or_below.is_some_and(|limit| *hash <= limit),
+			&mut |number: u64| Some(number),
+		)
+	};
+
+	if let Some(resolved) = exhaustive_resolved {
+		return (resolved, Some(resolved), bounded_hops, exhaustive_hops);
+	}
+
+	(latest_hash, None, bounded_hops, exhaustive_hops)
 }
 
 #[cfg(test)]
@@ -1092,29 +1135,32 @@ mod tests {
 	}
 
 	#[test]
-	fn latest_readable_selection_stops_at_scan_limit() {
-		let (resolved, cached, scanned_hops) =
-			test_only_select_latest_readable_hash(100, 100, 3, None, 90, false);
-		assert_eq!(resolved, 100);
-		assert_eq!(cached, None);
-		assert_eq!(scanned_hops, 3);
-	}
-
-	#[test]
-	fn latest_readable_selection_uses_cache_when_scan_misses() {
-		let (resolved, cached, scanned_hops) =
-			test_only_select_latest_readable_hash(100, 100, 2, Some(80), 50, true);
+	fn latest_readable_selection_uses_exhaustive_fallback_when_bounded_scan_misses() {
+		let (resolved, cached, bounded_hops, exhaustive_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, None, Some(80), false);
 		assert_eq!(resolved, 80);
 		assert_eq!(cached, Some(80));
-		assert_eq!(scanned_hops, 2);
+		assert_eq!(bounded_hops, 2);
+		assert_eq!(exhaustive_hops, 17);
 	}
 
 	#[test]
-	fn latest_readable_selection_ignores_stale_cache() {
-		let (resolved, cached, scanned_hops) =
-			test_only_select_latest_readable_hash(100, 100, 2, Some(80), 50, false);
+	fn latest_readable_selection_uses_cache_before_scanning() {
+		let (resolved, cached, bounded_hops, exhaustive_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, Some(80), Some(50), true);
+		assert_eq!(resolved, 80);
+		assert_eq!(cached, Some(80));
+		assert_eq!(bounded_hops, 0);
+		assert_eq!(exhaustive_hops, 0);
+	}
+
+	#[test]
+	fn latest_readable_selection_falls_back_to_latest_when_no_readable_exists() {
+		let (resolved, cached, bounded_hops, exhaustive_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, Some(80), None, false);
 		assert_eq!(resolved, 100);
 		assert_eq!(cached, None);
-		assert_eq!(scanned_hops, 2);
+		assert_eq!(bounded_hops, 2);
+		assert_eq!(exhaustive_hops, 97);
 	}
 }

@@ -406,6 +406,8 @@ mod tests {
 	};
 	use tempfile::tempdir;
 
+	use crate::ReorgInfo;
+
 	use super::{canonical_reconciler, repair_canonical_number_mappings_batch};
 
 	type OpaqueBlock = sp_runtime::generic::Block<
@@ -721,6 +723,137 @@ mod tests {
 		);
 
 		assert!(storage_override.current_block(canonical_hash_1).is_none());
+	}
+
+	#[test]
+	fn reconcile_reorg_window_does_not_write_below_sync_from() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change for block 1");
+		let block_1 = builder.build().expect("build block 1").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_1))
+			.expect("import block 1");
+
+		let best_after_1 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_1.best_hash)
+			.with_parent_block_number(best_after_1.best_number)
+			.build()
+			.expect("build block 2");
+		builder
+			.push_storage_change(vec![2], None)
+			.expect("push storage change for block 2");
+		let block_2 = builder.build().expect("build block 2").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_2))
+			.expect("import block 2");
+
+		let best_after_2 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_2.best_hash)
+			.with_parent_block_number(best_after_2.best_number)
+			.build()
+			.expect("build block 3");
+		builder
+			.push_storage_change(vec![3], None)
+			.expect("push storage change for block 3");
+		let block_3 = builder.build().expect("build block 3").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_3))
+			.expect("import block 3");
+
+		let canonical_hash_1 = client
+			.hash(1)
+			.expect("query canonical hash for #1")
+			.expect("canonical hash for #1");
+		let canonical_hash_2 = client
+			.hash(2)
+			.expect("query canonical hash for #2")
+			.expect("canonical hash for #2");
+		let canonical_hash_3 = client
+			.hash(3)
+			.expect("query canonical hash for #3")
+			.expect("canonical hash for #3");
+
+		let eth_block_2 = make_ethereum_block(2);
+		let eth_block_3 = make_ethereum_block(3);
+		let eth_hash_3 = eth_block_3.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([
+				(canonical_hash_2, eth_block_2),
+				(canonical_hash_3, eth_block_3),
+			]),
+		};
+
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(2, H256::repeat_byte(0x22))
+			.expect("seed stale #2");
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(3, H256::repeat_byte(0x33))
+			.expect("seed stale #3");
+
+		let reorg_info = ReorgInfo::<OpaqueBlock> {
+			common_ancestor: canonical_hash_1,
+			retracted: vec![],
+			enacted: vec![canonical_hash_2],
+			new_best: canonical_hash_3,
+		};
+		let stats = canonical_reconciler::reconcile_reorg_window(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			Some(&reorg_info),
+			canonical_hash_3,
+			3,
+		)
+		.expect("reconcile reorg window")
+		.expect("stats");
+
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(2),
+			Ok(Some(H256::repeat_byte(0x22))),
+			"mapping below sync_from must stay unchanged",
+		);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(3),
+			Ok(Some(eth_hash_3)),
+			"mapping at sync_from must be reconciled",
+		);
+		assert_eq!(stats.scanned, 1);
+		assert_eq!(stats.updated, 1);
+		assert_eq!(
+			stats.window,
+			canonical_reconciler::ReconcileWindow { start: 3, end: 3 },
+		);
 	}
 
 	#[test]
