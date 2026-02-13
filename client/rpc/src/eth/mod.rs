@@ -94,7 +94,6 @@ pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 
 async fn resolve_canonical_substrate_hash_by_number<B, C>(
 	client: &C,
-	storage_override: &dyn StorageOverride<B>,
 	backend: &dyn fc_api::Backend<B>,
 	block_number: u64,
 ) -> RpcResult<Option<B::Hash>>
@@ -120,20 +119,6 @@ where
 		if substrate_hash == Some(canonical_hash) {
 			return Ok(Some(canonical_hash));
 		}
-	}
-
-	let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
-		return Ok(None);
-	};
-	let repaired_eth_hash = ethereum_block.header.hash();
-	if let Err(err) = backend
-		.set_block_hash_by_number(block_number, repaired_eth_hash)
-		.await
-	{
-		log::warn!(
-			target: "rpc",
-			"Failed to repair block number mapping for #{block_number} ({repaired_eth_hash:?}): {err:?}",
-		);
 	}
 
 	Ok(Some(canonical_hash))
@@ -184,6 +169,40 @@ where
 		}
 	}
 
+	async fn latest_indexed_hash_with_block(&self) -> RpcResult<B::Hash> {
+		let mut substrate_hash = self
+			.backend
+			.latest_block_hash()
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		let mut block_number: u64 = self
+			.client
+			.number(substrate_hash)
+			.map_err(|err| internal_err(format!("{err:?}")))?
+			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?
+			.unique_saturated_into();
+
+		// Ensure "latest" always resolves to a block payload that is readable by RPC.
+		while self
+			.storage_override
+			.current_block(substrate_hash)
+			.is_none()
+			&& block_number > 0
+		{
+			block_number = block_number.saturating_sub(1);
+			let Some(previous_hash) = self
+				.client
+				.hash(block_number.unique_saturated_into())
+				.map_err(|err| internal_err(format!("{err:?}")))?
+			else {
+				break;
+			};
+			substrate_hash = previous_hash;
+		}
+
+		Ok(substrate_hash)
+	}
+
 	pub async fn block_info_by_number(
 		&self,
 		number_or_hash: BlockNumberOrHash,
@@ -201,14 +220,9 @@ where
 				return self.block_info_by_eth_block_hash(hash).await;
 			}
 			BlockNumberOrHash::Latest => {
-				// For "latest", use backend.latest_block_hash() which returns the latest
-				// indexed block. This avoids a race condition where the best block from
-				// the client may not yet be indexed by mapping-sync.
-				let substrate_hash = self
-					.backend
-					.latest_block_hash()
-					.await
-					.map_err(|err| internal_err(format!("{err:?}")))?;
+				// For "latest", use the latest indexed block and fall back to the nearest
+				// canonical ancestor that has a readable block payload.
+				let substrate_hash = self.latest_indexed_hash_with_block().await?;
 				return self.block_info_by_substrate_hash(substrate_hash).await;
 			}
 			_ => {}
@@ -229,7 +243,6 @@ where
 
 		let Some(canonical_hash) = resolve_canonical_substrate_hash_by_number::<B, C>(
 			self.client.as_ref(),
-			self.storage_override.as_ref(),
 			self.backend.as_ref(),
 			block_number,
 		)
@@ -779,17 +792,15 @@ impl<H> BlockInfo<H> {
 
 #[cfg(test)]
 mod tests {
-	use std::{collections::HashMap, path::PathBuf, sync::Arc};
+	use std::{path::PathBuf, sync::Arc};
 
 	use ethereum::PartialHeader;
-	use ethereum_types::{Address, Bloom, H160, H256, H64, U256};
-	use fp_rpc::TransactionStatus;
+	use ethereum_types::{Bloom, H160, H256, H64, U256};
 	use sc_block_builder::BlockBuilderBuilder;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
 		generic::{Block, Header},
 		traits::{BlakeTwo256, Block as BlockT},
-		Permill,
 	};
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
@@ -841,57 +852,8 @@ mod tests {
 		ethereum::Block::new(partial_header, vec![], vec![])
 	}
 
-	struct TestStorageOverride {
-		blocks: HashMap<<OpaqueBlock as BlockT>::Hash, ethereum::BlockV3>,
-	}
-
-	impl fc_storage::StorageOverride<OpaqueBlock> for TestStorageOverride {
-		fn account_code_at(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-			_address: Address,
-		) -> Option<Vec<u8>> {
-			None
-		}
-
-		fn account_storage_at(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-			_address: Address,
-			_index: U256,
-		) -> Option<H256> {
-			None
-		}
-
-		fn current_block(&self, at: <OpaqueBlock as BlockT>::Hash) -> Option<ethereum::BlockV3> {
-			self.blocks.get(&at).cloned()
-		}
-
-		fn current_receipts(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-		) -> Option<Vec<ethereum::ReceiptV4>> {
-			None
-		}
-
-		fn current_transaction_statuses(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-		) -> Option<Vec<TransactionStatus>> {
-			None
-		}
-
-		fn elasticity(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<Permill> {
-			None
-		}
-
-		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
-			false
-		}
-	}
-
 	#[test]
-	fn resolve_canonical_substrate_hash_repairs_missing_and_stale_number_mapping() {
+	fn resolve_canonical_substrate_hash_by_number_is_read_only() {
 		let tmp = tempdir().expect("create temp dir");
 		let (client, _) = TestClientBuilder::new()
 			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
@@ -915,10 +877,6 @@ mod tests {
 
 		let ethereum_block = make_ethereum_block(1);
 		let canonical_eth_hash = ethereum_block.header.hash();
-		let storage_override = TestStorageOverride {
-			blocks: HashMap::from([(canonical_hash, ethereum_block)]),
-		};
-
 		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
 			block_hash: canonical_hash,
 			ethereum_block_hash: canonical_eth_hash,
@@ -948,18 +906,17 @@ mod tests {
 			_,
 		>(
 			client.as_ref(),
-			&storage_override,
 			backend.as_ref(),
 			1,
 		))
-		.expect("resolve missing mapping");
+		.expect("resolve missing mapping without repair");
 		assert_eq!(resolved, Some(canonical_hash));
 		assert_eq!(
 			backend
 				.mapping()
 				.block_hash_by_number(1)
-				.expect("read repaired number mapping"),
-			Some(canonical_eth_hash)
+				.expect("read unchanged number mapping"),
+			None
 		);
 
 		let stale_hash = H256::repeat_byte(0x42);
@@ -980,18 +937,17 @@ mod tests {
 			_,
 		>(
 			client.as_ref(),
-			&storage_override,
 			backend.as_ref(),
 			1,
 		))
-		.expect("resolve stale mapping");
+		.expect("resolve stale mapping without repair");
 		assert_eq!(resolved, Some(canonical_hash));
 		assert_eq!(
 			backend
 				.mapping()
 				.block_hash_by_number(1)
-				.expect("read repaired stale mapping"),
-			Some(canonical_eth_hash)
+				.expect("read stale number mapping"),
+			Some(stale_hash)
 		);
 	}
 }

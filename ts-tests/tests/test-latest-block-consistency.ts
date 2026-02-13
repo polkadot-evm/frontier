@@ -151,4 +151,76 @@ describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
 			.result;
 		expect(parseInt(latestAfterCatchup.number, 16)).to.be.gte(startIndexed + lagBlocks);
 	});
+
+	step("eth_getBlockByNumber('latest') should never return null during frequent polling", async function () {
+		this.timeout(30000);
+
+		const pollCount = 120;
+		const pollIntervalMs = 50;
+		const producerBlocks = 25;
+		let producerDone = false;
+		const failures: Array<{ i: number; value: unknown }> = [];
+
+		const producer = (async () => {
+			for (let i = 0; i < producerBlocks; i++) {
+				await createAndFinalizeBlockNowait(context.web3);
+			}
+			producerDone = true;
+		})();
+
+		const poller = (async () => {
+			for (let i = 0; i < pollCount || !producerDone; i++) {
+				const response = await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false]);
+				if (response.result == null) {
+					failures.push({ i, value: response.result });
+				}
+				await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+			}
+		})();
+
+		await Promise.all([producer, poller]);
+
+		expect(failures, `latest returned null in ${failures.length} polls`).to.be.empty;
+	});
+
+	step("latest should stay non-null during alternating reorg storms and converge", async function () {
+		this.timeout(45000);
+
+		const rounds = 4;
+		let expectedHead = Number(await context.web3.eth.getBlockNumber());
+		const nulls: number[] = [];
+
+		for (let i = 0; i < rounds; i++) {
+			const anchor = await createBlock(false);
+			expectedHead += 1;
+
+			const a1 = await createBlock(false, anchor);
+			expectedHead += 1;
+
+			const b1 = await createBlock(false, anchor);
+			await createBlock(false, b1);
+			expectedHead += 1;
+
+			// Poll while branches are flipping.
+			for (let j = 0; j < 20; j++) {
+				const latest = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+				if (latest == null) {
+					nulls.push(i * 20 + j);
+				}
+				await new Promise((resolve) => setTimeout(resolve, 40));
+			}
+
+			// Ensure both branches were imported.
+			expect(a1).to.be.a("string");
+		}
+
+		await waitForBlock(context.web3, "0x" + expectedHead.toString(16), 20000);
+		const latest = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		const blockNumber = Number(await context.web3.eth.getBlockNumber());
+
+		expect(nulls, `latest returned null at polls ${nulls.join(",")}`).to.be.empty;
+		expect(latest).to.not.be.null;
+		expect(parseInt(latest.number, 16)).to.equal(blockNumber);
+		expect(parseInt(latest.number, 16)).to.equal(expectedHead);
+	});
 });
