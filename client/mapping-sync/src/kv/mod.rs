@@ -665,7 +665,7 @@ mod tests {
 			.push_storage_change(vec![1], None)
 			.expect("push storage change for block 1");
 		let block_1 = builder.build().expect("build block 1").block;
-		futures::executor::block_on(client.import(BlockOrigin::Own, block_1))
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_1))
 			.expect("import block 1");
 
 		let best_after_1 = client.chain_info();
@@ -678,7 +678,7 @@ mod tests {
 			.push_storage_change(vec![2], None)
 			.expect("push storage change for block 2");
 		let block_2 = builder.build().expect("build block 2").block;
-		futures::executor::block_on(client.import(BlockOrigin::Own, block_2))
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_2))
 			.expect("import block 2");
 
 		let canonical_hash_1 = client
@@ -758,7 +758,8 @@ mod tests {
 			.push_storage_change(vec![1], None)
 			.expect("push storage change");
 		let block = builder.build().expect("build block").block;
-		futures::executor::block_on(client.import(BlockOrigin::Own, block)).expect("import block");
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
 
 		let canonical_hash = client
 			.hash(1)
@@ -813,6 +814,123 @@ mod tests {
 		assert!(
 			pointer_after_second >= pointer_after_first,
 			"latest canonical pointer must be monotonic"
+		);
+	}
+
+	#[test]
+	fn canonical_reconcile_batch_prioritizes_recent_finalized_blocks() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change for block 1");
+		let block_1 = builder.build().expect("build block 1").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_1))
+			.expect("import block 1");
+
+		let best_after_1 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_1.best_hash)
+			.with_parent_block_number(best_after_1.best_number)
+			.build()
+			.expect("build block 2");
+		builder
+			.push_storage_change(vec![2], None)
+			.expect("push storage change for block 2");
+		let block_2 = builder.build().expect("build block 2").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_2))
+			.expect("import block 2");
+
+		let canonical_hash_1 = client
+			.hash(1)
+			.expect("query canonical hash for #1")
+			.expect("canonical hash for #1");
+		let canonical_hash_2 = client
+			.hash(2)
+			.expect("query canonical hash for #2")
+			.expect("canonical hash for #2");
+		let eth_block_1 = make_ethereum_block(1);
+		let eth_hash_1 = eth_block_1.header.hash();
+		let eth_block_2 = make_ethereum_block(2);
+		let eth_hash_2 = eth_block_2.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([
+				(canonical_hash_1, eth_block_1),
+				(canonical_hash_2, eth_block_2),
+			]),
+		};
+
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(1, H256::repeat_byte(0x11))
+			.expect("seed stale #1");
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(2, H256::repeat_byte(0x22))
+			.expect("seed stale #2");
+
+		let first = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			0,
+			1,
+		)
+		.expect("first batch")
+		.expect("first stats");
+		assert_eq!(first.scanned, 1);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(2),
+			Ok(Some(eth_hash_2)),
+			"latest finalized block must be repaired first"
+		);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(H256::repeat_byte(0x11))),
+			"older block should still be stale after first small batch"
+		);
+
+		let second = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			0,
+			1,
+		)
+		.expect("second batch")
+		.expect("second stats");
+		assert_eq!(second.scanned, 1);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(eth_hash_1)),
+			"second batch should continue backward"
 		);
 	}
 }

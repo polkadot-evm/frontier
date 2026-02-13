@@ -44,6 +44,12 @@ enum CursorUpdateStrategy {
 	KeepLower,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ScanDirection {
+	Ascending,
+	Descending,
+}
+
 pub fn build_reconcile_window<Block: BlockT, C: HeaderBackend<Block>>(
 	client: &C,
 	reorg_info: Option<&ReorgInfo<Block>>,
@@ -91,6 +97,7 @@ pub fn reconcile_reorg_window<Block: BlockT, C: HeaderBackend<Block>>(
 	};
 
 	let sync_from_number = UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from);
+	let best_number: u64 = client.info().best_number.unique_saturated_into();
 	let stats = reconcile_range_internal(
 		client,
 		storage_override,
@@ -98,6 +105,8 @@ pub fn reconcile_reorg_window<Block: BlockT, C: HeaderBackend<Block>>(
 		window.start,
 		window.end,
 		sync_from_number,
+		best_number,
+		ScanDirection::Ascending,
 		CursorUpdateStrategy::KeepLower,
 	)?;
 	Ok(Some(stats))
@@ -114,17 +123,17 @@ pub fn reconcile_from_cursor_batch<Block: BlockT, C: HeaderBackend<Block>>(
 		return Ok(None);
 	}
 
-	let best_number: u64 = client.info().best_number.unique_saturated_into();
+	let finalized_number: u64 = client.info().finalized_number.unique_saturated_into();
 	let sync_from_number = UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from);
 	let start = frontier_backend
 		.mapping()
 		.canonical_number_repair_cursor()?
-		.unwrap_or(sync_from_number)
+		.unwrap_or(finalized_number)
 		.max(sync_from_number)
-		.min(best_number);
+		.min(finalized_number);
 	let end = start
-		.saturating_add(max_blocks.saturating_sub(1))
-		.min(best_number);
+		.saturating_sub(max_blocks.saturating_sub(1))
+		.max(sync_from_number);
 
 	let stats = reconcile_range_internal(
 		client,
@@ -133,6 +142,8 @@ pub fn reconcile_from_cursor_batch<Block: BlockT, C: HeaderBackend<Block>>(
 		start,
 		end,
 		sync_from_number,
+		finalized_number,
+		ScanDirection::Descending,
 		CursorUpdateStrategy::Replace,
 	)?;
 	Ok(Some(stats))
@@ -145,9 +156,15 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 	start: u64,
 	end: u64,
 	sync_from_number: u64,
+	upper_bound_number: u64,
+	direction: ScanDirection,
 	cursor_update: CursorUpdateStrategy,
 ) -> Result<ReconcileStats, String> {
-	if end < start {
+	let no_range = match direction {
+		ScanDirection::Ascending => end < start,
+		ScanDirection::Descending => start < end,
+	};
+	if no_range {
 		let lag_blocks = compute_lag_blocks(client, frontier_backend)?;
 		return Ok(ReconcileStats {
 			scanned: 0,
@@ -160,22 +177,23 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 		});
 	}
 
-	let best_number: u64 = client.info().best_number.unique_saturated_into();
 	let mut updated = 0u64;
 	let mut first_unresolved = None;
-	let mut highest_reconciled = None;
+	let mut highest_reconciled: Option<u64> = None;
+	let mut scanned = 0u64;
 
-	for number in start..=end {
+	let mut step = |number: u64| -> Result<(), String> {
+		scanned = scanned.saturating_add(1);
 		let Some(canonical_hash) = client
 			.hash(number.unique_saturated_into())
 			.map_err(|e| format!("{e:?}"))?
 		else {
 			first_unresolved.get_or_insert(number);
-			continue;
+			return Ok(());
 		};
 		let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
 			first_unresolved.get_or_insert(number);
-			continue;
+			return Ok(());
 		};
 		let canonical_eth_hash = ethereum_block.header.hash();
 		let should_update =
@@ -186,15 +204,47 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 				.set_block_hash_by_number(number, canonical_eth_hash)?;
 			updated = updated.saturating_add(1);
 		}
-		highest_reconciled = Some(number);
+		highest_reconciled = Some(highest_reconciled.map_or(number, |current| current.max(number)));
+		Ok(())
+	};
+
+	match direction {
+		ScanDirection::Ascending => {
+			for number in start..=end {
+				step(number)?;
+			}
+		}
+		ScanDirection::Descending => {
+			let mut number = start;
+			loop {
+				step(number)?;
+				if number == end {
+					break;
+				}
+				number = number.saturating_sub(1);
+			}
+		}
 	}
 
-	let next_cursor = if let Some(unresolved) = first_unresolved {
-		unresolved
-	} else if end >= best_number {
-		best_number
-	} else {
-		end.saturating_add(1)
+	let next_cursor = match direction {
+		ScanDirection::Ascending => {
+			if let Some(unresolved) = first_unresolved {
+				unresolved
+			} else if end >= upper_bound_number {
+				upper_bound_number
+			} else {
+				end.saturating_add(1)
+			}
+		}
+		ScanDirection::Descending => {
+			if let Some(unresolved) = first_unresolved {
+				unresolved
+			} else if end <= sync_from_number {
+				sync_from_number
+			} else {
+				end.saturating_sub(1)
+			}
+		}
 	};
 	update_repair_cursor(
 		frontier_backend,
@@ -209,7 +259,6 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 
 	validate_latest_pointer_invariant(client, storage_override, frontier_backend)?;
 
-	let scanned = end.saturating_sub(start).saturating_add(1);
 	let lag_blocks = compute_lag_blocks(client, frontier_backend)?;
 	let stats = ReconcileStats {
 		scanned,
