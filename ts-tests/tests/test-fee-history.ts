@@ -52,6 +52,34 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 		}
 	}
 
+	async function waitForFeeHistory(
+		requestedBlockCount: number,
+		newestBlock: string,
+		rewardPercentiles: number[],
+		timeoutMs = 30000
+	) {
+		const start = Date.now();
+		let lastResult: any = null;
+		while (Date.now() - start < timeoutMs) {
+			lastResult = (
+				await customRequest(context.web3, "eth_feeHistory", [
+					context.web3.utils.numberToHex(requestedBlockCount),
+					newestBlock,
+					rewardPercentiles,
+				])
+			).result;
+			const expectedBaseFeeLength = requestedBlockCount + 1;
+			const expectedRewardLength = rewardPercentiles.length > 0 ? requestedBlockCount : 0;
+			const hasFullBaseFee = lastResult?.baseFeePerGas?.length === expectedBaseFeeLength;
+			const hasFullReward = rewardPercentiles.length === 0 || lastResult?.reward?.length === expectedRewardLength;
+			if (hasFullBaseFee && hasFullReward) {
+				return lastResult;
+			}
+			await new Promise((resolve) => setTimeout(resolve, 250));
+		}
+		return lastResult;
+	}
+
 	step("should return error on non-existent blocks", async function () {
 		this.timeout(100000);
 		let result = customRequest(context.web3, "eth_feeHistory", ["0x0", "0x1", []])
@@ -69,7 +97,7 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 		let rewardPercentiles = [20, 50, 70];
 		let priorityFees = [1, 2, 3];
 		await createBlocks(blockCount, priorityFees);
-		let result = (await customRequest(context.web3, "eth_feeHistory", ["0x2", "latest", rewardPercentiles])).result;
+		let result = await waitForFeeHistory(blockCount, "latest", rewardPercentiles);
 
 		// baseFeePerGas is always the requested block range + 1 (the next derived base fee).
 		expect(result.baseFeePerGas.length).to.be.eq(blockCount + 1);
@@ -89,7 +117,7 @@ describeWithFrontier("Frontier RPC (Fee History)", (context) => {
 		let rewardPercentiles = [20, 50, 70, 85, 100];
 		let priorityFees = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
 		await createBlocks(blockCount, priorityFees);
-		let result = (await customRequest(context.web3, "eth_feeHistory", ["0xA", "latest", rewardPercentiles])).result;
+		let result = await waitForFeeHistory(blockCount, "latest", rewardPercentiles);
 
 		// Calculate the percentiles in javascript.
 		let localRewards = [];
