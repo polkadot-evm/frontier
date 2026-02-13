@@ -299,9 +299,7 @@ where
 		)?;
 		log::debug!(
 			target: "reconcile",
-			"new-best reconcile at {:?}: {:?}",
-			hash,
-			reconcile_stats,
+			"new-best reconcile at {hash:?}: {reconcile_stats:?}",
 		);
 	}
 

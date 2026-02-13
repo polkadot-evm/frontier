@@ -317,9 +317,7 @@ fn validate_latest_pointer_invariant<Block: BlockT, C: HeaderBackend<Block>>(
 	{
 		log::warn!(
 			target: "reconcile",
-			"invariant mismatch at latest pointer #{}: expected {:?}",
-			latest_indexed,
-			canonical_eth_hash,
+			"invariant mismatch at latest pointer #{latest_indexed}: expected {canonical_eth_hash:?}",
 		);
 	}
 
