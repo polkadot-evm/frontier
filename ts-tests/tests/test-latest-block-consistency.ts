@@ -223,4 +223,25 @@ describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
 		expect(parseInt(latest.number, 16)).to.equal(blockNumber);
 		expect(parseInt(latest.number, 16)).to.equal(expectedHead);
 	});
+
+	step("explicit number/hash block queries should remain non-null during indexing lag", async function () {
+		this.timeout(30000);
+
+		for (let i = 0; i < 12; i++) {
+			await createAndFinalizeBlockNowait(context.web3);
+		}
+
+		const latest = (await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false])).result;
+		expect(latest).to.not.be.null;
+
+		const numberHex = latest.number as string;
+		const hash = latest.hash as string;
+		const byNumber = (await customRequest(context.web3, "eth_getBlockByNumber", [numberHex, true])).result;
+		const byHash = (await customRequest(context.web3, "eth_getBlockByHash", [hash, true])).result;
+
+		expect(byNumber).to.not.be.null;
+		expect(byHash).to.not.be.null;
+		expect(byNumber.hash).to.equal(hash);
+		expect(byHash.number).to.equal(numberHex);
+	});
 });

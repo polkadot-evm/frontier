@@ -27,12 +27,41 @@ use sp_core::hashing::keccak_256;
 use sp_runtime::traits::Block as BlockT;
 // Frontier
 use fc_rpc_core::types::*;
-use fp_rpc::EthereumRuntimeRPCApi;
+use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
 use crate::{
 	eth::{rich_block_build, BlockInfo, Eth},
 	internal_err,
 };
+
+fn status_slots_or_missing(
+	statuses: Option<Vec<TransactionStatus>>,
+	tx_count: usize,
+) -> Vec<Option<TransactionStatus>> {
+	statuses
+		.map(|statuses| statuses.into_iter().map(Option::Some).collect())
+		.unwrap_or_else(|| vec![None; tx_count])
+}
+
+fn rich_block_or_none(
+	block: Option<ethereum::BlockV3>,
+	statuses: Option<Vec<TransactionStatus>>,
+	block_hash: Option<H256>,
+	full: bool,
+	base_fee: U256,
+	is_pending: bool,
+) -> Option<RichBlock> {
+	let block = block?;
+	let statuses = status_slots_or_missing(statuses, block.transactions.len());
+	Some(rich_block_build(
+		block,
+		statuses,
+		block_hash,
+		full,
+		Some(base_fee),
+		is_pending,
+	))
+}
 
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
@@ -52,27 +81,22 @@ where
 			..
 		} = self.block_info_by_eth_block_hash(hash).await?;
 
-		match (block, statuses) {
-			(Some(block), statuses) => {
-				let statuses = statuses
-					.map(|statuses| statuses.into_iter().map(Option::Some).collect())
-					.unwrap_or_else(|| vec![None; block.transactions.len()]);
-				let mut rich_block =
-					rich_block_build(block, statuses, Some(hash), full, Some(base_fee), false);
+		let mut rich_block =
+			match rich_block_or_none(block, statuses, Some(hash), full, base_fee, false) {
+				Some(rich_block) => rich_block,
+				None => return Ok(None),
+			};
 
-				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
-				if let Some(parent_hash) = self
-					.forced_parent_hashes
-					.as_ref()
-					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
-				{
-					rich_block.inner.header.parent_hash = parent_hash
-				}
-
-				Ok(Some(rich_block))
-			}
-			_ => Ok(None),
+		let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+		if let Some(parent_hash) = self
+			.forced_parent_hashes
+			.as_ref()
+			.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+		{
+			rich_block.inner.header.parent_hash = parent_hash
 		}
+
+		Ok(Some(rich_block))
 	}
 
 	pub async fn block_by_number(
@@ -94,28 +118,25 @@ where
 			..
 		} = self.block_info_by_number(number_or_hash).await?;
 
-		match (block, statuses) {
-			(Some(block), statuses) => {
-				let statuses = statuses
-					.map(|statuses| statuses.into_iter().map(Option::Some).collect())
-					.unwrap_or_else(|| vec![None; block.transactions.len()]);
-				let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
-				let mut rich_block =
-					rich_block_build(block, statuses, Some(hash), full, Some(base_fee), false);
+		let block_hash = block
+			.as_ref()
+			.map(|block| H256::from(keccak_256(&rlp::encode(&block.header))));
+		let mut rich_block =
+			match rich_block_or_none(block, statuses, block_hash, full, base_fee, false) {
+				Some(rich_block) => rich_block,
+				None => return Ok(None),
+			};
 
-				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
-				if let Some(parent_hash) = self
-					.forced_parent_hashes
-					.as_ref()
-					.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
-				{
-					rich_block.inner.header.parent_hash = parent_hash
-				}
-
-				Ok(Some(rich_block))
-			}
-			_ => Ok(None),
+		let substrate_hash = H256::from_slice(substrate_hash.as_ref());
+		if let Some(parent_hash) = self
+			.forced_parent_hashes
+			.as_ref()
+			.and_then(|parent_hashes| parent_hashes.get(&substrate_hash).cloned())
+		{
+			rich_block.inner.header.parent_hash = parent_hash
 		}
+
+		Ok(Some(rich_block))
 	}
 
 	async fn pending_block(&self, full: bool) -> RpcResult<Option<RichBlock>> {
@@ -225,5 +246,88 @@ where
 		_: Index,
 	) -> RpcResult<Option<RichBlock>> {
 		Ok(None)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use ethereum::PartialHeader;
+	use ethereum_types::{Bloom, H160, H256, H64, U256};
+
+	use super::rich_block_or_none;
+
+	fn make_block(seed: u64) -> ethereum::BlockV3 {
+		let partial_header = PartialHeader {
+			parent_hash: H256::from_low_u64_be(seed),
+			beneficiary: H160::from_low_u64_be(seed),
+			state_root: H256::from_low_u64_be(seed.saturating_add(1)),
+			receipts_root: H256::from_low_u64_be(seed.saturating_add(2)),
+			logs_bloom: Bloom::default(),
+			difficulty: U256::from(seed),
+			number: U256::from(seed),
+			gas_limit: U256::from(seed.saturating_add(100)),
+			gas_used: U256::from(seed.saturating_add(50)),
+			timestamp: seed,
+			extra_data: Vec::new(),
+			mix_hash: H256::from_low_u64_be(seed.saturating_add(3)),
+			nonce: H64::from_low_u64_be(seed),
+		};
+		ethereum::Block::new(partial_header, vec![], vec![])
+	}
+
+	#[test]
+	fn block_by_hash_returns_block_when_statuses_missing_full_true() {
+		let block = make_block(1);
+		let rich = rich_block_or_none(
+			Some(block),
+			None,
+			Some(H256::repeat_byte(0x11)),
+			true,
+			U256::from(1),
+			false,
+		);
+		assert!(rich.is_some());
+	}
+
+	#[test]
+	fn block_by_hash_returns_block_when_statuses_missing_full_false() {
+		let block = make_block(2);
+		let rich = rich_block_or_none(
+			Some(block),
+			None,
+			Some(H256::repeat_byte(0x22)),
+			false,
+			U256::from(1),
+			false,
+		);
+		assert!(rich.is_some());
+	}
+
+	#[test]
+	fn block_by_number_explicit_returns_block_when_statuses_missing_full_true() {
+		let block = make_block(3);
+		let rich = rich_block_or_none(
+			Some(block),
+			None,
+			Some(H256::repeat_byte(0x33)),
+			true,
+			U256::from(1),
+			false,
+		);
+		assert!(rich.is_some());
+	}
+
+	#[test]
+	fn block_by_number_explicit_returns_block_when_statuses_missing_full_false() {
+		let block = make_block(4);
+		let rich = rich_block_or_none(
+			Some(block),
+			None,
+			Some(H256::repeat_byte(0x44)),
+			false,
+			U256::from(1),
+			false,
+		);
+		assert!(rich.is_some());
 	}
 }

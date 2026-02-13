@@ -28,7 +28,11 @@ mod state;
 mod submit;
 mod transaction;
 
-use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
+use std::{
+	collections::BTreeMap,
+	marker::PhantomData,
+	sync::{Arc, Mutex},
+};
 
 use ethereum::{BlockV3 as EthereumBlock, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
@@ -69,6 +73,8 @@ impl<B: BlockT, C> EthConfig<B, C> for () {
 	type RuntimeStorageOverride = ();
 }
 
+const LATEST_READABLE_SCAN_LIMIT: u64 = 128;
+
 /// Eth API implementation.
 pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	pool: Arc<P>,
@@ -86,10 +92,47 @@ pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	/// block.gas_limit * execute_gas_limit_multiplier
 	execute_gas_limit_multiplier: u64,
 	forced_parent_hashes: Option<BTreeMap<H256, H256>>,
+	latest_readable_scan_limit: u64,
+	last_readable_latest: Mutex<Option<B::Hash>>,
 	/// Something that can create the inherent data providers for pending state.
 	pending_create_inherent_data_providers: CIDP,
 	pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
 	_marker: PhantomData<(BE, EC)>,
+}
+
+fn find_readable_hash_within_limit<H, FReadable, FHashAt>(
+	start_hash: H,
+	start_number: u64,
+	scan_limit: u64,
+	is_readable: &mut FReadable,
+	hash_at_number: &mut FHashAt,
+) -> (Option<H>, u64)
+where
+	H: Clone,
+	FReadable: FnMut(&H) -> bool,
+	FHashAt: FnMut(u64) -> Option<H>,
+{
+	if is_readable(&start_hash) {
+		return (Some(start_hash), 0);
+	}
+
+	let mut current_number = start_number;
+	let mut scanned_hops: u64 = 0;
+	for _ in 0..scan_limit {
+		if current_number == 0 {
+			break;
+		}
+		current_number = current_number.saturating_sub(1);
+		let Some(previous_hash) = hash_at_number(current_number) else {
+			break;
+		};
+		scanned_hops = scanned_hops.saturating_add(1);
+		if is_readable(&previous_hash) {
+			return (Some(previous_hash), scanned_hops);
+		}
+	}
+
+	(None, scanned_hops)
 }
 
 async fn resolve_canonical_substrate_hash_by_number<B, C>(
@@ -163,44 +206,113 @@ where
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			latest_readable_scan_limit: LATEST_READABLE_SCAN_LIMIT,
+			last_readable_latest: Mutex::new(None),
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
 			_marker: PhantomData,
 		}
 	}
 
+	fn cached_latest_hash_is_usable(
+		&self,
+		cached_hash: &B::Hash,
+		latest_indexed_number: u64,
+	) -> RpcResult<bool> {
+		let Some(cached_number) = self
+			.client
+			.number(cached_hash.clone())
+			.map_err(|err| internal_err(format!("{err:?}")))?
+		else {
+			return Ok(false);
+		};
+		let cached_number: u64 = cached_number.unique_saturated_into();
+		if cached_number > latest_indexed_number {
+			return Ok(false);
+		}
+
+		let canonical_hash = self
+			.client
+			.hash(cached_number.unique_saturated_into())
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		if canonical_hash != Some(cached_hash.clone()) {
+			return Ok(false);
+		}
+
+		Ok(self
+			.storage_override
+			.current_block(cached_hash.clone())
+			.is_some())
+	}
+
 	async fn latest_indexed_hash_with_block(&self) -> RpcResult<B::Hash> {
-		let mut substrate_hash = self
+		let latest_indexed_hash = self
 			.backend
 			.latest_block_hash()
 			.await
 			.map_err(|err| internal_err(format!("{err:?}")))?;
-		let mut block_number: u64 = self
+		let latest_indexed_number: u64 = self
 			.client
-			.number(substrate_hash)
+			.number(latest_indexed_hash.clone())
 			.map_err(|err| internal_err(format!("{err:?}")))?
 			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?
 			.unique_saturated_into();
 
-		// Ensure "latest" always resolves to a block payload that is readable by RPC.
-		while self
-			.storage_override
-			.current_block(substrate_hash)
-			.is_none()
-			&& block_number > 0
-		{
-			block_number = block_number.saturating_sub(1);
-			let Some(previous_hash) = self
-				.client
-				.hash(block_number.unique_saturated_into())
-				.map_err(|err| internal_err(format!("{err:?}")))?
-			else {
-				break;
-			};
-			substrate_hash = previous_hash;
+		let cached_hash = self
+			.last_readable_latest
+			.lock()
+			.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
+			.clone();
+		if let Some(cached_hash) = cached_hash {
+			if self.cached_latest_hash_is_usable(&cached_hash, latest_indexed_number)? {
+				log::debug!(target: "rpc", "latest readable cache hit");
+				return Ok(cached_hash);
+			}
 		}
 
-		Ok(substrate_hash)
+		let (resolved_hash, scanned_hops) = find_readable_hash_within_limit(
+			latest_indexed_hash.clone(),
+			latest_indexed_number,
+			self.latest_readable_scan_limit,
+			&mut |hash: &B::Hash| self.storage_override.current_block(hash.clone()).is_some(),
+			&mut |number: u64| {
+				self.client
+					.hash(number.unique_saturated_into())
+					.map_err(|err| internal_err(format!("{err:?}")))
+					.ok()
+					.flatten()
+			},
+		);
+
+		let selected_hash = if let Some(resolved_hash) = resolved_hash {
+			self.last_readable_latest
+				.lock()
+				.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
+				.replace(resolved_hash.clone());
+			resolved_hash
+		} else if let Some(cached_hash) = self
+			.last_readable_latest
+			.lock()
+			.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
+			.clone()
+		{
+			if self.cached_latest_hash_is_usable(&cached_hash, latest_indexed_number)? {
+				cached_hash
+			} else {
+				latest_indexed_hash
+			}
+		} else {
+			latest_indexed_hash
+		};
+
+		log::debug!(
+			target: "rpc",
+			"latest readable selection scanned_hops {}, limit {}",
+			scanned_hops,
+			self.latest_readable_scan_limit,
+		);
+
+		Ok(selected_hash)
 	}
 
 	pub async fn block_info_by_number(
@@ -356,6 +468,8 @@ where
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			latest_readable_scan_limit,
+			last_readable_latest,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
 			_marker: _,
@@ -375,6 +489,8 @@ where
 			fee_history_cache_limit,
 			execute_gas_limit_multiplier,
 			forced_parent_hashes,
+			latest_readable_scan_limit,
+			last_readable_latest,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
 			_marker: PhantomData,
@@ -791,6 +907,36 @@ impl<H> BlockInfo<H> {
 }
 
 #[cfg(test)]
+fn test_only_select_latest_readable_hash(
+	latest_hash: u64,
+	latest_number: u64,
+	scan_limit: u64,
+	cached_hash: Option<u64>,
+	readable_from: u64,
+	cached_usable: bool,
+) -> (u64, Option<u64>, u64) {
+	let (resolved, scanned_hops) = find_readable_hash_within_limit(
+		latest_hash,
+		latest_number,
+		scan_limit,
+		&mut |hash: &u64| *hash <= readable_from,
+		&mut |number: u64| Some(number),
+	);
+
+	if let Some(resolved) = resolved {
+		return (resolved, Some(resolved), scanned_hops);
+	}
+
+	if let Some(cached_hash) = cached_hash {
+		if cached_usable {
+			return (cached_hash, Some(cached_hash), scanned_hops);
+		}
+	}
+
+	(latest_hash, None, scanned_hops)
+}
+
+#[cfg(test)]
 mod tests {
 	use std::{path::PathBuf, sync::Arc};
 
@@ -807,7 +953,9 @@ mod tests {
 	};
 	use tempfile::tempdir;
 
-	use super::resolve_canonical_substrate_hash_by_number;
+	use super::{
+		resolve_canonical_substrate_hash_by_number, test_only_select_latest_readable_hash,
+	};
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
@@ -941,5 +1089,32 @@ mod tests {
 				.expect("read stale number mapping"),
 			Some(stale_hash)
 		);
+	}
+
+	#[test]
+	fn latest_readable_selection_stops_at_scan_limit() {
+		let (resolved, cached, scanned_hops) =
+			test_only_select_latest_readable_hash(100, 100, 3, None, 90, false);
+		assert_eq!(resolved, 100);
+		assert_eq!(cached, None);
+		assert_eq!(scanned_hops, 3);
+	}
+
+	#[test]
+	fn latest_readable_selection_uses_cache_when_scan_misses() {
+		let (resolved, cached, scanned_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, Some(80), 50, true);
+		assert_eq!(resolved, 80);
+		assert_eq!(cached, Some(80));
+		assert_eq!(scanned_hops, 2);
+	}
+
+	#[test]
+	fn latest_readable_selection_ignores_stale_cache() {
+		let (resolved, cached, scanned_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, Some(80), 50, false);
+		assert_eq!(resolved, 100);
+		assert_eq!(cached, None);
+		assert_eq!(scanned_hops, 2);
 	}
 }
