@@ -184,6 +184,40 @@ where
 		}
 	}
 
+	async fn latest_indexed_hash_with_block(&self) -> RpcResult<B::Hash> {
+		let mut substrate_hash = self
+			.backend
+			.latest_block_hash()
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		let mut block_number: u64 = self
+			.client
+			.number(substrate_hash)
+			.map_err(|err| internal_err(format!("{err:?}")))?
+			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?
+			.unique_saturated_into();
+
+		// Ensure "latest" always resolves to a block payload that is readable by RPC.
+		while self
+			.storage_override
+			.current_block(substrate_hash)
+			.is_none()
+			&& block_number > 0
+		{
+			block_number = block_number.saturating_sub(1);
+			let Some(previous_hash) = self
+				.client
+				.hash(block_number.unique_saturated_into())
+				.map_err(|err| internal_err(format!("{err:?}")))?
+			else {
+				break;
+			};
+			substrate_hash = previous_hash;
+		}
+
+		Ok(substrate_hash)
+	}
+
 	pub async fn block_info_by_number(
 		&self,
 		number_or_hash: BlockNumberOrHash,
@@ -201,14 +235,9 @@ where
 				return self.block_info_by_eth_block_hash(hash).await;
 			}
 			BlockNumberOrHash::Latest => {
-				// For "latest", use backend.latest_block_hash() which returns the latest
-				// indexed block. This avoids a race condition where the best block from
-				// the client may not yet be indexed by mapping-sync.
-				let substrate_hash = self
-					.backend
-					.latest_block_hash()
-					.await
-					.map_err(|err| internal_err(format!("{err:?}")))?;
+				// For "latest", use the latest indexed block and fall back to the nearest
+				// canonical ancestor that has a readable block payload.
+				let substrate_hash = self.latest_indexed_hash_with_block().await?;
 				return self.block_info_by_substrate_hash(substrate_hash).await;
 			}
 			_ => {}

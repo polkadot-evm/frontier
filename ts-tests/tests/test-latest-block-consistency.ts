@@ -151,4 +151,35 @@ describeWithFrontier("Frontier RPC (Latest Block Consistency)", (context) => {
 			.result;
 		expect(parseInt(latestAfterCatchup.number, 16)).to.be.gte(startIndexed + lagBlocks);
 	});
+
+	step("eth_getBlockByNumber('latest') should never return null during frequent polling", async function () {
+		this.timeout(30000);
+
+		const pollCount = 120;
+		const pollIntervalMs = 50;
+		const producerBlocks = 25;
+		let producerDone = false;
+		const failures: Array<{ i: number; value: unknown }> = [];
+
+		const producer = (async () => {
+			for (let i = 0; i < producerBlocks; i++) {
+				await createAndFinalizeBlockNowait(context.web3);
+			}
+			producerDone = true;
+		})();
+
+		const poller = (async () => {
+			for (let i = 0; i < pollCount || !producerDone; i++) {
+				const response = await customRequest(context.web3, "eth_getBlockByNumber", ["latest", false]);
+				if (response.result == null) {
+					failures.push({ i, value: response.result });
+				}
+				await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+			}
+		})();
+
+		await Promise.all([producer, poller]);
+
+		expect(failures, `latest returned null in ${failures.length} polls`).to.be.empty;
+	});
 });

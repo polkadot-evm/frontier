@@ -53,15 +53,12 @@ where
 		} = self.block_info_by_eth_block_hash(hash).await?;
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => {
-				let mut rich_block = rich_block_build(
-					block,
-					statuses.into_iter().map(Option::Some).collect(),
-					Some(hash),
-					full,
-					Some(base_fee),
-					false,
-				);
+			(Some(block), statuses) => {
+				let statuses = statuses
+					.map(|statuses| statuses.into_iter().map(Option::Some).collect())
+					.unwrap_or_else(|| vec![None; block.transactions.len()]);
+				let mut rich_block =
+					rich_block_build(block, statuses, Some(hash), full, Some(base_fee), false);
 
 				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
 				if let Some(parent_hash) = self
@@ -98,16 +95,13 @@ where
 		} = self.block_info_by_number(number_or_hash).await?;
 
 		match (block, statuses) {
-			(Some(block), Some(statuses)) => {
+			(Some(block), statuses) => {
+				let statuses = statuses
+					.map(|statuses| statuses.into_iter().map(Option::Some).collect())
+					.unwrap_or_else(|| vec![None; block.transactions.len()]);
 				let hash = H256::from(keccak_256(&rlp::encode(&block.header)));
-				let mut rich_block = rich_block_build(
-					block,
-					statuses.into_iter().map(Option::Some).collect(),
-					Some(hash),
-					full,
-					Some(base_fee),
-					false,
-				);
+				let mut rich_block =
+					rich_block_build(block, statuses, Some(hash), full, Some(base_fee), false);
 
 				let substrate_hash = H256::from_slice(substrate_hash.as_ref());
 				if let Some(parent_hash) = self
