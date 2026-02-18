@@ -1,12 +1,7 @@
 import { expect } from "chai";
 import { step } from "mocha-steps";
 
-import {
-	createAndFinalizeBlock,
-	describeWithFrontier,
-	customRequest,
-	waitForBlock,
-} from "./util";
+import { createAndFinalizeBlock, describeWithFrontier, customRequest, waitForBlock } from "./util";
 
 const MAX_BLOCK_RANGE = 10;
 const BLOCK_RANGE_ERROR_MSG = `block range is too wide (maximum ${MAX_BLOCK_RANGE})`;
@@ -21,11 +16,7 @@ describeWithFrontier(
 			for (let i = 0; i < MAX_BLOCK_RANGE + 5; i++) {
 				await createAndFinalizeBlock(context.web3);
 			}
-			await waitForBlock(
-				context.web3,
-				"0x" + blocksToProduce.toString(16),
-				10000
-			);
+			await waitForBlock(context.web3, "0x" + blocksToProduce.toString(16), 10000);
 
 			const r = await customRequest(context.web3, "eth_getLogs", [
 				{
@@ -81,9 +72,7 @@ describeWithFrontier(
 			}
 			await waitForBlock(context.web3, "latest", 5000);
 
-			const poll = await customRequest(context.web3, "eth_getFilterLogs", [
-				filterId,
-			]);
+			const poll = await customRequest(context.web3, "eth_getFilterLogs", [filterId]);
 			expect(poll.error).to.not.be.undefined;
 			expect(poll.error.message).to.include(BLOCK_RANGE_ERROR_MSG);
 		});
@@ -110,9 +99,7 @@ describeWithFrontier(
 			}
 			await waitForBlock(context.web3, "latest", 5000);
 
-			const poll = await customRequest(context.web3, "eth_getFilterChanges", [
-				filterId,
-			]);
+			const poll = await customRequest(context.web3, "eth_getFilterChanges", [filterId]);
 			expect(poll.error).to.not.be.undefined;
 			expect(poll.error.message).to.include(BLOCK_RANGE_ERROR_MSG);
 		});

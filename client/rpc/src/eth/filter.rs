@@ -325,27 +325,36 @@ where
 							.unwrap_or(last_poll);
 
 						let from_number = std::cmp::max(last_poll, filter_from);
+						let block_range = current_number.saturating_sub(from_number);
 
-						// Update filter `last_poll` based on the same capped head we query.
-						// This avoids skipping blocks when best_number is ahead of indexed data.
-						let next_last_poll =
-							UniqueSaturatedInto::<u64>::unique_saturated_into(current_number)
-								.saturating_add(1);
-						locked.insert(
-							key,
-							FilterPoolItem {
-								last_poll: BlockNumberOrHash::Num(next_last_poll),
-								filter_type: pool_item.filter_type.clone(),
-								at_block: pool_item.at_block,
-								pending_transaction_hashes: HashSet::new(),
-							},
-						);
-
-						// Build the response.
-						FuturePath::Log {
-							filter: filter.clone(),
-							from_number,
-							current_number,
+						// Validate block range before advancing last_poll. If we reject after
+						// updating last_poll, the cursor would skip logs on the next poll.
+						if block_range > self.max_block_range.into() {
+							FuturePath::Error(internal_err(format!(
+								"block range is too wide (maximum {})",
+								self.max_block_range
+							)))
+						} else {
+							// Update filter `last_poll` based on the same capped head we query.
+							// This avoids skipping blocks when best_number is ahead of indexed data.
+							let next_last_poll =
+								UniqueSaturatedInto::<u64>::unique_saturated_into(current_number)
+									.saturating_add(1);
+							locked.insert(
+								key,
+								FilterPoolItem {
+									last_poll: BlockNumberOrHash::Num(next_last_poll),
+									filter_type: pool_item.filter_type.clone(),
+									at_block: pool_item.at_block,
+									pending_transaction_hashes: HashSet::new(),
+								},
+							);
+							// Build the response.
+							FuturePath::Log {
+								filter: filter.clone(),
+								from_number,
+								current_number,
+							}
 						}
 					}
 				}
@@ -384,13 +393,6 @@ where
 				from_number,
 				current_number,
 			} => {
-				let block_range = current_number.saturating_sub(from_number);
-				if block_range > self.max_block_range.into() {
-					return Err(internal_err(format!(
-						"block range is too wide (maximum {})",
-						self.max_block_range
-					)));
-				}
 				let logs = if backend.is_indexed() {
 					filter_range_logs_indexed(
 						client.as_ref(),
