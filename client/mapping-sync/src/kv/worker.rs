@@ -195,16 +195,16 @@ where
 			match result {
 				Ok(have_next) => {
 					if !have_next {
-						if let Err(e) = crate::kv::repair_canonical_number_mappings_batch(
+						if let Err(e) = super::canonical_reconciler::reconcile_from_cursor_batch(
 							self.client.as_ref(),
 							self.storage_override.as_ref(),
 							self.frontier_backend.as_ref(),
 							self.sync_from,
-							crate::kv::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
+							super::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
 						) {
 							debug!(
-								target: "mapping-sync",
-								"Canonical number mapping repair failed with error {e:?}, retrying."
+								target: "reconcile",
+								"Batch canonical reconcile failed with error {e:?}, retrying."
 							);
 						}
 					}

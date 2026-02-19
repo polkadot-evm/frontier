@@ -18,6 +18,30 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		return tx;
 	}
 
+	async function waitForTransactionSeen(txHash: string, timeoutMs = 5000) {
+		const start = Date.now();
+		while (Date.now() - start < timeoutMs) {
+			const tx = await context.web3.eth.getTransaction(txHash);
+			if (tx !== null) {
+				return;
+			}
+			await new Promise<void>((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error(`Timed out waiting for transaction ${txHash} to reach the pool`);
+	}
+
+	async function waitForReceipt(txHash: string, timeoutMs = 5000) {
+		const start = Date.now();
+		while (Date.now() - start < timeoutMs) {
+			const receipt = await context.web3.eth.getTransactionReceipt(txHash);
+			if (receipt !== null) {
+				return receipt;
+			}
+			await new Promise<void>((resolve) => setTimeout(resolve, 50));
+		}
+		throw new Error(`Timed out waiting for receipt ${txHash}`);
+	}
+
 	step("should handle Legacy transaction type 0", async function () {
 		let tx = {
 			from: GENESIS_ACCOUNT,
@@ -30,15 +54,14 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 			chainId: CHAIN_ID,
 		};
 		const txHash = (await sendTransaction(context, tx)).hash;
+		await waitForTransactionSeen(txHash);
 		await createAndFinalizeBlock(context.web3);
-		const latest = await context.web3.eth.getBlock("latest");
-		expect(latest.transactions.length).to.be.eq(1);
-		expect(latest.transactions[0]).to.be.eq(txHash);
-
-		let receipt = await context.web3.eth.getTransactionReceipt(txHash);
+		let receipt = await waitForReceipt(txHash);
+		const minedBlock = await context.web3.eth.getBlock(receipt.blockNumber);
+		expect(minedBlock.transactions).to.include(txHash);
 		expect(receipt.transactionHash).to.be.eq(txHash);
 
-		let transaction_data = await context.web3.eth.getTransaction(txHash);
+		const transaction_data = await context.web3.eth.getTransaction(txHash);
 		expect(transaction_data).to.have.own.property("type");
 		expect(transaction_data).to.not.have.own.property("maxFeePerGas");
 		expect(transaction_data).to.not.have.own.property("maxPriorityFeePerGas");
@@ -57,15 +80,14 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 			chainId: CHAIN_ID,
 		};
 		const txHash = (await sendTransaction(context, tx)).hash;
+		await waitForTransactionSeen(txHash);
 		await createAndFinalizeBlock(context.web3);
-		const latest = await context.web3.eth.getBlock("latest");
-		expect(latest.transactions.length).to.be.eq(1);
-		expect(latest.transactions[0]).to.be.eq(txHash);
-
-		let receipt = await context.web3.eth.getTransactionReceipt(txHash);
+		let receipt = await waitForReceipt(txHash);
+		const minedBlock = await context.web3.eth.getBlock(receipt.blockNumber);
+		expect(minedBlock.transactions).to.include(txHash);
 		expect(receipt.transactionHash).to.be.eq(txHash);
 
-		let transaction_data = await context.web3.eth.getTransaction(txHash);
+		const transaction_data = await context.web3.eth.getTransaction(txHash);
 		expect(transaction_data).to.have.own.property("type");
 		expect(transaction_data).to.not.have.own.property("maxFeePerGas");
 		expect(transaction_data).to.not.have.own.property("maxPriorityFeePerGas");
@@ -85,15 +107,14 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 			chainId: CHAIN_ID,
 		};
 		const txHash = (await sendTransaction(context, tx)).hash;
+		await waitForTransactionSeen(txHash);
 		await createAndFinalizeBlock(context.web3);
-		const latest = await context.web3.eth.getBlock("latest");
-		expect(latest.transactions.length).to.be.eq(1);
-		expect(latest.transactions[0]).to.be.eq(txHash);
-
-		let receipt = await context.web3.eth.getTransactionReceipt(txHash);
+		let receipt = await waitForReceipt(txHash);
+		const minedBlock = await context.web3.eth.getBlock(receipt.blockNumber);
+		expect(minedBlock.transactions).to.include(txHash);
 		expect(receipt.transactionHash).to.be.eq(txHash);
 
-		let transaction_data = await context.web3.eth.getTransaction(txHash);
+		const transaction_data = await context.web3.eth.getTransaction(txHash);
 		expect(transaction_data).to.have.own.property("type");
 		expect(transaction_data).to.have.own.property("maxFeePerGas");
 		expect(transaction_data).to.have.own.property("maxPriorityFeePerGas");

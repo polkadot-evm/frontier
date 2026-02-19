@@ -18,6 +18,7 @@
 
 #![allow(clippy::too_many_arguments)]
 
+mod canonical_reconciler;
 mod worker;
 
 pub use worker::MappingSyncWorker;
@@ -47,15 +48,10 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	storage_override: Arc<dyn StorageOverride<Block>>,
 	backend: &fc_db::kv::Backend<Block, C>,
 	header: &Block::Header,
-	write_number_mapping: bool,
 ) -> Result<(), String> {
 	let substrate_block_hash = header.hash();
 	let block_number: u64 = (*header.number()).unique_saturated_into();
-	let number_mapping_write = if write_number_mapping {
-		fc_db::kv::NumberMappingWrite::Write
-	} else {
-		fc_db::kv::NumberMappingWrite::Skip
-	};
+	let number_mapping_write = fc_db::kv::NumberMappingWrite::Skip;
 
 	match fp_consensus::find_log(header.digest()) {
 		Ok(log) => {
@@ -179,32 +175,6 @@ where
 	Ok(())
 }
 
-fn repair_canonical_number_mapping_for_hash<Block: BlockT, C: HeaderBackend<Block>>(
-	client: &C,
-	storage_override: &dyn StorageOverride<Block>,
-	frontier_backend: &fc_db::kv::Backend<Block, C>,
-	hash: Block::Hash,
-) -> Result<Option<u64>, String> {
-	let Some(header) = client.header(hash).map_err(|e| format!("{e:?}"))? else {
-		return Ok(None);
-	};
-	let block_number: u64 = (*header.number()).unique_saturated_into();
-	let is_canonical_now = client
-		.hash(block_number.unique_saturated_into())
-		.map_err(|e| format!("{e:?}"))?
-		== Some(hash);
-	if !is_canonical_now {
-		return Ok(None);
-	}
-	let Some(ethereum_block) = storage_override.current_block(hash) else {
-		return Ok(None);
-	};
-	frontier_backend
-		.mapping()
-		.set_block_hash_by_number(block_number, ethereum_block.header.hash())?;
-	Ok(Some(block_number))
-}
-
 pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Block>>(
 	client: &C,
 	storage_override: &dyn StorageOverride<Block>,
@@ -212,119 +182,23 @@ pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Bl
 	sync_from: <Block::Header as HeaderT>::Number,
 	max_blocks: u64,
 ) -> Result<(), String> {
-	if max_blocks == 0 {
-		return Ok(());
-	}
-
-	let best_number: u64 = client.info().best_number.unique_saturated_into();
-	let sync_from_number: u64 =
-		UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from).min(best_number);
-	let cursor = frontier_backend
-		.mapping()
-		.canonical_number_repair_cursor()?
-		.unwrap_or(sync_from_number)
-		.max(sync_from_number)
-		.min(best_number);
-
-	let end = cursor
-		.saturating_add(max_blocks.saturating_sub(1))
-		.min(best_number);
-
-	let mut repaired = 0u64;
-	let mut first_unresolved = None;
-	for number in cursor..=end {
-		let Some(canonical_hash) = client
-			.hash(number.unique_saturated_into())
-			.map_err(|e| format!("{e:?}"))?
-		else {
-			first_unresolved.get_or_insert(number);
-			continue;
-		};
-		let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
-			first_unresolved.get_or_insert(number);
-			continue;
-		};
-		let canonical_eth_hash = ethereum_block.header.hash();
-		let should_repair =
-			frontier_backend.mapping().block_hash_by_number(number)? != Some(canonical_eth_hash);
-		if should_repair {
-			frontier_backend
-				.mapping()
-				.set_block_hash_by_number(number, canonical_eth_hash)?;
-			repaired = repaired.saturating_add(1);
-		}
-	}
-
-	let next_cursor = if let Some(unresolved) = first_unresolved {
-		unresolved
-	} else if end >= best_number {
-		best_number
-	} else {
-		end.saturating_add(1)
-	};
-	frontier_backend
-		.mapping()
-		.set_canonical_number_repair_cursor(next_cursor)?;
-
-	log::debug!(
-		target: "mapping-sync",
-		"canonical number repair scanned #{cursor}..#{end}, repaired {repaired}, first unresolved {first_unresolved:?}, next cursor #{next_cursor}",
-	);
-
-	Ok(())
-}
-
-fn advance_latest_canonical_indexed_block<Block: BlockT, C: HeaderBackend<Block>>(
-	frontier_backend: &fc_db::kv::Backend<Block, C>,
-	block_number: u64,
-) -> Result<(), String> {
-	let latest_indexed = frontier_backend
-		.mapping()
-		.latest_canonical_indexed_block_number()?;
-	if latest_indexed.is_none_or(|current| block_number > current) {
-		frontier_backend
-			.mapping()
-			.set_latest_canonical_indexed_block(block_number)?;
-	}
-	Ok(())
-}
-
-fn repair_new_best_number_mappings<Block: BlockT, C: HeaderBackend<Block>>(
-	client: &C,
-	storage_override: &dyn StorageOverride<Block>,
-	frontier_backend: &fc_db::kv::Backend<Block, C>,
-	hash: Block::Hash,
-	reorg_info: Option<&crate::ReorgInfo<Block>>,
-) -> Result<u64, String> {
-	// `is_new_best` can come from import-time state and may be stale by sync time.
-	// Number mapping repairs are canonical-gated in `repair_canonical_number_mapping_for_hash`.
-	let mut reorg_remapped = 0u64;
-	if let Some(repaired_number) =
-		repair_canonical_number_mapping_for_hash(client, storage_override, frontier_backend, hash)?
-	{
-		advance_latest_canonical_indexed_block(frontier_backend, repaired_number)?;
-		reorg_remapped = reorg_remapped.saturating_add(1);
-	} else {
+	if let Some(stats) = canonical_reconciler::reconcile_from_cursor_batch(
+		client,
+		storage_override,
+		frontier_backend,
+		sync_from,
+		max_blocks,
+	)? {
 		log::debug!(
-			target: "mapping-sync",
-			"Skipping canonical pointer update for non-canonical new-best candidate {hash:?}",
+			target: "reconcile",
+			"batch reconcile scanned {}, updated {}, lag {}",
+			stats.scanned,
+			stats.updated,
+			stats.lag_blocks,
 		);
 	}
-	if let Some(info) = reorg_info {
-		for enacted_hash in &info.enacted {
-			if let Some(repaired_number) = repair_canonical_number_mapping_for_hash(
-				client,
-				storage_override,
-				frontier_backend,
-				*enacted_hash,
-			)? {
-				advance_latest_canonical_indexed_block(frontier_backend, repaired_number)?;
-				reorg_remapped = reorg_remapped.saturating_add(1);
-			}
-		}
-	}
 
-	Ok(reorg_remapped)
+	Ok(())
 }
 
 pub fn sync_one_block<Block: BlockT, C, BE>(
@@ -393,28 +267,11 @@ where
 		{
 			return Ok(false);
 		}
-		let block_number: u64 = (*operating_header.number()).unique_saturated_into();
-		let is_canonical_now = client
-			.hash(block_number.unique_saturated_into())
-			.map_err(|e| format!("{e:?}"))?
-			== Some(operating_header.hash());
-		if !is_canonical_now {
-			log::debug!(
-				target: "mapping-sync",
-				"Skipping block-number mapping write for non-canonical block #{} ({:?})",
-				operating_header.number(),
-				operating_header.hash(),
-			);
-		}
 		sync_block(
 			storage_override.clone(),
 			frontier_backend,
 			&operating_header,
-			is_canonical_now,
 		)?;
-		if is_canonical_now {
-			advance_latest_canonical_indexed_block(frontier_backend, block_number)?;
-		}
 
 		current_syncing_tips.push(*operating_header.parent_hash());
 		frontier_backend
@@ -432,16 +289,17 @@ where
 	let reorg_info = best_info.and_then(|info| info.reorg_info);
 
 	if is_new_best {
-		let reorg_remapped = repair_new_best_number_mappings(
+		let reconcile_stats = canonical_reconciler::reconcile_reorg_window(
 			client,
 			storage_override.as_ref(),
 			frontier_backend,
-			hash,
 			reorg_info.as_deref(),
+			hash,
+			sync_from,
 		)?;
 		log::debug!(
-			target: "mapping-sync",
-			"Reorg canonical remap touched {reorg_remapped} blocks at new best {hash:?}",
+			target: "reconcile",
+			"new-best reconcile at {hash:?}: {reconcile_stats:?}",
 		);
 	}
 
@@ -548,7 +406,9 @@ mod tests {
 	};
 	use tempfile::tempdir;
 
-	use super::{repair_canonical_number_mappings_batch, repair_new_best_number_mappings};
+	use crate::ReorgInfo;
+
+	use super::{canonical_reconciler, repair_canonical_number_mappings_batch};
 
 	type OpaqueBlock = sp_runtime::generic::Block<
 		Header<u64, BlakeTwo256>,
@@ -741,16 +601,28 @@ mod tests {
 			.set_latest_canonical_indexed_block(1)
 			.expect("seed pointer");
 
-		let repaired = repair_new_best_number_mappings(
+		let repaired = canonical_reconciler::reconcile_reorg_window(
 			client.as_ref(),
 			&NoopStorageOverride,
 			&frontier_backend,
-			b1_hash,
 			None,
+			b1_hash,
+			1,
 		)
 		.expect("repair pass");
 
-		assert_eq!(repaired, 0);
+		assert_eq!(
+			repaired,
+			Some(canonical_reconciler::ReconcileStats {
+				scanned: 1,
+				updated: 0,
+				first_unresolved: Some(1),
+				highest_reconciled: None,
+				next_cursor: 1,
+				lag_blocks: 1,
+				window: canonical_reconciler::ReconcileWindow { start: 1, end: 1 },
+			})
+		);
 		assert_eq!(
 			frontier_backend
 				.mapping()
@@ -795,7 +667,7 @@ mod tests {
 			.push_storage_change(vec![1], None)
 			.expect("push storage change for block 1");
 		let block_1 = builder.build().expect("build block 1").block;
-		futures::executor::block_on(client.import(BlockOrigin::Own, block_1))
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_1))
 			.expect("import block 1");
 
 		let best_after_1 = client.chain_info();
@@ -808,7 +680,7 @@ mod tests {
 			.push_storage_change(vec![2], None)
 			.expect("push storage change for block 2");
 		let block_2 = builder.build().expect("build block 2").block;
-		futures::executor::block_on(client.import(BlockOrigin::Own, block_2))
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_2))
 			.expect("import block 2");
 
 		let canonical_hash_1 = client
@@ -851,5 +723,347 @@ mod tests {
 		);
 
 		assert!(storage_override.current_block(canonical_hash_1).is_none());
+	}
+
+	#[test]
+	fn reconcile_reorg_window_does_not_write_below_sync_from() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change for block 1");
+		let block_1 = builder.build().expect("build block 1").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_1))
+			.expect("import block 1");
+
+		let best_after_1 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_1.best_hash)
+			.with_parent_block_number(best_after_1.best_number)
+			.build()
+			.expect("build block 2");
+		builder
+			.push_storage_change(vec![2], None)
+			.expect("push storage change for block 2");
+		let block_2 = builder.build().expect("build block 2").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_2))
+			.expect("import block 2");
+
+		let best_after_2 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_2.best_hash)
+			.with_parent_block_number(best_after_2.best_number)
+			.build()
+			.expect("build block 3");
+		builder
+			.push_storage_change(vec![3], None)
+			.expect("push storage change for block 3");
+		let block_3 = builder.build().expect("build block 3").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_3))
+			.expect("import block 3");
+
+		let canonical_hash_1 = client
+			.hash(1)
+			.expect("query canonical hash for #1")
+			.expect("canonical hash for #1");
+		let canonical_hash_2 = client
+			.hash(2)
+			.expect("query canonical hash for #2")
+			.expect("canonical hash for #2");
+		let canonical_hash_3 = client
+			.hash(3)
+			.expect("query canonical hash for #3")
+			.expect("canonical hash for #3");
+
+		let eth_block_2 = make_ethereum_block(2);
+		let eth_block_3 = make_ethereum_block(3);
+		let eth_hash_3 = eth_block_3.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([
+				(canonical_hash_2, eth_block_2),
+				(canonical_hash_3, eth_block_3),
+			]),
+		};
+
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(2, H256::repeat_byte(0x22))
+			.expect("seed stale #2");
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(3, H256::repeat_byte(0x33))
+			.expect("seed stale #3");
+
+		let reorg_info = ReorgInfo::<OpaqueBlock> {
+			common_ancestor: canonical_hash_1,
+			retracted: vec![],
+			enacted: vec![canonical_hash_2],
+			new_best: canonical_hash_3,
+		};
+		let stats = canonical_reconciler::reconcile_reorg_window(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			Some(&reorg_info),
+			canonical_hash_3,
+			3,
+		)
+		.expect("reconcile reorg window")
+		.expect("stats");
+
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(2),
+			Ok(Some(H256::repeat_byte(0x22))),
+			"mapping below sync_from must stay unchanged",
+		);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(3),
+			Ok(Some(eth_hash_3)),
+			"mapping at sync_from must be reconciled",
+		);
+		assert_eq!(stats.scanned, 1);
+		assert_eq!(stats.updated, 1);
+		assert_eq!(
+			stats.window,
+			canonical_reconciler::ReconcileWindow { start: 3, end: 3 },
+		);
+	}
+
+	#[test]
+	fn canonical_reconcile_is_idempotent_and_pointer_monotonic() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change");
+		let block = builder.build().expect("build block").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let canonical_hash = client
+			.hash(1)
+			.expect("query canonical hash")
+			.expect("canonical hash");
+		let canonical_eth_block = make_ethereum_block(1);
+		let canonical_eth_hash = canonical_eth_block.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([(canonical_hash, canonical_eth_block)]),
+		};
+
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(1, H256::repeat_byte(0x55))
+			.expect("seed stale mapping");
+
+		let first = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("first reconcile")
+		.expect("stats");
+		assert_eq!(first.updated, 1);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(canonical_eth_hash))
+		);
+		let pointer_after_first = frontier_backend
+			.mapping()
+			.latest_canonical_indexed_block_number()
+			.expect("read pointer after first")
+			.expect("pointer after first");
+
+		let second = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("second reconcile")
+		.expect("stats");
+		assert_eq!(second.updated, 0);
+		let pointer_after_second = frontier_backend
+			.mapping()
+			.latest_canonical_indexed_block_number()
+			.expect("read pointer after second")
+			.expect("pointer after second");
+		assert!(
+			pointer_after_second >= pointer_after_first,
+			"latest canonical pointer must be monotonic"
+		);
+	}
+
+	#[test]
+	fn canonical_reconcile_batch_prioritizes_recent_finalized_blocks() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change for block 1");
+		let block_1 = builder.build().expect("build block 1").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_1))
+			.expect("import block 1");
+
+		let best_after_1 = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(best_after_1.best_hash)
+			.with_parent_block_number(best_after_1.best_number)
+			.build()
+			.expect("build block 2");
+		builder
+			.push_storage_change(vec![2], None)
+			.expect("push storage change for block 2");
+		let block_2 = builder.build().expect("build block 2").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block_2))
+			.expect("import block 2");
+
+		let canonical_hash_1 = client
+			.hash(1)
+			.expect("query canonical hash for #1")
+			.expect("canonical hash for #1");
+		let canonical_hash_2 = client
+			.hash(2)
+			.expect("query canonical hash for #2")
+			.expect("canonical hash for #2");
+		let eth_block_1 = make_ethereum_block(1);
+		let eth_hash_1 = eth_block_1.header.hash();
+		let eth_block_2 = make_ethereum_block(2);
+		let eth_hash_2 = eth_block_2.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([
+				(canonical_hash_1, eth_block_1),
+				(canonical_hash_2, eth_block_2),
+			]),
+		};
+
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(1, H256::repeat_byte(0x11))
+			.expect("seed stale #1");
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(2, H256::repeat_byte(0x22))
+			.expect("seed stale #2");
+
+		let first = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			0,
+			1,
+		)
+		.expect("first batch")
+		.expect("first stats");
+		assert_eq!(first.scanned, 1);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(2),
+			Ok(Some(eth_hash_2)),
+			"latest finalized block must be repaired first"
+		);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(H256::repeat_byte(0x11))),
+			"older block should still be stale after first small batch"
+		);
+
+		let second = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			0,
+			1,
+		)
+		.expect("second batch")
+		.expect("second stats");
+		assert_eq!(second.scanned, 1);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(eth_hash_1)),
+			"second batch should continue backward"
+		);
 	}
 }

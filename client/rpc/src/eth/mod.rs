@@ -28,7 +28,11 @@ mod state;
 mod submit;
 mod transaction;
 
-use std::{collections::BTreeMap, marker::PhantomData, sync::Arc};
+use std::{
+	collections::BTreeMap,
+	marker::PhantomData,
+	sync::{Arc, Mutex},
+};
 
 use ethereum::{BlockV3 as EthereumBlock, TransactionV3 as EthereumTransaction};
 use ethereum_types::{H160, H256, H64, U256, U64};
@@ -69,6 +73,8 @@ impl<B: BlockT, C> EthConfig<B, C> for () {
 	type RuntimeStorageOverride = ();
 }
 
+const LATEST_READABLE_SCAN_LIMIT: u64 = 128;
+
 /// Eth API implementation.
 pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	pool: Arc<P>,
@@ -88,15 +94,51 @@ pub struct Eth<B: BlockT, C, P, CT, BE, CIDP, EC> {
 	/// Whether RPC submission accepts legacy transactions without EIP-155 chain id.
 	rpc_allow_unprotected_txs: bool,
 	forced_parent_hashes: Option<BTreeMap<H256, H256>>,
+	latest_readable_scan_limit: u64,
+	last_readable_latest: Mutex<Option<B::Hash>>,
 	/// Something that can create the inherent data providers for pending state.
 	pending_create_inherent_data_providers: CIDP,
 	pending_consensus_data_provider: Option<Box<dyn pending::ConsensusDataProvider<B>>>,
 	_marker: PhantomData<(BE, EC)>,
 }
 
+fn find_readable_hash_from_number_desc<H, FReadable, FHashAt>(
+	start_number: u64,
+	stop_number: Option<u64>,
+	is_readable: &mut FReadable,
+	hash_at_number: &mut FHashAt,
+) -> (Option<H>, u64)
+where
+	FReadable: FnMut(&H) -> bool,
+	FHashAt: FnMut(u64) -> Option<H>,
+{
+	let lower_bound = stop_number.unwrap_or(0);
+	if start_number < lower_bound {
+		return (None, 0);
+	}
+
+	let mut current_number = start_number;
+	let mut scanned_hops: u64 = 0;
+
+	loop {
+		let Some(hash) = hash_at_number(current_number) else {
+			break;
+		};
+		if is_readable(&hash) {
+			return (Some(hash), scanned_hops);
+		}
+		if current_number == lower_bound || current_number == 0 {
+			break;
+		}
+		current_number = current_number.saturating_sub(1);
+		scanned_hops = scanned_hops.saturating_add(1);
+	}
+
+	(None, scanned_hops)
+}
+
 async fn resolve_canonical_substrate_hash_by_number<B, C>(
 	client: &C,
-	storage_override: &dyn StorageOverride<B>,
 	backend: &dyn fc_api::Backend<B>,
 	block_number: u64,
 ) -> RpcResult<Option<B::Hash>>
@@ -122,20 +164,6 @@ where
 		if substrate_hash == Some(canonical_hash) {
 			return Ok(Some(canonical_hash));
 		}
-	}
-
-	let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
-		return Ok(None);
-	};
-	let repaired_eth_hash = ethereum_block.header.hash();
-	if let Err(err) = backend
-		.set_block_hash_by_number(block_number, repaired_eth_hash)
-		.await
-	{
-		log::warn!(
-			target: "rpc",
-			"Failed to repair block number mapping for #{block_number} ({repaired_eth_hash:?}): {err:?}",
-		);
 	}
 
 	Ok(Some(canonical_hash))
@@ -182,10 +210,141 @@ where
 			execute_gas_limit_multiplier,
 			rpc_allow_unprotected_txs,
 			forced_parent_hashes,
+			latest_readable_scan_limit: LATEST_READABLE_SCAN_LIMIT,
+			last_readable_latest: Mutex::new(None),
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
 			_marker: PhantomData,
 		}
+	}
+
+	fn cached_latest_hash_is_usable(
+		&self,
+		cached_hash: &B::Hash,
+		latest_indexed_number: u64,
+	) -> RpcResult<bool> {
+		let Some(cached_number) = self
+			.client
+			.number(*cached_hash)
+			.map_err(|err| internal_err(format!("{err:?}")))?
+		else {
+			return Ok(false);
+		};
+		let cached_number: u64 = cached_number.unique_saturated_into();
+		if cached_number > latest_indexed_number {
+			return Ok(false);
+		}
+
+		let canonical_hash = self
+			.client
+			.hash(cached_number.unique_saturated_into())
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		if canonical_hash != Some(*cached_hash) {
+			return Ok(false);
+		}
+
+		Ok(self.storage_override.current_block(*cached_hash).is_some())
+	}
+
+	async fn latest_indexed_hash_with_block(&self) -> RpcResult<B::Hash> {
+		let latest_indexed_hash = self
+			.backend
+			.latest_block_hash()
+			.await
+			.map_err(|err| internal_err(format!("{err:?}")))?;
+		let latest_indexed_number: u64 = self
+			.client
+			.number(latest_indexed_hash)
+			.map_err(|err| internal_err(format!("{err:?}")))?
+			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?
+			.unique_saturated_into();
+
+		let cached_hash = *self
+			.last_readable_latest
+			.lock()
+			.map_err(|_| internal_err("last_readable_latest lock poisoned"))?;
+		if let Some(cached_hash) = cached_hash {
+			if self.cached_latest_hash_is_usable(&cached_hash, latest_indexed_number)? {
+				log::debug!(
+					target: "rpc",
+					"latest readable selection cache_hit=true bounded_hit=false exhaustive_hit=false full_miss=false bounded_scanned_hops=0 exhaustive_scanned_hops=0 limit={}",
+					self.latest_readable_scan_limit,
+				);
+				return Ok(cached_hash);
+			}
+		}
+
+		let bounded_lower = latest_indexed_number.saturating_sub(self.latest_readable_scan_limit);
+		let (bounded_resolved_hash, bounded_scanned_hops) = find_readable_hash_from_number_desc(
+			latest_indexed_number,
+			Some(bounded_lower),
+			&mut |hash: &B::Hash| self.storage_override.current_block(*hash).is_some(),
+			&mut |number: u64| {
+				self.client
+					.hash(number.unique_saturated_into())
+					.map_err(|err| internal_err(format!("{err:?}")))
+					.ok()
+					.flatten()
+			},
+		);
+
+		let (selected_hash, bounded_hit, exhaustive_hit, full_miss, exhaustive_scanned_hops) =
+			if let Some(resolved_hash) = bounded_resolved_hash {
+				(resolved_hash, true, false, false, 0)
+			} else {
+				let exhaustive_start = bounded_lower.checked_sub(1);
+				let (exhaustive_resolved_hash, exhaustive_scanned_hops) =
+					if let Some(exhaustive_start) = exhaustive_start {
+						find_readable_hash_from_number_desc(
+							exhaustive_start,
+							Some(0),
+							&mut |hash: &B::Hash| {
+								self.storage_override.current_block(*hash).is_some()
+							},
+							&mut |number: u64| {
+								self.client
+									.hash(number.unique_saturated_into())
+									.map_err(|err| internal_err(format!("{err:?}")))
+									.ok()
+									.flatten()
+							},
+						)
+					} else {
+						(None, 0)
+					};
+
+				if let Some(resolved_hash) = exhaustive_resolved_hash {
+					(resolved_hash, false, true, false, exhaustive_scanned_hops)
+				} else {
+					(
+						latest_indexed_hash,
+						false,
+						false,
+						true,
+						exhaustive_scanned_hops,
+					)
+				}
+			};
+
+		if !full_miss {
+			self.last_readable_latest
+				.lock()
+				.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
+				.replace(selected_hash);
+		}
+
+		log::debug!(
+			target: "rpc",
+			"latest readable selection cache_hit=false bounded_hit={} exhaustive_hit={} full_miss={} bounded_scanned_hops={} exhaustive_scanned_hops={} limit={}",
+			bounded_hit,
+			exhaustive_hit,
+			full_miss,
+			bounded_scanned_hops,
+			exhaustive_scanned_hops,
+			self.latest_readable_scan_limit,
+		);
+
+		Ok(selected_hash)
 	}
 
 	pub async fn block_info_by_number(
@@ -205,14 +364,9 @@ where
 				return self.block_info_by_eth_block_hash(hash).await;
 			}
 			BlockNumberOrHash::Latest => {
-				// For "latest", use backend.latest_block_hash() which returns the latest
-				// indexed block. This avoids a race condition where the best block from
-				// the client may not yet be indexed by mapping-sync.
-				let substrate_hash = self
-					.backend
-					.latest_block_hash()
-					.await
-					.map_err(|err| internal_err(format!("{err:?}")))?;
+				// For "latest", use the latest indexed block and fall back to the nearest
+				// canonical ancestor that has a readable block payload.
+				let substrate_hash = self.latest_indexed_hash_with_block().await?;
 				return self.block_info_by_substrate_hash(substrate_hash).await;
 			}
 			_ => {}
@@ -233,7 +387,6 @@ where
 
 		let Some(canonical_hash) = resolve_canonical_substrate_hash_by_number::<B, C>(
 			self.client.as_ref(),
-			self.storage_override.as_ref(),
 			self.backend.as_ref(),
 			block_number,
 		)
@@ -348,6 +501,8 @@ where
 			execute_gas_limit_multiplier,
 			rpc_allow_unprotected_txs,
 			forced_parent_hashes,
+			latest_readable_scan_limit,
+			last_readable_latest,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
 			_marker: _,
@@ -368,6 +523,8 @@ where
 			execute_gas_limit_multiplier,
 			rpc_allow_unprotected_txs,
 			forced_parent_hashes,
+			latest_readable_scan_limit,
+			last_readable_latest,
 			pending_create_inherent_data_providers,
 			pending_consensus_data_provider,
 			_marker: PhantomData,
@@ -784,25 +941,70 @@ impl<H> BlockInfo<H> {
 }
 
 #[cfg(test)]
+fn test_only_select_latest_readable_hash(
+	latest_hash: u64,
+	latest_number: u64,
+	scan_limit: u64,
+	cached_hash: Option<u64>,
+	readable_at_or_below: Option<u64>,
+	cached_usable: bool,
+) -> (u64, Option<u64>, u64, u64) {
+	if let Some(cached_hash) = cached_hash {
+		if cached_usable {
+			return (cached_hash, Some(cached_hash), 0, 0);
+		}
+	}
+
+	let bounded_lower = latest_number.saturating_sub(scan_limit);
+	let (bounded_resolved, bounded_hops) = find_readable_hash_from_number_desc(
+		latest_number,
+		Some(bounded_lower),
+		&mut |hash: &u64| readable_at_or_below.is_some_and(|limit| *hash <= limit),
+		&mut |number: u64| Some(number),
+	);
+
+	if let Some(resolved) = bounded_resolved {
+		return (resolved, Some(resolved), bounded_hops, 0);
+	}
+
+	let (exhaustive_resolved, exhaustive_hops) = if bounded_lower == 0 {
+		(None, 0)
+	} else {
+		find_readable_hash_from_number_desc(
+			bounded_lower.saturating_sub(1),
+			Some(0),
+			&mut |hash: &u64| readable_at_or_below.is_some_and(|limit| *hash <= limit),
+			&mut |number: u64| Some(number),
+		)
+	};
+
+	if let Some(resolved) = exhaustive_resolved {
+		return (resolved, Some(resolved), bounded_hops, exhaustive_hops);
+	}
+
+	(latest_hash, None, bounded_hops, exhaustive_hops)
+}
+
+#[cfg(test)]
 mod tests {
-	use std::{collections::HashMap, path::PathBuf, sync::Arc};
+	use std::{path::PathBuf, sync::Arc};
 
 	use ethereum::PartialHeader;
-	use ethereum_types::{Address, Bloom, H160, H256, H64, U256};
-	use fp_rpc::TransactionStatus;
+	use ethereum_types::{Bloom, H160, H256, H64, U256};
 	use sc_block_builder::BlockBuilderBuilder;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
 		generic::{Block, Header},
 		traits::{BlakeTwo256, Block as BlockT},
-		Permill,
 	};
 	use substrate_test_runtime_client::{
 		prelude::*, DefaultTestClientBuilderExt, TestClientBuilder,
 	};
 	use tempfile::tempdir;
 
-	use super::resolve_canonical_substrate_hash_by_number;
+	use super::{
+		resolve_canonical_substrate_hash_by_number, test_only_select_latest_readable_hash,
+	};
 
 	type OpaqueBlock =
 		Block<Header<u64, BlakeTwo256>, substrate_test_runtime_client::runtime::Extrinsic>;
@@ -847,57 +1049,8 @@ mod tests {
 		ethereum::Block::new(partial_header, vec![], vec![])
 	}
 
-	struct TestStorageOverride {
-		blocks: HashMap<<OpaqueBlock as BlockT>::Hash, ethereum::BlockV3>,
-	}
-
-	impl fc_storage::StorageOverride<OpaqueBlock> for TestStorageOverride {
-		fn account_code_at(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-			_address: Address,
-		) -> Option<Vec<u8>> {
-			None
-		}
-
-		fn account_storage_at(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-			_address: Address,
-			_index: U256,
-		) -> Option<H256> {
-			None
-		}
-
-		fn current_block(&self, at: <OpaqueBlock as BlockT>::Hash) -> Option<ethereum::BlockV3> {
-			self.blocks.get(&at).cloned()
-		}
-
-		fn current_receipts(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-		) -> Option<Vec<ethereum::ReceiptV4>> {
-			None
-		}
-
-		fn current_transaction_statuses(
-			&self,
-			_at: <OpaqueBlock as BlockT>::Hash,
-		) -> Option<Vec<TransactionStatus>> {
-			None
-		}
-
-		fn elasticity(&self, _at: <OpaqueBlock as BlockT>::Hash) -> Option<Permill> {
-			None
-		}
-
-		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
-			false
-		}
-	}
-
 	#[test]
-	fn resolve_canonical_substrate_hash_repairs_missing_and_stale_number_mapping() {
+	fn resolve_canonical_substrate_hash_by_number_is_read_only() {
 		let tmp = tempdir().expect("create temp dir");
 		let (client, _) = TestClientBuilder::new()
 			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
@@ -921,10 +1074,6 @@ mod tests {
 
 		let ethereum_block = make_ethereum_block(1);
 		let canonical_eth_hash = ethereum_block.header.hash();
-		let storage_override = TestStorageOverride {
-			blocks: HashMap::from([(canonical_hash, ethereum_block)]),
-		};
-
 		let commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
 			block_hash: canonical_hash,
 			ethereum_block_hash: canonical_eth_hash,
@@ -952,20 +1101,15 @@ mod tests {
 		let resolved = futures::executor::block_on(resolve_canonical_substrate_hash_by_number::<
 			OpaqueBlock,
 			_,
-		>(
-			client.as_ref(),
-			&storage_override,
-			backend.as_ref(),
-			1,
-		))
-		.expect("resolve missing mapping");
+		>(client.as_ref(), backend.as_ref(), 1))
+		.expect("resolve missing mapping without repair");
 		assert_eq!(resolved, Some(canonical_hash));
 		assert_eq!(
 			backend
 				.mapping()
 				.block_hash_by_number(1)
-				.expect("read repaired number mapping"),
-			Some(canonical_eth_hash)
+				.expect("read unchanged number mapping"),
+			None
 		);
 
 		let stale_hash = H256::repeat_byte(0x42);
@@ -984,20 +1128,45 @@ mod tests {
 		let resolved = futures::executor::block_on(resolve_canonical_substrate_hash_by_number::<
 			OpaqueBlock,
 			_,
-		>(
-			client.as_ref(),
-			&storage_override,
-			backend.as_ref(),
-			1,
-		))
-		.expect("resolve stale mapping");
+		>(client.as_ref(), backend.as_ref(), 1))
+		.expect("resolve stale mapping without repair");
 		assert_eq!(resolved, Some(canonical_hash));
 		assert_eq!(
 			backend
 				.mapping()
 				.block_hash_by_number(1)
-				.expect("read repaired stale mapping"),
-			Some(canonical_eth_hash)
+				.expect("read stale number mapping"),
+			Some(stale_hash)
 		);
+	}
+
+	#[test]
+	fn latest_readable_selection_uses_exhaustive_fallback_when_bounded_scan_misses() {
+		let (resolved, cached, bounded_hops, exhaustive_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, None, Some(80), false);
+		assert_eq!(resolved, 80);
+		assert_eq!(cached, Some(80));
+		assert_eq!(bounded_hops, 2);
+		assert_eq!(exhaustive_hops, 17);
+	}
+
+	#[test]
+	fn latest_readable_selection_uses_cache_before_scanning() {
+		let (resolved, cached, bounded_hops, exhaustive_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, Some(80), Some(50), true);
+		assert_eq!(resolved, 80);
+		assert_eq!(cached, Some(80));
+		assert_eq!(bounded_hops, 0);
+		assert_eq!(exhaustive_hops, 0);
+	}
+
+	#[test]
+	fn latest_readable_selection_falls_back_to_latest_when_no_readable_exists() {
+		let (resolved, cached, bounded_hops, exhaustive_hops) =
+			test_only_select_latest_readable_hash(100, 100, 2, Some(80), None, false);
+		assert_eq!(resolved, 100);
+		assert_eq!(cached, None);
+		assert_eq!(bounded_hops, 2);
+		assert_eq!(exhaustive_hops, 97);
 	}
 }

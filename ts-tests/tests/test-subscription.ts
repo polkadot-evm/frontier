@@ -135,7 +135,7 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 		done();
 	}).timeout(20000);
 
-	step("should subscribe to all logs", async function (done) {
+	step("should subscribe to all logs", async function () {
 		subscription = context.web3.eth.subscribe("logs", {}, function (error, result) {});
 
 		await new Promise<void>((resolve) => {
@@ -144,23 +144,28 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			});
 		});
 
-		const tx = await sendTransaction(context);
+		await sendTransaction(context);
 		let data = null;
-		let dataResolve = null;
-		let dataPromise = new Promise((resolve) => {
-			dataResolve = resolve;
-		});
-		subscription.on("data", function (d: any) {
-			data = d;
-			logsGenerated += 1;
-			dataResolve();
+		const dataPromise = new Promise<void>((resolve, reject) => {
+			const timer = setTimeout(() => reject(new Error("Timed out waiting for logs subscription event")), 20000);
+			subscription.on("data", function (d: any) {
+				data = d;
+				logsGenerated += 1;
+				clearTimeout(timer);
+				resolve();
+			});
+			subscription.on("error", function (error: any) {
+				clearTimeout(timer);
+				reject(error);
+			});
 		});
 
+		// Ensure a block is sealed after the tx enters the pool and wait for subscription payload.
 		await createAndFinalizeBlock(context.web3);
 		await dataPromise;
 
 		subscription.unsubscribe();
-		const block = await context.web3.eth.getBlock("latest");
+		const block = await context.web3.eth.getBlock(data.blockNumber);
 		expect(data).to.include({
 			blockHash: block.hash,
 			blockNumber: block.number,
@@ -171,7 +176,6 @@ describeWithFrontierWs("Frontier RPC (Subscription)", (context) => {
 			transactionIndex: 0,
 			transactionLogIndex: "0x0",
 		});
-		done();
 	}).timeout(20000);
 
 	step("should subscribe to logs by multiple addresses", async function (done) {
