@@ -107,20 +107,23 @@ where
 		Ok(number)
 	}
 
-	fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
+	async fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
 		let info = self.client.info();
 		let best_hash = info.best_hash;
 		let best_number = UniqueSaturatedInto::<u64>::unique_saturated_into(info.best_number);
 		// Reject log filters with block range exceeding limit (same as eth_getLogs).
 		if let FilterType::Log(ref filter) = filter_type {
+			let latest_indexed_number = self.latest_indexed_block_number().await?;
 			let from_num = filter
 				.from_block
 				.and_then(|b| b.to_min_block_num())
-				.unwrap_or(best_number);
+				.map(|s| s.unique_saturated_into())
+				.unwrap_or(latest_indexed_number);
 			let to_num = filter
 				.to_block
 				.and_then(|b| b.to_min_block_num())
-				.unwrap_or(best_number);
+				.map(|s| s.unique_saturated_into())
+				.unwrap_or(latest_indexed_number);
 			let block_range = to_num.saturating_sub(from_num);
 			if block_range > self.max_block_range.into() {
 				return Err(internal_err(format!(
@@ -194,16 +197,16 @@ where
 	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
-	fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
-		self.create_filter(FilterType::Log(filter))
+	async fn new_filter(&self, filter: Filter) -> RpcResult<U256> {
+		self.create_filter(FilterType::Log(filter)).await
 	}
 
-	fn new_block_filter(&self) -> RpcResult<U256> {
-		self.create_filter(FilterType::Block)
+	async fn new_block_filter(&self) -> RpcResult<U256> {
+		self.create_filter(FilterType::Block).await
 	}
 
-	fn new_pending_transaction_filter(&self) -> RpcResult<U256> {
-		self.create_filter(FilterType::PendingTransaction)
+	async fn new_pending_transaction_filter(&self) -> RpcResult<U256> {
+		self.create_filter(FilterType::PendingTransaction).await
 	}
 
 	async fn filter_changes(&self, index: Index) -> RpcResult<FilterChanges> {
