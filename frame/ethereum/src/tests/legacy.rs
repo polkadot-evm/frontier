@@ -210,6 +210,54 @@ fn transaction_with_invalid_chain_id_should_fail_in_block() {
 }
 
 #[test]
+fn unprotected_transaction_should_fail_when_not_allowed() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		AllowUnprotectedTxs::set(false);
+		let transaction =
+			legacy_erc20_creation_unsigned_transaction().sign_without_chain_id(&alice.private_key);
+
+		let call = crate::Call::<Test>::transact { transaction };
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<_, _, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: RuntimeCall::Ethereum(call),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
+		assert_err!(
+			extrinsic.apply::<Test>(&dispatch_info, 0),
+			TransactionValidityError::Invalid(InvalidTransaction::Custom(
+				fp_evm::TransactionValidationError::InvalidChainId as u8,
+			))
+		);
+	});
+}
+
+#[test]
+fn unprotected_transaction_should_succeed_when_allowed() {
+	let (pairs, mut ext) = new_test_ext(1);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		AllowUnprotectedTxs::set(true);
+		let transaction =
+			legacy_erc20_creation_unsigned_transaction().sign_without_chain_id(&alice.private_key);
+
+		let call = crate::Call::<Test>::transact { transaction };
+		let source = call.check_self_contained().unwrap().unwrap();
+		let extrinsic = CheckedExtrinsic::<_, _, SignedExtra, _> {
+			signed: fp_self_contained::CheckedSignature::SelfContained(source),
+			function: RuntimeCall::Ethereum(call),
+		};
+		let dispatch_info = extrinsic.get_dispatch_info();
+		assert_ok!(extrinsic.apply::<Test>(&dispatch_info, 0));
+		AllowUnprotectedTxs::set(false);
+	});
+}
+
+#[test]
 fn contract_constructor_should_get_executed() {
 	let (pairs, mut ext) = new_test_ext(1);
 	let alice = &pairs[0];

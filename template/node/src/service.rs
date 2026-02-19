@@ -429,6 +429,7 @@ where
 		let max_past_logs = eth_config.max_past_logs;
 		let max_block_range = eth_config.max_block_range;
 		let execute_gas_limit_multiplier = eth_config.execute_gas_limit_multiplier;
+		let rpc_allow_unprotected_txs = eth_config.rpc_allow_unprotected_txs;
 		let filter_pool = filter_pool.clone();
 		let frontier_backend = frontier_backend.clone();
 		let pubsub_notification_sinks = pubsub_notification_sinks.clone();
@@ -477,6 +478,7 @@ where
 				fee_history_cache: fee_history_cache.clone(),
 				fee_history_cache_limit,
 				execute_gas_limit_multiplier,
+				rpc_allow_unprotected_txs,
 				forced_parent_hashes: None,
 				pending_create_inherent_data_providers,
 			};

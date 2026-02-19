@@ -90,6 +90,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
 	pub const GasLimitStorageGrowthRatio: u64 = 0;
+	pub static AllowUnprotectedTxs: bool = false;
 	// Alice is allowed to create contracts via CREATE and CALL(CREATE)
 	pub AllowedAddressesCreate: Vec<H160> = vec![H160::from_str("0x1a642f0e3c3af545e7acbd38b07251b3990914f1").expect("alice address")];
 	pub AllowedAddressesCreateInner: Vec<H160> = vec![H160::from_str("0x1a642f0e3c3af545e7acbd38b07251b3990914f1").expect("alice address")];
@@ -111,7 +112,9 @@ impl pallet_evm::Config for Test {
 }
 
 #[derive_impl(crate::config_preludes::TestDefaultConfig)]
-impl Config for Test {}
+impl Config for Test {
+	type AllowUnprotectedTxs = AllowUnprotectedTxs;
+}
 
 impl fp_self_contained::SelfContainedCall for RuntimeCall {
 	type SignedInfo = H160;
@@ -285,6 +288,17 @@ impl LegacyUnsignedTransaction {
 		H256::from(keccak_256(&stream.out()))
 	}
 
+	fn unprotected_signing_hash(&self) -> H256 {
+		let mut stream = RlpStream::new_list(6);
+		stream.append(&self.nonce);
+		stream.append(&self.gas_price);
+		stream.append(&self.gas_limit);
+		stream.append(&self.action);
+		stream.append(&self.value);
+		stream.append(&self.input);
+		H256::from(keccak_256(&stream.out()))
+	}
+
 	pub fn sign(&self, key: &H256) -> Transaction {
 		self.sign_with_chain_id(key, ChainId::get())
 	}
@@ -300,6 +314,33 @@ impl LegacyUnsignedTransaction {
 
 		let sig = LegacyTransactionSignature::new(
 			s.1.serialize() as u64 % 2 + chain_id * 2 + 35,
+			H256::from_slice(&sig[0..32]),
+			H256::from_slice(&sig[32..64]),
+		)
+		.unwrap();
+
+		Transaction::Legacy(ethereum::LegacyTransaction {
+			nonce: self.nonce,
+			gas_price: self.gas_price,
+			gas_limit: self.gas_limit,
+			action: self.action,
+			value: self.value,
+			input: self.input.clone(),
+			signature: sig,
+		})
+	}
+
+	pub fn sign_without_chain_id(&self, key: &H256) -> Transaction {
+		let hash = self.unprotected_signing_hash();
+		let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
+		let s = libsecp256k1::sign(
+			&msg,
+			&libsecp256k1::SecretKey::parse_slice(&key[..]).unwrap(),
+		);
+		let sig = s.0.serialize();
+
+		let sig = LegacyTransactionSignature::new(
+			s.1.serialize() as u64 % 2 + 27,
 			H256::from_slice(&sig[0..32]),
 			H256::from_slice(&sig[32..64]),
 		)

@@ -37,6 +37,20 @@ use crate::{
 	internal_err, public_key,
 };
 
+fn is_unprotected_legacy_tx(transaction: &ethereum::TransactionV3) -> bool {
+	matches!(
+		transaction,
+		ethereum::TransactionV3::Legacy(tx) if tx.signature.chain_id().is_none()
+	)
+}
+
+fn should_reject_unprotected_legacy_tx(
+	transaction: &ethereum::TransactionV3,
+	allow_unprotected_txs: bool,
+) -> bool {
+	is_unprotected_legacy_tx(transaction) && !allow_unprotected_txs
+}
+
 impl<B, C, P, CT, BE, CIDP, EC> Eth<B, C, P, CT, BE, CIDP, EC>
 where
 	B: BlockT,
@@ -48,6 +62,21 @@ where
 	CT: ConvertTransaction<<B as BlockT>::Extrinsic> + 'static,
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 {
+	fn ensure_unprotected_legacy_tx_allowed(
+		&self,
+		transaction: &ethereum::TransactionV3,
+	) -> RpcResult<()> {
+		if should_reject_unprotected_legacy_tx(transaction, self.rpc_allow_unprotected_txs) {
+			// Runtime validation remains authoritative since peers can still gossip transactions
+			// over p2p and bypass RPC submission.
+			return Err(internal_err(
+				"unprotected legacy transactions are not allowed by RPC policy",
+			));
+		}
+
+		Ok(())
+	}
+
 	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
 		let from = match request.from {
 			Some(from) => from,
@@ -143,6 +172,7 @@ where
 			Some(transaction) => transaction,
 			None => return Err(internal_err("no signer available")),
 		};
+		self.ensure_unprotected_legacy_tx_allowed(&transaction)?;
 		let transaction_hash = transaction.hash();
 
 		let extrinsic = self.convert_transaction(block_hash, transaction)?;
@@ -165,6 +195,7 @@ where
 				Ok(transaction) => transaction,
 				Err(_) => return Err(internal_err("decode transaction failed")),
 			};
+		self.ensure_unprotected_legacy_tx_allowed(&transaction)?;
 		let transaction_hash = transaction.hash();
 
 		let block_hash = self.client.info().best_hash;
@@ -288,5 +319,80 @@ where
 				"`ConvertTransactionRuntimeApi` is not supported",
 			)),
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::{is_unprotected_legacy_tx, should_reject_unprotected_legacy_tx};
+	use ethereum::{
+		legacy::TransactionSignature as LegacyTransactionSignature, LegacyTransaction,
+		TransactionAction, TransactionV3,
+	};
+	use rlp::RlpStream;
+	use sp_core::{hashing::keccak_256, H160, H256, U256};
+
+	fn legacy_tx_with_v(v: u64) -> TransactionV3 {
+		let nonce = U256::zero();
+		let gas_price = U256::from(1u8);
+		let gas_limit = U256::from(21_000u64);
+		let action = TransactionAction::Call(H160::default());
+		let value = U256::zero();
+		let input = Vec::new();
+
+		let mut stream = RlpStream::new_list(6);
+		stream.append(&nonce);
+		stream.append(&gas_price);
+		stream.append(&gas_limit);
+		stream.append(&action);
+		stream.append(&value);
+		stream.append(&input);
+		let hash = H256::from(keccak_256(&stream.out()));
+		let msg = libsecp256k1::Message::parse(hash.as_fixed_bytes());
+		let secret = libsecp256k1::SecretKey::parse_slice(&[1u8; 32]).expect("valid secret key");
+		let (signature, _) = libsecp256k1::sign(&msg, &secret);
+		let rs = signature.serialize();
+
+		TransactionV3::Legacy(LegacyTransaction {
+			nonce,
+			gas_price,
+			gas_limit,
+			action,
+			value,
+			input,
+			signature: LegacyTransactionSignature::new(
+				v,
+				H256::from_slice(&rs[0..32]),
+				H256::from_slice(&rs[32..64]),
+			)
+			.expect("valid legacy signature"),
+		})
+	}
+
+	#[test]
+	fn detects_unprotected_legacy_transaction() {
+		let tx = legacy_tx_with_v(27);
+
+		assert!(is_unprotected_legacy_tx(&tx));
+	}
+
+	#[test]
+	fn ignores_protected_legacy_transaction() {
+		let tx = legacy_tx_with_v(37);
+
+		assert!(!is_unprotected_legacy_tx(&tx));
+	}
+
+	#[test]
+	fn reject_decision_respects_policy() {
+		let unprotected_legacy = legacy_tx_with_v(27);
+		assert!(should_reject_unprotected_legacy_tx(
+			&unprotected_legacy,
+			false
+		));
+		assert!(!should_reject_unprotected_legacy_tx(
+			&unprotected_legacy,
+			true
+		));
 	}
 }
