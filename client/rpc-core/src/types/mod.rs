@@ -63,7 +63,9 @@ pub use self::{
 		Peers, PipProtocolInfo, SyncInfo, SyncStatus, TransactionStats,
 	},
 	transaction::{LocalTransactionStatus, RichRawTransaction, Transaction},
-	transaction_request::{TransactionMessage, TransactionRequest},
+	transaction_request::{
+		TransactionMessage, TransactionRequest, DEFAULT_MAX_TX_INPUT_BYTES, TX_SLOT_BYTE_SIZE,
+	},
 	work::Work,
 };
 
