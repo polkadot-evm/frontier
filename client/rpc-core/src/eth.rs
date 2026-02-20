@@ -271,15 +271,15 @@ pub trait EthApi {
 pub trait EthFilterApi {
 	/// Returns id of new filter.
 	#[method(name = "eth_newFilter")]
-	fn new_filter(&self, filter: Filter) -> RpcResult<U256>;
+	async fn new_filter(&self, filter: Filter) -> RpcResult<U256>;
 
 	/// Returns id of new block filter.
 	#[method(name = "eth_newBlockFilter")]
-	fn new_block_filter(&self) -> RpcResult<U256>;
+	async fn new_block_filter(&self) -> RpcResult<U256>;
 
 	/// Returns id of new block filter.
 	#[method(name = "eth_newPendingTransactionFilter")]
-	fn new_pending_transaction_filter(&self) -> RpcResult<U256>;
+	async fn new_pending_transaction_filter(&self) -> RpcResult<U256>;
 
 	/// Returns filter changes since last poll.
 	#[method(name = "eth_getFilterChanges")]
