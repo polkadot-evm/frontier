@@ -585,25 +585,33 @@ pub(crate) fn migrate_2_to_3_rocks_db<Block: BlockT, C: HeaderBackend<Block>>(
 	let db_cfg = kvdb_rocksdb::DatabaseConfig::with_columns(V3_NUM_COLUMNS);
 	let db = kvdb_rocksdb::Database::open(&db_cfg, db_path)?;
 
-	// Get all the block mapping entries
-	let entries: Vec<_> = db
+	// Stream entries from the database in fixed-size chunks to avoid
+	// loading the entire BLOCK_MAPPING column into memory (OOM on large chains).
+	const CHUNK_SIZE: usize = 10_000;
+	let mut processed = 0usize;
+	let mut chunk = Vec::with_capacity(CHUNK_SIZE);
+	for entry in db
 		.iter(super::columns::BLOCK_MAPPING)
 		.filter_map(|entry| entry.ok())
-		.collect();
-
-	// Read and update each entry in db transaction batches
-	const CHUNK_SIZE: usize = 10_000;
-	let chunks = entries.chunks(CHUNK_SIZE);
-	let all_len = entries.len();
-	for (i, chunk) in chunks.enumerate() {
-		process_chunk(&db, chunk)?;
-		log::debug!(
-			target: "fc-db-upgrade",
-			"🔨 Processed {} of {} entries.",
-			(CHUNK_SIZE * (i + 1)).min(all_len),
-			all_len
-		);
+	{
+		chunk.push(entry);
+		if chunk.len() >= CHUNK_SIZE {
+			processed += chunk.len();
+			process_chunk(&db, &chunk)?;
+			chunk.clear();
+		}
 	}
+	if !chunk.is_empty() {
+		processed += chunk.len();
+		process_chunk(&db, &chunk)?;
+	}
+	log::info!(
+		target: "fc-db-upgrade",
+		"🔨 Migration 2->3 complete: {} entries processed ({} success, {} skipped).",
+		processed,
+		res.success,
+		res.skipped
+	);
 	Ok(res)
 }
 
@@ -666,24 +674,33 @@ pub(crate) fn migrate_2_to_3_parity_db<Block: BlockT, C: HeaderBackend<Block>>(
 	let db = parity_db::Db::open_or_create(&db_cfg)
 		.map_err(|err| io::Error::other(format!("Failed to open db: {err}")))?;
 
-	// Get all the block mapping entries
-	let entries: Vec<_> = match db.iter(super::columns::BLOCK_MAPPING as u8) {
-		Ok(mut iter) => {
-			let mut items = vec![];
-			while let Ok(Some((k, v))) = iter.next() {
-				items.push((k, v));
-			}
-			items
-		}
-		Err(_) => vec![],
-	};
-
-	// Read and update each entry in db transaction batches
+	// Stream entries from the database in fixed-size chunks to avoid
+	// loading the entire BLOCK_MAPPING column into memory (OOM on large chains).
 	const CHUNK_SIZE: usize = 10_000;
-	let chunks = entries.chunks(CHUNK_SIZE);
-	for chunk in chunks {
-		process_chunk(&db, chunk)?;
+	let mut processed = 0usize;
+	if let Ok(mut iter) = db.iter(super::columns::BLOCK_MAPPING as u8) {
+		loop {
+			let mut chunk = Vec::with_capacity(CHUNK_SIZE);
+			for _ in 0..CHUNK_SIZE {
+				match iter.next() {
+					Ok(Some((k, v))) => chunk.push((k, v)),
+					_ => break,
+				}
+			}
+			if chunk.is_empty() {
+				break;
+			}
+			processed += chunk.len();
+			process_chunk(&db, &chunk)?;
+		}
 	}
+	log::info!(
+		target: "fc-db-upgrade",
+		"🔨 Migration 2->3 complete: {} entries processed ({} success, {} skipped).",
+		processed,
+		res.success,
+		res.skipped
+	);
 	Ok(res)
 }
 
