@@ -144,9 +144,27 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 
 		// Best block is not indexed yet or mapping is stale (reorg). Walk back to
 		// the latest indexed canonical block and persist the recovered pointer.
-		if let Some((recovered_number, recovered_hash)) =
-			self.find_latest_indexed_canonical_block(best_number.saturating_sub(1))?
-		{
+		if let Some((recovered_number, recovered_hash)) = self.find_latest_indexed_canonical_block(
+			best_number.saturating_sub(1),
+			INDEXED_RECOVERY_SCAN_LIMIT,
+		)? {
+			self.mapping
+				.set_latest_canonical_indexed_block(recovered_number)?;
+			return Ok(recovered_hash);
+		}
+
+		// Rare path: both persisted pointer and bounded scan missed. Try exhaustive
+		// fallback with a larger scan limit. Log when this triggers so operators can
+		// observe indexing lag or other anomalies.
+		log::warn!(
+			target: "frontier-db",
+			"latest_block_hash: rare-path exhaustive fallback triggered (best_number={}, persisted and bounded scan missed)",
+			best_number,
+		);
+		if let Some((recovered_number, recovered_hash)) = self.find_latest_indexed_canonical_block(
+			best_number.saturating_sub(1),
+			INDEXED_RECOVERY_SCAN_LIMIT * 4,
+		)? {
 			self.mapping
 				.set_latest_canonical_indexed_block(recovered_number)?;
 			return Ok(recovered_hash);
@@ -266,13 +284,13 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 	}
 
 	/// Finds the latest indexed block that is on the canonical chain by walking
-	/// backwards from `start_block`, bounded to `INDEXED_RECOVERY_SCAN_LIMIT`
-	/// probes to keep lookups fast on long chains.
+	/// backwards from `start_block`, bounded to `scan_limit` probes.
 	fn find_latest_indexed_canonical_block(
 		&self,
 		start_block: u64,
+		scan_limit: u64,
 	) -> Result<Option<(u64, Block::Hash)>, String> {
-		let scan_limit = INDEXED_RECOVERY_SCAN_LIMIT.saturating_sub(1);
+		let scan_limit = scan_limit.saturating_sub(1);
 		let min_block = start_block.saturating_sub(scan_limit);
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
@@ -592,10 +610,10 @@ mod tests {
 	#[tokio::test]
 	async fn latest_block_hash_scans_past_stale_reorg_window() {
 		let tmp = tempdir().expect("create a temporary directory");
-		let (client, _backend) = TestClientBuilder::new().build_with_native_executor::<
-			substrate_test_runtime_client::runtime::RuntimeApi,
-			_,
-		>(None);
+		let (client, _backend) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
 		let client = Arc::new(client);
 
 		let frontier_backend = Arc::new(
