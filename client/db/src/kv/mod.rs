@@ -134,7 +134,7 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Use persisted latest indexed block when mapping-sync is behind. This avoids
 		// falling back to genesis when the chain head has advanced beyond the 8k
 		// block scan limit—e.g. on heavily used chains where indexing lags.
-		if let Ok(Some(persisted_number)) = self.mapping.latest_canonical_indexed_block_number() {
+		if let Some(persisted_number) = self.mapping.latest_canonical_indexed_block_number()? {
 			if persisted_number <= best_number {
 				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
 					return Ok(canonical_hash);
