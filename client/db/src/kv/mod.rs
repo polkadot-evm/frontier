@@ -139,6 +139,18 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
 					return Ok(canonical_hash);
 				}
+				// Persisted pointer is stale (e.g. reorg); walk back from it.
+				if persisted_number > 0 {
+					if let Some((recovered_number, recovered_hash)) = self
+						.find_latest_indexed_canonical_block(
+							persisted_number.saturating_sub(1),
+							INDEXED_RECOVERY_SCAN_LIMIT,
+						)? {
+						self.mapping
+							.set_latest_canonical_indexed_block(recovered_number)?;
+						return Ok(recovered_hash);
+					}
+				}
 			}
 		}
 
