@@ -131,16 +131,21 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			return Ok(canonical_hash);
 		}
 
-		// Use cached pointer only as a lower bound hint for recovery scan.
-		let min_block_hint = self
-			.mapping
-			.latest_canonical_indexed_block_number()?
-			.map(|cached| cached.min(best_number));
+		// Use persisted latest indexed block when mapping-sync is behind. This avoids
+		// falling back to genesis when the chain head has advanced beyond the 8k
+		// block scan limit—e.g. on heavily used chains where indexing lags.
+		if let Ok(Some(persisted_number)) = self.mapping.latest_canonical_indexed_block_number() {
+			if persisted_number <= best_number {
+				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
+					return Ok(canonical_hash);
+				}
+			}
+		}
 
 		// Best block is not indexed yet or mapping is stale (reorg). Walk back to
 		// the latest indexed canonical block and persist the recovered pointer.
 		if let Some((recovered_number, recovered_hash)) =
-			self.find_latest_indexed_canonical_block(best_number.saturating_sub(1), min_block_hint)?
+			self.find_latest_indexed_canonical_block(best_number.saturating_sub(1))?
 		{
 			self.mapping
 				.set_latest_canonical_indexed_block(recovered_number)?;
@@ -266,13 +271,9 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 	fn find_latest_indexed_canonical_block(
 		&self,
 		start_block: u64,
-		min_block_hint: Option<u64>,
 	) -> Result<Option<(u64, Block::Hash)>, String> {
 		let scan_limit = INDEXED_RECOVERY_SCAN_LIMIT.saturating_sub(1);
-		let min_block = start_block
-			.saturating_sub(scan_limit)
-			.max(min_block_hint.unwrap_or(0))
-			.min(start_block);
+		let min_block = start_block.saturating_sub(scan_limit);
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 				return Ok(Some((block_number, canonical_hash)));
@@ -558,5 +559,139 @@ impl<Block: BlockT> MappingDb<Block> {
 			&block_number.encode(),
 		);
 		self.db.commit(transaction).map_err(|e| e.to_string())
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	use fc_api::Backend as _;
+	use sc_block_builder::BlockBuilderBuilder;
+	use sp_consensus::BlockOrigin;
+	use sp_core::H256;
+	use sp_runtime::{generic::Header, traits::BlakeTwo256, Digest};
+	use substrate_test_runtime_client::{
+		ClientBlockImportExt, DefaultTestClientBuilderExt, TestClientBuilder,
+	};
+	use tempfile::tempdir;
+
+	type OpaqueBlock = sp_runtime::generic::Block<
+		Header<u64, BlakeTwo256>,
+		substrate_test_runtime_client::runtime::Extrinsic,
+	>;
+
+	/// Regression test: `eth_blockNumber` must not return 0x00 (`latest_block_hash` must not
+	/// fall back to genesis) when mapping-sync has not yet reconciled a re-org and the
+	/// `LATEST_CANONICAL_INDEXED_BLOCK` pointer sits at a height whose `BLOCK_NUMBER_MAPPING`
+	/// entry still references the retracted fork's Ethereum hash.
+	///
+	/// Before the fix, `find_latest_indexed_canonical_block` used the cached pointer as a
+	/// hard lower bound, collapsing the scan window to just the handful of stale blocks and
+	/// causing the fallback path to return genesis (→ 0x00).
+	#[tokio::test]
+	async fn latest_block_hash_scans_past_stale_reorg_window() {
+		let tmp = tempdir().expect("create a temporary directory");
+		let (client, _backend) = TestClientBuilder::new().build_with_native_executor::<
+			substrate_test_runtime_client::runtime::RuntimeApi,
+			_,
+		>(None);
+		let client = Arc::new(client);
+
+		let frontier_backend = Arc::new(
+			Backend::<OpaqueBlock, _>::new(
+				client.clone(),
+				&DatabaseSettings {
+					#[cfg(feature = "rocksdb")]
+					source: sc_client_db::DatabaseSource::RocksDb {
+						path: tmp.path().to_path_buf(),
+						cache_size: 0,
+					},
+					#[cfg(not(feature = "rocksdb"))]
+					source: sc_client_db::DatabaseSource::ParityDb {
+						path: tmp.path().to_path_buf(),
+					},
+				},
+			)
+			.expect("frontier backend"),
+		);
+
+		// Import 5 substrate blocks so `client.hash(n)` resolves real canonical hashes.
+		let mut substrate_hashes = vec![client.chain_info().genesis_hash]; // [0] = genesis
+		for _ in 1u64..=5 {
+			let chain_info = client.chain_info();
+			let block = BlockBuilderBuilder::new(&*client)
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.with_inherent_digests(Digest::default())
+				.build()
+				.unwrap()
+				.build()
+				.unwrap()
+				.block;
+			let hash = block.header.hash();
+			client.import(BlockOrigin::Own, block).await.unwrap();
+			substrate_hashes.push(hash);
+		}
+		// substrate_hashes[n] is the canonical substrate hash for block height n.
+
+		// Write correct frontier mappings for blocks 1..3 (stable, pre-reorg).
+		// Each entry links: block_number → eth_hash → [substrate_hash].
+		for n in 1u64..=3 {
+			let eth_hash = H256::repeat_byte(n as u8);
+			let commitment = MappingCommitment::<OpaqueBlock> {
+				block_hash: substrate_hashes[n as usize],
+				ethereum_block_hash: eth_hash,
+				ethereum_transaction_hashes: vec![],
+			};
+			frontier_backend
+				.mapping()
+				.write_hashes(commitment, n, NumberMappingWrite::Write)
+				.expect("write stable mapping");
+		}
+
+		// Simulate a re-org at heights 4 and 5: the BLOCK_NUMBER_MAPPING entries point
+		// to Ethereum hashes whose BLOCK_MAPPING entry (eth → substrate) does NOT include
+		// the current canonical substrate hash, so indexed_canonical_hash_at() returns
+		// None for both heights (stale / retracted-fork state).
+		for n in 4u64..=5 {
+			// Use a unique hash that was never written into BLOCK_MAPPING.
+			let stale_eth_hash = H256::repeat_byte(0xA0 + n as u8);
+			frontier_backend
+				.mapping()
+				.set_block_hash_by_number(n, stale_eth_hash)
+				.expect("write stale number mapping");
+		}
+
+		// Set the cached LATEST_CANONICAL_INDEXED_BLOCK pointer to 5, as mapping-sync
+		// would have after successfully processing blocks up to height 5 before the reorg.
+		frontier_backend
+			.mapping()
+			.set_latest_canonical_indexed_block(5)
+			.expect("set latest pointer");
+
+		// The best block is now height 5 (after the reorg, substrate tip = 5).
+		assert_eq!(
+			client.chain_info().best_number,
+			5,
+			"test setup: substrate best should be at height 5"
+		);
+
+		// latest_block_hash() must walk past the stale blocks at heights 4 and 5 and
+		// return the last correctly-indexed canonical block (height 3), not genesis.
+		let result = frontier_backend
+			.latest_block_hash()
+			.await
+			.expect("latest_block_hash");
+
+		assert_ne!(
+			result,
+			client.chain_info().genesis_hash,
+			"latest_block_hash must NOT fall back to genesis during a pending re-org reconciliation"
+		);
+		assert_eq!(
+			result, substrate_hashes[3],
+			"latest_block_hash should return the highest correctly-indexed canonical block (height 3)"
+		);
 	}
 }
