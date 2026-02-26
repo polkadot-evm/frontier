@@ -23,7 +23,10 @@ mod utils;
 use std::{
 	marker::PhantomData,
 	path::{Path, PathBuf},
-	sync::Arc,
+	sync::{
+		atomic::{AtomicU64, Ordering},
+		Arc,
+	},
 };
 
 use parking_lot::Mutex;
@@ -44,6 +47,11 @@ pub type DbHash = [u8; DB_HASH_LEN];
 /// Maximum number of blocks inspected in a single recovery pass when the
 /// latest indexed canonical pointer is stale or missing.
 const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8192;
+/// Minimum interval (seconds) between exhaustive-fallback warnings to avoid
+/// flooding logs during startup or sustained indexing lag.
+const EXHAUSTIVE_FALLBACK_WARN_INTERVAL_SECS: u64 = 60;
+/// Epoch-seconds of the last exhaustive-fallback warning. Zero means "never warned".
+static LAST_EXHAUSTIVE_WARN_SECS: AtomicU64 = AtomicU64::new(0);
 
 /// Database settings.
 pub struct DatabaseSettings {
@@ -165,21 +173,45 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			return Ok(recovered_hash);
 		}
 
-		// Rare path: both persisted pointer and bounded scan missed. Try exhaustive
-		// fallback with a larger scan limit. Log when this triggers so operators can
-		// observe indexing lag or other anomalies.
-		log::warn!(
-			target: "frontier-db",
-			"latest_block_hash: rare-path exhaustive fallback triggered (best_number={}, persisted and bounded scan missed)",
-			best_number,
-		);
-		if let Some((recovered_number, recovered_hash)) = self.find_latest_indexed_canonical_block(
-			best_number.saturating_sub(1),
-			INDEXED_RECOVERY_SCAN_LIMIT * 4,
-		)? {
-			self.mapping
-				.set_latest_canonical_indexed_block(recovered_number)?;
-			return Ok(recovered_hash);
+		// Exhaustive fallback: only worthwhile when at least one block has been
+		// indexed before (persisted pointer exists). During initial sync before
+		// mapping-sync has processed any block, the persisted pointer is absent
+		// and the bounded scan above already covered the relevant range — a wider
+		// scan would just repeat lookups against empty mappings.
+		let has_indexed_history = self
+			.mapping
+			.latest_canonical_indexed_block_number()?
+			.is_some();
+
+		if has_indexed_history {
+			let now_secs = std::time::SystemTime::now()
+				.duration_since(std::time::UNIX_EPOCH)
+				.unwrap_or_default()
+				.as_secs();
+			let prev = LAST_EXHAUSTIVE_WARN_SECS.load(Ordering::Relaxed);
+			if now_secs.saturating_sub(prev) >= EXHAUSTIVE_FALLBACK_WARN_INTERVAL_SECS {
+				if LAST_EXHAUSTIVE_WARN_SECS
+					.compare_exchange(prev, now_secs, Ordering::Relaxed, Ordering::Relaxed)
+					.is_ok()
+				{
+					log::warn!(
+						target: "frontier-db",
+						"latest_block_hash: exhaustive fallback triggered \
+						 (best_number={best_number}, persisted and bounded scan missed). \
+						 If this persists, check indexing progress.",
+					);
+				}
+			}
+
+			if let Some((recovered_number, recovered_hash)) = self
+				.find_latest_indexed_canonical_block(
+					best_number.saturating_sub(1),
+					INDEXED_RECOVERY_SCAN_LIMIT * 4,
+				)? {
+				self.mapping
+					.set_latest_canonical_indexed_block(recovered_number)?;
+				return Ok(recovered_hash);
+			}
 		}
 
 		Ok(self.client.info().genesis_hash)
