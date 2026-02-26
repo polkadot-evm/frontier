@@ -189,18 +189,17 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 				.unwrap_or_default()
 				.as_secs();
 			let prev = LAST_EXHAUSTIVE_WARN_SECS.load(Ordering::Relaxed);
-			if now_secs.saturating_sub(prev) >= EXHAUSTIVE_FALLBACK_WARN_INTERVAL_SECS {
-				if LAST_EXHAUSTIVE_WARN_SECS
+			if now_secs.saturating_sub(prev) >= EXHAUSTIVE_FALLBACK_WARN_INTERVAL_SECS
+				&& LAST_EXHAUSTIVE_WARN_SECS
 					.compare_exchange(prev, now_secs, Ordering::Relaxed, Ordering::Relaxed)
 					.is_ok()
-				{
-					log::warn!(
-						target: "frontier-db",
-						"latest_block_hash: exhaustive fallback triggered \
-						 (best_number={best_number}, persisted and bounded scan missed). \
-						 If this persists, check indexing progress.",
-					);
-				}
+			{
+				log::warn!(
+					target: "frontier-db",
+					"latest_block_hash: exhaustive fallback triggered \
+					 (best_number={best_number}, persisted and bounded scan missed). \
+					 If this persists, check indexing progress.",
+				);
 			}
 
 			if let Some((recovered_number, recovered_hash)) = self
@@ -334,8 +333,10 @@ impl<Block: BlockT, C: HeaderBackend<Block>> Backend<Block, C> {
 		start_block: u64,
 		scan_limit: u64,
 	) -> Result<Option<(u64, Block::Hash)>, String> {
-		let scan_limit = scan_limit.saturating_sub(1);
-		let min_block = start_block.saturating_sub(scan_limit);
+		if scan_limit == 0 {
+			return Ok(None);
+		}
+		let min_block = start_block.saturating_sub(scan_limit - 1);
 		for block_number in (min_block..=start_block).rev() {
 			if let Some(canonical_hash) = self.indexed_canonical_hash_at(block_number)? {
 				return Ok(Some((block_number, canonical_hash)));
