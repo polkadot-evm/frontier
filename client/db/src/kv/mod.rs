@@ -46,7 +46,12 @@ const DB_HASH_LEN: usize = 32;
 pub type DbHash = [u8; DB_HASH_LEN];
 /// Maximum number of blocks inspected in a single recovery pass when the
 /// latest indexed canonical pointer is stale or missing.
+#[cfg(not(test))]
 const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8192;
+/// Smaller test-only limit so deep-lag branch behavior can be exercised
+/// without creating thousands of blocks in unit tests.
+#[cfg(test)]
+const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8;
 /// Minimum interval (seconds) between exhaustive-fallback warnings to avoid
 /// flooding logs during startup or sustained indexing lag.
 const EXHAUSTIVE_FALLBACK_WARN_INTERVAL_SECS: u64 = 60;
@@ -139,53 +144,23 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			return Ok(canonical_hash);
 		}
 
-		// Bounded scan: walk back from best to find the latest indexed canonical
-		// block. This must run before the persisted-pointer check so we always
-		// discover blocks that mapping-sync indexed after the pointer was written.
-		let bounded_scan_start = best_number.saturating_sub(1);
-		if let Some((recovered_number, recovered_hash)) = self
-			.find_latest_indexed_canonical_block(bounded_scan_start, INDEXED_RECOVERY_SCAN_LIMIT)?
+		// Walk backwards from best in three layers, each covering a deeper
+		// non-overlapping range. The persisted pointer is checked last so it
+		// never short-circuits past higher indexed blocks in the scan ranges.
+		let bounded_start = best_number.saturating_sub(1);
+
+		// Layer 1 — bounded scan: [best-1 .. best-8k]
+		if let Some((found_number, found_hash)) =
+			self.find_latest_indexed_canonical_block(bounded_start, INDEXED_RECOVERY_SCAN_LIMIT)?
 		{
 			self.mapping
-				.set_latest_canonical_indexed_block(recovered_number)?;
-			return Ok(recovered_hash);
+				.set_latest_canonical_indexed_block(found_number)?;
+			return Ok(found_hash);
 		}
 
-		// Persisted-pointer fallback: when the bounded scan misses (indexing is
-		// >8k blocks behind best), use the persisted pointer as a known-good
-		// lower bound. The pointer may lag behind actual indexing progress, but
-		// the bounded scan above already covered the near range.
-		if let Some(persisted_number) = self.mapping.latest_canonical_indexed_block_number()? {
-			if persisted_number <= best_number {
-				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
-					return Ok(canonical_hash);
-				}
-				// Persisted pointer is stale (e.g. reorg); walk back from it.
-				if persisted_number > 0 {
-					if let Some((recovered_number, recovered_hash)) = self
-						.find_latest_indexed_canonical_block(
-							persisted_number.saturating_sub(1),
-							INDEXED_RECOVERY_SCAN_LIMIT,
-						)? {
-						self.mapping
-							.set_latest_canonical_indexed_block(recovered_number)?;
-						return Ok(recovered_hash);
-					}
-				}
-			}
-		}
-
-		// Exhaustive fallback: only worthwhile when at least one block has been
-		// indexed before (persisted pointer exists). During initial sync before
-		// mapping-sync has processed any block, the persisted pointer is absent
-		// and the bounded scan above already covered the relevant range — a wider
-		// scan would just repeat lookups against empty mappings.
-		let has_indexed_history = self
-			.mapping
-			.latest_canonical_indexed_block_number()?
-			.is_some();
-
-		if has_indexed_history {
+		// Layer 2 — exhaustive scan: [best-8k-1 .. best-32k]
+		// Extends the search when indexing is far behind. Skip only at genesis.
+		if best_number > 0 {
 			let now_secs = std::time::SystemTime::now()
 				.duration_since(std::time::UNIX_EPOCH)
 				.unwrap_or_default()
@@ -198,20 +173,47 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			{
 				log::warn!(
 					target: "frontier-db",
-					"latest_block_hash: exhaustive fallback triggered (best_number={best_number}, persisted and bounded scan missed). If this persists, check indexing progress.",
+					"latest_block_hash: exhaustive fallback triggered (best_number={best_number}). If this persists, check indexing progress.",
 				);
 			}
 
-			// Continue scanning from where the bounded scan left off to avoid
-			// re-checking the same blocks. 8k bounded + 24k exhaustive = 32k total.
-			let exhaustive_start = bounded_scan_start.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
+			// 8k bounded + 24k exhaustive = 32k total non-overlapping coverage.
+			let exhaustive_start = bounded_start.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
 			let exhaustive_limit = INDEXED_RECOVERY_SCAN_LIMIT * 3;
-			if let Some((recovered_number, recovered_hash)) =
+			if let Some((found_number, found_hash)) =
 				self.find_latest_indexed_canonical_block(exhaustive_start, exhaustive_limit)?
 			{
 				self.mapping
-					.set_latest_canonical_indexed_block(recovered_number)?;
-				return Ok(recovered_hash);
+					.set_latest_canonical_indexed_block(found_number)?;
+				return Ok(found_hash);
+			}
+		}
+
+		// Layer 3 — persisted pointer: O(1) jump for extreme lag (>32k blocks).
+		// Checked last so layers 1–2 always find the highest indexed block
+		// within 32k of best. The pointer only helps when indexing is so far
+		// behind that both scans miss entirely.
+		//
+		// When the pointer target is stale (e.g. reorg), walk backward from it to
+		// find the latest valid indexed canonical block instead of falling to genesis.
+		if let Some(persisted_number) = self.mapping.latest_canonical_indexed_block_number()? {
+			if persisted_number <= best_number {
+				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
+					return Ok(canonical_hash);
+				}
+				// Pointer target is stale; backtrack from pointer-1 to find a valid block.
+				if persisted_number > 0 {
+					let backtrack_start = persisted_number.saturating_sub(1);
+					if let Some((found_number, found_hash)) = self
+						.find_latest_indexed_canonical_block(
+							backtrack_start,
+							INDEXED_RECOVERY_SCAN_LIMIT,
+						)? {
+						self.mapping
+							.set_latest_canonical_indexed_block(found_number)?;
+						return Ok(found_hash);
+					}
+				}
 			}
 		}
 
@@ -646,117 +648,333 @@ mod tests {
 		substrate_test_runtime_client::runtime::Extrinsic,
 	>;
 
-	/// Regression test: `eth_blockNumber` must not return 0x00 (`latest_block_hash` must not
-	/// fall back to genesis) when mapping-sync has not yet reconciled a re-org and the
-	/// `LATEST_CANONICAL_INDEXED_BLOCK` pointer sits at a height whose `BLOCK_NUMBER_MAPPING`
-	/// entry still references the retracted fork's Ethereum hash.
-	///
-	/// Before the fix, `find_latest_indexed_canonical_block` used the cached pointer as a
-	/// hard lower bound, collapsing the scan window to just the handful of stale blocks and
-	/// causing the fallback path to return genesis (→ 0x00).
-	#[tokio::test]
-	async fn latest_block_hash_scans_past_stale_reorg_window() {
-		let tmp = tempdir().expect("create a temporary directory");
-		let (client, _backend) = TestClientBuilder::new()
-			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
-			None,
-		);
-		let client = Arc::new(client);
+	struct TestEnv {
+		client: Arc<substrate_test_runtime_client::TestClient>,
+		backend: Arc<Backend<OpaqueBlock, substrate_test_runtime_client::TestClient>>,
+		substrate_hashes: Vec<<OpaqueBlock as sp_runtime::traits::Block>::Hash>,
+		_tmp: tempfile::TempDir,
+	}
 
-		let frontier_backend = Arc::new(
-			Backend::<OpaqueBlock, _>::new(
-				client.clone(),
-				&DatabaseSettings {
-					#[cfg(feature = "rocksdb")]
-					source: sc_client_db::DatabaseSource::RocksDb {
-						path: tmp.path().to_path_buf(),
-						cache_size: 0,
-					},
-					#[cfg(not(feature = "rocksdb"))]
-					source: sc_client_db::DatabaseSource::ParityDb {
-						path: tmp.path().to_path_buf(),
-					},
-				},
-			)
-			.expect("frontier backend"),
-		);
+	impl TestEnv {
+		async fn new(num_blocks: u64) -> Self {
+			let tmp = tempdir().expect("create a temporary directory");
+			let (client, _substrate_backend) = TestClientBuilder::new()
+				.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+				None,
+			);
+			let client = Arc::new(client);
 
-		// Import 5 substrate blocks so `client.hash(n)` resolves real canonical hashes.
-		let mut substrate_hashes = vec![client.chain_info().genesis_hash]; // [0] = genesis
-		for _ in 1u64..=5 {
-			let chain_info = client.chain_info();
-			let block = BlockBuilderBuilder::new(&*client)
-				.on_parent_block(chain_info.best_hash)
-				.with_parent_block_number(chain_info.best_number)
-				.with_inherent_digests(Digest::default())
-				.build()
-				.unwrap()
-				.build()
-				.unwrap()
-				.block;
-			let hash = block.header.hash();
-			client.import(BlockOrigin::Own, block).await.unwrap();
-			substrate_hashes.push(hash);
+			let backend = Arc::new(
+				Backend::<OpaqueBlock, _>::new(
+					client.clone(),
+					&DatabaseSettings {
+						#[cfg(feature = "rocksdb")]
+						source: sc_client_db::DatabaseSource::RocksDb {
+							path: tmp.path().to_path_buf(),
+							cache_size: 0,
+						},
+						#[cfg(not(feature = "rocksdb"))]
+						source: sc_client_db::DatabaseSource::ParityDb {
+							path: tmp.path().to_path_buf(),
+						},
+					},
+				)
+				.expect("frontier backend"),
+			);
+
+			let mut substrate_hashes = vec![client.chain_info().genesis_hash];
+			for _ in 1u64..=num_blocks {
+				let chain_info = client.chain_info();
+				let block = BlockBuilderBuilder::new(&*client)
+					.on_parent_block(chain_info.best_hash)
+					.with_parent_block_number(chain_info.best_number)
+					.with_inherent_digests(Digest::default())
+					.build()
+					.unwrap()
+					.build()
+					.unwrap()
+					.block;
+				let hash = block.header.hash();
+				client.import(BlockOrigin::Own, block).await.unwrap();
+				substrate_hashes.push(hash);
+			}
+
+			Self {
+				client,
+				backend,
+				substrate_hashes,
+				_tmp: tmp,
+			}
 		}
-		// substrate_hashes[n] is the canonical substrate hash for block height n.
 
-		// Write correct frontier mappings for blocks 1..3 (stable, pre-reorg).
-		// Each entry links: block_number → eth_hash → [substrate_hash].
-		for n in 1u64..=3 {
+		fn index_block(&self, n: u64) {
 			let eth_hash = H256::repeat_byte(n as u8);
 			let commitment = MappingCommitment::<OpaqueBlock> {
-				block_hash: substrate_hashes[n as usize],
+				block_hash: self.substrate_hashes[n as usize],
 				ethereum_block_hash: eth_hash,
 				ethereum_transaction_hashes: vec![],
 			};
-			frontier_backend
+			self.backend
 				.mapping()
 				.write_hashes(commitment, n, NumberMappingWrite::Write)
-				.expect("write stable mapping");
+				.expect("write mapping");
 		}
 
-		// Simulate a re-org at heights 4 and 5: the BLOCK_NUMBER_MAPPING entries point
-		// to Ethereum hashes whose BLOCK_MAPPING entry (eth → substrate) does NOT include
-		// the current canonical substrate hash, so indexed_canonical_hash_at() returns
-		// None for both heights (stale / retracted-fork state).
-		for n in 4u64..=5 {
-			// Use a unique hash that was never written into BLOCK_MAPPING.
+		fn write_stale_mapping(&self, n: u64) {
 			let stale_eth_hash = H256::repeat_byte(0xA0 + n as u8);
-			frontier_backend
+			self.backend
 				.mapping()
 				.set_block_hash_by_number(n, stale_eth_hash)
 				.expect("write stale number mapping");
 		}
 
-		// Set the cached LATEST_CANONICAL_INDEXED_BLOCK pointer to 5, as mapping-sync
-		// would have after successfully processing blocks up to height 5 before the reorg.
-		frontier_backend
-			.mapping()
-			.set_latest_canonical_indexed_block(5)
-			.expect("set latest pointer");
+		fn set_pointer(&self, n: u64) {
+			self.backend
+				.mapping()
+				.set_latest_canonical_indexed_block(n)
+				.expect("set pointer");
+		}
 
-		// The best block is now height 5 (after the reorg, substrate tip = 5).
+		fn genesis_hash(&self) -> <OpaqueBlock as sp_runtime::traits::Block>::Hash {
+			self.client.chain_info().genesis_hash
+		}
+
+		async fn latest(&self) -> <OpaqueBlock as sp_runtime::traits::Block>::Hash {
+			self.backend
+				.latest_block_hash()
+				.await
+				.expect("latest_block_hash")
+		}
+	}
+
+	#[tokio::test]
+	async fn fast_path_returns_best_when_fully_indexed() {
+		let env = TestEnv::new(5).await;
+		for n in 1u64..=5 {
+			env.index_block(n);
+		}
+		env.set_pointer(5);
+
+		let result = env.latest().await;
+		assert_eq!(result, env.substrate_hashes[5]);
+	}
+
+	#[tokio::test]
+	async fn bounded_scan_finds_latest_indexed_under_normal_lag() {
+		let env = TestEnv::new(10).await;
+		for n in 1u64..=7 {
+			env.index_block(n);
+		}
+		env.set_pointer(7);
+
+		let result = env.latest().await;
 		assert_eq!(
-			client.chain_info().best_number,
-			5,
-			"test setup: substrate best should be at height 5"
+			result, env.substrate_hashes[7],
+			"should find block 7 via bounded scan even though best is 10"
 		);
+	}
 
-		// latest_block_hash() must walk past the stale blocks at heights 4 and 5 and
-		// return the last correctly-indexed canonical block (height 3), not genesis.
-		let result = frontier_backend
-			.latest_block_hash()
-			.await
-			.expect("latest_block_hash");
+	#[tokio::test]
+	async fn bounded_scan_prefers_newer_over_stale_pointer() {
+		let env = TestEnv::new(10).await;
+		// Simulate: pointer was set to 3 a while ago, but mapping-sync has since
+		// indexed up to 8. The bounded scan must find 8, not return the stale 3.
+		for n in 1u64..=8 {
+			env.index_block(n);
+		}
+		env.set_pointer(3);
 
-		assert_ne!(
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[8],
+			"bounded scan must find block 8, not return stale pointer at 3"
+		);
+	}
+
+	#[tokio::test]
+	async fn reorg_with_stale_pointer_walks_past_stale_blocks() {
+		let env = TestEnv::new(5).await;
+		for n in 1u64..=3 {
+			env.index_block(n);
+		}
+		for n in 4u64..=5 {
+			env.write_stale_mapping(n);
+		}
+		env.set_pointer(5);
+
+		let result = env.latest().await;
+		assert_ne!(result, env.genesis_hash(), "must not fall back to genesis");
+		assert_eq!(
+			result, env.substrate_hashes[3],
+			"should return block 3 (highest valid indexed block)"
+		);
+	}
+
+	#[tokio::test]
+	async fn no_pointer_still_finds_indexed_blocks() {
+		let env = TestEnv::new(5).await;
+		for n in 1u64..=3 {
+			env.index_block(n);
+		}
+		// No pointer set — simulates DB corruption or first run after pointer loss.
+
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[3],
+			"should find block 3 via bounded scan even without a pointer"
+		);
+	}
+
+	#[tokio::test]
+	async fn initial_sync_nothing_indexed_returns_genesis() {
+		let env = TestEnv::new(5).await;
+		// No blocks indexed, no pointer.
+
+		let result = env.latest().await;
+		assert_eq!(
 			result,
-			client.chain_info().genesis_hash,
-			"latest_block_hash must NOT fall back to genesis during a pending re-org reconciliation"
+			env.genesis_hash(),
+			"should return genesis when nothing is indexed"
 		);
+	}
+
+	#[tokio::test]
+	async fn genesis_only_returns_genesis() {
+		let env = TestEnv::new(0).await;
+
+		let result = env.latest().await;
 		assert_eq!(
-			result, substrate_hashes[3],
-			"latest_block_hash should return the highest correctly-indexed canonical block (height 3)"
+			result,
+			env.genesis_hash(),
+			"should return genesis when chain is at block 0"
+		);
+	}
+
+	#[tokio::test]
+	async fn exhaustive_scan_finds_indexed_block_beyond_bounded_range() {
+		// With the test scan limit (8), best=20 yields:
+		// - bounded scan over [12..19]
+		// - exhaustive scan over [0..11]
+		let env = TestEnv::new(20).await;
+		env.index_block(5);
+
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[5],
+			"should recover block 5 via exhaustive scan when bounded scan misses"
+		);
+	}
+
+	#[tokio::test]
+	async fn persisted_pointer_used_when_both_scan_layers_miss() {
+		// With the test scan limit (8), best=40 covers:
+		// - bounded [32..39]
+		// - exhaustive [8..31]
+		// So block 3 is only reachable via the persisted pointer fallback.
+		let env = TestEnv::new(40).await;
+		env.index_block(3);
+		env.set_pointer(3);
+
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[3],
+			"should use persisted pointer when bounded+exhaustive scans both miss"
+		);
+	}
+
+	#[tokio::test]
+	async fn large_lag_without_pointer_returns_genesis_even_if_old_block_is_indexed() {
+		// This documents current behavior: if indexing is far behind and no pointer
+		// exists, the resolver falls back to genesis after both scan layers miss.
+		let env = TestEnv::new(40).await;
+		env.index_block(3);
+
+		let result = env.latest().await;
+		assert_eq!(
+			result,
+			env.genesis_hash(),
+			"without pointer and with indexed block outside scan windows, fallback is genesis"
+		);
+	}
+
+	#[tokio::test]
+	async fn pointer_above_best_is_ignored_and_can_fall_back_to_genesis() {
+		// Pointer corruption case: pointer > best should be ignored.
+		// If old indexed blocks are outside scan windows, this currently falls
+		// back to genesis.
+		let env = TestEnv::new(40).await;
+		env.index_block(3);
+		env.set_pointer(100);
+
+		let result = env.latest().await;
+		assert_eq!(
+			result,
+			env.genesis_hash(),
+			"pointer above best is ignored; current behavior falls back to genesis"
+		);
+	}
+
+	#[tokio::test]
+	async fn stale_pointer_target_backtracks_to_find_valid_block() {
+		// Pointer points to a stale/unusable number mapping (no canonical indexed
+		// block at that height). There is an older valid indexed block (2). The
+		// resolver must backtrack from pointer-1 and return block 2, not genesis.
+		let env = TestEnv::new(40).await;
+		env.index_block(2);
+		env.write_stale_mapping(3);
+		env.set_pointer(3);
+
+		let result = env.latest().await;
+		assert_ne!(result, env.genesis_hash(), "must not fall back to genesis");
+		assert_eq!(
+			result, env.substrate_hashes[2],
+			"should find block 2 via backtrack from stale pointer target"
+		);
+	}
+
+	#[tokio::test]
+	async fn pointer_updates_after_stale_pointer_backtrack_recovery() {
+		// After backtrack from a stale pointer, the persisted pointer should be
+		// updated to the block we found.
+		let env = TestEnv::new(40).await;
+		env.index_block(2);
+		env.write_stale_mapping(3);
+		env.set_pointer(3);
+
+		let _ = env.latest().await;
+
+		let updated = env
+			.backend
+			.mapping()
+			.latest_canonical_indexed_block_number()
+			.expect("read pointer");
+		assert_eq!(
+			updated,
+			Some(2),
+			"pointer should be updated to block 2 found by backtrack"
+		);
+	}
+
+	#[tokio::test]
+	async fn pointer_updates_after_bounded_scan_recovery() {
+		let env = TestEnv::new(10).await;
+		for n in 1u64..=6 {
+			env.index_block(n);
+		}
+		env.set_pointer(3);
+
+		let _ = env.latest().await;
+
+		// After the call, the pointer should have been updated to 6.
+		let updated = env
+			.backend
+			.mapping()
+			.latest_canonical_indexed_block_number()
+			.expect("read pointer");
+		assert_eq!(
+			updated,
+			Some(6),
+			"pointer should be updated to the block found by bounded scan"
 		);
 	}
 }
