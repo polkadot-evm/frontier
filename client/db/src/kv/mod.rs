@@ -164,10 +164,10 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 
 		// Best block is not indexed yet or mapping is stale (reorg). Walk back to
 		// the latest indexed canonical block and persist the recovered pointer.
-		if let Some((recovered_number, recovered_hash)) = self.find_latest_indexed_canonical_block(
-			best_number.saturating_sub(1),
-			INDEXED_RECOVERY_SCAN_LIMIT,
-		)? {
+		let bounded_scan_start = best_number.saturating_sub(1);
+		if let Some((recovered_number, recovered_hash)) = self
+			.find_latest_indexed_canonical_block(bounded_scan_start, INDEXED_RECOVERY_SCAN_LIMIT)?
+		{
 			self.mapping
 				.set_latest_canonical_indexed_block(recovered_number)?;
 			return Ok(recovered_hash);
@@ -196,17 +196,17 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			{
 				log::warn!(
 					target: "frontier-db",
-					"latest_block_hash: exhaustive fallback triggered \
-					 (best_number={best_number}, persisted and bounded scan missed). \
-					 If this persists, check indexing progress.",
+					"latest_block_hash: exhaustive fallback triggered (best_number={best_number}, persisted and bounded scan missed). If this persists, check indexing progress.",
 				);
 			}
 
-			if let Some((recovered_number, recovered_hash)) = self
-				.find_latest_indexed_canonical_block(
-					best_number.saturating_sub(1),
-					INDEXED_RECOVERY_SCAN_LIMIT * 4,
-				)? {
+			// Continue scanning from where the bounded scan left off to avoid
+			// re-checking the same blocks.
+			let exhaustive_start = bounded_scan_start.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
+			let exhaustive_limit = INDEXED_RECOVERY_SCAN_LIMIT * 4;
+			if let Some((recovered_number, recovered_hash)) =
+				self.find_latest_indexed_canonical_block(exhaustive_start, exhaustive_limit)?
+			{
 				self.mapping
 					.set_latest_canonical_indexed_block(recovered_number)?;
 				return Ok(recovered_hash);
