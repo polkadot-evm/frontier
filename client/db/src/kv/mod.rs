@@ -139,9 +139,22 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			return Ok(canonical_hash);
 		}
 
-		// Use persisted latest indexed block when mapping-sync is behind. This avoids
-		// falling back to genesis when the chain head has advanced beyond the 8k
-		// block scan limit—e.g. on heavily used chains where indexing lags.
+		// Bounded scan: walk back from best to find the latest indexed canonical
+		// block. This must run before the persisted-pointer check so we always
+		// discover blocks that mapping-sync indexed after the pointer was written.
+		let bounded_scan_start = best_number.saturating_sub(1);
+		if let Some((recovered_number, recovered_hash)) = self
+			.find_latest_indexed_canonical_block(bounded_scan_start, INDEXED_RECOVERY_SCAN_LIMIT)?
+		{
+			self.mapping
+				.set_latest_canonical_indexed_block(recovered_number)?;
+			return Ok(recovered_hash);
+		}
+
+		// Persisted-pointer fallback: when the bounded scan misses (indexing is
+		// >8k blocks behind best), use the persisted pointer as a known-good
+		// lower bound. The pointer may lag behind actual indexing progress, but
+		// the bounded scan above already covered the near range.
 		if let Some(persisted_number) = self.mapping.latest_canonical_indexed_block_number()? {
 			if persisted_number <= best_number {
 				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
@@ -160,17 +173,6 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 					}
 				}
 			}
-		}
-
-		// Best block is not indexed yet or mapping is stale (reorg). Walk back to
-		// the latest indexed canonical block and persist the recovered pointer.
-		let bounded_scan_start = best_number.saturating_sub(1);
-		if let Some((recovered_number, recovered_hash)) = self
-			.find_latest_indexed_canonical_block(bounded_scan_start, INDEXED_RECOVERY_SCAN_LIMIT)?
-		{
-			self.mapping
-				.set_latest_canonical_indexed_block(recovered_number)?;
-			return Ok(recovered_hash);
 		}
 
 		// Exhaustive fallback: only worthwhile when at least one block has been
@@ -201,9 +203,9 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			}
 
 			// Continue scanning from where the bounded scan left off to avoid
-			// re-checking the same blocks.
+			// re-checking the same blocks. 8k bounded + 24k exhaustive = 32k total.
 			let exhaustive_start = bounded_scan_start.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
-			let exhaustive_limit = INDEXED_RECOVERY_SCAN_LIMIT * 4;
+			let exhaustive_limit = INDEXED_RECOVERY_SCAN_LIMIT * 3;
 			if let Some((recovered_number, recovered_hash)) =
 				self.find_latest_indexed_canonical_block(exhaustive_start, exhaustive_limit)?
 			{
