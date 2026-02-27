@@ -52,6 +52,9 @@ const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8192;
 /// without creating thousands of blocks in unit tests.
 #[cfg(test)]
 const INDEXED_RECOVERY_SCAN_LIMIT: u64 = 8;
+/// Scan limit for the deep-recovery pass when pointer and 32k scan both miss but
+/// best > 0. Extends coverage to ~64k blocks from best before falling back to genesis.
+const INDEXED_DEEP_RECOVERY_SCAN_LIMIT: u64 = INDEXED_RECOVERY_SCAN_LIMIT * 8;
 /// Minimum interval (seconds) between exhaustive-fallback warnings to avoid
 /// flooding logs during startup or sustained indexing lag.
 const EXHAUSTIVE_FALLBACK_WARN_INTERVAL_SECS: u64 = 60;
@@ -214,6 +217,22 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 						return Ok(found_hash);
 					}
 				}
+			}
+		}
+
+		// Layer 4 — deep recovery: when best > 0, scan further back before falling to genesis.
+		// Covers [best-96k .. best-32k-1] so we avoid returning genesis when indexed data
+		// exists just outside the 32k window (e.g. after pointer loss or corruption).
+		if best_number > 0 {
+			let deep_start = bounded_start
+				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT)
+				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT * 3);
+			if let Some((found_number, found_hash)) = self
+				.find_latest_indexed_canonical_block(deep_start, INDEXED_DEEP_RECOVERY_SCAN_LIMIT)?
+			{
+				self.mapping
+					.set_latest_canonical_indexed_block(found_number)?;
+				return Ok(found_hash);
 			}
 		}
 
@@ -883,34 +902,49 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn large_lag_without_pointer_returns_genesis_even_if_old_block_is_indexed() {
-		// This documents current behavior: if indexing is far behind and no pointer
-		// exists, the resolver falls back to genesis after both scan layers miss.
+	async fn deep_recovery_finds_indexed_block_when_pointer_missing() {
+		// With scan limit 8: bounded [32..39], exhaustive [8..31]. Block 3 is outside both.
+		// Layer 4 deep recovery [0..7] finds it when no pointer exists.
 		let env = TestEnv::new(40).await;
 		env.index_block(3);
 
 		let result = env.latest().await;
+		assert_ne!(result, env.genesis_hash(), "must not fall back to genesis");
 		assert_eq!(
-			result,
-			env.genesis_hash(),
-			"without pointer and with indexed block outside scan windows, fallback is genesis"
+			result, env.substrate_hashes[3],
+			"deep recovery should find block 3 when pointer is missing"
 		);
 	}
 
 	#[tokio::test]
-	async fn pointer_above_best_is_ignored_and_can_fall_back_to_genesis() {
-		// Pointer corruption case: pointer > best should be ignored.
-		// If old indexed blocks are outside scan windows, this currently falls
-		// back to genesis.
+	async fn pointer_above_best_ignored_deep_recovery_finds_block() {
+		// Pointer corruption: pointer > best is ignored. Deep recovery should still
+		// find indexed block 3 in [0..7] when bounded+exhaustive miss.
 		let env = TestEnv::new(40).await;
 		env.index_block(3);
 		env.set_pointer(100);
 
 		let result = env.latest().await;
+		assert_ne!(result, env.genesis_hash(), "must not fall back to genesis");
+		assert_eq!(
+			result, env.substrate_hashes[3],
+			"deep recovery should find block 3 when pointer is invalid"
+		);
+	}
+
+	#[tokio::test]
+	async fn genesis_fallback_when_indexed_block_outside_all_windows() {
+		// With limit 8: deep recovery covers [best-96..best-33]. For best=100, [4..67].
+		// Block 2 is outside; no pointer. Documents that genesis is still returned when
+		// indexed data exists but is beyond even the deep-recovery window.
+		let env = TestEnv::new(100).await;
+		env.index_block(2);
+
+		let result = env.latest().await;
 		assert_eq!(
 			result,
 			env.genesis_hash(),
-			"pointer above best is ignored; current behavior falls back to genesis"
+			"indexed block outside all scan windows with no pointer yields genesis"
 		);
 	}
 
