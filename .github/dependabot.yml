@@ -18,5 +18,7 @@ updates:
       - dependency-name: "substrate-*"
       - dependency-name: "beefy-*"
       - dependency-name: "fork-tree"
+      - dependency-name: "polkavm-*"
+      - dependency-name: "futures"
     schedule:
       interval: "daily"
