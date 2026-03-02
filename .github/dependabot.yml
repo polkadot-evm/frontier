@@ -7,6 +7,21 @@ updates:
       interval: weekly
       time: "03:00"
       timezone: Europe/Berlin
+  - package-ecosystem: npm
+    directory: "/ts-tests"
+    schedule:
+      interval: weekly
+      time: "03:00"
+      timezone: Europe/Berlin
+  - package-ecosystem: npm
+    directory: "/docs"
+    schedule:
+      interval: weekly
+      time: "03:00"
+      timezone: Europe/Berlin
+    open-pull-requests-limit: 0
+    ignore:
+      - dependency-name: "*"
   - package-ecosystem: cargo
     directory: "/"
     schedule:
