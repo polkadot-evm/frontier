@@ -89,7 +89,7 @@ similar-asserts = "1.7.0"
 sqlx = { version = "0.8.6", default-features = false, features = ["macros"] }
 syn = "2.0.87"
 thiserror = "2.0"
-tokio = { version = "1.45.0", default-features = false }
+tokio = { version = "1.49.0", default-features = false }
 
 # Substrate Client
 sc-basic-authorship = { git = "https://github.com/paritytech/polkadot-sdk", branch = "stable2512" }
