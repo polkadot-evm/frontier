@@ -20,5 +20,8 @@ updates:
       - dependency-name: "fork-tree"
       - dependency-name: "polkavm-*"
       - dependency-name: "futures"
+      - dependency-name: "serde"
+      - dependency-name: "parking_lot"
+      - dependency-name: "polkadot-*"
     schedule:
       interval: "daily"
