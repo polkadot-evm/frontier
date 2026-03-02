@@ -192,10 +192,25 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			}
 		}
 
-		// Layer 3 — persisted pointer: O(1) jump for extreme lag (>32k blocks).
-		// Checked last so layers 1–2 always find the highest indexed block
-		// within 32k of best. The pointer only helps when indexing is so far
-		// behind that both scans miss entirely.
+		// Layer 3 — deep recovery: when best > 0, scan further back before pointer/genesis.
+		// Covers [best-96k .. best-32k-1]. Must run before pointer so a stale-but-valid pointer
+		// does not mask a newer indexed block in the deep range.
+		if best_number > 0 {
+			let deep_start = bounded_start
+				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT)
+				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT * 3);
+			if let Some((found_number, found_hash)) = self
+				.find_latest_indexed_canonical_block(deep_start, INDEXED_DEEP_RECOVERY_SCAN_LIMIT)?
+			{
+				self.mapping
+					.set_latest_canonical_indexed_block(found_number)?;
+				return Ok(found_hash);
+			}
+		}
+
+		// Layer 4 — persisted pointer: O(1) jump when all scans miss (indexing >96k behind).
+		// Checked after deep recovery so we never return an older block when a newer one
+		// exists in the deep window.
 		//
 		// When the pointer target is stale (e.g. reorg), walk backward from it to
 		// find the latest valid indexed canonical block instead of falling to genesis.
@@ -217,22 +232,6 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 						return Ok(found_hash);
 					}
 				}
-			}
-		}
-
-		// Layer 4 — deep recovery: when best > 0, scan further back before falling to genesis.
-		// Covers [best-96k .. best-32k-1] so we avoid returning genesis when indexed data
-		// exists just outside the 32k window (e.g. after pointer loss or corruption).
-		if best_number > 0 {
-			let deep_start = bounded_start
-				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT)
-				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT * 3);
-			if let Some((found_number, found_hash)) = self
-				.find_latest_indexed_canonical_block(deep_start, INDEXED_DEEP_RECOVERY_SCAN_LIMIT)?
-			{
-				self.mapping
-					.set_latest_canonical_indexed_block(found_number)?;
-				return Ok(found_hash);
 			}
 		}
 
@@ -904,7 +903,7 @@ mod tests {
 	#[tokio::test]
 	async fn deep_recovery_finds_indexed_block_when_pointer_missing() {
 		// With scan limit 8: bounded [32..39], exhaustive [8..31]. Block 3 is outside both.
-		// Layer 4 deep recovery [0..7] finds it when no pointer exists.
+		// Layer 3 deep recovery [0..7] finds it when no pointer exists.
 		let env = TestEnv::new(40).await;
 		env.index_block(3);
 
@@ -929,6 +928,21 @@ mod tests {
 		assert_eq!(
 			result, env.substrate_hashes[3],
 			"deep recovery should find block 3 when pointer is invalid"
+		);
+	}
+
+	#[tokio::test]
+	async fn deep_recovery_preferred_over_stale_pointer() {
+		// Regression: stale-but-valid pointer (block 1) must not mask newer indexed block (3)
+		// in the deep range. Deep recovery [0..7] runs before pointer; must return block 3.
+		let env = TestEnv::new(40).await;
+		env.index_block(3);
+		env.set_pointer(1);
+
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[3],
+			"deep recovery must find block 3, not return older block 1 from pointer"
 		);
 	}
 
