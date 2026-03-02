@@ -26,5 +26,8 @@ updates:
       - dependency-name: "ark-*"
       - dependency-name: "hex-literal"
       - dependency-name: "tokio"
+      - dependency-name: "prettyplease"
+      - dependency-name: "cumulus-*"
+      - dependency-name: "rand"
     schedule:
       interval: "daily"
