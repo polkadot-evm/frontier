@@ -45,7 +45,6 @@ tempfile = "3.21.0"
 sc-block-builder = { workspace = true }
 sp-consensus = { workspace = true }
 substrate-test-runtime-client = { workspace = true }
-tokio = { workspace = true }
 
 [features]
 default = ["sql"]
