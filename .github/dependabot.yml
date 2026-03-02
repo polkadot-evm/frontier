@@ -23,5 +23,7 @@ updates:
       - dependency-name: "serde"
       - dependency-name: "parking_lot"
       - dependency-name: "polkadot-*"
+      - dependency-name: "ark-*"
+      - dependency-name: "hex-literal"
     schedule:
       interval: "daily"
