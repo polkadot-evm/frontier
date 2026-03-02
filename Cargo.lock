@@ -2279,7 +2279,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8d162beedaa69905488a8da94f5ac3edb4dd4788b732fadb7bd120b2625c1976"
 dependencies = [
  "data-encoding",
- "syn 1.0.109",
+ "syn 2.0.104",
 ]
 
 [[package]]
@@ -7347,7 +7347,7 @@ version = "1.0.0-dev"
 dependencies = [
  "ark-bls12-377",
  "ark-ec 0.4.2",
- "ark-ff 0.4.2",
+ "ark-ff 0.5.0",
  "ark-std 0.5.0",
  "fp-evm",
  "pallet-evm-test-vector-support",
@@ -7360,7 +7360,7 @@ version = "1.0.0-dev"
 dependencies = [
  "ark-bls12-381 0.4.0",
  "ark-ec 0.4.2",
- "ark-ff 0.4.2",
+ "ark-ff 0.5.0",
  "ark-std 0.5.0",
  "fp-evm",
  "pallet-evm-test-vector-support",
@@ -7382,7 +7382,7 @@ version = "1.0.0-dev"
 dependencies = [
  "ark-bw6-761",
  "ark-ec 0.4.2",
- "ark-ff 0.4.2",
+ "ark-ff 0.5.0",
  "ark-std 0.5.0",
  "fp-evm",
  "pallet-evm-test-vector-support",
