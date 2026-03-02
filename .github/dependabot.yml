@@ -25,5 +25,6 @@ updates:
       - dependency-name: "polkadot-*"
       - dependency-name: "ark-*"
       - dependency-name: "hex-literal"
+      - dependency-name: "tokio"
     schedule:
       interval: "daily"
