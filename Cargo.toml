@@ -73,7 +73,7 @@ jsonrpsee = { version = "0.24.10" }
 jsonrpsee-core = { version = "0.24.10" }
 kvdb-rocksdb = "0.21.0"
 libsecp256k1 = { version = "0.7.2", default-features = false }
-log = { version = "0.4.27", default-features = false }
+log = { version = "0.4.29", default-features = false }
 num_enum = { version = "0.7.3", default-features = false }
 parity-db = "0.5.4"
 parking_lot = "0.12.3"
