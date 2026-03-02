@@ -66,7 +66,7 @@ evm = { git = "https://github.com/rust-ethereum/evm.git", branch = "v0.x", defau
 futures = "0.3.31"
 hash-db = { version = "0.16.0", default-features = false }
 hex = { version = "0.4.3", default-features = false, features = ["alloc"] }
-hex-literal = "0.4.1"
+hex-literal = "1.1.0"
 impl-serde = { version = "0.5.0", default-features = false }
 impl-trait-for-tuples = "0.2.3"
 jsonrpsee = { version = "0.24.10" }
