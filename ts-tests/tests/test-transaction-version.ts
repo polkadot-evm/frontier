@@ -3,7 +3,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, CHAIN_ID } from "./config";
-import { createAndFinalizeBlock, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, describeWithFrontier, waitForReceipt } from "./util";
 
 // We use ethers library in this test as apparently web3js's types are not fully EIP-1559 compliant yet.
 describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
@@ -30,18 +30,6 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		throw new Error(`Timed out waiting for transaction ${txHash} to reach the pool`);
 	}
 
-	async function waitForReceipt(txHash: string, timeoutMs = 5000) {
-		const start = Date.now();
-		while (Date.now() - start < timeoutMs) {
-			const receipt = await context.web3.eth.getTransactionReceipt(txHash);
-			if (receipt !== null) {
-				return receipt;
-			}
-			await new Promise<void>((resolve) => setTimeout(resolve, 50));
-		}
-		throw new Error(`Timed out waiting for receipt ${txHash}`);
-	}
-
 	step("should handle Legacy transaction type 0", async function () {
 		let tx = {
 			from: GENESIS_ACCOUNT,
@@ -56,7 +44,7 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		const txHash = (await sendTransaction(context, tx)).hash;
 		await waitForTransactionSeen(txHash);
 		await createAndFinalizeBlock(context.web3);
-		let receipt = await waitForReceipt(txHash);
+		let receipt = await waitForReceipt(context.web3, txHash);
 		const minedBlock = await context.web3.eth.getBlock(receipt.blockNumber);
 		expect(minedBlock.transactions).to.include(txHash);
 		expect(receipt.transactionHash).to.be.eq(txHash);
@@ -82,7 +70,7 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		const txHash = (await sendTransaction(context, tx)).hash;
 		await waitForTransactionSeen(txHash);
 		await createAndFinalizeBlock(context.web3);
-		let receipt = await waitForReceipt(txHash);
+		let receipt = await waitForReceipt(context.web3, txHash);
 		const minedBlock = await context.web3.eth.getBlock(receipt.blockNumber);
 		expect(minedBlock.transactions).to.include(txHash);
 		expect(receipt.transactionHash).to.be.eq(txHash);
@@ -109,7 +97,7 @@ describeWithFrontier("Frontier RPC (Transaction Version)", (context) => {
 		const txHash = (await sendTransaction(context, tx)).hash;
 		await waitForTransactionSeen(txHash);
 		await createAndFinalizeBlock(context.web3);
-		let receipt = await waitForReceipt(txHash);
+		let receipt = await waitForReceipt(context.web3, txHash);
 		const minedBlock = await context.web3.eth.getBlock(receipt.blockNumber);
 		expect(minedBlock.transactions).to.include(txHash);
 		expect(receipt.transactionHash).to.be.eq(txHash);

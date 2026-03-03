@@ -71,7 +71,7 @@ export async function waitForBlock(
 // visible as "latest". The node exposes the best chain to eth RPC, so this works for both.
 export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = true) {
 	const response = await customRequest(web3, "engine_createBlock", [true, finalize, null]);
-	if (!response.result?.hash) {
+	if (!response?.result?.hash) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
 	const blockHash = response.result.hash as string;
@@ -134,6 +134,19 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
+}
+
+// Wait for a receipt to be available for a given transaction hash.
+export async function waitForReceipt(web3: Web3, txHash: string, timeoutMs = 10000) {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		const receipt = await web3.eth.getTransactionReceipt(txHash);
+		if (receipt !== null) {
+			return receipt;
+		}
+		await new Promise<void>((resolve) => setTimeout(resolve, 50));
+	}
+	throw new Error(`Timed out waiting for receipt ${txHash}`);
 }
 
 export async function startFrontierNode(
