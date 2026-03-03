@@ -78,19 +78,26 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 
 	// Poll until chain head advances (chain_getHeader can lag after createBlock).
 	// Without this we may wait for the previous block and return before the new one is indexed.
+	// Retry on transient RPC errors instead of failing fast.
 	const headTimeout = 10_000;
 	const start = Date.now();
 	let head: { number?: string } | null = null;
+	let headLastError: Error | null = null;
 	while (Date.now() - start < headTimeout) {
-		head = (await customRequest(web3, "chain_getHeader", [])).result;
-		if (head?.number != null && parseInt(head.number, 16) > prevNumber) {
-			break;
+		try {
+			head = (await customRequest(web3, "chain_getHeader", [])).result;
+			if (head?.number != null && parseInt(head.number, 16) > prevNumber) {
+				break;
+			}
+		} catch (error) {
+			headLastError = error instanceof Error ? error : new Error(String(error));
 		}
 		await new Promise<void>((r) => setTimeout(r, 50));
 	}
 	// Require that head advanced; on timeout we may have head.number === prevNumber.
 	if (!head?.number || parseInt(head.number, 16) <= prevNumber) {
-		throw new Error(`Chain head did not advance after createBlock (prev: ${prevNumber})`);
+		const errSuffix = headLastError ? ` (last error: ${headLastError.message})` : "";
+		throw new Error(`Chain head did not advance after createBlock (prev: ${prevNumber})${errSuffix}`);
 	}
 
 	const expectedNumber = parseInt(head.number, 16);
@@ -99,21 +106,24 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 	// Also wait for eth_blockNumber / "latest" to be at least the new block, so tests that
 	// assert on getBlockNumber() or use "latest" see the block we just created.
 	// Use >= so we don't timeout if the node advances past expectedNumber between polls.
+	// Retry on transient RPC errors instead of failing fast.
 	const rpcSyncTimeout = 10_000;
 	const rpcStart = Date.now();
+	let rpcLastError: Error | null = null;
 	while (Date.now() - rpcStart < rpcSyncTimeout) {
-		const current = await customRequest(web3, "eth_blockNumber", []);
-		const n = current.result != null ? parseInt(current.result, 16) : -1;
-		if (n >= expectedNumber) {
-			return;
+		try {
+			const current = await customRequest(web3, "eth_blockNumber", []);
+			const n = current.result != null ? parseInt(current.result, 16) : -1;
+			if (n >= expectedNumber) {
+				return;
+			}
+		} catch (error) {
+			rpcLastError = error instanceof Error ? error : new Error(String(error));
 		}
 		await new Promise<void>((r) => setTimeout(r, 50));
 	}
-	throw new Error(
-		`eth_blockNumber did not reach ${expectedNumber} after ${rpcSyncTimeout}ms (got ${
-			(await customRequest(web3, "eth_blockNumber", [])).result
-		})`
-	);
+	const rpcErrorSuffix = rpcLastError ? ` (last error: ${rpcLastError.message})` : "";
+	throw new Error(`eth_blockNumber did not reach ${expectedNumber} after ${rpcSyncTimeout}ms${rpcErrorSuffix}`);
 }
 
 // Create a block and finalize it without waiting for indexing.
