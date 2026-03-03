@@ -100,9 +100,12 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 		throw new Error(`chain_getHeader(${blockHash}) returned no header for created block${errSuffix}`);
 	}
 	const expectedNumber = parseInt(header.number, 16);
+	const expectedBlockTag = "0x" + expectedNumber.toString(16);
 
-	// Wait for eth_blockNumber / "latest" to be at least the new block. Once "latest" is our
-	// block, it is indexed so eth_getBlockByNumber(n) and getBlockNumber() both see it.
+	await waitForBlock(web3, expectedBlockTag, 10_000);
+
+	// Also wait for eth_blockNumber / "latest" to be at least the new block, so tests that
+	// assert on getBlockNumber() or use "latest" see the block we just created.
 	// Use >= so we don't timeout if the node advances past expectedNumber between polls.
 	// Retry on transient RPC errors instead of failing fast.
 	const rpcSyncTimeout = 10_000;
