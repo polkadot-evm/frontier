@@ -81,34 +81,49 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("SSTORE cost should properly take into account transaction initial value", async function () {
-		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
+		this.timeout(30000);
 
-		await context.web3.eth.accounts.wallet.add(GENESIS_ACCOUNT_PRIVATE_KEY);
+		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x3B9ACA00",
 		});
 
-		const promisify = (inner) => new Promise((resolve, reject) => inner(resolve, reject));
+		const waitForReceipt = async (txHash: string, timeoutMs = 10000) => {
+			const start = Date.now();
+			while (Date.now() - start < timeoutMs) {
+				const receipt = await context.web3.eth.getTransactionReceipt(txHash);
+				if (receipt !== null) {
+					return receipt;
+				}
+				await new Promise<void>((resolve) => setTimeout(resolve, 50));
+			}
+			throw new Error(`Timed out waiting for receipt ${txHash}`);
+		};
 
-		let tx1 = contract.methods
-			.setStorage("0x2A", "0x1")
-			.send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
-
-		let tx2 = contract.methods
-			.setStorage("0x2A", "0x1")
-			.send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
-
-		let tx3 = contract.methods
-			.setStorage("0x2A", "0x2")
-			.send(
-				{ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ },
-				async (hash) => await createAndFinalizeBlock(context.web3)
+		const sendSetStorageTx = async (value: string, txNonce: number) => {
+			const tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: FIRST_CONTRACT_ADDRESS,
+					data: contract.methods.setStorage("0x2A", value).encodeABI(),
+					value: "0x00",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x100000",
+					nonce: txNonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
 			);
 
-		tx1 = await tx1;
-		tx2 = await tx2;
-		tx3 = await tx3;
+			const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
+			await createAndFinalizeBlock(context.web3);
+
+			return waitForReceipt(txHash);
+		};
+
+		const tx1 = await sendSetStorageTx("0x1", nonce++);
+		const tx2 = await sendSetStorageTx("0x1", nonce++);
+		const tx3 = await sendSetStorageTx("0x2", nonce++);
 
 		// cost minus SSTORE
 		const baseCost = 24029;
