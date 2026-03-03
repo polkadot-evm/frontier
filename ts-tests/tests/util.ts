@@ -88,21 +88,23 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 		}
 		await new Promise<void>((r) => setTimeout(r, 50));
 	}
-	if (!head?.number) {
+	// Require that head advanced; on timeout we may have head.number === prevNumber.
+	if (!head?.number || parseInt(head.number, 16) <= prevNumber) {
 		throw new Error(`Chain head did not advance after createBlock (prev: ${prevNumber})`);
 	}
 
 	const expectedNumber = parseInt(head.number, 16);
 	await waitForBlock(web3, head.number, 10_000);
 
-	// Also wait for eth_blockNumber / "latest" to match the new block, so tests that
+	// Also wait for eth_blockNumber / "latest" to be at least the new block, so tests that
 	// assert on getBlockNumber() or use "latest" see the block we just created.
+	// Use >= so we don't timeout if the node advances past expectedNumber between polls.
 	const rpcSyncTimeout = 10_000;
 	const rpcStart = Date.now();
 	while (Date.now() - rpcStart < rpcSyncTimeout) {
 		const current = await customRequest(web3, "eth_blockNumber", []);
 		const n = current.result != null ? parseInt(current.result, 16) : -1;
-		if (n === expectedNumber) {
+		if (n >= expectedNumber) {
 			return;
 		}
 		await new Promise<void>((r) => setTimeout(r, 50));
