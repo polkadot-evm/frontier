@@ -228,6 +228,10 @@ precompile-utils = { path = "precompiles", default-features = false }
 # Frontier Template
 frontier-template-runtime = { path = "template/runtime", default-features = false }
 
+# TODO: Remove this patch before merging once ethereum 0.19.0 is released
+[patch.crates-io]
+ethereum = { git = "https://github.com/rust-ethereum/ethereum.git", rev = "5185fe8efa62add7e989660a69c6945c8a3ae64e" }
+
 [profile.release]
 # Substrate runtime requires unwinding.
 panic = "unwind"

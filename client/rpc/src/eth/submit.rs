@@ -29,7 +29,7 @@ use sp_core::H160;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::{traits::Block as BlockT, transaction_validity::TransactionSource};
 // Frontier
-use fc_rpc_core::types::*;
+use fc_rpc_core::types::{TransactionRequest, DEFAULT_MAX_TX_INPUT_BYTES, *};
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 use crate::{
@@ -78,6 +78,10 @@ where
 	}
 
 	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
+		request
+			.validate_size()
+			.map_err(|msg| crate::err(jsonrpsee::types::error::INVALID_PARAMS_CODE, &msg, None))?;
+
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -188,6 +192,19 @@ where
 		let bytes = bytes.into_vec();
 		if bytes.is_empty() {
 			return Err(internal_err("transaction data is empty"));
+		}
+
+		// Validate transaction size to prevent DoS attacks.
+		// This matches geth/reth pool validation which rejects transactions > 128 KB.
+		if bytes.len() > DEFAULT_MAX_TX_INPUT_BYTES {
+			return Err(crate::err(
+				jsonrpsee::types::error::INVALID_PARAMS_CODE,
+				format!(
+					"oversized data: transaction size {} exceeds limit {DEFAULT_MAX_TX_INPUT_BYTES}",
+					bytes.len()
+				),
+				None,
+			));
 		}
 
 		let transaction: ethereum::TransactionV3 =
