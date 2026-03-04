@@ -3,7 +3,7 @@ import { AbiItem } from "web3-utils";
 
 import Test from "../build/contracts/Storage.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithFrontier, waitForReceipt } from "./util";
 
 describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	const TEST_CONTRACT_BYTECODE = Test.bytecode;
@@ -81,34 +81,37 @@ describeWithFrontier("Frontier RPC (Contract)", (context) => {
 	});
 
 	it("SSTORE cost should properly take into account transaction initial value", async function () {
-		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
+		this.timeout(30000);
 
-		await context.web3.eth.accounts.wallet.add(GENESIS_ACCOUNT_PRIVATE_KEY);
+		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x3B9ACA00",
 		});
 
-		const promisify = (inner) => new Promise((resolve, reject) => inner(resolve, reject));
-
-		let tx1 = contract.methods
-			.setStorage("0x2A", "0x1")
-			.send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
-
-		let tx2 = contract.methods
-			.setStorage("0x2A", "0x1")
-			.send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
-
-		let tx3 = contract.methods
-			.setStorage("0x2A", "0x2")
-			.send(
-				{ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ },
-				async (hash) => await createAndFinalizeBlock(context.web3)
+		const sendSetStorageTx = async (value: string, txNonce: number) => {
+			const tx = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: FIRST_CONTRACT_ADDRESS,
+					data: contract.methods.setStorage("0x2A", value).encodeABI(),
+					value: "0x00",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x100000",
+					nonce: txNonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
 			);
 
-		tx1 = await tx1;
-		tx2 = await tx2;
-		tx3 = await tx3;
+			const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [tx.rawTransaction])).result;
+			await createAndFinalizeBlock(context.web3);
+
+			return waitForReceipt(context.web3, txHash);
+		};
+
+		const tx1 = await sendSetStorageTx("0x1", nonce++);
+		const tx2 = await sendSetStorageTx("0x1", nonce++);
+		const tx3 = await sendSetStorageTx("0x2", nonce++);
 
 		// cost minus SSTORE
 		const baseCost = 24029;

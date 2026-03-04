@@ -4,7 +4,7 @@ import { AbiItem } from "web3-utils";
 
 import SelfDestructAfterCreate2 from "../build/contracts/SelfDestructAfterCreate2.json";
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY, FIRST_CONTRACT_ADDRESS } from "./config";
-import { createAndFinalizeBlock, customRequest, describeWithFrontier } from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithFrontier, waitForReceipt } from "./util";
 
 chaiUse(chaiAsPromised);
 
@@ -50,32 +50,41 @@ describeWithFrontier("Test self-destruct contract", (context) => {
 			result: TEST_CONTRACT_DEPLOYED_BYTECODE,
 		});
 
-		// Prepare signer and fetch latest nonce
-		await context.web3.eth.accounts.wallet.add(GENESIS_ACCOUNT_PRIVATE_KEY);
 		let nonce = await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT);
-
 		const contract = new context.web3.eth.Contract(TEST_CONTRACT_ABI, FIRST_CONTRACT_ADDRESS, {
 			from: GENESIS_ACCOUNT,
 			gasPrice: "0x3B9ACA00",
 		});
 
-		let tx1 = contract.methods.step1().send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
-
-		let tx2 = contract.methods.step2().send({ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ });
-
-		let tx3 = contract.methods
-			.cannotRecreateInTheSameCall()
-			.send(
-				{ from: GENESIS_ACCOUNT, gas: "0x100000", nonce: nonce++ },
-				async (_hash) => await createAndFinalizeBlock(context.web3)
+		const sendTx = async (data: string, txNonce: number) => {
+			const signed = await context.web3.eth.accounts.signTransaction(
+				{
+					from: GENESIS_ACCOUNT,
+					to: FIRST_CONTRACT_ADDRESS,
+					data,
+					value: "0x00",
+					gasPrice: "0x3B9ACA00",
+					gas: "0x100000",
+					nonce: txNonce,
+				},
+				GENESIS_ACCOUNT_PRIVATE_KEY
 			);
+			const txHash = (await customRequest(context.web3, "eth_sendRawTransaction", [signed.rawTransaction]))
+				.result as string;
+			return txHash;
+		};
 
-		const { transactionHash: tx1Hash } = await tx1;
-		const { transactionHash: tx2Hash } = await tx2;
-		const { transactionHash: tx3Hash } = await tx3;
+		const tx1Hash = await sendTx(contract.methods.step1().encodeABI(), nonce++);
+		const tx2Hash = await sendTx(contract.methods.step2().encodeABI(), nonce++);
+		const tx3Hash = await sendTx(contract.methods.cannotRecreateInTheSameCall().encodeABI(), nonce++);
 
-		for (let txHash of [tx1Hash, tx2Hash, tx3Hash]) {
-			const receipt = await context.web3.eth.getTransactionReceipt(txHash);
+		await createAndFinalizeBlock(context.web3);
+
+		const tx1Receipt = await waitForReceipt(context.web3, tx1Hash);
+		const tx2Receipt = await waitForReceipt(context.web3, tx2Hash);
+		const tx3Receipt = await waitForReceipt(context.web3, tx3Hash);
+
+		for (const receipt of [tx1Receipt, tx2Receipt, tx3Receipt]) {
 			expect(receipt.status).to.be.true;
 		}
 

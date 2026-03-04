@@ -65,22 +65,66 @@ export async function waitForBlock(
 	throw new Error(`Timeout waiting for block ${blockTag} to be indexed${errorSuffix}`);
 }
 
-// Create a block, finalize it, and wait for it to be indexed by mapping-sync.
+// Create a block, optionally finalize it, and wait for it to be indexed by mapping-sync.
 // This ensures the block is visible via eth_getBlockByNumber before returning.
+// When finalize is false the block is still imported (best block); we wait for it to be
+// visible as "latest". The node exposes the best chain to eth RPC, so this works for both.
 export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = true) {
 	const response = await customRequest(web3, "engine_createBlock", [true, finalize, null]);
-	if (!response.result) {
+	if (!response?.result?.hash) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
+	const blockHash = response.result.hash as string;
 
-	// Use chain head as source of truth for the new block height, then wait until
-	// mapping-sync exposes that exact block via eth RPC.
-	const head = (await customRequest(web3, "chain_getHeader", [])).result;
-	if (!head?.number) {
-		throw new Error(`Unexpected chain head response: ${JSON.stringify(head)}`);
+	// Get the block number from the created block's header. Poll until the header is visible
+	// (import can lag) and retry on transient RPC errors.
+	const headerTimeout = 10_000;
+	const headerStart = Date.now();
+	let header: { number?: string } | null = null;
+	let headerLastError: Error | null = null;
+	while (Date.now() - headerStart < headerTimeout) {
+		try {
+			const headerResp = await customRequest(web3, "chain_getHeader", [blockHash]);
+			const h = headerResp.result as { number?: string } | null;
+			if (h?.number != null) {
+				header = h;
+				break;
+			}
+		} catch (error) {
+			headerLastError = error instanceof Error ? error : new Error(String(error));
+		}
+		await new Promise<void>((r) => setTimeout(r, 50));
 	}
+	if (!header?.number) {
+		const errSuffix = headerLastError ? ` (last error: ${headerLastError.message})` : "";
+		throw new Error(`chain_getHeader(${blockHash}) returned no header for created block${errSuffix}`);
+	}
+	const expectedNumber = parseInt(header.number, 16);
+	const expectedBlockTag = "0x" + expectedNumber.toString(16);
 
-	await waitForBlock(web3, head.number, 5000);
+	await waitForBlock(web3, expectedBlockTag, 10_000);
+
+	// Also wait for eth_blockNumber / "latest" to be at least the new block, so tests that
+	// assert on getBlockNumber() or use "latest" see the block we just created.
+	// Use >= so we don't timeout if the node advances past expectedNumber between polls.
+	// Retry on transient RPC errors instead of failing fast.
+	const rpcSyncTimeout = 10_000;
+	const rpcStart = Date.now();
+	let rpcLastError: Error | null = null;
+	while (Date.now() - rpcStart < rpcSyncTimeout) {
+		try {
+			const current = await customRequest(web3, "eth_blockNumber", []);
+			const n = current.result != null ? parseInt(current.result, 16) : -1;
+			if (n >= expectedNumber) {
+				return;
+			}
+		} catch (error) {
+			rpcLastError = error instanceof Error ? error : new Error(String(error));
+		}
+		await new Promise<void>((r) => setTimeout(r, 50));
+	}
+	const rpcErrorSuffix = rpcLastError ? ` (last error: ${rpcLastError.message})` : "";
+	throw new Error(`eth_blockNumber did not reach ${expectedNumber} after ${rpcSyncTimeout}ms${rpcErrorSuffix}`);
 }
 
 // Create a block and finalize it without waiting for indexing.
@@ -90,6 +134,19 @@ export async function createAndFinalizeBlockNowait(web3: Web3) {
 	if (!response.result) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
+}
+
+// Wait for a receipt to be available for a given transaction hash.
+export async function waitForReceipt(web3: Web3, txHash: string, timeoutMs = 10000) {
+	const start = Date.now();
+	while (Date.now() - start < timeoutMs) {
+		const receipt = await web3.eth.getTransactionReceipt(txHash);
+		if (receipt !== null) {
+			return receipt;
+		}
+		await new Promise<void>((resolve) => setTimeout(resolve, 50));
+	}
+	throw new Error(`Timed out waiting for receipt ${txHash}`);
 }
 
 export async function startFrontierNode(

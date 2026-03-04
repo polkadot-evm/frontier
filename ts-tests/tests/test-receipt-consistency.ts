@@ -2,7 +2,13 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { createAndFinalizeBlockNowait, describeWithFrontier, customRequest, waitForBlock } from "./util";
+import {
+	createAndFinalizeBlockNowait,
+	describeWithFrontier,
+	customRequest,
+	waitForBlock,
+	waitForReceipt,
+} from "./util";
 
 /**
  * Test for receipt consistency (ADR-003).
@@ -26,19 +32,6 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 			await new Promise<void>((resolve) => setTimeout(resolve, 50));
 		}
 		throw new Error(`Timed out waiting for txpool pending >= ${minPending}`);
-	}
-
-	async function waitForReceipt(txHash: string, timeoutMs = 10000) {
-		const start = Date.now();
-		while (Date.now() - start < timeoutMs) {
-			const receipt = await context.web3.eth.getTransactionReceipt(txHash);
-			if (receipt !== null) {
-				return receipt;
-			}
-			await createAndFinalizeBlockNowait(context.web3);
-			await new Promise<void>((resolve) => setTimeout(resolve, 50));
-		}
-		throw new Error(`Timed out waiting for receipt ${txHash}`);
 	}
 
 	step("should return receipt immediately after block is visible", async function () {
@@ -118,7 +111,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 
 		// All receipts should eventually be available and point to visible blocks.
 		for (let i = 0; i < txCount; i++) {
-			const receipt = await waitForReceipt(txHashes[i]);
+			const receipt = await waitForReceipt(context.web3, txHashes[i]);
 
 			expect(receipt, `Receipt for tx ${i}`).to.not.be.null;
 			expect(receipt.transactionHash).to.equal(txHashes[i]);
