@@ -146,6 +146,7 @@ pub async fn spawn_frontier_tasks<B, RA, HF>(
 	storage_override: Arc<dyn StorageOverride<B>>,
 	fee_history_cache: FeeHistoryCache,
 	fee_history_cache_limit: FeeHistoryCacheLimit,
+	state_pruning_blocks: Option<u64>,
 	sync: Arc<SyncingService<B>>,
 	pubsub_notification_sinks: Arc<
 		fc_mapping_sync::EthereumBlockNotificationSinks<
@@ -174,7 +175,7 @@ pub async fn spawn_frontier_tasks<B, RA, HF>(
 					b.clone(),
 					3,
 					0u32.into(),
-					None, // state_pruning_blocks: set for pruned nodes to skip past pruned state
+					state_pruning_blocks,
 					fc_mapping_sync::SyncStrategy::Normal,
 					sync,
 					pubsub_notification_sinks,
