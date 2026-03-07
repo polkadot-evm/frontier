@@ -60,6 +60,9 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	have_next: bool,
 	retry_times: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
+	/// If set, blocks older than (best - state_pruning_blocks) are skipped during catch-up
+	/// so the sync tip does not get stuck behind pruned state.
+	state_pruning_blocks: Option<u64>,
 	strategy: SyncStrategy,
 
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
@@ -86,6 +89,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
+		state_pruning_blocks: Option<u64>,
 		strategy: SyncStrategy,
 		sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 		pubsub_notification_sinks: Arc<
@@ -105,6 +109,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 			have_next: true,
 			retry_times,
 			sync_from,
+			state_pruning_blocks,
 			strategy,
 
 			sync_oracle,
@@ -183,6 +188,7 @@ where
 				self.frontier_backend.as_ref(),
 				self.retry_times,
 				self.sync_from,
+				self.state_pruning_blocks,
 				self.strategy,
 				self.sync_oracle.clone(),
 				self.pubsub_notification_sinks.clone(),
@@ -346,6 +352,7 @@ mod tests {
 				frontier_backend,
 				3,
 				0,
+				None,
 				SyncStrategy::Normal,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
@@ -493,6 +500,7 @@ mod tests {
 				frontier_backend,
 				3,
 				0,
+				None,
 				SyncStrategy::Normal,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,

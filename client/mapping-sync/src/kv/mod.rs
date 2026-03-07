@@ -30,7 +30,9 @@ use sc_client_api::backend::{Backend, StorageProvider};
 use sp_api::{ApiExt, ProvideRuntimeApi};
 use sp_blockchain::{Backend as _, HeaderBackend};
 use sp_consensus::SyncOracle;
-use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto, Zero};
+use sp_runtime::traits::{
+	Block as BlockT, Header as HeaderT, SaturatedConversion, UniqueSaturatedInto, Zero,
+};
 // Frontier
 use fc_storage::StorageOverride;
 use fp_consensus::{FindLogError, Hashes, Log, PostLog, PreLog};
@@ -44,14 +46,25 @@ use worker::BestBlockInfo;
 
 pub const CANONICAL_NUMBER_REPAIR_BATCH_SIZE: u64 = 2048;
 
+/// Sync a single block's Ethereum mapping from its consensus digest into the Frontier DB.
 pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
+	client: &C,
 	storage_override: Arc<dyn StorageOverride<Block>>,
 	backend: &fc_db::kv::Backend<Block, C>,
 	header: &Block::Header,
 ) -> Result<(), String> {
 	let substrate_block_hash = header.hash();
 	let block_number: u64 = (*header.number()).unique_saturated_into();
-	let number_mapping_write = fc_db::kv::NumberMappingWrite::Skip;
+
+	// Write BLOCK_NUMBER_MAPPING when this block is canonical at this number, so
+	// latest_block_hash() / indexed_canonical_hash_at() find it during catch-up.
+	// Uses only HeaderBackend::hash() — no state access, pruning-safe.
+	let canonical_hash_at_number = client.hash(*header.number()).ok().flatten();
+	let number_mapping_write = if canonical_hash_at_number == Some(substrate_block_hash) {
+		fc_db::kv::NumberMappingWrite::Write
+	} else {
+		fc_db::kv::NumberMappingWrite::Skip
+	};
 
 	match fp_consensus::find_log(header.digest()) {
 		Ok(log) => {
@@ -113,7 +126,16 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 									)
 								}
 							}
-							None => backend.mapping().write_none(substrate_block_hash),
+							None => {
+								// State is unavailable — likely pruned.
+								log::warn!(
+									target: "mapping-sync",
+									"State unavailable for block #{block_number} ({substrate_block_hash:?}); \
+									marking as synced with no ethereum mapping. \
+									This may indicate the pruning window is too narrow.",
+								);
+								backend.mapping().write_none(substrate_block_hash)
+							}
 						}
 					}
 				},
@@ -207,6 +229,7 @@ pub fn sync_one_block<Block: BlockT, C, BE>(
 	storage_override: Arc<dyn StorageOverride<Block>>,
 	frontier_backend: &fc_db::kv::Backend<Block, C>,
 	sync_from: <Block::Header as HeaderT>::Number,
+	state_pruning_blocks: Option<u64>,
 	strategy: SyncStrategy,
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 	pubsub_notification_sinks: Arc<
@@ -267,7 +290,41 @@ where
 		{
 			return Ok(false);
 		}
+
+		// On pruned nodes: if this block is behind the live state window, jump the
+		// syncing tip forward to the oldest block we can still access state for.
+		// This prevents the worker stalling permanently on blocks whose state is gone.
+		// Note: returns before best_at_import.remove(), so any pending entries for
+		// skipped hashes will be cleaned up by the finalization pruning in sync_blocks().
+		if let Some(pruning_blocks) = state_pruning_blocks {
+			let best_number_u64: u64 = client.info().best_number.unique_saturated_into();
+			let live_window_start_u64 = best_number_u64.saturating_sub(pruning_blocks);
+			let sync_from_u64: u64 = sync_from.unique_saturated_into();
+			let skip_to_u64 = live_window_start_u64.max(sync_from_u64);
+			let current_number_u64: u64 = (*operating_header.number()).unique_saturated_into();
+
+			if current_number_u64 < skip_to_u64 {
+				let skip_to_number =
+					skip_to_u64.saturated_into::<<Block::Header as HeaderT>::Number>();
+				if let Ok(Some(skip_hash)) = client.hash(skip_to_number) {
+					log::warn!(
+						target: "mapping-sync",
+						"Pruned node: skipping blocks #{}..#{} (outside live state window), \
+						jumping tip to #{}",
+						current_number_u64,
+						skip_to_u64.saturating_sub(1),
+						skip_to_u64,
+					);
+					frontier_backend
+						.meta()
+						.write_current_syncing_tips(vec![skip_hash])?;
+					return Ok(true);
+				}
+			}
+		}
+
 		sync_block(
+			client,
 			storage_override.clone(),
 			frontier_backend,
 			&operating_header,
@@ -323,6 +380,7 @@ pub fn sync_blocks<Block: BlockT, C, BE>(
 	frontier_backend: &fc_db::kv::Backend<Block, C>,
 	limit: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
+	state_pruning_blocks: Option<u64>,
 	strategy: SyncStrategy,
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 	pubsub_notification_sinks: Arc<
@@ -346,6 +404,7 @@ where
 				storage_override.clone(),
 				frontier_backend,
 				sync_from,
+				state_pruning_blocks,
 				strategy,
 				sync_oracle.clone(),
 				pubsub_notification_sinks.clone(),

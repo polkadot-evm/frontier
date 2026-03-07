@@ -174,6 +174,7 @@ pub async fn spawn_frontier_tasks<B, RA, HF>(
 					b.clone(),
 					3,
 					0u32.into(),
+					None, // state_pruning_blocks: set for pruned nodes to skip past pruned state
 					fc_mapping_sync::SyncStrategy::Normal,
 					sync,
 					pubsub_notification_sinks,
