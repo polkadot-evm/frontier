@@ -240,12 +240,14 @@ where
 		let Some(header) = substrate_backend.header(canonical_hash).ok().flatten() else {
 			continue;
 		};
-		let eth_block_hash = match fp_consensus::find_log(header.digest()) {
-			Ok(Log::Pre(PreLog::Block(block))) => Some(block.header.hash()),
-			Ok(Log::Post(PostLog::Hashes(h))) => Some(h.block_hash),
-			Ok(Log::Post(PostLog::Block(block))) => Some(block.header.hash()),
-			Ok(Log::Post(PostLog::BlockHash(hash))) => Some(hash),
-			_ => None,
+		let eth_block_hash = match fp_consensus::find_post_log(header.digest()) {
+			Ok(PostLog::Hashes(h)) => Some(h.block_hash),
+			Ok(PostLog::Block(block)) => Some(block.header.hash()),
+			Ok(PostLog::BlockHash(hash)) => Some(hash),
+			Err(_) => match fp_consensus::find_pre_log(header.digest()) {
+				Ok(PreLog::Block(block)) => Some(block.header.hash()),
+				Err(_) => None,
+			},
 		};
 		if let Some(eth_hash) = eth_block_hash {
 			frontier_backend
