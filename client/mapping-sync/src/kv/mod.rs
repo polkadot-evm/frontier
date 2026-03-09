@@ -357,12 +357,11 @@ where
 			return Ok(false);
 		}
 
-		// On pruned nodes: if this block is behind the live state window
-		// (finalized_number - pruning_blocks), jump the syncing tip forward
-		// to the oldest block we can still access state for, retaining any
-		// other queued tips that are already within the live window.
-		// This prevents the worker stalling permanently on blocks whose
-		// state has been pruned.
+		// On pruned nodes: live state window is derived from finalized_number (not best),
+		// so we skip blocks below (finalized_number - pruning_blocks). That avoids
+		// depending on unfinalized chain and matches typical state-pruning semantics.
+		// Jump the syncing tip forward to the window floor, retaining any queued tips
+		// that are already within the live window (fork/reorg catch-up).
 		if let Some(pruning_blocks) = state_pruning_blocks {
 			let finalized_number_u64: u64 = client.info().finalized_number.unique_saturated_into();
 			let live_window_start_u64 = finalized_number_u64.saturating_sub(pruning_blocks);
@@ -576,7 +575,9 @@ mod tests {
 	use ethereum_types::{Address, H256, U256};
 	use fc_storage::StorageOverride;
 	use fp_rpc::TransactionStatus;
+	use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 	use sc_block_builder::BlockBuilderBuilder;
+	use scale_codec::Encode;
 	use sp_blockchain::HeaderBackend as _;
 	use sp_consensus::BlockOrigin;
 	use sp_runtime::{
@@ -586,12 +587,14 @@ mod tests {
 	};
 	use substrate_test_runtime_client::{
 		BlockBuilderExt, ClientBlockImportExt, DefaultTestClientBuilderExt, TestClientBuilder,
+		TestClientBuilderExt,
 	};
 	use tempfile::tempdir;
 
-	use crate::ReorgInfo;
-
-	use super::{canonical_reconciler, repair_canonical_number_mappings_batch};
+	use super::{canonical_reconciler, repair_canonical_number_mappings_batch, sync_one_block};
+	use crate::{
+		EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy,
+	};
 
 	type OpaqueBlock = sp_runtime::generic::Block<
 		Header<u64, BlakeTwo256>,
@@ -641,6 +644,17 @@ mod tests {
 		}
 
 		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
+			false
+		}
+	}
+
+	/// Stub SyncOracle for tests that call sync_one_block (not syncing, not offline).
+	struct TestSyncOracleNotSyncing;
+	impl sp_consensus::SyncOracle for TestSyncOracleNotSyncing {
+		fn is_major_syncing(&self) -> bool {
+			false
+		}
+		fn is_offline(&self) -> bool {
 			false
 		}
 	}
@@ -1247,6 +1261,107 @@ mod tests {
 			frontier_backend.mapping().block_hash_by_number(1),
 			Ok(Some(eth_hash_1)),
 			"second batch should continue backward"
+		);
+	}
+
+	/// After a pruning skip, tips that are within the live window (>= skip_to) must be
+	/// retained so fork/reorg catch-up can continue. Window is derived from finalized_number.
+	#[test]
+	fn pruning_skip_retains_in_window_tips() {
+		let tmp = tempdir().expect("create temp dir");
+		let builder = TestClientBuilder::new().add_extra_storage(
+			PALLET_ETHEREUM_SCHEMA.to_vec(),
+			Encode::encode(&EthereumStorageSchema::V3),
+		);
+		let backend = builder.backend();
+		let (client, _) =
+			builder.build_with_native_executor::<frontier_template_runtime::RuntimeApi, _>(None);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		// Build chain 0..=10 and finalize so finalized_number = 10.
+		let mut chain_info = client.chain_info();
+		for _ in 1..=10 {
+			let mut block_builder = BlockBuilderBuilder::new(client.as_ref())
+				.on_parent_block(chain_info.best_hash)
+				.with_parent_block_number(chain_info.best_number)
+				.build()
+				.expect("build block");
+			block_builder
+				.push_storage_change(vec![1], None)
+				.expect("push storage change");
+			let block = block_builder.build().expect("build block").block;
+			futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+				.expect("import as final");
+			chain_info = client.chain_info();
+		}
+		assert!(
+			chain_info.finalized_number >= 10,
+			"finalized number for pruning test"
+		);
+
+		let hash_1 = client.hash(1).expect("hash").expect("block 1 exists");
+		let hash_2 = client.hash(2).expect("hash").expect("block 2 exists");
+		let hash_5 = client.hash(5).expect("hash").expect("block 5 exists");
+
+		// Tips: one below window (1), one in window (5). With state_pruning_blocks=8,
+		// live_window_start = 10 - 8 = 2, skip_to = 2. Order so the below-window tip is popped
+		// first (sync_one_block pops from the end): [in_window, below_window].
+		frontier_backend
+			.meta()
+			.write_current_syncing_tips(vec![hash_5, hash_1])
+			.expect("write tips");
+
+		let storage_override: Arc<dyn fc_storage::StorageOverride<OpaqueBlock>> =
+			Arc::new(NoopStorageOverride);
+		let sync_oracle: Arc<dyn sp_consensus::SyncOracle + Send + Sync> =
+			Arc::new(TestSyncOracleNotSyncing);
+		let pubsub_sinks: Arc<
+			EthereumBlockNotificationSinks<EthereumBlockNotification<OpaqueBlock>>,
+		> = Arc::new(Default::default());
+		let mut best_at_import = HashMap::new();
+
+		let did_sync = sync_one_block(
+			client.as_ref(),
+			&backend,
+			storage_override,
+			&frontier_backend,
+			0,
+			Some(8),
+			SyncStrategy::Normal,
+			sync_oracle,
+			pubsub_sinks,
+			&mut best_at_import,
+		)
+		.expect("sync_one_block");
+		assert!(did_sync, "skip path should run and return true");
+
+		let tips = frontier_backend
+			.meta()
+			.current_syncing_tips()
+			.expect("read tips");
+		assert!(
+			tips.contains(&hash_5),
+			"in-window tip (block 5) must be retained after skip; tips={tips:?}",
+		);
+		assert!(
+			tips.contains(&hash_2),
+			"skip target (block 2) must be in tips after skip; tips={tips:?}",
 		);
 	}
 }

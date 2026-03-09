@@ -60,8 +60,9 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	have_next: bool,
 	retry_times: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
-	/// If set, blocks older than (best - state_pruning_blocks) are skipped during catch-up
-	/// so the sync tip does not get stuck behind pruned state.
+	/// If set, blocks below the live state window (finalized_number - state_pruning_blocks)
+	/// are skipped during catch-up so the sync tip does not get stuck behind pruned state.
+	/// Must match the node's state pruning depth (e.g. from config.state_pruning).
 	state_pruning_blocks: Option<u64>,
 	strategy: SyncStrategy,
 
