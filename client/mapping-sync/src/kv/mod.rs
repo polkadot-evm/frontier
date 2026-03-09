@@ -293,11 +293,12 @@ where
 			return Ok(false);
 		}
 
-		// On pruned nodes: if this block is behind the live state window, jump the
-		// syncing tip forward to the oldest block we can still access state for.
-		// This prevents the worker stalling permanently on blocks whose state is gone.
-		// Note: returns before best_at_import.remove(), so any pending entries for
-		// skipped hashes will be cleaned up by the finalization pruning in sync_blocks().
+		// On pruned nodes: if this block is behind the live state window
+		// (finalized_number - pruning_blocks), jump the syncing tip forward
+		// to the oldest block we can still access state for, retaining any
+		// other queued tips that are already within the live window.
+		// This prevents the worker stalling permanently on blocks whose
+		// state has been pruned.
 		if let Some(pruning_blocks) = state_pruning_blocks {
 			let finalized_number_u64: u64 = client.info().finalized_number.unique_saturated_into();
 			let live_window_start_u64 = finalized_number_u64.saturating_sub(pruning_blocks);
@@ -308,24 +309,37 @@ where
 			if current_number_u64 < skip_to_u64 {
 				let skip_to_number =
 					skip_to_u64.saturated_into::<<Block::Header as HeaderT>::Number>();
-				let skip_hash = client
-					.hash(skip_to_number)
-					.map_err(|e| format!("failed to resolve skip target #{skip_to_u64}: {e:?}"))?
-					.ok_or_else(|| {
-						format!("canonical hash for skip target #{skip_to_u64} not found")
-					})?;
-				log::warn!(
-					target: "mapping-sync",
-					"Pruned node: skipping blocks #{}..#{} (outside live state window), \
-					jumping tip to #{}",
-					current_number_u64,
-					skip_to_u64.saturating_sub(1),
-					skip_to_u64,
-				);
-				frontier_backend
-					.meta()
-					.write_current_syncing_tips(vec![skip_hash])?;
-				return Ok(true);
+				if let Ok(Some(skip_hash)) = client.hash(skip_to_number) {
+					log::warn!(
+						target: "mapping-sync",
+						"Pruned node: skipping blocks #{}..#{} (outside live state window), \
+						jumping tip to #{}",
+						current_number_u64,
+						skip_to_u64.saturating_sub(1),
+						skip_to_u64,
+					);
+					// Retain any tips still within the live window rather than
+					// discarding them — they may be unsynced fork branches that
+					// need indexing. Replace only the out-of-window tip with
+					// the skip target.
+					current_syncing_tips.retain(|tip| {
+						substrate_backend
+							.blockchain()
+							.header(*tip)
+							.ok()
+							.flatten()
+							.map(|h| {
+								let n: u64 = (*h.number()).unique_saturated_into();
+								n >= skip_to_u64
+							})
+							.unwrap_or(false)
+					});
+					current_syncing_tips.push(skip_hash);
+					frontier_backend
+						.meta()
+						.write_current_syncing_tips(current_syncing_tips)?;
+					return Ok(true);
+				}
 			}
 		}
 
