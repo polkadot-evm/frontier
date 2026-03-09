@@ -59,9 +59,9 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	// Write BLOCK_NUMBER_MAPPING when this block is canonical at this number, so
 	// latest_block_hash() / indexed_canonical_hash_at() find it during catch-up.
 	// Uses only HeaderBackend::hash() — no state access, pruning-safe.
-	let canonical_hash_at_number = client
-		.hash(*header.number())
-		.map_err(|e| format!("failed to resolve canonical hash at #{block_number}: {e:?}"))?;
+	// If the hash lookup fails or returns None, use Skip so we don't abort the
+	// sync (best-effort; avoids stalling on intermittent or edge-condition failures).
+	let canonical_hash_at_number = client.hash(*header.number()).ok().flatten();
 	let number_mapping_write = if canonical_hash_at_number == Some(substrate_block_hash) {
 		fc_db::kv::NumberMappingWrite::Write
 	} else {
@@ -309,36 +309,59 @@ where
 			if current_number_u64 < skip_to_u64 {
 				let skip_to_number =
 					skip_to_u64.saturated_into::<<Block::Header as HeaderT>::Number>();
-				if let Ok(Some(skip_hash)) = client.hash(skip_to_number) {
-					log::warn!(
-						target: "mapping-sync",
-						"Pruned node: skipping blocks #{}..#{} (outside live state window), \
-						jumping tip to #{}",
-						current_number_u64,
-						skip_to_u64.saturating_sub(1),
-						skip_to_u64,
-					);
-					// Retain any tips still within the live window rather than
-					// discarding them — they may be unsynced fork branches that
-					// need indexing. Replace only the out-of-window tip with
-					// the skip target.
-					current_syncing_tips.retain(|tip| {
-						substrate_backend
-							.blockchain()
-							.header(*tip)
-							.ok()
-							.flatten()
-							.map(|h| {
-								let n: u64 = (*h.number()).unique_saturated_into();
-								n >= skip_to_u64
-							})
-							.unwrap_or(false)
-					});
-					current_syncing_tips.push(skip_hash);
-					frontier_backend
-						.meta()
-						.write_current_syncing_tips(current_syncing_tips)?;
-					return Ok(true);
+				match client.hash(skip_to_number) {
+					Ok(Some(skip_hash)) => {
+						log::warn!(
+							target: "mapping-sync",
+							"Pruned node: skipping blocks #{}..#{} (outside live state window), \
+							jumping tip to #{}",
+							current_number_u64,
+							skip_to_u64.saturating_sub(1),
+							skip_to_u64,
+						);
+						// Retain any tips still within the live window rather than
+						// discarding them — they may be unsynced fork branches that
+						// need indexing. Replace only the out-of-window tip with
+						// the skip target.
+						current_syncing_tips.retain(|tip| {
+							substrate_backend
+								.blockchain()
+								.header(*tip)
+								.ok()
+								.flatten()
+								.map(|h| {
+									let n: u64 = (*h.number()).unique_saturated_into();
+									n >= skip_to_u64
+								})
+								.unwrap_or(false)
+						});
+						current_syncing_tips.push(skip_hash);
+						frontier_backend
+							.meta()
+							.write_current_syncing_tips(current_syncing_tips)?;
+						return Ok(true);
+					}
+					Ok(None) => {
+						// Target block not yet known to the client (e.g. node still
+						// syncing headers). Return false to back off and retry later
+						// rather than falling through to sync a pruned block.
+						frontier_backend
+							.meta()
+							.write_current_syncing_tips(current_syncing_tips)?;
+						return Ok(false);
+					}
+					Err(e) => {
+						// Transient client error. Back off and retry rather than
+						// falling through to sync a pruned block.
+						log::warn!(
+							target: "mapping-sync",
+							"Pruned node: failed to resolve skip target #{skip_to_u64}: {e:?}; will retry.",
+						);
+						frontier_backend
+							.meta()
+							.write_current_syncing_tips(current_syncing_tips)?;
+						return Ok(false);
+					}
 				}
 			}
 		}
