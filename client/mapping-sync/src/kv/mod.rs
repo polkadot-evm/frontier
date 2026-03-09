@@ -199,6 +199,62 @@ where
 	Ok(())
 }
 
+/// Backfill BLOCK_NUMBER_MAPPING for already-synced canonical blocks in `[from..=to]`.
+/// Uses only `HeaderBackend` and consensus digests — no state access, pruning-safe.
+/// Returns the count of mappings written.
+fn backfill_number_mappings<Block: BlockT, C, BE>(
+	client: &C,
+	substrate_backend: &BE,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	from: u64,
+	to: u64,
+) -> Result<u64, String>
+where
+	C: HeaderBackend<Block>,
+	BE: sp_blockchain::Backend<Block>,
+{
+	let mut written = 0u64;
+	for number in from..=to {
+		if frontier_backend
+			.mapping()
+			.block_hash_by_number(number)?
+			.is_some()
+		{
+			continue;
+		}
+		let block_number_native = number.saturated_into::<<Block::Header as HeaderT>::Number>();
+		let Some(canonical_hash) = client.hash(block_number_native).ok().flatten() else {
+			continue;
+		};
+		if !frontier_backend.mapping().is_synced(&canonical_hash)? {
+			continue;
+		}
+		let Some(header) = substrate_backend.header(canonical_hash).ok().flatten() else {
+			continue;
+		};
+		let eth_block_hash = match fp_consensus::find_log(header.digest()) {
+			Ok(Log::Pre(PreLog::Block(block))) => Some(block.header.hash()),
+			Ok(Log::Post(PostLog::Hashes(h))) => Some(h.block_hash),
+			Ok(Log::Post(PostLog::Block(block))) => Some(block.header.hash()),
+			Ok(Log::Post(PostLog::BlockHash(hash))) => Some(hash),
+			_ => None,
+		};
+		if let Some(eth_hash) = eth_block_hash {
+			frontier_backend
+				.mapping()
+				.set_block_hash_by_number(number, eth_hash)?;
+			written += 1;
+		}
+	}
+	if written > 0 {
+		log::debug!(
+			target: "mapping-sync",
+			"Backfilled BLOCK_NUMBER_MAPPING for {written} blocks in #{from}..#{to}",
+		);
+	}
+	Ok(written)
+}
+
 pub fn repair_canonical_number_mappings_batch<Block: BlockT, C: HeaderBackend<Block>>(
 	client: &C,
 	storage_override: &dyn StorageOverride<Block>,
@@ -339,6 +395,21 @@ where
 						frontier_backend
 							.meta()
 							.write_current_syncing_tips(current_syncing_tips)?;
+
+						// Backfill BLOCK_NUMBER_MAPPING for already-synced
+						// canonical blocks in the live window so
+						// latest_block_hash() can find them (handles upgrade
+						// from old logic that always used Skip).
+						let best_number_u64: u64 =
+							client.info().best_number.unique_saturated_into();
+						backfill_number_mappings(
+							client,
+							substrate_backend.blockchain(),
+							frontier_backend,
+							skip_to_u64,
+							best_number_u64,
+						)?;
+
 						return Ok(true);
 					}
 					Ok(None) => {
