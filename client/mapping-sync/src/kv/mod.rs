@@ -46,6 +46,9 @@ use worker::BestBlockInfo;
 
 pub const CANONICAL_NUMBER_REPAIR_BATCH_SIZE: u64 = 2048;
 
+/// Max blocks to backfill in one skip-path call to avoid unbounded stall on heavily pruned nodes.
+const BACKFILL_ON_SKIP_MAX_BLOCKS: u64 = 1024;
+
 /// Sync a single block's Ethereum mapping from its consensus digest into the Frontier DB.
 pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	client: &C,
@@ -201,6 +204,7 @@ where
 
 /// Backfill BLOCK_NUMBER_MAPPING for already-synced canonical blocks in `[from..=to]`.
 /// Uses only `HeaderBackend` and consensus digests — no state access, pruning-safe.
+/// Stops after writing `max_blocks` mappings to avoid unbounded stall on heavily pruned nodes.
 /// Returns the count of mappings written.
 fn backfill_number_mappings<Block: BlockT, C, BE>(
 	client: &C,
@@ -208,6 +212,7 @@ fn backfill_number_mappings<Block: BlockT, C, BE>(
 	frontier_backend: &fc_db::kv::Backend<Block, C>,
 	from: u64,
 	to: u64,
+	max_blocks: u64,
 ) -> Result<u64, String>
 where
 	C: HeaderBackend<Block>,
@@ -215,6 +220,9 @@ where
 {
 	let mut written = 0u64;
 	for number in from..=to {
+		if written >= max_blocks {
+			break;
+		}
 		if frontier_backend
 			.mapping()
 			.block_hash_by_number(number)?
@@ -399,7 +407,8 @@ where
 						// Backfill BLOCK_NUMBER_MAPPING for already-synced
 						// canonical blocks in the live window so
 						// latest_block_hash() can find them (handles upgrade
-						// from old logic that always used Skip).
+						// from old logic that always used Skip). Capped per
+						// call to avoid unbounded stall on heavily pruned nodes.
 						let best_number_u64: u64 =
 							client.info().best_number.unique_saturated_into();
 						backfill_number_mappings(
@@ -408,6 +417,7 @@ where
 							frontier_backend,
 							skip_to_u64,
 							best_number_u64,
+							BACKFILL_ON_SKIP_MAX_BLOCKS,
 						)?;
 
 						return Ok(true);
