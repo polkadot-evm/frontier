@@ -59,7 +59,9 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	// Write BLOCK_NUMBER_MAPPING when this block is canonical at this number, so
 	// latest_block_hash() / indexed_canonical_hash_at() find it during catch-up.
 	// Uses only HeaderBackend::hash() — no state access, pruning-safe.
-	let canonical_hash_at_number = client.hash(*header.number()).ok().flatten();
+	let canonical_hash_at_number = client
+		.hash(*header.number())
+		.map_err(|e| format!("failed to resolve canonical hash at #{block_number}: {e:?}"))?;
 	let number_mapping_write = if canonical_hash_at_number == Some(substrate_block_hash) {
 		fc_db::kv::NumberMappingWrite::Write
 	} else {
@@ -297,8 +299,8 @@ where
 		// Note: returns before best_at_import.remove(), so any pending entries for
 		// skipped hashes will be cleaned up by the finalization pruning in sync_blocks().
 		if let Some(pruning_blocks) = state_pruning_blocks {
-			let best_number_u64: u64 = client.info().best_number.unique_saturated_into();
-			let live_window_start_u64 = best_number_u64.saturating_sub(pruning_blocks);
+			let finalized_number_u64: u64 = client.info().finalized_number.unique_saturated_into();
+			let live_window_start_u64 = finalized_number_u64.saturating_sub(pruning_blocks);
 			let sync_from_u64: u64 = sync_from.unique_saturated_into();
 			let skip_to_u64 = live_window_start_u64.max(sync_from_u64);
 			let current_number_u64: u64 = (*operating_header.number()).unique_saturated_into();
@@ -306,20 +308,24 @@ where
 			if current_number_u64 < skip_to_u64 {
 				let skip_to_number =
 					skip_to_u64.saturated_into::<<Block::Header as HeaderT>::Number>();
-				if let Ok(Some(skip_hash)) = client.hash(skip_to_number) {
-					log::warn!(
-						target: "mapping-sync",
-						"Pruned node: skipping blocks #{}..#{} (outside live state window), \
-						jumping tip to #{}",
-						current_number_u64,
-						skip_to_u64.saturating_sub(1),
-						skip_to_u64,
-					);
-					frontier_backend
-						.meta()
-						.write_current_syncing_tips(vec![skip_hash])?;
-					return Ok(true);
-				}
+				let skip_hash = client
+					.hash(skip_to_number)
+					.map_err(|e| format!("failed to resolve skip target #{skip_to_u64}: {e:?}"))?
+					.ok_or_else(|| {
+						format!("canonical hash for skip target #{skip_to_u64} not found")
+					})?;
+				log::warn!(
+					target: "mapping-sync",
+					"Pruned node: skipping blocks #{}..#{} (outside live state window), \
+					jumping tip to #{}",
+					current_number_u64,
+					skip_to_u64.saturating_sub(1),
+					skip_to_u64,
+				);
+				frontier_backend
+					.meta()
+					.write_current_syncing_tips(vec![skip_hash])?;
+				return Ok(true);
 			}
 		}
 
