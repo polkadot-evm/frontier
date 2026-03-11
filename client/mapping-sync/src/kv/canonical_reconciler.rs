@@ -277,6 +277,33 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 						number,
 						fc_db::kv::NumberMappingWrite::Skip,
 					)?;
+				} else if !ethereum_block.transactions.is_empty() {
+					// BLOCK_MAPPING exists but TRANSACTION_MAPPING may be empty
+					// (block was initially synced with pruned state via write_hashes
+					// with vec![]). If state is now readable, repair tx mappings.
+					let first_tx_hash = ethereum_block.transactions[0].hash();
+					let needs_tx_repair = !frontier_backend
+						.mapping()
+						.transaction_metadata(&first_tx_hash)?
+						.iter()
+						.any(|m| m.substrate_block_hash == canonical_hash);
+					if needs_tx_repair {
+						let commitment = fc_db::kv::MappingCommitment::<Block> {
+							block_hash: canonical_hash,
+							ethereum_block_hash: canonical_eth_hash,
+							ethereum_transaction_hashes: ethereum_block
+								.transactions
+								.iter()
+								.map(|tx| tx.hash())
+								.collect(),
+						};
+						frontier_backend.mapping().write_hashes(
+							commitment,
+							number,
+							fc_db::kv::NumberMappingWrite::Skip,
+						)?;
+						updated = updated.saturating_add(1);
+					}
 				}
 
 				// Block fully verified — advance highest_reconciled.

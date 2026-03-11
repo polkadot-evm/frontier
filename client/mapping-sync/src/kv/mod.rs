@@ -723,6 +723,38 @@ mod tests {
 	}
 
 	fn make_ethereum_block(seed: u64) -> ethereum::BlockV3 {
+		make_ethereum_block_inner(seed, vec![])
+	}
+
+	fn make_ethereum_block_with_txs(seed: u64, num_txs: u64) -> ethereum::BlockV3 {
+		let txs: Vec<ethereum::TransactionV3> = (0..num_txs)
+			.map(|i| {
+				let sig = ethereum::legacy::TransactionSignature::new(
+					27,
+					H256::from_low_u64_be(seed.saturating_add(i).saturating_add(1)),
+					H256::from_low_u64_be(seed.saturating_add(i).saturating_add(2)),
+				)
+				.expect("valid signature");
+				ethereum::TransactionV3::Legacy(ethereum::LegacyTransaction {
+					nonce: U256::from(i),
+					gas_price: U256::from(1),
+					gas_limit: U256::from(21000),
+					action: ethereum::TransactionAction::Call(
+						ethereum_types::H160::from_low_u64_be(seed),
+					),
+					value: U256::zero(),
+					input: vec![],
+					signature: sig,
+				})
+			})
+			.collect();
+		make_ethereum_block_inner(seed, txs)
+	}
+
+	fn make_ethereum_block_inner(
+		seed: u64,
+		transactions: Vec<ethereum::TransactionV3>,
+	) -> ethereum::BlockV3 {
 		let partial_header = PartialHeader {
 			parent_hash: H256::from_low_u64_be(seed),
 			beneficiary: ethereum_types::H160::from_low_u64_be(seed),
@@ -738,7 +770,7 @@ mod tests {
 			mix_hash: H256::from_low_u64_be(seed.saturating_add(3)),
 			nonce: ethereum_types::H64::from_low_u64_be(seed),
 		};
-		ethereum::Block::new(partial_header, vec![], vec![])
+		ethereum::Block::new(partial_header, transactions, vec![])
 	}
 
 	struct SelectiveStorageOverride {
@@ -1723,5 +1755,123 @@ mod tests {
 
 		assert_eq!(stats.updated, 1);
 		assert!(stats.highest_reconciled.is_some());
+	}
+
+	/// When a block was synced with empty tx hashes (pruned-state path), the reconciler
+	/// must repair TRANSACTION_MAPPING when state becomes available. This ensures
+	/// eth_getTransactionByHash works for blocks that were initially synced without state.
+	#[test]
+	fn reconciler_repairs_missing_transaction_mapping_on_pruned_blocks() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let eth_block = make_ethereum_block_with_txs(1, 2);
+		let eth_hash = eth_block.header.hash();
+		let tx_hashes: Vec<H256> = eth_block.transactions.iter().map(|tx| tx.hash()).collect();
+		assert_eq!(tx_hashes.len(), 2);
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change");
+		let block = builder.build().expect("build block").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let canonical_hash = client
+			.hash(1)
+			.expect("query canonical hash")
+			.expect("canonical hash");
+
+		// Simulate pruned-state sync: write_hashes with empty tx list.
+		// This writes BLOCK_MAPPING, BLOCK_NUMBER_MAPPING, SYNCED_MAPPING but
+		// no TRANSACTION_MAPPING entries.
+		let minimal_commitment = fc_db::kv::MappingCommitment::<OpaqueBlock> {
+			block_hash: canonical_hash,
+			ethereum_block_hash: eth_hash,
+			ethereum_transaction_hashes: vec![],
+		};
+		frontier_backend
+			.mapping()
+			.write_hashes(minimal_commitment, 1, fc_db::kv::NumberMappingWrite::Write)
+			.expect("write minimal commitment");
+
+		// Sanity: BLOCK_MAPPING exists, TRANSACTION_MAPPING is empty.
+		assert!(
+			frontier_backend
+				.mapping()
+				.block_hash(&eth_hash)
+				.expect("read BLOCK_MAPPING")
+				.is_some_and(|hashes| hashes.contains(&canonical_hash)),
+			"BLOCK_MAPPING must exist"
+		);
+		assert!(
+			frontier_backend
+				.mapping()
+				.transaction_metadata(&tx_hashes[0])
+				.expect("read tx metadata")
+				.is_empty(),
+			"TRANSACTION_MAPPING must be empty before repair"
+		);
+
+		// Run reconciler with state now available (SelectiveStorageOverride
+		// returns the ethereum block with transactions).
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([(canonical_hash, eth_block)]),
+		};
+		let stats = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("reconcile")
+		.expect("stats");
+
+		// TRANSACTION_MAPPING must now be populated for both transactions.
+		for (i, tx_hash) in tx_hashes.iter().enumerate() {
+			let metadata = frontier_backend
+				.mapping()
+				.transaction_metadata(tx_hash)
+				.expect("read tx metadata");
+			assert!(
+				metadata
+					.iter()
+					.any(|m| m.substrate_block_hash == canonical_hash
+						&& m.ethereum_index == i as u32),
+				"tx {i} ({tx_hash:?}) must have TRANSACTION_MAPPING for canonical block; got {metadata:?}"
+			);
+		}
+
+		assert_eq!(
+			stats.updated, 1,
+			"reconciler must report 1 update for tx repair"
+		);
 	}
 }
