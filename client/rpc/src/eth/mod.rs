@@ -259,6 +259,28 @@ where
 			.ok_or_else(|| internal_err("Block number not found for latest indexed block"))?
 			.unique_saturated_into();
 
+		// Fast path: if the latest indexed block itself is readable, use it
+		// directly. This avoids the cache returning a stale older block when
+		// the chain tip has advanced.
+		if self
+			.storage_override
+			.current_block(latest_indexed_hash)
+			.is_some()
+		{
+			self.last_readable_latest
+				.lock()
+				.map_err(|_| internal_err("last_readable_latest lock poisoned"))?
+				.replace(latest_indexed_hash);
+			log::debug!(
+				target: "rpc",
+				"latest readable selection cache_hit=false bounded_hit=false exhaustive_hit=false full_miss=false bounded_scanned_hops=0 exhaustive_scanned_hops=0 limit={}",
+				self.latest_readable_scan_limit,
+			);
+			return Ok(latest_indexed_hash);
+		}
+
+		// The latest indexed block isn't readable (state pruned or not yet
+		// available). Fall back to the cache or scan for an older readable block.
 		let cached_hash = *self
 			.last_readable_latest
 			.lock()

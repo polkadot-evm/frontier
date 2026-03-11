@@ -151,6 +151,41 @@ pub fn reconcile_from_cursor_batch<Block: BlockT, C: HeaderBackend<Block>>(
 	Ok(Some(stats))
 }
 
+pub fn reconcile_recent_window<Block: BlockT, C: HeaderBackend<Block>>(
+	client: &C,
+	storage_override: &dyn fc_storage::StorageOverride<Block>,
+	frontier_backend: &fc_db::kv::Backend<Block, C>,
+	sync_from: <Block::Header as HeaderT>::Number,
+	window_size: u64,
+) -> Result<Option<ReconcileStats>, String> {
+	let best_number: u64 = client.info().best_number.unique_saturated_into();
+	let sync_from_number = UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from);
+
+	// Anchor at best_number, not finalized — finalized can be 0 on parachains
+	// during startup or sync gaps. best_number is always current.
+	let end = best_number;
+	let start = end
+		.saturating_sub(window_size.saturating_sub(1))
+		.max(sync_from_number);
+
+	if end < sync_from_number {
+		return Ok(None);
+	}
+
+	let stats = reconcile_range_internal(
+		client,
+		storage_override,
+		frontier_backend,
+		start,
+		end,
+		sync_from_number,
+		best_number,
+		ScanDirection::Ascending,
+		CursorUpdateStrategy::KeepLower,
+	)?;
+	Ok(Some(stats))
+}
+
 fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 	client: &C,
 	storage_override: &dyn fc_storage::StorageOverride<Block>,
@@ -193,20 +228,84 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 			first_unresolved.get_or_insert(number);
 			return Ok(());
 		};
-		let Some(ethereum_block) = storage_override.current_block(canonical_hash) else {
-			first_unresolved.get_or_insert(number);
-			return Ok(());
-		};
-		let canonical_eth_hash = ethereum_block.header.hash();
-		let should_update =
-			frontier_backend.mapping().block_hash_by_number(number)? != Some(canonical_eth_hash);
-		if should_update {
-			frontier_backend
-				.mapping()
-				.set_block_hash_by_number(number, canonical_eth_hash)?;
-			updated = updated.saturating_add(1);
+
+		match storage_override.current_block(canonical_hash) {
+			Some(ethereum_block) => {
+				let canonical_eth_hash = ethereum_block.header.hash();
+
+				let should_update = frontier_backend.mapping().block_hash_by_number(number)?
+					!= Some(canonical_eth_hash);
+				if should_update {
+					frontier_backend
+						.mapping()
+						.set_block_hash_by_number(number, canonical_eth_hash)?;
+					updated = updated.saturating_add(1);
+				}
+
+				let block_mapping_has_canonical = frontier_backend
+					.mapping()
+					.block_hash(&canonical_eth_hash)?
+					.map(|hashes| hashes.contains(&canonical_hash))
+					.unwrap_or(false);
+
+				if !block_mapping_has_canonical {
+					let commitment = fc_db::kv::MappingCommitment::<Block> {
+						block_hash: canonical_hash,
+						ethereum_block_hash: canonical_eth_hash,
+						ethereum_transaction_hashes: ethereum_block
+							.transactions
+							.iter()
+							.map(|tx| tx.hash())
+							.collect(),
+					};
+					frontier_backend.mapping().write_hashes(
+						commitment,
+						number,
+						fc_db::kv::NumberMappingWrite::Skip,
+					)?;
+				}
+
+				// Block fully verified — advance highest_reconciled.
+				highest_reconciled =
+					Some(highest_reconciled.map_or(number, |current| current.max(number)));
+			}
+			None => {
+				// State unavailable for this block — common for very recent unfinalized
+				// blocks on pruned nodes where state isn't yet readable via
+				// storage_override. Check if BLOCK_NUMBER_MAPPING already has a valid
+				// entry written by sync_block() / backfill, and if so ensure
+				// BLOCK_MAPPING also exists (older code paths wrote only SYNCED_MAPPING
+				// via write_none, leaving BLOCK_MAPPING empty).
+				if let Some(eth_hash) = frontier_backend.mapping().block_hash_by_number(number)? {
+					let has_block_mapping = frontier_backend
+						.mapping()
+						.block_hash(&eth_hash)?
+						.map(|hashes| hashes.contains(&canonical_hash))
+						.unwrap_or(false);
+
+					if !has_block_mapping {
+						let commitment = fc_db::kv::MappingCommitment::<Block> {
+							block_hash: canonical_hash,
+							ethereum_block_hash: eth_hash,
+							ethereum_transaction_hashes: vec![],
+						};
+						frontier_backend.mapping().write_hashes(
+							commitment,
+							number,
+							fc_db::kv::NumberMappingWrite::Skip,
+						)?;
+						updated = updated.saturating_add(1);
+					}
+
+					highest_reconciled =
+						Some(highest_reconciled.map_or(number, |current| current.max(number)));
+				} else {
+					// Truly unresolved — no mapping and no state.
+					first_unresolved.get_or_insert(number);
+				}
+			}
 		}
-		highest_reconciled = Some(highest_reconciled.map_or(number, |current| current.max(number)));
+
 		Ok(())
 	};
 

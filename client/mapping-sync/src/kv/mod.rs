@@ -49,6 +49,10 @@ pub const CANONICAL_NUMBER_REPAIR_BATCH_SIZE: u64 = 2048;
 /// Max blocks to backfill in one skip-path call to avoid unbounded stall on heavily pruned nodes.
 const BACKFILL_ON_SKIP_MAX_BLOCKS: u64 = 1024;
 
+/// Number of recent blocks to reconcile on every mapping-sync worker tick.
+/// Small enough to be cheap per-tick, large enough to cover typical reorg depth.
+pub const PERIODIC_RECONCILE_WINDOW: u64 = 16;
+
 /// Sync a single block's Ethereum mapping from its consensus digest into the Frontier DB.
 pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	client: &C,
@@ -132,14 +136,26 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 								}
 							}
 							None => {
-								// State is unavailable — likely pruned.
+								// State is unavailable — likely pruned. Write a minimal
+								// commitment so BLOCK_MAPPING and BLOCK_NUMBER_MAPPING are
+								// populated and indexed_canonical_hash_at() can resolve
+								// this block. Transaction hashes are unavailable without state.
 								log::warn!(
 									target: "mapping-sync",
 									"State unavailable for block #{block_number} ({substrate_block_hash:?}); \
-									marking as synced with no ethereum mapping. \
+									writing minimal mapping (no tx hashes). \
 									This may indicate the pruning window is too narrow.",
 								);
-								backend.mapping().write_none(substrate_block_hash)
+								let mapping_commitment = fc_db::kv::MappingCommitment::<Block> {
+									block_hash: substrate_block_hash,
+									ethereum_block_hash: expect_eth_block_hash,
+									ethereum_transaction_hashes: vec![],
+								};
+								backend.mapping().write_hashes(
+									mapping_commitment,
+									block_number,
+									number_mapping_write,
+								)
 							}
 						}
 					}
@@ -253,6 +269,25 @@ where
 			frontier_backend
 				.mapping()
 				.set_block_hash_by_number(number, eth_hash)?;
+
+			let has_block_mapping = frontier_backend
+				.mapping()
+				.block_hash(&eth_hash)?
+				.map(|hashes| hashes.contains(&canonical_hash))
+				.unwrap_or(false);
+			if !has_block_mapping {
+				let commitment = fc_db::kv::MappingCommitment::<Block> {
+					block_hash: canonical_hash,
+					ethereum_block_hash: eth_hash,
+					ethereum_transaction_hashes: vec![],
+				};
+				frontier_backend.mapping().write_hashes(
+					commitment,
+					number,
+					fc_db::kv::NumberMappingWrite::Skip,
+				)?;
+			}
+
 			written += 1;
 		}
 	}
@@ -322,6 +357,12 @@ where
 			return Ok(false);
 		}
 		current_syncing_tips.append(&mut leaves);
+	}
+
+	let best_hash = client.info().best_hash;
+	if SyncStrategy::Parachain == strategy && !frontier_backend.mapping().is_synced(&best_hash)? {
+		// Add best block to current_syncing_tips
+		current_syncing_tips.push(best_hash);
 	}
 
 	let mut operating_header = None;
@@ -460,6 +501,16 @@ where
 			.meta()
 			.write_current_syncing_tips(current_syncing_tips)?;
 	}
+
+	// Reconcile the most recent window of blocks.
+	canonical_reconciler::reconcile_recent_window(
+		client,
+		storage_override.as_ref(),
+		frontier_backend,
+		sync_from,
+		PERIODIC_RECONCILE_WINDOW,
+	)?;
+
 	// Notify on import and remove closed channels using the unified notification mechanism.
 	let hash = operating_header.hash();
 	// Use the `is_new_best` status from import time if available.
@@ -470,6 +521,7 @@ where
 	let is_new_best = best_info.is_some() || client.info().best_hash == hash;
 	let reorg_info = best_info.and_then(|info| info.reorg_info);
 
+	// Reorg-aware reconcile only when this block was actually new-best at import.
 	if is_new_best {
 		let reconcile_stats = canonical_reconciler::reconcile_reorg_window(
 			client,
@@ -1365,5 +1417,197 @@ mod tests {
 			tips.contains(&hash_2),
 			"skip target (block 2) must be in tips after skip; tips={tips:?}",
 		);
+	}
+
+	/// Reconciler None branch: when a block has SYNCED_MAPPING + BLOCK_NUMBER_MAPPING
+	/// but no BLOCK_MAPPING (the old write_none + backfill path), the reconciler must
+	/// repair BLOCK_MAPPING so indexed_canonical_hash_at() can resolve the block.
+	#[test]
+	fn reconciler_repairs_missing_block_mapping_on_pruned_blocks() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change");
+		let block = builder.build().expect("build block").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let canonical_hash = client
+			.hash(1)
+			.expect("query canonical hash")
+			.expect("canonical hash");
+		let eth_block = make_ethereum_block(1);
+		let eth_hash = eth_block.header.hash();
+
+		// Simulate old write_none path: only SYNCED_MAPPING is set.
+		frontier_backend
+			.mapping()
+			.write_none(canonical_hash)
+			.expect("write_none");
+
+		// Simulate backfill: BLOCK_NUMBER_MAPPING is set, but BLOCK_MAPPING is NOT.
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(1, eth_hash)
+			.expect("set block hash by number");
+
+		// Sanity: BLOCK_MAPPING must be absent.
+		assert_eq!(
+			frontier_backend.mapping().block_hash(&eth_hash),
+			Ok(None),
+			"BLOCK_MAPPING must be absent before reconciler runs"
+		);
+
+		// Run reconciler with NoopStorageOverride (state unavailable → hits None branch).
+		let stats = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&NoopStorageOverride,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("reconcile")
+		.expect("stats");
+
+		// BLOCK_MAPPING must now contain the canonical hash.
+		let block_mapping = frontier_backend
+			.mapping()
+			.block_hash(&eth_hash)
+			.expect("read BLOCK_MAPPING");
+		assert!(
+			block_mapping
+				.as_ref()
+				.is_some_and(|hashes| hashes.contains(&canonical_hash)),
+			"reconciler must repair BLOCK_MAPPING; got {block_mapping:?}"
+		);
+		assert_eq!(stats.updated, 1, "reconciler must report 1 update");
+	}
+
+	/// When the reconciler encounters an unsynced block and state is available,
+	/// it must write BLOCK_MAPPING with the canonical hash so the block becomes
+	/// resolvable by indexed_canonical_hash_at / latest_block_hash.
+	#[test]
+	fn reconciler_writes_block_mapping_for_unsynced_blocks() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_storage_change(vec![1], None)
+			.expect("push storage change");
+		let block = builder.build().expect("build block").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let canonical_hash = client
+			.hash(1)
+			.expect("query canonical hash")
+			.expect("canonical hash");
+		let eth_block = make_ethereum_block(1);
+		let eth_hash = eth_block.header.hash();
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([(canonical_hash, eth_block)]),
+		};
+
+		// Block is completely unsynced: no SYNCED, no BLOCK_MAPPING, no BLOCK_NUMBER_MAPPING.
+		assert_eq!(
+			frontier_backend.mapping().is_synced(&canonical_hash),
+			Ok(false),
+		);
+		assert_eq!(frontier_backend.mapping().block_hash(&eth_hash), Ok(None));
+		assert_eq!(frontier_backend.mapping().block_hash_by_number(1), Ok(None));
+
+		// Run reconciler with state available.
+		let stats = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("reconcile")
+		.expect("stats");
+
+		// BLOCK_MAPPING must now contain the canonical hash.
+		let block_mapping = frontier_backend
+			.mapping()
+			.block_hash(&eth_hash)
+			.expect("read BLOCK_MAPPING");
+		assert!(
+			block_mapping
+				.as_ref()
+				.is_some_and(|hashes| hashes.contains(&canonical_hash)),
+			"reconciler must write BLOCK_MAPPING for unsynced blocks; got {block_mapping:?}"
+		);
+
+		// BLOCK_NUMBER_MAPPING must be set.
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(eth_hash)),
+			"reconciler must write BLOCK_NUMBER_MAPPING"
+		);
+
+		// is_synced must now be true (write_hashes sets SYNCED_MAPPING).
+		assert_eq!(
+			frontier_backend.mapping().is_synced(&canonical_hash),
+			Ok(true),
+			"block must be marked as synced after reconciliation"
+		);
+
+		assert_eq!(stats.updated, 1);
+		assert!(stats.highest_reconciled.is_some());
 	}
 }

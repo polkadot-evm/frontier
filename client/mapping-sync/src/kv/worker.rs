@@ -202,16 +202,16 @@ where
 			match result {
 				Ok(have_next) => {
 					if !have_next {
-						if let Err(e) = super::canonical_reconciler::reconcile_from_cursor_batch(
+						if let Err(e) = super::canonical_reconciler::reconcile_recent_window(
 							self.client.as_ref(),
 							self.storage_override.as_ref(),
 							self.frontier_backend.as_ref(),
 							self.sync_from,
-							super::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
+							super::PERIODIC_RECONCILE_WINDOW,
 						) {
 							debug!(
 								target: "reconcile",
-								"Batch canonical reconcile failed with error {e:?}, retrying."
+								"Recent window reconcile failed: {e:?}",
 							);
 						}
 					}
