@@ -645,10 +645,19 @@ mod tests {
 	};
 	use tempfile::tempdir;
 
+	use sp_runtime::generic::DigestItem;
+
 	use super::{canonical_reconciler, repair_canonical_number_mappings_batch, sync_one_block};
 	use crate::{
 		EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy,
 	};
+
+	fn ethereum_digest_item_for(eth_block: &ethereum::BlockV3) -> DigestItem {
+		DigestItem::Consensus(
+			fp_consensus::FRONTIER_ENGINE_ID,
+			fp_consensus::PostLog::BlockHash(eth_block.header.hash()).encode(),
+		)
+	}
 
 	type OpaqueBlock = sp_runtime::generic::Block<
 		Header<u64, BlakeTwo256>,
@@ -1421,7 +1430,8 @@ mod tests {
 
 	/// Reconciler None branch: when a block has SYNCED_MAPPING + BLOCK_NUMBER_MAPPING
 	/// but no BLOCK_MAPPING (the old write_none + backfill path), the reconciler must
-	/// repair BLOCK_MAPPING so indexed_canonical_hash_at() can resolve the block.
+	/// verify the eth hash from the header digest and repair BLOCK_MAPPING so
+	/// indexed_canonical_hash_at() can resolve the block.
 	#[test]
 	fn reconciler_repairs_missing_block_mapping_on_pruned_blocks() {
 		let tmp = tempdir().expect("create temp dir");
@@ -1447,6 +1457,9 @@ mod tests {
 		)
 		.expect("frontier backend");
 
+		let eth_block = make_ethereum_block(1);
+		let eth_hash = eth_block.header.hash();
+
 		let chain = client.chain_info();
 		let mut builder = BlockBuilderBuilder::new(client.as_ref())
 			.on_parent_block(chain.best_hash)
@@ -1454,8 +1467,8 @@ mod tests {
 			.build()
 			.expect("build block 1");
 		builder
-			.push_storage_change(vec![1], None)
-			.expect("push storage change");
+			.push_deposit_log_digest_item(ethereum_digest_item_for(&eth_block))
+			.expect("push ethereum digest");
 		let block = builder.build().expect("build block").block;
 		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
 			.expect("import block");
@@ -1464,8 +1477,6 @@ mod tests {
 			.hash(1)
 			.expect("query canonical hash")
 			.expect("canonical hash");
-		let eth_block = make_ethereum_block(1);
-		let eth_hash = eth_block.header.hash();
 
 		// Simulate old write_none path: only SYNCED_MAPPING is set.
 		frontier_backend
@@ -1509,6 +1520,109 @@ mod tests {
 			"reconciler must repair BLOCK_MAPPING; got {block_mapping:?}"
 		);
 		assert_eq!(stats.updated, 1, "reconciler must report 1 update");
+	}
+
+	/// Reconciler None branch: when BLOCK_NUMBER_MAPPING holds a stale eth hash
+	/// (e.g. after a reorg), the reconciler must re-derive the correct eth hash
+	/// from the header digest, correct BLOCK_NUMBER_MAPPING, and write BLOCK_MAPPING
+	/// with the verified hash — not the stale one.
+	#[test]
+	fn reconciler_corrects_stale_block_number_mapping_after_reorg() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let correct_eth_block = make_ethereum_block(1);
+		let correct_eth_hash = correct_eth_block.header.hash();
+		let stale_eth_hash = make_ethereum_block(99).header.hash();
+		assert_ne!(correct_eth_hash, stale_eth_hash);
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block 1");
+		builder
+			.push_deposit_log_digest_item(ethereum_digest_item_for(&correct_eth_block))
+			.expect("push ethereum digest");
+		let block = builder.build().expect("build block").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let canonical_hash = client
+			.hash(1)
+			.expect("query canonical hash")
+			.expect("canonical hash");
+
+		// Simulate a stale BLOCK_NUMBER_MAPPING from a pre-reorg fork.
+		frontier_backend
+			.mapping()
+			.set_block_hash_by_number(1, stale_eth_hash)
+			.expect("set stale block hash by number");
+
+		// Run reconciler with NoopStorageOverride (state unavailable → hits None branch).
+		let stats = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&NoopStorageOverride,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("reconcile")
+		.expect("stats");
+
+		// BLOCK_NUMBER_MAPPING must now hold the correct (digest-derived) eth hash.
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(correct_eth_hash)),
+			"reconciler must correct stale BLOCK_NUMBER_MAPPING to digest-derived hash"
+		);
+
+		// BLOCK_MAPPING must map the correct eth hash to the canonical substrate hash.
+		let block_mapping = frontier_backend
+			.mapping()
+			.block_hash(&correct_eth_hash)
+			.expect("read BLOCK_MAPPING for correct hash");
+		assert!(
+			block_mapping
+				.as_ref()
+				.is_some_and(|hashes| hashes.contains(&canonical_hash)),
+			"BLOCK_MAPPING must use the verified eth hash; got {block_mapping:?}"
+		);
+
+		// The stale eth hash must NOT have a BLOCK_MAPPING pointing to the canonical hash.
+		let stale_mapping = frontier_backend
+			.mapping()
+			.block_hash(&stale_eth_hash)
+			.expect("read BLOCK_MAPPING for stale hash");
+		assert!(
+			!stale_mapping
+				.as_ref()
+				.is_some_and(|hashes| hashes.contains(&canonical_hash)),
+			"stale eth hash must not be mapped to canonical substrate hash; got {stale_mapping:?}"
+		);
+
+		assert!(stats.updated >= 1, "reconciler must report updates");
 	}
 
 	/// When the reconciler encounters an unsynced block and state is available,

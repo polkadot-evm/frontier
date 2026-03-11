@@ -21,6 +21,20 @@ use sp_runtime::traits::{Block as BlockT, Header as HeaderT, UniqueSaturatedInto
 
 use crate::ReorgInfo;
 
+/// Extract the Ethereum block hash from a substrate block header's consensus digest.
+/// This is pruning-safe: digests are always available regardless of state pruning.
+fn eth_hash_from_digest<Block: BlockT>(header: &Block::Header) -> Option<ethereum_types::H256> {
+	match fp_consensus::find_post_log(header.digest()) {
+		Ok(fp_consensus::PostLog::Hashes(h)) => Some(h.block_hash),
+		Ok(fp_consensus::PostLog::Block(block)) => Some(block.header.hash()),
+		Ok(fp_consensus::PostLog::BlockHash(hash)) => Some(hash),
+		Err(_) => match fp_consensus::find_pre_log(header.digest()) {
+			Ok(fp_consensus::PreLog::Block(block)) => Some(block.header.hash()),
+			Err(_) => None,
+		},
+	}
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct ReconcileWindow {
 	pub start: u64,
@@ -270,39 +284,50 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 					Some(highest_reconciled.map_or(number, |current| current.max(number)));
 			}
 			None => {
-				// State unavailable for this block — common for very recent unfinalized
-				// blocks on pruned nodes where state isn't yet readable via
-				// storage_override. Check if BLOCK_NUMBER_MAPPING already has a valid
-				// entry written by sync_block() / backfill, and if so ensure
-				// BLOCK_MAPPING also exists (older code paths wrote only SYNCED_MAPPING
-				// via write_none, leaving BLOCK_MAPPING empty).
-				if let Some(eth_hash) = frontier_backend.mapping().block_hash_by_number(number)? {
-					let has_block_mapping = frontier_backend
-						.mapping()
-						.block_hash(&eth_hash)?
-						.map(|hashes| hashes.contains(&canonical_hash))
-						.unwrap_or(false);
+				// State unavailable — re-derive the Ethereum block hash from the
+				// header digest (pruning-safe) instead of trusting BLOCK_NUMBER_MAPPING,
+				// which may be stale after a reorg.
+				let digest_eth_hash = client
+					.header(canonical_hash)
+					.map_err(|e| format!("{e:?}"))?
+					.and_then(|h| eth_hash_from_digest::<Block>(&h));
 
-					if !has_block_mapping {
-						let commitment = fc_db::kv::MappingCommitment::<Block> {
-							block_hash: canonical_hash,
-							ethereum_block_hash: eth_hash,
-							ethereum_transaction_hashes: vec![],
-						};
-						frontier_backend.mapping().write_hashes(
-							commitment,
-							number,
-							fc_db::kv::NumberMappingWrite::Skip,
-						)?;
-						updated = updated.saturating_add(1);
-					}
-
-					highest_reconciled =
-						Some(highest_reconciled.map_or(number, |current| current.max(number)));
-				} else {
-					// Truly unresolved — no mapping and no state.
+				let Some(verified_eth_hash) = digest_eth_hash else {
 					first_unresolved.get_or_insert(number);
+					return Ok(());
+				};
+
+				// Correct BLOCK_NUMBER_MAPPING if it holds a stale value.
+				let stored_eth_hash = frontier_backend.mapping().block_hash_by_number(number)?;
+				if stored_eth_hash != Some(verified_eth_hash) {
+					frontier_backend
+						.mapping()
+						.set_block_hash_by_number(number, verified_eth_hash)?;
+					updated = updated.saturating_add(1);
 				}
+
+				let has_block_mapping = frontier_backend
+					.mapping()
+					.block_hash(&verified_eth_hash)?
+					.map(|hashes| hashes.contains(&canonical_hash))
+					.unwrap_or(false);
+
+				if !has_block_mapping {
+					let commitment = fc_db::kv::MappingCommitment::<Block> {
+						block_hash: canonical_hash,
+						ethereum_block_hash: verified_eth_hash,
+						ethereum_transaction_hashes: vec![],
+					};
+					frontier_backend.mapping().write_hashes(
+						commitment,
+						number,
+						fc_db::kv::NumberMappingWrite::Skip,
+					)?;
+					updated = updated.saturating_add(1);
+				}
+
+				highest_reconciled =
+					Some(highest_reconciled.map_or(number, |current| current.max(number)));
 			}
 		}
 
