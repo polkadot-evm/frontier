@@ -253,14 +253,26 @@ where
 			continue;
 		}
 		let block_number_native = number.saturated_into::<<Block::Header as HeaderT>::Number>();
-		let Some(canonical_hash) = client.hash(block_number_native).ok().flatten() else {
-			continue;
+		let canonical_hash = match client.hash(block_number_native) {
+			Ok(Some(hash)) => hash,
+			Ok(None) => continue,
+			Err(e) => {
+				return Err(format!(
+					"failed to resolve canonical hash at #{number}: {e:?}"
+				))
+			}
 		};
 		if !frontier_backend.mapping().is_synced(&canonical_hash)? {
 			continue;
 		}
-		let Some(header) = substrate_backend.header(canonical_hash).ok().flatten() else {
-			continue;
+		let header = match substrate_backend.header(canonical_hash) {
+			Ok(Some(header)) => header,
+			Ok(None) => continue,
+			Err(e) => {
+				return Err(format!(
+					"failed to load canonical header {canonical_hash:?} at #{number}: {e:?}"
+				))
+			}
 		};
 		let eth_block_hash = match fp_consensus::find_post_log(header.digest()) {
 			Ok(PostLog::Hashes(h)) => Some(h.block_hash),
@@ -435,18 +447,21 @@ where
 						// discarding them — they may be unsynced fork branches that
 						// need indexing. Replace only the out-of-window tip with
 						// the skip target.
-						current_syncing_tips.retain(|tip| {
-							substrate_backend
-								.blockchain()
-								.header(*tip)
-								.ok()
-								.flatten()
-								.map(|h| {
+						let mut retained = Vec::with_capacity(current_syncing_tips.len());
+						for tip in current_syncing_tips.drain(..) {
+							match substrate_backend.blockchain().header(tip) {
+								Ok(Some(h)) => {
 									let n: u64 = (*h.number()).unique_saturated_into();
-									n >= skip_to_u64
-								})
-								.unwrap_or(false)
-						});
+									if n >= skip_to_u64 {
+										retained.push(tip);
+									}
+								}
+								Ok(None) | Err(_) => {
+									retained.push(tip);
+								}
+							}
+						}
+						current_syncing_tips = retained;
 						current_syncing_tips.push(skip_hash);
 						frontier_backend
 							.meta()
