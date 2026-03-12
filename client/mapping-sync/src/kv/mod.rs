@@ -70,9 +70,11 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 	// Write BLOCK_NUMBER_MAPPING when this block is canonical at this number, so
 	// latest_block_hash() / indexed_canonical_hash_at() find it during catch-up.
 	// Uses only HeaderBackend::hash() — no state access, pruning-safe.
-	// If the hash lookup fails or returns None, use Skip so we don't abort the
-	// sync (best-effort; avoids stalling on intermittent or edge-condition failures).
-	let canonical_hash_at_number = client.hash(*header.number()).ok().flatten();
+	// Ok(None) (block number unknown) falls back to Skip; Err is propagated so
+	// the block stays unsynced and fetch_header retries it on the next tick.
+	let canonical_hash_at_number = client
+		.hash(*header.number())
+		.map_err(|e| format!("failed to resolve canonical hash at #{block_number}: {e:?}"))?;
 	let number_mapping_write = if canonical_hash_at_number == Some(substrate_block_hash) {
 		fc_db::kv::NumberMappingWrite::Write
 	} else {
