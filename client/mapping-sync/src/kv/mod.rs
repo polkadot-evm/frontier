@@ -54,8 +54,7 @@ const BACKFILL_ON_SKIP_MAX_BLOCKS: u64 = 1024;
 pub const PERIODIC_RECONCILE_WINDOW: u64 = 16;
 
 /// Max blocks to repair per idle tick via the cursor-driven full-history sweep.
-/// Keeps per-tick cost bounded while ensuring eventual consistency across the
-/// entire chain. At ~1 tick/s a 10M-block chain is fully swept in ~22 hours.
+/// Keeps per-tick cost bounded while ensuring eventual consistency across the entire chain.
 pub const CURSOR_REPAIR_IDLE_BATCH: u64 = 128;
 
 /// Sync a single block's Ethereum mapping from its consensus digest into the Frontier DB.
