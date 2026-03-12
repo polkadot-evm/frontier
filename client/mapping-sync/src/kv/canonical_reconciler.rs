@@ -278,15 +278,26 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 						fc_db::kv::NumberMappingWrite::Skip,
 					)?;
 				} else if !ethereum_block.transactions.is_empty() {
-					// BLOCK_MAPPING exists but TRANSACTION_MAPPING may be empty
+					// BLOCK_MAPPING exists but TRANSACTION_MAPPING may be incomplete
 					// (block was initially synced with pruned state via write_hashes
 					// with vec![]). If state is now readable, repair tx mappings.
-					let first_tx_hash = ethereum_block.transactions[0].hash();
-					let needs_tx_repair = !frontier_backend
-						.mapping()
-						.transaction_metadata(&first_tx_hash)?
-						.iter()
-						.any(|m| m.substrate_block_hash == canonical_hash);
+					// Check every tx — a partial write (e.g. crash mid-batch) could
+					// leave some mappings present while others are missing.
+					let needs_tx_repair = {
+						let mut needs = false;
+						for tx in &ethereum_block.transactions {
+							let has_canonical = frontier_backend
+								.mapping()
+								.transaction_metadata(&tx.hash())?
+								.iter()
+								.any(|m| m.substrate_block_hash == canonical_hash);
+							if !has_canonical {
+								needs = true;
+								break;
+							}
+						}
+						needs
+					};
 					if needs_tx_repair {
 						let commitment = fc_db::kv::MappingCommitment::<Block> {
 							block_hash: canonical_hash,
