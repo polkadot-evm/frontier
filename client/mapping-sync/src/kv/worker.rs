@@ -214,6 +214,18 @@ where
 								"Recent window reconcile failed: {e:?}",
 							);
 						}
+						if let Err(e) = super::repair_canonical_number_mappings_batch(
+							self.client.as_ref(),
+							self.storage_override.as_ref(),
+							self.frontier_backend.as_ref(),
+							self.sync_from,
+							super::CURSOR_REPAIR_IDLE_BATCH,
+						) {
+							debug!(
+								target: "reconcile",
+								"Cursor repair batch failed: {e:?}",
+							);
+						}
 					}
 					self.have_next = have_next;
 					Poll::Ready(Some(()))
