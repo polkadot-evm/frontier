@@ -172,6 +172,10 @@ pub fn reconcile_recent_window<Block: BlockT, C: HeaderBackend<Block>>(
 	sync_from: <Block::Header as HeaderT>::Number,
 	window_size: u64,
 ) -> Result<Option<ReconcileStats>, String> {
+	if window_size == 0 {
+		return Ok(None);
+	}
+
 	let best_number: u64 = client.info().best_number.unique_saturated_into();
 	let sync_from_number = UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from);
 

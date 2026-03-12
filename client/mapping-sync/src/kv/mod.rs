@@ -472,6 +472,7 @@ where
 						// Target block not yet known to the client (e.g. node still
 						// syncing headers). Return false to back off and retry later
 						// rather than falling through to sync a pruned block.
+						current_syncing_tips.push(operating_header.hash());
 						frontier_backend
 							.meta()
 							.write_current_syncing_tips(current_syncing_tips)?;
@@ -484,6 +485,7 @@ where
 							target: "mapping-sync",
 							"Pruned node: failed to resolve skip target #{skip_to_u64}: {e:?}; will retry.",
 						);
+						current_syncing_tips.push(operating_header.hash());
 						frontier_backend
 							.meta()
 							.write_current_syncing_tips(current_syncing_tips)?;
