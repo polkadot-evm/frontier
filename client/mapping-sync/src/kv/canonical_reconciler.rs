@@ -141,12 +141,18 @@ pub fn reconcile_from_cursor_batch<Block: BlockT, C: HeaderBackend<Block>>(
 
 	let finalized_number: u64 = client.info().finalized_number.unique_saturated_into();
 	let sync_from_number = UniqueSaturatedInto::<u64>::unique_saturated_into(sync_from);
-	let start = frontier_backend
+	let cursor = frontier_backend
 		.mapping()
 		.canonical_number_repair_cursor()?
-		.unwrap_or(finalized_number)
-		.max(sync_from_number)
-		.min(finalized_number);
+		.unwrap_or(finalized_number);
+
+	// When the cursor has completed its full descending sweep (reached sync_from),
+	// wrap back to finalized_number to start a fresh cycle.
+	let start = if cursor <= sync_from_number {
+		finalized_number
+	} else {
+		cursor.max(sync_from_number).min(finalized_number)
+	};
 	let end = start
 		.saturating_sub(max_blocks.saturating_sub(1))
 		.max(sync_from_number);
