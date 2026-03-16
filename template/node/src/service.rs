@@ -501,6 +501,16 @@ where
 		})
 	};
 
+	// Derive state_pruning_blocks from the node's --state-pruning so the mapping-sync
+	// worker can skip past pruned blocks during catch-up (KV backend only).
+	let state_pruning_blocks = config.state_pruning.as_ref().and_then(|mode| {
+		if let sc_service::PruningMode::Constrained(c) = mode {
+			c.max_blocks.map(u64::from)
+		} else {
+			None
+		}
+	});
+
 	let _rpc_handlers = sc_service::spawn_tasks(sc_service::SpawnTasksParams {
 		config,
 		client: client.clone(),
@@ -526,6 +536,7 @@ where
 		storage_override,
 		fee_history_cache,
 		fee_history_cache_limit,
+		state_pruning_blocks,
 		sync_service.clone(),
 		pubsub_notification_sinks,
 	)

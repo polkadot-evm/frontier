@@ -60,6 +60,10 @@ pub struct MappingSyncWorker<Block: BlockT, C, BE> {
 	have_next: bool,
 	retry_times: usize,
 	sync_from: <Block::Header as HeaderT>::Number,
+	/// If set, blocks below the live state window (finalized_number - state_pruning_blocks)
+	/// are skipped during catch-up so the sync tip does not get stuck behind pruned state.
+	/// Must match the node's state pruning depth (e.g. from config.state_pruning).
+	state_pruning_blocks: Option<u64>,
 	strategy: SyncStrategy,
 
 	sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
@@ -86,6 +90,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 		frontier_backend: Arc<fc_db::kv::Backend<Block, C>>,
 		retry_times: usize,
 		sync_from: <Block::Header as HeaderT>::Number,
+		state_pruning_blocks: Option<u64>,
 		strategy: SyncStrategy,
 		sync_oracle: Arc<dyn SyncOracle + Send + Sync + 'static>,
 		pubsub_notification_sinks: Arc<
@@ -105,6 +110,7 @@ impl<Block: BlockT, C, BE> MappingSyncWorker<Block, C, BE> {
 			have_next: true,
 			retry_times,
 			sync_from,
+			state_pruning_blocks,
 			strategy,
 
 			sync_oracle,
@@ -183,6 +189,7 @@ where
 				self.frontier_backend.as_ref(),
 				self.retry_times,
 				self.sync_from,
+				self.state_pruning_blocks,
 				self.strategy,
 				self.sync_oracle.clone(),
 				self.pubsub_notification_sinks.clone(),
@@ -195,16 +202,28 @@ where
 			match result {
 				Ok(have_next) => {
 					if !have_next {
-						if let Err(e) = super::canonical_reconciler::reconcile_from_cursor_batch(
+						if let Err(e) = super::canonical_reconciler::reconcile_recent_window(
 							self.client.as_ref(),
 							self.storage_override.as_ref(),
 							self.frontier_backend.as_ref(),
 							self.sync_from,
-							super::CANONICAL_NUMBER_REPAIR_BATCH_SIZE,
+							super::PERIODIC_RECONCILE_WINDOW,
 						) {
 							debug!(
 								target: "reconcile",
-								"Batch canonical reconcile failed with error {e:?}, retrying."
+								"Recent window reconcile failed: {e:?}",
+							);
+						}
+						if let Err(e) = super::repair_canonical_number_mappings_batch(
+							self.client.as_ref(),
+							self.storage_override.as_ref(),
+							self.frontier_backend.as_ref(),
+							self.sync_from,
+							super::CURSOR_REPAIR_IDLE_BATCH,
+						) {
+							debug!(
+								target: "reconcile",
+								"Cursor repair batch failed: {e:?}",
 							);
 						}
 					}
@@ -346,6 +365,7 @@ mod tests {
 				frontier_backend,
 				3,
 				0,
+				None,
 				SyncStrategy::Normal,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,
@@ -493,6 +513,7 @@ mod tests {
 				frontier_backend,
 				3,
 				0,
+				None,
 				SyncStrategy::Normal,
 				Arc::new(test_sync_oracle),
 				pubsub_notification_sinks_inner,

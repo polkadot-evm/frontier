@@ -138,12 +138,16 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// where eth_getBlockByNumber("latest") returns block 0 during initial sync.
 		// Users can check sync status via eth_syncing to determine if the node is
 		// still catching up.
+		//
+		// IMPORTANT: This function is intentionally read-only. The persisted pointer
+		// (LATEST_CANONICAL_INDEXED_BLOCK) is maintained exclusively by the reconciler
+		// in mapping-sync via advance_latest_pointer(). Writing the pointer here from
+		// a reader caused a race condition where every failed fast path would lower the
+		// pointer, racing against the reconciler trying to advance it.
 		let best_number: u64 = self.client.info().best_number.unique_saturated_into();
 
 		// Fast path: if best is already indexed and canonical, use it directly.
 		if let Some(canonical_hash) = self.indexed_canonical_hash_at(best_number)? {
-			self.mapping
-				.set_latest_canonical_indexed_block(best_number)?;
 			return Ok(canonical_hash);
 		}
 
@@ -153,11 +157,9 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		let bounded_start = best_number.saturating_sub(1);
 
 		// Layer 1 — bounded scan: [best-1 .. best-8k]
-		if let Some((found_number, found_hash)) =
+		if let Some((_found_number, found_hash)) =
 			self.find_latest_indexed_canonical_block(bounded_start, INDEXED_RECOVERY_SCAN_LIMIT)?
 		{
-			self.mapping
-				.set_latest_canonical_indexed_block(found_number)?;
 			return Ok(found_hash);
 		}
 
@@ -183,11 +185,9 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			// 8k bounded + 24k exhaustive = 32k total non-overlapping coverage.
 			let exhaustive_start = bounded_start.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT);
 			let exhaustive_limit = INDEXED_RECOVERY_SCAN_LIMIT * 3;
-			if let Some((found_number, found_hash)) =
+			if let Some((_found_number, found_hash)) =
 				self.find_latest_indexed_canonical_block(exhaustive_start, exhaustive_limit)?
 			{
-				self.mapping
-					.set_latest_canonical_indexed_block(found_number)?;
 				return Ok(found_hash);
 			}
 		}
@@ -199,11 +199,9 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 			let deep_start = bounded_start
 				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT)
 				.saturating_sub(INDEXED_RECOVERY_SCAN_LIMIT * 3);
-			if let Some((found_number, found_hash)) = self
+			if let Some((_found_number, found_hash)) = self
 				.find_latest_indexed_canonical_block(deep_start, INDEXED_DEEP_RECOVERY_SCAN_LIMIT)?
 			{
-				self.mapping
-					.set_latest_canonical_indexed_block(found_number)?;
 				return Ok(found_hash);
 			}
 		}
@@ -212,8 +210,10 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 		// Checked after deep recovery so we never return an older block when a newer one
 		// exists in the deep window.
 		//
-		// When the pointer target is stale (e.g. reorg), walk backward from it to
-		// find the latest valid indexed canonical block instead of falling to genesis.
+		// The pointer is maintained exclusively by the reconciler (advance_latest_pointer),
+		// so it is always monotonically increasing and safe to trust here as a fallback.
+		// When the pointer target is stale (e.g. reorg not yet reconciled), walk backward
+		// from it to find the latest valid indexed canonical block.
 		if let Some(persisted_number) = self.mapping.latest_canonical_indexed_block_number()? {
 			if persisted_number <= best_number {
 				if let Some(canonical_hash) = self.indexed_canonical_hash_at(persisted_number)? {
@@ -222,13 +222,11 @@ impl<Block: BlockT, C: HeaderBackend<Block>> fc_api::Backend<Block> for Backend<
 				// Pointer target is stale; backtrack from pointer-1 to find a valid block.
 				if persisted_number > 0 {
 					let backtrack_start = persisted_number.saturating_sub(1);
-					if let Some((found_number, found_hash)) = self
+					if let Some((_found_number, found_hash)) = self
 						.find_latest_indexed_canonical_block(
 							backtrack_start,
 							INDEXED_RECOVERY_SCAN_LIMIT,
 						)? {
-						self.mapping
-							.set_latest_canonical_indexed_block(found_number)?;
 						return Ok(found_hash);
 					}
 				}
@@ -868,6 +866,34 @@ mod tests {
 		);
 	}
 
+	/// latest_block_hash() is read-only: it must never write the pointer. Otherwise RPC
+	/// calls would lower the pointer when the fast path fails and a scan finds an older
+	/// block, racing the reconciler and causing "latest" to stick.
+	#[tokio::test]
+	async fn latest_block_hash_never_lowers_pointer() {
+		let env = TestEnv::new(5).await;
+		for n in 1u64..=3 {
+			env.index_block(n);
+		}
+		// Pointer at 5 (e.g. from a previous reconciler tick); blocks 4 and 5 are not indexed.
+		env.set_pointer(5);
+
+		let _ = env.latest().await;
+		// Call again to simulate multiple RPC requests between reconciler ticks.
+		let _ = env.latest().await;
+
+		let pointer_after = env
+			.backend
+			.mapping()
+			.latest_canonical_indexed_block_number()
+			.expect("read pointer")
+			.expect("pointer set");
+		assert_eq!(
+			pointer_after, 5,
+			"reader must not write the pointer; it must remain 5 and never be lowered to 3"
+		);
+	}
+
 	#[tokio::test]
 	async fn exhaustive_scan_finds_indexed_block_beyond_bounded_range() {
 		// With the test scan limit (8), best=20 yields:
@@ -981,48 +1007,59 @@ mod tests {
 	}
 
 	#[tokio::test]
-	async fn pointer_updates_after_stale_pointer_backtrack_recovery() {
-		// After backtrack from a stale pointer, the persisted pointer should be
-		// updated to the block we found.
+	async fn pointer_unchanged_after_stale_pointer_backtrack_recovery() {
+		// latest_block_hash() is read-only: even when backtracking from a stale
+		// pointer, it must not modify the persisted pointer. The reconciler is
+		// the sole writer.
 		let env = TestEnv::new(40).await;
 		env.index_block(2);
 		env.write_stale_mapping(3);
 		env.set_pointer(3);
 
-		let _ = env.latest().await;
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[2],
+			"backtrack must still find block 2"
+		);
 
-		let updated = env
+		let pointer = env
 			.backend
 			.mapping()
 			.latest_canonical_indexed_block_number()
 			.expect("read pointer");
 		assert_eq!(
-			updated,
-			Some(2),
-			"pointer should be updated to block 2 found by backtrack"
+			pointer,
+			Some(3),
+			"read-only: pointer must stay at 3, not be lowered to 2"
 		);
 	}
 
 	#[tokio::test]
-	async fn pointer_updates_after_bounded_scan_recovery() {
+	async fn pointer_unchanged_after_bounded_scan_recovery() {
+		// latest_block_hash() is read-only: even when the bounded scan finds a
+		// higher indexed block, the pointer must not be updated. The reconciler
+		// is the sole writer.
 		let env = TestEnv::new(10).await;
 		for n in 1u64..=6 {
 			env.index_block(n);
 		}
 		env.set_pointer(3);
 
-		let _ = env.latest().await;
+		let result = env.latest().await;
+		assert_eq!(
+			result, env.substrate_hashes[6],
+			"bounded scan must find block 6"
+		);
 
-		// After the call, the pointer should have been updated to 6.
-		let updated = env
+		let pointer = env
 			.backend
 			.mapping()
 			.latest_canonical_indexed_block_number()
 			.expect("read pointer");
 		assert_eq!(
-			updated,
-			Some(6),
-			"pointer should be updated to the block found by bounded scan"
+			pointer,
+			Some(3),
+			"read-only: pointer must stay at 3, not be advanced to 6"
 		);
 	}
 }
