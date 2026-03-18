@@ -184,58 +184,23 @@ impl TransactionRequest {
 
 	/// Calculates the RLP-encoded size of the signed transaction for DoS protection.
 	///
-	/// This mirrors geth's `tx.Size()` and reth's `transaction.encoded_length()` which use
-	/// actual RLP encoding to determine transaction size. We convert the request to its
-	/// transaction message type and use the `encoded_len()` method from the ethereum crate.
+	/// This converts the request to a `TransactionMessage` using default values for any
+	/// missing fields, then delegates to `TransactionMessage::encoded_length()`.
+	///
+	/// **Note:** For `eth_sendTransaction`, prefer calling `TransactionMessage::validate_size()`
+	/// on the fully-populated message (after nonce, gas, fees, chain ID are filled in)
+	/// to get an accurate size measurement.
 	///
 	/// Returns an error if the transaction request cannot be converted to a valid message type.
 	pub fn encoded_length(&self) -> Result<usize, String> {
-		// Convert to transaction message and use the ethereum crate's encoded_len()
 		let message: Option<TransactionMessage> = self.clone().into();
 
 		match message {
-			Some(TransactionMessage::Legacy(msg)) => {
-				// Legacy: RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
-				// v is variable (27/28 or chainId*2+35/36), r and s are 32 bytes each
-				Ok(msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
-			}
-			Some(TransactionMessage::EIP2930(msg)) => {
-				// EIP-2930: 0x01 || RLP([chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, yParity, r, s])
-				Ok(1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
-			}
-			Some(TransactionMessage::EIP1559(msg)) => {
-				// EIP-1559: 0x02 || RLP([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, yParity, r, s])
-				Ok(1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
-			}
-			Some(TransactionMessage::EIP7702(msg)) => {
-				// EIP-7702: 0x04 || RLP([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, authorizationList, yParity, r, s])
-				Ok(1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD)
-			}
+			Some(msg) => Ok(msg.encoded_length()),
 			None => Err(
 				"invalid transaction parameters: unable to determine transaction type".to_string(),
 			),
 		}
-	}
-
-	/// RLP overhead for signature fields (yParity + r + s)
-	/// - yParity: 1 byte (0x00 or 0x01 encoded as single byte)
-	/// - r: typically 33 bytes (0x80 + 32 bytes, or less if leading zeros)
-	/// - s: typically 33 bytes (0x80 + 32 bytes, or less if leading zeros)
-	const SIGNATURE_RLP_OVERHEAD: usize = 1 + 33 + 33;
-
-	/// Validates that the estimated signed transaction size is within limits.
-	///
-	/// This prevents DoS attacks via oversized transactions before they enter the pool.
-	/// The limit matches geth's `txMaxSize` and reth's `DEFAULT_MAX_TX_INPUT_BYTES`.
-	pub fn validate_size(&self) -> Result<(), String> {
-		let size = self.encoded_length()?;
-
-		if size > DEFAULT_MAX_TX_INPUT_BYTES {
-			return Err(format!(
-				"oversized data: transaction size {size} exceeds limit {DEFAULT_MAX_TX_INPUT_BYTES}"
-			));
-		}
-		Ok(())
 	}
 }
 
@@ -299,6 +264,57 @@ pub enum TransactionMessage {
 	EIP2930(EIP2930TransactionMessage),
 	EIP1559(EIP1559TransactionMessage),
 	EIP7702(EIP7702TransactionMessage),
+}
+
+impl TransactionMessage {
+	/// RLP overhead for signature fields (yParity + r + s)
+	/// - yParity: 1 byte (0x00 or 0x01 encoded as single byte)
+	/// - r: typically 33 bytes (0x80 + 32 bytes, or less if leading zeros)
+	/// - s: typically 33 bytes (0x80 + 32 bytes, or less if leading zeros)
+	const SIGNATURE_RLP_OVERHEAD: usize = 1 + 33 + 33;
+
+	/// Calculates the RLP-encoded size of the signed transaction for DoS protection.
+	///
+	/// This mirrors geth's `tx.Size()` and reth's `transaction.encoded_length()` which use
+	/// actual RLP encoding to determine transaction size. We use the `encoded_len()` method
+	/// from the ethereum crate on the fully-populated message.
+	pub fn encoded_length(&self) -> usize {
+		match self {
+			// Legacy: RLP([nonce, gasPrice, gasLimit, to, value, data, v, r, s])
+			TransactionMessage::Legacy(msg) => msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD,
+			// EIP-2930: 0x01 || RLP([chainId, nonce, gasPrice, gasLimit, to, value, data, accessList, yParity, r, s])
+			TransactionMessage::EIP2930(msg) => {
+				1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+			}
+			// EIP-1559: 0x02 || RLP([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, yParity, r, s])
+			TransactionMessage::EIP1559(msg) => {
+				1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+			}
+			// EIP-7702: 0x04 || RLP([chainId, nonce, maxPriorityFeePerGas, maxFeePerGas, gasLimit, to, value, data, accessList, authorizationList, yParity, r, s])
+			TransactionMessage::EIP7702(msg) => {
+				1 + msg.encoded_len() + Self::SIGNATURE_RLP_OVERHEAD
+			}
+		}
+	}
+
+	/// Validates that the estimated signed transaction size is within limits.
+	///
+	/// This prevents DoS attacks via oversized transactions before they enter the pool.
+	/// The limit matches geth's `txMaxSize` and reth's `DEFAULT_MAX_TX_INPUT_BYTES`.
+	///
+	/// This should be called on the fully-populated message (after nonce, gas limit,
+	/// gas price, chain ID, etc. have been filled in) to ensure the final transaction
+	/// size is accurately measured.
+	pub fn validate_size(&self) -> Result<(), String> {
+		let size = self.encoded_length();
+
+		if size > DEFAULT_MAX_TX_INPUT_BYTES {
+			return Err(format!(
+				"oversized data: transaction size {size} exceeds limit {DEFAULT_MAX_TX_INPUT_BYTES}"
+			));
+		}
+		Ok(())
+	}
 }
 
 impl From<TransactionRequest> for Option<TransactionMessage> {
@@ -511,7 +527,7 @@ mod tests {
 	}
 
 	#[test]
-	fn test_request_size_validation_large_access_list() {
+	fn test_message_size_validation_large_access_list() {
 		use ethereum::AccessListItem;
 		use ethereum_types::{H160, H256};
 
@@ -527,11 +543,12 @@ mod tests {
 			access_list: Some(access_list),
 			..Default::default()
 		};
-		assert!(request.validate_size().is_err());
+		let message: Option<TransactionMessage> = request.into();
+		assert!(message.unwrap().validate_size().is_err());
 	}
 
 	#[test]
-	fn test_request_size_validation_valid() {
+	fn test_message_size_validation_valid() {
 		use ethereum::AccessListItem;
 		use ethereum_types::{H160, H256};
 
@@ -543,7 +560,8 @@ mod tests {
 			}]),
 			..Default::default()
 		};
-		assert!(request.validate_size().is_ok());
+		let message: Option<TransactionMessage> = request.into();
+		assert!(message.unwrap().validate_size().is_ok());
 	}
 
 	#[test]
@@ -557,10 +575,10 @@ mod tests {
 		// + 1 byte type prefix + 67 bytes signature overhead = ~79 bytes minimum
 		// The signature overhead (67 bytes) is the key verification
 		assert!(
-			size >= TransactionRequest::SIGNATURE_RLP_OVERHEAD,
+			size >= TransactionMessage::SIGNATURE_RLP_OVERHEAD,
 			"Size {} should be at least signature overhead {}",
 			size,
-			TransactionRequest::SIGNATURE_RLP_OVERHEAD
+			TransactionMessage::SIGNATURE_RLP_OVERHEAD
 		);
 
 		// Verify it's a reasonable size for a minimal transaction
@@ -657,6 +675,8 @@ mod tests {
 		};
 
 		assert!(request.encoded_length().is_err());
-		assert!(request.validate_size().is_err());
+		// Invalid parameters also fail conversion, so validate_size is unreachable
+		let message: Option<TransactionMessage> = request.into();
+		assert!(message.is_none());
 	}
 }

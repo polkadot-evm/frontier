@@ -49,10 +49,6 @@ where
 	CIDP: CreateInherentDataProviders<B, ()> + Send + 'static,
 {
 	pub async fn send_transaction(&self, request: TransactionRequest) -> RpcResult<H256> {
-		request
-			.validate_size()
-			.map_err(|msg| crate::err(jsonrpsee::types::error::INVALID_PARAMS_CODE, &msg, None))?;
-
 		let from = match request.from {
 			Some(from) => from,
 			None => {
@@ -131,6 +127,12 @@ where
 			}
 			_ => return Err(internal_err("invalid transaction parameters")),
 		};
+
+		// Validate size on the fully-populated message (after nonce, gas, fees, chain ID
+		// have been filled in) to accurately enforce the 128 KiB limit.
+		message
+			.validate_size()
+			.map_err(|msg| crate::err(jsonrpsee::types::error::INVALID_PARAMS_CODE, &msg, None))?;
 
 		let mut transaction = None;
 		for signer in &self.signers {
