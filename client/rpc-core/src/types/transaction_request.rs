@@ -569,7 +569,9 @@ mod tests {
 		// A minimal EIP-1559 transaction should include signature overhead
 		// Default TransactionRequest converts to EIP-1559 (no gas_price, no access_list)
 		let request = TransactionRequest::default();
-		let size = request.encoded_length().unwrap();
+		let size = request
+			.encoded_length()
+			.expect("should encode valid EIP-1559 request");
 
 		// EIP-1559 message RLP: ~11 bytes for minimal fields (all zeros/empty)
 		// + 1 byte type prefix + 67 bytes signature overhead = ~79 bytes minimum
@@ -602,14 +604,18 @@ mod tests {
 			}]),
 			..Default::default()
 		};
-		let typed_size = request.encoded_length().unwrap();
+		let typed_size = request
+			.encoded_length()
+			.expect("should encode valid EIP-1559 request");
 
 		// Legacy transaction
 		let legacy_request = TransactionRequest {
 			gas_price: Some(U256::from(1000)),
 			..Default::default()
 		};
-		let legacy_size = legacy_request.encoded_length().unwrap();
+		let legacy_size = legacy_request
+			.encoded_length()
+			.expect("should encode valid legacy request");
 
 		// Typed transaction should be larger due to:
 		// - Type byte (+1)
@@ -645,8 +651,12 @@ mod tests {
 			..Default::default()
 		};
 
-		let size_10 = request_10.encoded_length().unwrap();
-		let size_100 = request_100.encoded_length().unwrap();
+		let size_10 = request_10
+			.encoded_length()
+			.expect("should encode valid EIP-1559 request with 10 keys");
+		let size_100 = request_100
+			.encoded_length()
+			.expect("should encode valid EIP-1559 request with 100 keys");
 
 		// Size should scale roughly linearly with storage keys
 		// 90 additional keys * ~34 bytes each ≈ 3060 bytes difference
