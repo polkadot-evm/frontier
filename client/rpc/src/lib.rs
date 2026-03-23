@@ -30,6 +30,7 @@ mod cache;
 mod debug;
 mod eth;
 mod eth_pubsub;
+mod logs_journal;
 mod net;
 mod signer;
 #[cfg(feature = "txpool")]
@@ -43,6 +44,7 @@ pub use self::{
 	debug::Debug,
 	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
+	logs_journal::{LogsJournal, LogsJournalEntry, LogsJournalError},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,

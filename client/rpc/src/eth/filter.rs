@@ -40,7 +40,10 @@ use sp_runtime::{
 use fc_rpc_core::{types::*, EthFilterApiServer};
 use fp_rpc::{EthereumRuntimeRPCApi, TransactionStatus};
 
-use crate::{cache::EthBlockDataCacheTask, frontier_backend_client, internal_err};
+use crate::{
+	cache::EthBlockDataCacheTask, frontier_backend_client, internal_err, LogsJournal,
+	LogsJournalError,
+};
 
 pub struct EthFilter<B: BlockT, C, BE, P> {
 	client: Arc<C>,
@@ -51,6 +54,7 @@ pub struct EthFilter<B: BlockT, C, BE, P> {
 	max_past_logs: u32,
 	max_block_range: u32,
 	block_data_cache: Arc<EthBlockDataCacheTask<B>>,
+	logs_journal: Arc<LogsJournal>,
 	_marker: PhantomData<BE>,
 }
 
@@ -64,6 +68,7 @@ impl<B: BlockT, C, BE, P: TransactionPool> EthFilter<B, C, BE, P> {
 		max_past_logs: u32,
 		max_block_range: u32,
 		block_data_cache: Arc<EthBlockDataCacheTask<B>>,
+		logs_journal: Arc<LogsJournal>,
 	) -> Self {
 		Self {
 			client,
@@ -74,6 +79,7 @@ impl<B: BlockT, C, BE, P: TransactionPool> EthFilter<B, C, BE, P> {
 			max_past_logs,
 			max_block_range,
 			block_data_cache,
+			logs_journal,
 			_marker: PhantomData,
 		}
 	}
@@ -174,6 +180,8 @@ where
 				key,
 				FilterPoolItem {
 					last_poll: BlockNumberOrHash::Num(best_number),
+					last_log_journal_seq: matches!(filter_type, FilterType::Log(_))
+						.then(|| self.logs_journal.cursor()),
 					filter_type,
 					at_block: best_number,
 					pending_transaction_hashes,
@@ -218,19 +226,10 @@ where
 		// To avoid issues with multiple async blocks (having different
 		// anonymous types) we collect all necessary data in this enum then have
 		// a single async block.
-		enum FuturePath<B: BlockT> {
-			Block {
-				last: u64,
-				next: u64,
-			},
-			PendingTransaction {
-				new_hashes: Vec<H256>,
-			},
-			Log {
-				filter: Filter,
-				from_number: NumberFor<B>,
-				current_number: NumberFor<B>,
-			},
+		enum FuturePath {
+			Block { last: u64, next: u64 },
+			PendingTransaction { new_hashes: Vec<H256> },
+			Log { filter: Filter, cursor: u64 },
 			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
 
@@ -238,9 +237,6 @@ where
 		let info = self.client.info();
 		let best_hash = info.best_hash;
 		let best_number = UniqueSaturatedInto::<u64>::unique_saturated_into(info.best_number);
-		// Get latest indexed block number before acquiring the lock to avoid
-		// holding the lock across an await point.
-		let latest_indexed_number = self.latest_indexed_block_number().await?;
 		let pool = self.filter_pool.clone();
 		// Try to lock.
 		let path = if let Ok(locked) = &mut pool.lock() {
@@ -256,13 +252,14 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumberOrHash::Num(next),
+								last_log_journal_seq: None,
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: HashSet::new(),
 							},
 						);
 
-						FuturePath::<B>::Block { last, next }
+						FuturePath::Block { last, next }
 					}
 					FilterType::PendingTransaction => {
 						let previous_hashes = pool_item.pending_transaction_hashes;
@@ -287,6 +284,7 @@ where
 							key,
 							FilterPoolItem {
 								last_poll: BlockNumberOrHash::Num(best_number + 1),
+								last_log_journal_seq: None,
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: current_hashes.clone(),
@@ -302,62 +300,12 @@ where
 					}
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
-						// Either the filter-specific `to` block or latest indexed block.
-						// Use latest indexed block to ensure consistency with other RPCs.
-						let mut current_number = filter
-							.to_block
-							.and_then(|v| v.to_min_block_num())
-							.map(|s| s.unique_saturated_into())
-							.unwrap_or(latest_indexed_number);
-
-						if current_number > latest_indexed_number {
-							current_number = latest_indexed_number;
-						}
-
-						// The from clause is the max(last_poll, filter_from).
-						let last_poll = pool_item
-							.last_poll
-							.to_min_block_num()
-							.unwrap()
-							.unique_saturated_into();
-
-						let filter_from = filter
-							.from_block
-							.and_then(|v| v.to_min_block_num())
-							.map(|s| s.unique_saturated_into())
-							.unwrap_or(last_poll);
-
-						let from_number = std::cmp::max(last_poll, filter_from);
-						let block_range = current_number.saturating_sub(from_number);
-
-						// Validate block range before advancing last_poll. If we reject after
-						// updating last_poll, the cursor would skip logs on the next poll.
-						if block_range > self.max_block_range.into() {
-							FuturePath::Error(internal_err(format!(
-								"block range is too wide (maximum {})",
-								self.max_block_range
-							)))
-						} else {
-							// Update filter `last_poll` based on the same capped head we query.
-							// This avoids skipping blocks when best_number is ahead of indexed data.
-							let next_last_poll =
-								UniqueSaturatedInto::<u64>::unique_saturated_into(current_number)
-									.saturating_add(1);
-							locked.insert(
-								key,
-								FilterPoolItem {
-									last_poll: BlockNumberOrHash::Num(next_last_poll),
-									filter_type: pool_item.filter_type.clone(),
-									at_block: pool_item.at_block,
-									pending_transaction_hashes: HashSet::new(),
-								},
-							);
-							// Build the response.
-							FuturePath::Log {
-								filter: filter.clone(),
-								from_number,
-								current_number,
-							}
+						let cursor = pool_item
+							.last_log_journal_seq
+							.unwrap_or_else(|| self.logs_journal.cursor());
+						FuturePath::Log {
+							filter: filter.clone(),
+							cursor,
 						}
 					}
 				}
@@ -369,7 +317,6 @@ where
 		};
 
 		let client = Arc::clone(&self.client);
-		let backend = Arc::clone(&self.backend);
 		let block_data_cache = Arc::clone(&self.block_data_cache);
 		let max_past_logs = self.max_past_logs;
 
@@ -391,33 +338,39 @@ where
 				Ok(FilterChanges::Hashes(ethereum_hashes))
 			}
 			FuturePath::PendingTransaction { new_hashes } => Ok(FilterChanges::Hashes(new_hashes)),
-			FuturePath::Log {
-				filter,
-				from_number,
-				current_number,
-			} => {
-				let logs = if backend.is_indexed() {
-					filter_range_logs_indexed(
-						client.as_ref(),
-						backend.log_indexer(),
-						&block_data_cache,
-						max_past_logs,
-						&filter,
-						from_number,
-						current_number,
-					)
-					.await?
-				} else {
-					filter_range_logs(
-						client.as_ref(),
-						&block_data_cache,
-						max_past_logs,
-						&filter,
-						from_number,
-						current_number,
-					)
-					.await?
+			FuturePath::Log { filter, cursor } => {
+				let params = FilteredParams::new(filter);
+				let (entries, next_cursor) = match self.logs_journal.snapshot_since(cursor) {
+					Ok(snapshot) => snapshot,
+					Err(err) => {
+						if let Ok(locked) = &mut self.filter_pool.lock() {
+							let _ = locked.remove(&key);
+						}
+						return Err(logs_journal_error(err));
+					}
 				};
+
+				let mut logs = Vec::new();
+				for entry in entries {
+					for log in entry.logs.iter() {
+						if log_matches_filter(&params, log, true) {
+							logs.push(log.clone());
+						}
+					}
+				}
+
+				if logs.len() as u32 > self.max_past_logs {
+					return Err(internal_err(format!(
+						"query returned more than {} results",
+						self.max_past_logs
+					)));
+				}
+
+				if let Ok(locked) = &mut self.filter_pool.lock() {
+					if let Some(pool_item) = locked.get_mut(&key) {
+						pool_item.last_log_journal_seq = Some(next_cursor);
+					}
+				}
 
 				Ok(FilterChanges::Logs(logs))
 			}
@@ -803,10 +756,41 @@ where
 	Ok(logs)
 }
 
+pub(crate) fn log_matches_filter(
+	params: &FilteredParams,
+	log: &Log,
+	include_block_range: bool,
+) -> bool {
+	let block_hash_match = log
+		.block_hash
+		.is_none_or(|block_hash| params.filter_block_hash(block_hash));
+	let topics_match = params.filter.topics().is_empty() || params.filter_topics(&log.topics);
+	let address_match = params
+		.filter
+		.address
+		.as_ref()
+		.is_none_or(|_| params.filter_address(&log.address));
+	let block_range_match = !include_block_range
+		|| log
+			.block_number
+			.is_some_and(|block_number| params.filter_block_range(block_number.low_u64()));
+
+	block_hash_match && topics_match && address_match && block_range_match
+}
+
 pub(crate) fn filter_block_logs(
 	filter: &Filter,
 	block: EthereumBlock,
 	transaction_statuses: Vec<TransactionStatus>,
+) -> Vec<Log> {
+	filter_block_logs_with_removed(filter, block, transaction_statuses, false)
+}
+
+pub(crate) fn filter_block_logs_with_removed(
+	filter: &Filter,
+	block: EthereumBlock,
+	transaction_statuses: Vec<TransactionStatus>,
+	removed: bool,
 ) -> Vec<Log> {
 	let params = FilteredParams::new(filter.clone());
 	let mut block_log_index: u32 = 0;
@@ -827,21 +811,16 @@ pub(crate) fn filter_block_logs(
 				transaction_index: None,
 				log_index: None,
 				transaction_log_index: None,
-				removed: false,
+				removed,
 			};
 
-			let topics_match = filter.topics().is_empty() || params.filter_topics(&log.topics);
-			let address_match = filter
-				.address
-				.as_ref()
-				.is_none_or(|_| params.filter_address(&log.address));
-			if topics_match && address_match {
-				log.block_hash = Some(block_hash);
-				log.block_number = Some(block.header.number);
-				log.transaction_hash = Some(transaction_hash);
-				log.transaction_index = Some(U256::from(status.transaction_index));
-				log.log_index = Some(U256::from(block_log_index));
-				log.transaction_log_index = Some(U256::from(transaction_log_index));
+			log.block_hash = Some(block_hash);
+			log.block_number = Some(block.header.number);
+			log.transaction_hash = Some(transaction_hash);
+			log.transaction_index = Some(U256::from(status.transaction_index));
+			log.log_index = Some(U256::from(block_log_index));
+			log.transaction_log_index = Some(U256::from(transaction_log_index));
+			if log_matches_filter(&params, &log, false) {
 				logs.push(log);
 			}
 			transaction_log_index += 1;
@@ -849,4 +828,19 @@ pub(crate) fn filter_block_logs(
 		}
 	}
 	logs
+}
+
+fn logs_journal_error(err: LogsJournalError) -> jsonrpsee::types::ErrorObjectOwned {
+	match err {
+		LogsJournalError::CursorTooOld {
+			cursor,
+			earliest_available,
+			next_cursor,
+		} => internal_err(format!(
+			"log filter fell behind the retained reorg journal (cursor={cursor}, earliest={earliest_available}, next={next_cursor}); recreate the filter"
+		)),
+		LogsJournalError::IncompleteEntry { seq } => internal_err(format!(
+			"log filter encountered an incomplete reorg journal entry at sequence {seq}; recreate the filter"
+		)),
+	}
 }

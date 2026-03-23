@@ -315,6 +315,7 @@ pub enum FilterType {
 #[derive(Clone, Debug)]
 pub struct FilterPoolItem {
 	pub last_poll: BlockNumberOrHash,
+	pub last_log_journal_seq: Option<u64>,
 	pub filter_type: FilterType,
 	pub at_block: u64,
 	pub pending_transaction_hashes: HashSet<H256>,
