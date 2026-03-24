@@ -180,8 +180,7 @@ where
 				key,
 				FilterPoolItem {
 					last_poll: BlockNumberOrHash::Num(best_number),
-					last_log_journal_seq: matches!(filter_type, FilterType::Log(_))
-						.then(|| self.logs_journal.cursor()),
+					last_log_journal_seq: matches!(filter_type, FilterType::Log(_)).then_some(0),
 					filter_type,
 					at_block: best_number,
 					pending_transaction_hashes,
@@ -229,7 +228,11 @@ where
 		enum FuturePath {
 			Block { last: u64, next: u64 },
 			PendingTransaction { new_hashes: Vec<H256> },
-			Log { filter: Filter, cursor: u64 },
+			Log {
+				filter: Filter,
+				cursor: u64,
+				last_poll_block: u64,
+			},
 			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
 
@@ -300,12 +303,15 @@ where
 					}
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
-						let cursor = pool_item
-							.last_log_journal_seq
-							.unwrap_or_else(|| self.logs_journal.cursor());
+						let cursor = pool_item.last_log_journal_seq.unwrap_or(0);
+						let last_poll_block = pool_item
+							.last_poll
+							.to_min_block_num()
+							.unwrap_or(0);
 						FuturePath::Log {
 							filter: filter.clone(),
 							cursor,
+							last_poll_block,
 						}
 					}
 				}
@@ -338,7 +344,20 @@ where
 				Ok(FilterChanges::Hashes(ethereum_hashes))
 			}
 			FuturePath::PendingTransaction { new_hashes } => Ok(FilterChanges::Hashes(new_hashes)),
-			FuturePath::Log { filter, cursor } => {
+			FuturePath::Log {
+				filter,
+				cursor,
+				last_poll_block,
+			} => {
+				let latest_indexed = self.latest_indexed_block_number().await?;
+				let latest_u64: u64 = latest_indexed.unique_saturated_into();
+				if latest_u64.saturating_sub(last_poll_block) > self.max_block_range.into() {
+					return Err(internal_err(format!(
+						"block range is too wide (maximum {})",
+						self.max_block_range
+					)));
+				}
+
 				let params = FilteredParams::new(filter);
 				let (entries, next_cursor) = match self.logs_journal.snapshot_since(cursor) {
 					Ok(snapshot) => snapshot,
@@ -359,16 +378,16 @@ where
 					}
 				}
 
-				if logs.len() as u32 > self.max_past_logs {
+				if logs.len() as u32 > max_past_logs {
 					return Err(internal_err(format!(
-						"query returned more than {} results",
-						self.max_past_logs
+						"query returned more than {max_past_logs} results",
 					)));
 				}
 
 				if let Ok(locked) = &mut self.filter_pool.lock() {
 					if let Some(pool_item) = locked.get_mut(&key) {
 						pool_item.last_log_journal_seq = Some(next_cursor);
+						pool_item.last_poll = BlockNumberOrHash::Num(latest_u64);
 					}
 				}
 

@@ -118,37 +118,45 @@ impl LogsJournal {
 
 		let worker_state = state.clone();
 		let worker_tx = tx.clone();
-		executor.spawn("frontier-rpc-logs-journal", Some("rpc"), async move {
-			let mut had_stream = false;
-			loop {
-				let (inner_sink, mut notifications) =
-					sc_utils::mpsc::tracing_unbounded("logs_journal_notification_stream", 100_000);
-				pubsub_notification_sinks.lock().push(inner_sink);
+		executor.spawn(
+			"frontier-rpc-logs-journal",
+			Some("rpc"),
+			Box::pin(async move {
+				let mut had_stream = false;
+				loop {
+					let (inner_sink, mut notifications) = sc_utils::mpsc::tracing_unbounded(
+						"logs_journal_notification_stream",
+						100_000,
+					);
+					pubsub_notification_sinks.lock().push(inner_sink);
 
-				while let Some(notification) = notifications.next().await {
-					had_stream = true;
-					if !notification.is_new_best {
-						continue;
+					while let Some(notification) = notifications.next().await {
+						had_stream = true;
+						if !notification.is_new_best {
+							continue;
+						}
+
+						let (complete, logs) =
+							build_journal_payload(storage_override.as_ref(), notification);
+						let entry = {
+							let mut state =
+								worker_state.lock().expect("logs journal mutex poisoned");
+							state.push(complete, logs)
+						};
+						let _ = worker_tx.send(entry);
 					}
 
-					let (complete, logs) =
-						build_journal_payload(storage_override.as_ref(), notification);
-					let entry = {
-						let mut state = worker_state.lock().expect("logs journal mutex poisoned");
-						state.push(complete, logs)
-					};
-					let _ = worker_tx.send(entry);
+					if had_stream {
+						let entry = {
+							let mut state =
+								worker_state.lock().expect("logs journal mutex poisoned");
+							state.push(false, Vec::new())
+						};
+						let _ = worker_tx.send(entry);
+					}
 				}
-
-				if had_stream {
-					let entry = {
-						let mut state = worker_state.lock().expect("logs journal mutex poisoned");
-						state.push(false, Vec::new())
-					};
-					let _ = worker_tx.send(entry);
-				}
-			}
-		});
+			}),
+		);
 
 		Self { state, tx }
 	}
@@ -201,18 +209,18 @@ fn build_journal_payload<B: BlockT>(
 	let mut logs = Vec::new();
 	let empty_filter = Filter::default();
 
-	if let Some(reorg_info) = notification.reorg_info {
-		for hash in reorg_info.retracted {
-			if !append_block_logs(storage_override, &empty_filter, hash, true, &mut logs) {
+	if let Some(reorg_info) = notification.reorg_info.as_deref() {
+		for hash in &reorg_info.retracted {
+			if !append_block_logs(storage_override, &empty_filter, *hash, true, &mut logs) {
 				return (false, Vec::new());
 			}
 		}
 		for hash in reorg_info
 			.enacted
-			.into_iter()
-			.chain(std::iter::once(reorg_info.new_best))
+			.iter()
+			.chain(std::iter::once(&reorg_info.new_best))
 		{
-			if !append_block_logs(storage_override, &empty_filter, hash, false, &mut logs) {
+			if !append_block_logs(storage_override, &empty_filter, *hash, false, &mut logs) {
 				return (false, Vec::new());
 			}
 		}

@@ -318,7 +318,7 @@ where
 							)
 							.flat_map(futures::stream::iter);
 						PendingSubscription::from(pending)
-							.pipe_from_stream(stream, BoundedVecDeque::new(16))
+							.pipe_from_stream(Box::pin(stream), BoundedVecDeque::new(16))
 							.await
 					}
 					Kind::NewPendingTransactions => {
