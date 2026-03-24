@@ -140,7 +140,7 @@ impl Filter {
 
 /// Helper for Filter matching.
 /// Supports conditional indexed parameters and wildcards.
-#[derive(Debug, Default)]
+#[derive(Clone, Debug, Default)]
 pub struct FilteredParams {
 	pub filter: Filter,
 }

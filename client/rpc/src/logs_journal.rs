@@ -8,7 +8,7 @@ use std::{
 	sync::{Arc, Mutex},
 };
 
-use futures::StreamExt as _;
+use futures::{FutureExt as _, StreamExt as _};
 use tokio::sync::broadcast;
 // Substrate
 use sc_rpc::SubscriptionTaskExecutor;
@@ -118,45 +118,40 @@ impl LogsJournal {
 
 		let worker_state = state.clone();
 		let worker_tx = tx.clone();
-		executor.spawn(
-			"frontier-rpc-logs-journal",
-			Some("rpc"),
-			Box::pin(async move {
-				let mut had_stream = false;
-				loop {
-					let (inner_sink, mut notifications) = sc_utils::mpsc::tracing_unbounded(
-						"logs_journal_notification_stream",
-						100_000,
-					);
-					pubsub_notification_sinks.lock().push(inner_sink);
+		let worker_fut = async move {
+			let mut had_stream = false;
+			loop {
+				let (inner_sink, mut notifications) =
+					sc_utils::mpsc::tracing_unbounded("logs_journal_notification_stream", 100_000);
+				pubsub_notification_sinks.lock().push(inner_sink);
 
-					while let Some(notification) = notifications.next().await {
-						had_stream = true;
-						if !notification.is_new_best {
-							continue;
-						}
-
-						let (complete, logs) =
-							build_journal_payload(storage_override.as_ref(), notification);
-						let entry = {
-							let mut state =
-								worker_state.lock().expect("logs journal mutex poisoned");
-							state.push(complete, logs)
-						};
-						let _ = worker_tx.send(entry);
+				while let Some(notification) = notifications.next().await {
+					had_stream = true;
+					if !notification.is_new_best {
+						continue;
 					}
 
-					if had_stream {
-						let entry = {
-							let mut state =
-								worker_state.lock().expect("logs journal mutex poisoned");
-							state.push(false, Vec::new())
-						};
-						let _ = worker_tx.send(entry);
-					}
+					let (complete, logs) =
+						build_journal_payload(storage_override.as_ref(), notification);
+					let entry = {
+						let mut state = worker_state.lock().expect("logs journal mutex poisoned");
+						state.push(complete, logs)
+					};
+					let _ = worker_tx.send(entry);
 				}
-			}),
-		);
+
+				if had_stream {
+					let entry = {
+						let mut state = worker_state.lock().expect("logs journal mutex poisoned");
+						state.push(false, Vec::new())
+					};
+					let _ = worker_tx.send(entry);
+				}
+			}
+		}
+		.boxed();
+
+		executor.spawn("frontier-rpc-logs-journal", Some("rpc"), worker_fut);
 
 		Self { state, tx }
 	}
@@ -200,6 +195,15 @@ impl LogsJournal {
 
 		Ok((entries, next_cursor))
 	}
+}
+
+/// Same payload as pushed to the journal; used by `eth_subscribe("logs")` so pub-sub matches
+/// `eth_getFilterChanges` / the retained journal without reading the broadcast channel.
+pub(crate) fn build_journal_payload_for_subscription<B: BlockT>(
+	storage_override: &dyn StorageOverride<B>,
+	notification: EthereumBlockNotification<B>,
+) -> (bool, Vec<Log>) {
+	build_journal_payload(storage_override, notification)
 }
 
 fn build_journal_payload<B: BlockT>(

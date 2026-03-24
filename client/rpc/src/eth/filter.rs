@@ -226,8 +226,13 @@ where
 		// anonymous types) we collect all necessary data in this enum then have
 		// a single async block.
 		enum FuturePath {
-			Block { last: u64, next: u64 },
-			PendingTransaction { new_hashes: Vec<H256> },
+			Block {
+				last: u64,
+				next: u64,
+			},
+			PendingTransaction {
+				new_hashes: Vec<H256>,
+			},
 			Log {
 				filter: Filter,
 				cursor: u64,
@@ -304,10 +309,7 @@ where
 					// For each event since last poll, get a vector of ethereum logs.
 					FilterType::Log(filter) => {
 						let cursor = pool_item.last_log_journal_seq.unwrap_or(0);
-						let last_poll_block = pool_item
-							.last_poll
-							.to_min_block_num()
-							.unwrap_or(0);
+						let last_poll_block = pool_item.last_poll.to_min_block_num().unwrap_or(0);
 						FuturePath::Log {
 							filter: filter.clone(),
 							cursor,
