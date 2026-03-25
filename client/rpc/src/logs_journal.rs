@@ -119,8 +119,8 @@ impl LogsJournal {
 		let worker_state = state.clone();
 		let worker_tx = tx.clone();
 		let worker_fut = async move {
-			let mut had_stream = false;
 			loop {
+				let mut had_stream = false;
 				let (inner_sink, mut notifications) =
 					sc_utils::mpsc::tracing_unbounded("logs_journal_notification_stream", 100_000);
 				pubsub_notification_sinks.lock().push(inner_sink);
@@ -252,9 +252,17 @@ fn append_block_logs<B: BlockT>(
 	out: &mut Vec<Log>,
 ) -> bool {
 	let Some(block) = storage_override.current_block(block_hash) else {
+		log::debug!(
+			target: "rpc",
+			"Missing block data for {block_hash:?}, marking journal entry incomplete"
+		);
 		return false;
 	};
 	let Some(statuses) = storage_override.current_transaction_statuses(block_hash) else {
+		log::debug!(
+			target: "rpc",
+			"Missing transaction statuses for {block_hash:?}, marking journal entry incomplete"
+		);
 		return false;
 	};
 	out.extend(filter_block_logs_with_removed(
