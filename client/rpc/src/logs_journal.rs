@@ -127,13 +127,11 @@ impl LogsJournal {
 		let worker_tx = tx.clone();
 		let worker_fut = async move {
 			loop {
-				let mut had_stream = false;
 				let (inner_sink, mut notifications) =
 					sc_utils::mpsc::tracing_unbounded("logs_journal_notification_stream", 100_000);
 				pubsub_notification_sinks.lock().push(inner_sink);
 
 				while let Some(notification) = notifications.next().await {
-					had_stream = true;
 					if !notification.is_new_best {
 						continue;
 					}
@@ -147,11 +145,17 @@ impl LogsJournal {
 					let _ = worker_tx.send(entry);
 				}
 
-				if had_stream {
-					let entry = {
-						let mut state = worker_state.lock().expect("logs journal mutex poisoned");
-						state.push(false, Vec::new())
-					};
+				// Stream ended: fail closed for consumers only if we had a complete tail (continuity
+				// may be broken). Skip if the journal is still empty (no notifications yet) or the
+				// tail is already incomplete (do not stack duplicate gap markers).
+				let maybe_gap = {
+					let mut state = worker_state.lock().expect("logs journal mutex poisoned");
+					match state.entries.back() {
+						Some(last) if last.complete => Some(state.push(false, Vec::new())),
+						_ => None,
+					}
+				};
+				if let Some(entry) = maybe_gap {
 					let _ = worker_tx.send(entry);
 				}
 
