@@ -6,6 +6,7 @@
 use std::{
 	collections::VecDeque,
 	sync::{Arc, Mutex},
+	time::Duration,
 };
 
 use futures::{FutureExt as _, StreamExt as _};
@@ -21,6 +22,12 @@ use fc_storage::StorageOverride;
 use crate::eth::filter::filter_block_logs_with_removed;
 
 const DEFAULT_LOGS_JOURNAL_CAPACITY: usize = 256;
+
+/// When the per-connection notification stream ends (sender dropped — e.g. sink pool refresh or
+/// RPC restart), we register a new sink and continue. A short pause avoids tight spinning if sinks
+/// churn rapidly; we intentionally **do not** cap retries so the journal keeps tracking the best
+/// chain for the lifetime of the process.
+const LOGS_JOURNAL_RECONNECT_BACKOFF: Duration = Duration::from_millis(50);
 
 #[derive(Clone, Debug)]
 pub struct LogsJournalEntry {
@@ -147,6 +154,8 @@ impl LogsJournal {
 					};
 					let _ = worker_tx.send(entry);
 				}
+
+				tokio::time::sleep(LOGS_JOURNAL_RECONNECT_BACKOFF).await;
 			}
 		}
 		.boxed();
