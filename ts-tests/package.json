@@ -24,7 +24,7 @@
     "truffle": "^5.10.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.9.3",
-    "web3": "^1.9.0"
+    "web3": "^4.16.0"
   },
   "devDependencies": {
     "@types/chai-as-promised": "^7.1.5",
