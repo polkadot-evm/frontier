@@ -266,6 +266,89 @@ fn append_block_logs<B: BlockT>(
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use std::collections::HashMap;
+
+	use ethereum::{BlockV3, PartialHeader};
+	use ethereum_types::{Bloom, H160, H256, H64, U256};
+	use fp_rpc::TransactionStatus;
+	use sp_runtime::{
+		generic::{Block, Header},
+		traits::BlakeTwo256,
+		Permill,
+	};
+
+	type OpaqueBlock = Block<Header<u64, BlakeTwo256>, sp_runtime::OpaqueExtrinsic>;
+
+	#[derive(Default)]
+	struct MockStorageOverride {
+		blocks: HashMap<H256, BlockV3>,
+		statuses: HashMap<H256, Vec<TransactionStatus>>,
+	}
+
+	impl StorageOverride<OpaqueBlock> for MockStorageOverride {
+		fn account_code_at(&self, _at: H256, _address: H160) -> Option<Vec<u8>> {
+			None
+		}
+
+		fn account_storage_at(&self, _at: H256, _address: H160, _index: U256) -> Option<H256> {
+			None
+		}
+
+		fn current_block(&self, at: H256) -> Option<BlockV3> {
+			self.blocks.get(&at).cloned()
+		}
+
+		fn current_receipts(&self, _at: H256) -> Option<Vec<ethereum::ReceiptV4>> {
+			None
+		}
+
+		fn current_transaction_statuses(&self, at: H256) -> Option<Vec<TransactionStatus>> {
+			self.statuses.get(&at).cloned()
+		}
+
+		fn elasticity(&self, _at: H256) -> Option<Permill> {
+			None
+		}
+
+		fn is_eip1559(&self, _at: H256) -> bool {
+			false
+		}
+	}
+
+	fn make_ethereum_block(seed: u64) -> ethereum::BlockV3 {
+		let partial_header = PartialHeader {
+			parent_hash: H256::from_low_u64_be(seed),
+			beneficiary: H160::from_low_u64_be(seed),
+			state_root: H256::from_low_u64_be(seed.saturating_add(1)),
+			receipts_root: H256::from_low_u64_be(seed.saturating_add(2)),
+			logs_bloom: Bloom::default(),
+			difficulty: U256::from(seed),
+			number: U256::from(seed),
+			gas_limit: U256::from(seed.saturating_add(100)),
+			gas_used: U256::from(seed.saturating_add(50)),
+			timestamp: seed,
+			extra_data: Vec::new(),
+			mix_hash: H256::from_low_u64_be(seed.saturating_add(3)),
+			nonce: H64::from_low_u64_be(seed),
+		};
+		ethereum::Block::new(partial_header, vec![], vec![])
+	}
+
+	fn make_status(topic: H256, tx_index: u32) -> TransactionStatus {
+		TransactionStatus {
+			transaction_hash: H256::from_low_u64_be(topic.to_low_u64_be()),
+			transaction_index: tx_index,
+			from: H160::repeat_byte(0x11),
+			to: Some(H160::repeat_byte(0x22)),
+			contract_address: None,
+			logs: vec![ethereum::Log {
+				address: H160::repeat_byte(0x33),
+				topics: vec![topic],
+				data: vec![0x01, 0x02],
+			}],
+			logs_bloom: Bloom::default(),
+		}
+	}
 
 	#[test]
 	fn snapshot_since_returns_cursor_too_old_after_eviction() {
@@ -307,5 +390,99 @@ mod tests {
 
 		let err = journal.snapshot_since(0).unwrap_err();
 		assert!(matches!(err, LogsJournalError::IncompleteEntry { seq: 1 }));
+	}
+
+	#[test]
+	fn build_payload_without_reorg_marks_logs_as_not_removed() {
+		let hash = H256::repeat_byte(0xAA);
+		let mut storage = MockStorageOverride::default();
+		storage.blocks.insert(hash, make_ethereum_block(10));
+		storage
+			.statuses
+			.insert(hash, vec![make_status(H256::repeat_byte(0xA1), 0)]);
+
+		let notification = EthereumBlockNotification::<OpaqueBlock> {
+			is_new_best: true,
+			hash,
+			reorg_info: None,
+		};
+		let (complete, logs) = build_journal_payload(&storage, notification);
+
+		assert!(complete);
+		assert_eq!(logs.len(), 1);
+		assert!(!logs[0].removed);
+		assert_eq!(logs[0].topics, vec![H256::repeat_byte(0xA1)]);
+	}
+
+	#[test]
+	fn build_payload_with_reorg_orders_retracted_then_enacted_then_new_best() {
+		let retracted = H256::repeat_byte(0x10);
+		let enacted = H256::repeat_byte(0x20);
+		let new_best = H256::repeat_byte(0x30);
+
+		let mut storage = MockStorageOverride::default();
+		storage.blocks.insert(retracted, make_ethereum_block(1));
+		storage.blocks.insert(enacted, make_ethereum_block(2));
+		storage.blocks.insert(new_best, make_ethereum_block(3));
+		storage
+			.statuses
+			.insert(retracted, vec![make_status(H256::repeat_byte(0xA1), 0)]);
+		storage
+			.statuses
+			.insert(enacted, vec![make_status(H256::repeat_byte(0xB2), 0)]);
+		storage
+			.statuses
+			.insert(new_best, vec![make_status(H256::repeat_byte(0xC3), 0)]);
+
+		let notification = EthereumBlockNotification::<OpaqueBlock> {
+			is_new_best: true,
+			hash: new_best,
+			reorg_info: Some(Arc::new(fc_mapping_sync::ReorgInfo::<OpaqueBlock> {
+				common_ancestor: H256::repeat_byte(0x01),
+				retracted: vec![retracted],
+				enacted: vec![enacted],
+				new_best,
+			})),
+		};
+		let (complete, logs) = build_journal_payload(&storage, notification);
+
+		assert!(complete);
+		assert_eq!(logs.len(), 3);
+		assert_eq!(logs[0].topics, vec![H256::repeat_byte(0xA1)]);
+		assert_eq!(logs[1].topics, vec![H256::repeat_byte(0xB2)]);
+		assert_eq!(logs[2].topics, vec![H256::repeat_byte(0xC3)]);
+		assert!(logs[0].removed);
+		assert!(!logs[1].removed);
+		assert!(!logs[2].removed);
+	}
+
+	#[test]
+	fn build_payload_returns_incomplete_when_reorg_data_is_missing() {
+		let retracted = H256::repeat_byte(0x10);
+		let enacted = H256::repeat_byte(0x20);
+		let new_best = H256::repeat_byte(0x30);
+
+		let mut storage = MockStorageOverride::default();
+		storage.blocks.insert(retracted, make_ethereum_block(1));
+		storage.blocks.insert(enacted, make_ethereum_block(2));
+		storage
+			.statuses
+			.insert(retracted, vec![make_status(H256::repeat_byte(0xA1), 0)]);
+		// Missing statuses for enacted hash forces an incomplete payload.
+
+		let notification = EthereumBlockNotification::<OpaqueBlock> {
+			is_new_best: true,
+			hash: new_best,
+			reorg_info: Some(Arc::new(fc_mapping_sync::ReorgInfo::<OpaqueBlock> {
+				common_ancestor: H256::repeat_byte(0x01),
+				retracted: vec![retracted],
+				enacted: vec![enacted],
+				new_best,
+			})),
+		};
+		let (complete, logs) = build_journal_payload(&storage, notification);
+
+		assert!(!complete);
+		assert!(logs.is_empty());
 	}
 }
