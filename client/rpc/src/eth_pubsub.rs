@@ -16,18 +16,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-use std::{
-	marker::PhantomData,
-	sync::{
-		atomic::{AtomicBool, Ordering},
-		Arc,
-	},
-};
+use std::{marker::PhantomData, sync::Arc};
 
 use ethereum::TransactionV3 as EthereumTransaction;
 use futures::{future, stream::BoxStream, FutureExt as _, StreamExt as _};
 use jsonrpsee::{core::traits::IdProvider, server::PendingSubscriptionSink};
 use log::debug;
+use tokio::sync::broadcast::error::RecvError;
 // Substrate
 use sc_client_api::{
 	backend::{Backend, StorageProvider},
@@ -56,10 +51,7 @@ use fc_rpc_core::{
 use fc_storage::StorageOverride;
 use fp_rpc::EthereumRuntimeRPCApi;
 
-use crate::{
-	eth::filter::log_matches_filter, logs_journal::build_journal_payload_for_subscription,
-	LogsJournal,
-};
+use crate::{eth::filter::log_matches_filter, LogsJournal};
 
 #[derive(Clone, Debug)]
 pub struct EthereumSubIdProvider;
@@ -173,44 +165,6 @@ where
 		futures::stream::iter(maybe_header).boxed()
 	}
 
-	/// Turn a best-chain notification into pub-sub log results, using the same log set as
-	/// [`LogsJournal`]. When the payload is incomplete (reorg in progress), `subscription_ended`
-	/// is set so the outer stream stops (matches closing the prior broadcast-based subscription).
-	fn notify_logs(
-		&self,
-		notification: EthereumBlockNotification<B>,
-		params: &FilteredParams,
-		subscription_ended: &Arc<AtomicBool>,
-	) -> Option<Vec<PubSubResult>> {
-		if !notification.is_new_best {
-			return None;
-		}
-
-		let (complete, logs) =
-			build_journal_payload_for_subscription(self.storage_override.as_ref(), notification);
-
-		if !complete {
-			debug!(
-				target: "eth-pubsub",
-				"Closing logs subscription after incomplete journal-equivalent payload",
-			);
-			subscription_ended.store(true, Ordering::SeqCst);
-			return Some(Vec::new());
-		}
-
-		let results = logs
-			.into_iter()
-			.filter(|log| log_matches_filter(params, log, false))
-			.map(|log| PubSubResult::Log(Box::new(log)))
-			.collect::<Vec<_>>();
-
-		if results.is_empty() {
-			None
-		} else {
-			Some(results)
-		}
-	}
-
 	fn pending_transactions(&self, hash: &TxHash<P>) -> future::Ready<Option<PubSubResult>> {
 		let res = if let Some(xt) = self.pool.ready_transaction(hash) {
 			let best_block = self.client.info().best_hash;
@@ -295,14 +249,13 @@ where
 		};
 
 		let pubsub = self.clone();
-		// Everytime a new subscription is created, a new mpsc channel is added to the sink pool.
-		let (inner_sink, block_notification_stream) =
-			sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
-		self.pubsub_notification_sinks.lock().push(inner_sink);
 
 		let fut = async move {
 			match kind {
 				Kind::NewHeads => {
+					let (inner_sink, block_notification_stream) =
+						sc_utils::mpsc::tracing_unbounded("pubsub_notification_stream", 100_000);
+					pubsub.pubsub_notification_sinks.lock().push(inner_sink);
 					// Per Ethereum spec, when a reorg occurs, we must emit all headers
 					// for the new canonical chain. The reorg_info field in the notification
 					// contains the enacted blocks when a reorg occurred.
@@ -315,26 +268,48 @@ where
 						.await
 				}
 				Kind::Logs => {
-					let subscription_ended = Arc::new(AtomicBool::new(false));
 					let logs_params = filtered_params.clone();
-					let stream = block_notification_stream
-						.take_while({
-							let subscription_ended = subscription_ended.clone();
-							move |_| future::ready(!subscription_ended.load(Ordering::SeqCst))
-						})
-						.filter_map(move |notification| {
-							let pubsub = pubsub.clone();
-							let subscription_ended = subscription_ended.clone();
-							let logs_params = logs_params.clone();
-							future::ready(pubsub.notify_logs(
-								notification,
-								&logs_params,
-								&subscription_ended,
-							))
-						})
-						.flat_map(futures::stream::iter);
+					let journal_rx = pubsub.logs_journal.subscribe();
+					let stream = futures::stream::unfold(journal_rx, move |mut rx| {
+						let logs_params = logs_params.clone();
+						async move {
+							loop {
+								let entry = match rx.recv().await {
+									Ok(e) => e,
+									Err(RecvError::Lagged(n)) => {
+										debug!(
+											target: "eth-pubsub",
+											"Closing logs subscription; lagged behind logs journal by {n} entries"
+										);
+										return None;
+									}
+									Err(RecvError::Closed) => return None,
+								};
+
+								if !entry.complete {
+									debug!(
+										target: "eth-pubsub",
+										"Closing logs subscription after incomplete journal entry",
+									);
+									return None;
+								}
+
+								let results: Vec<PubSubResult> = entry
+									.logs
+									.iter()
+									.filter(|log| log_matches_filter(&logs_params, log, false))
+									.map(|log| PubSubResult::Log(Box::new(log.clone())))
+									.collect();
+
+								if !results.is_empty() {
+									return Some((results, rx));
+								}
+							}
+						}
+					})
+					.flat_map(futures::stream::iter);
 					PendingSubscription::from(pending)
-						.pipe_from_stream(stream, BoundedVecDeque::new(16))
+						.pipe_from_stream(Box::pin(stream), BoundedVecDeque::new(16))
 						.await
 				}
 				Kind::NewPendingTransactions => {

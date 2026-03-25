@@ -197,15 +197,6 @@ impl LogsJournal {
 	}
 }
 
-/// Same payload as pushed to the journal; used by `eth_subscribe("logs")` so pub-sub matches
-/// `eth_getFilterChanges` / the retained journal without reading the broadcast channel.
-pub(crate) fn build_journal_payload_for_subscription<B: BlockT>(
-	storage_override: &dyn StorageOverride<B>,
-	notification: EthereumBlockNotification<B>,
-) -> (bool, Vec<Log>) {
-	build_journal_payload(storage_override, notification)
-}
-
 fn build_journal_payload<B: BlockT>(
 	storage_override: &dyn StorageOverride<B>,
 	notification: EthereumBlockNotification<B>,
