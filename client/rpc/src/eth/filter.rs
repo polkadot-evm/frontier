@@ -176,11 +176,13 @@ where
 
 			// Assume `max_stored_filters` is always < U256::max.
 			let key = last_key.checked_add(U256::one()).unwrap();
+			let last_log_journal_seq =
+				matches!(&filter_type, FilterType::Log(_)).then(|| self.logs_journal.cursor());
 			locked.insert(
 				key,
 				FilterPoolItem {
 					last_poll: BlockNumberOrHash::Num(best_number),
-					last_log_journal_seq: matches!(filter_type, FilterType::Log(_)).then_some(0),
+					last_log_journal_seq,
 					filter_type,
 					at_block: best_number,
 					pending_transaction_hashes,
