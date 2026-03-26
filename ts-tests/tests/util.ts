@@ -65,14 +65,27 @@ export async function waitForBlock(
 	throw new Error(`Timeout waiting for block ${blockTag} to be indexed${errorSuffix}`);
 }
 
-// Create a block, optionally finalize it, and wait for it to be indexed by mapping-sync.
-// This ensures the block is visible via eth_getBlockByNumber before returning.
-// When finalize is false the block is still imported (best block); we wait for it to be
-// visible as "latest". The node exposes the best chain to eth RPC, so this works for both.
+/**
+ * Calls `engine_createBlock` and returns the new Substrate block hash.
+ *
+ * Always waits until `chain_getHeader(blockHash)` succeeds (import may lag the RPC response).
+ *
+ * When `isFork` is false (default), assumes the new block becomes **canonical** at its height:
+ * then waits for mapping-sync (`eth_getBlockByNumber` at that height) and for
+ * `eth_blockNumber >=` that height so `"latest"` and receipts stay consistent with the block
+ * you just built. Use this for extending the current best chain (`parentHash` null or tip).
+ *
+ * When `isFork` is true, skips Ethereum waits: `eth_getBlockByNumber` reflects the canonical
+ * chain, so a rival child at the same height would make number-based polling misleading or
+ * impossible. Substrate import is still guaranteed via `chain_getHeader` above.
+ *
+ * `finalize`: passed through to `engine_createBlock` (whether the block is finalized).
+ */
 export async function createAndFinalizeBlock(
 	web3: Web3,
 	finalize: boolean = true,
-	parentHash: string | null = null
+	parentHash: string | null = null,
+	isFork: boolean = false
 ): Promise<string> {
 	const response = await customRequest(web3, "engine_createBlock", [true, finalize, parentHash]);
 	if (!response?.result?.hash) {
@@ -103,32 +116,36 @@ export async function createAndFinalizeBlock(
 		const errSuffix = headerLastError ? ` (last error: ${headerLastError.message})` : "";
 		throw new Error(`chain_getHeader(${blockHash}) returned no header for created block${errSuffix}`);
 	}
-	const expectedNumber = parseInt(header.number, 16);
-	const expectedBlockTag = "0x" + expectedNumber.toString(16);
 
-	await waitForBlock(web3, expectedBlockTag, 10_000);
+	if (isFork) {
+		return blockHash;
+	} else {
+		const expectedNumber = parseInt(header.number, 16);
+		const expectedBlockTag = "0x" + expectedNumber.toString(16);
+		await waitForBlock(web3, expectedBlockTag, 10_000);
 
-	// Also wait for eth_blockNumber / "latest" to be at least the new block, so tests that
-	// assert on getBlockNumber() or use "latest" see the block we just created.
-	// Use >= so we don't timeout if the node advances past expectedNumber between polls.
-	// Retry on transient RPC errors instead of failing fast.
-	const rpcSyncTimeout = 10_000;
-	const rpcStart = Date.now();
-	let rpcLastError: Error | null = null;
-	while (Date.now() - rpcStart < rpcSyncTimeout) {
-		try {
-			const current = await customRequest(web3, "eth_blockNumber", []);
-			const n = current.result != null ? parseInt(current.result, 16) : -1;
-			if (n >= expectedNumber) {
-				return blockHash;
+		// Also wait for eth_blockNumber / "latest" to be at least the new block, so tests that
+		// assert on getBlockNumber() or use "latest" see the block we just created.
+		// Use >= so we don't timeout if the node advances past expectedNumber between polls.
+		// Retry on transient RPC errors instead of failing fast.
+		const rpcSyncTimeout = 10_000;
+		const rpcStart = Date.now();
+		let rpcLastError: Error | null = null;
+		while (Date.now() - rpcStart < rpcSyncTimeout) {
+			try {
+				const current = await customRequest(web3, "eth_blockNumber", []);
+				const n = current.result != null ? parseInt(current.result, 16) : -1;
+				if (n >= expectedNumber) {
+					return blockHash;
+				}
+			} catch (error) {
+				rpcLastError = error instanceof Error ? error : new Error(String(error));
 			}
-		} catch (error) {
-			rpcLastError = error instanceof Error ? error : new Error(String(error));
+			await new Promise<void>((r) => setTimeout(r, 50));
 		}
-		await new Promise<void>((r) => setTimeout(r, 50));
+		const rpcErrorSuffix = rpcLastError ? ` (last error: ${rpcLastError.message})` : "";
+		throw new Error(`eth_blockNumber did not reach ${expectedNumber} after ${rpcSyncTimeout}ms${rpcErrorSuffix}`);
 	}
-	const rpcErrorSuffix = rpcLastError ? ` (last error: ${rpcLastError.message})` : "";
-	throw new Error(`eth_blockNumber did not reach ${expectedNumber} after ${rpcSyncTimeout}ms${rpcErrorSuffix}`);
 }
 
 // Create a block and finalize it without waiting for indexing.

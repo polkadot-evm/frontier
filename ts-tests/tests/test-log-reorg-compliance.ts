@@ -132,8 +132,8 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		);
 		expect(firstEvent.blockHash).to.equal(receipt.blockHash);
 
-		const b1 = await createAndFinalizeBlock(context.web3, false, anchor);
-		await createAndFinalizeBlock(context.web3, false, b1);
+		const b1 = await createAndFinalizeBlock(context.web3, false, anchor, true);
+		await createAndFinalizeBlock(context.web3, false, b1, true);
 
 		const removedEvent = await waitForMatchingEvent(
 			events,
@@ -174,8 +174,8 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		);
 		expect(firstEvent.blockHash).to.equal(receipt.blockHash);
 
-		const b1 = await createAndFinalizeBlock(context.web3, false, anchor);
-		await createAndFinalizeBlock(context.web3, false, b1);
+		const b1 = await createAndFinalizeBlock(context.web3, false, anchor, true);
+		await createAndFinalizeBlock(context.web3, false, b1, true);
 
 		const removedEvent = await waitForFilterChange(
 			filterId,
@@ -223,8 +223,8 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		await sleep(1500);
 
 		// Longer fork from A1: A1 -> B2 -> B3 (retracts the block that contained the deploy)
-		const b2Hash = await createAndFinalizeBlock(context.web3, false, a1Hash);
-		await createAndFinalizeBlock(context.web3, false, b2Hash);
+		const b2Hash = await createAndFinalizeBlock(context.web3, false, a1Hash, true);
+		await createAndFinalizeBlock(context.web3, false, b2Hash, true);
 
 		const pollDeadline = Date.now() + 60000;
 		while (Date.now() < pollDeadline) {
