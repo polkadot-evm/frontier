@@ -69,8 +69,12 @@ export async function waitForBlock(
 // This ensures the block is visible via eth_getBlockByNumber before returning.
 // When finalize is false the block is still imported (best block); we wait for it to be
 // visible as "latest". The node exposes the best chain to eth RPC, so this works for both.
-export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = true) {
-	const response = await customRequest(web3, "engine_createBlock", [true, finalize, null]);
+export async function createAndFinalizeBlock(
+	web3: Web3,
+	finalize: boolean = true,
+	parentHash: string | null = null
+): Promise<string> {
+	const response = await customRequest(web3, "engine_createBlock", [true, finalize, parentHash]);
 	if (!response?.result?.hash) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
@@ -116,7 +120,7 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 			const current = await customRequest(web3, "eth_blockNumber", []);
 			const n = current.result != null ? parseInt(current.result, 16) : -1;
 			if (n >= expectedNumber) {
-				return;
+				return blockHash;
 			}
 		} catch (error) {
 			rpcLastError = error instanceof Error ? error : new Error(String(error));
@@ -129,11 +133,12 @@ export async function createAndFinalizeBlock(web3: Web3, finalize: boolean = tru
 
 // Create a block and finalize it without waiting for indexing.
 // Use this only for tests that explicitly handle waiting themselves.
-export async function createAndFinalizeBlockNowait(web3: Web3) {
-	const response = await customRequest(web3, "engine_createBlock", [true, true, null]);
-	if (!response.result) {
+export async function createAndFinalizeBlockNowait(web3: Web3, parentHash: string | null = null): Promise<string> {
+	const response = await customRequest(web3, "engine_createBlock", [true, true, parentHash]);
+	if (!response.result?.hash) {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
+	return response.result.hash;
 }
 
 // Wait for a receipt to be available for a given transaction hash.

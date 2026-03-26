@@ -2,7 +2,14 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import { customRequest, describeWithFrontierWs, waitForBlock, waitForReceipt } from "./util";
+import {
+	createAndFinalizeBlock,
+	createAndFinalizeBlockNowait,
+	customRequest,
+	describeWithFrontierWs,
+	waitForBlock,
+	waitForReceipt,
+} from "./util";
 
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const LOG_EMITTING_CONSTRUCTOR =
@@ -27,15 +34,6 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 
 	async function sleep(ms: number) {
 		await new Promise<void>((resolve) => setTimeout(resolve, ms));
-	}
-
-	async function createBlock(finalize: boolean = true, parentHash: string | null = null): Promise<string> {
-		const response = await customRequest(context.web3, "engine_createBlock", [true, finalize, parentHash]);
-		if (!response.result?.hash) {
-			throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
-		}
-		await waitForBlock(context.web3, "latest", 15000);
-		return response.result.hash as string;
 	}
 
 	async function sendLogTransaction() {
@@ -124,9 +122,9 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 			});
 		});
 
-		const anchor = await createBlock(false);
+		const anchor = await createAndFinalizeBlock(context.web3, false);
 		const tx = await sendLogTransaction();
-		await createBlock(false, anchor);
+		await createAndFinalizeBlock(context.web3, false, anchor);
 
 		const receipt = await waitForReceipt(context.web3, tx.transactionHash);
 		const firstEvent = await waitForMatchingEvent(
@@ -137,8 +135,8 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		);
 		expect(firstEvent.blockHash).to.equal(receipt.blockHash);
 
-		const b1 = await createBlock(false, anchor);
-		await createBlock(false, b1);
+		const b1 = await createAndFinalizeBlock(context.web3, false, anchor);
+		await createAndFinalizeBlock(context.web3, false, b1);
 
 		const removedEvent = await waitForMatchingEvent(
 			events,
@@ -155,9 +153,9 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		this.timeout(60000);
 
 		const filterId = (await customRequest(context.web3, "eth_newFilter", [{}])).result as string;
-		const anchor = await createBlock(false);
+		const anchor = await createAndFinalizeBlock(context.web3, false);
 		const tx = await sendLogTransaction();
-		await createBlock(false, anchor);
+		await createAndFinalizeBlock(context.web3, false, anchor);
 
 		const receipt = await waitForReceipt(context.web3, tx.transactionHash);
 		const firstEvent = await waitForFilterChange(
@@ -168,8 +166,8 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		);
 		expect(firstEvent.blockHash).to.equal(receipt.blockHash);
 
-		const b1 = await createBlock(false, anchor);
-		await createBlock(false, b1);
+		const b1 = await createAndFinalizeBlock(context.web3, false, anchor);
+		await createAndFinalizeBlock(context.web3, false, b1);
 
 		const removedEvent = await waitForFilterChange(
 			filterId,
@@ -195,10 +193,10 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		});
 
 		// Canonical chain: A1 -> A2 (includes deploy tx + log)
-		const a1Hash = await createBlock(false);
+		const a1Hash = await createAndFinalizeBlock(context.web3, false);
 		const signedTx = await deployErc20ContractTx();
 		const txHash = signedTx.transactionHash as string;
-		await createBlock(false);
+		await createAndFinalizeBlock(context.web3, false);
 
 		const receipt = await waitForReceipt(context.web3, txHash, 20000);
 		const blockWithDeploy = await context.web3.eth.getBlock(receipt.blockNumber, false);
@@ -208,8 +206,8 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		await new Promise((r) => setTimeout(r, 1500));
 
 		// Longer fork from A1: A1 -> B2 -> B3 (retracts the block that contained the deploy)
-		const b2Hash = await createBlock(false, a1Hash);
-		await createBlock(false, b2Hash);
+		const b2Hash = await createAndFinalizeBlock(context.web3, false, a1Hash);
+		await createAndFinalizeBlock(context.web3, false, b2Hash);
 
 		const pollDeadline = Date.now() + 60000;
 		while (Date.now() < pollDeadline) {
