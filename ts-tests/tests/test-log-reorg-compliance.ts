@@ -2,14 +2,7 @@ import { expect } from "chai";
 import { step } from "mocha-steps";
 
 import { GENESIS_ACCOUNT, GENESIS_ACCOUNT_PRIVATE_KEY } from "./config";
-import {
-	createAndFinalizeBlock,
-	createAndFinalizeBlockNowait,
-	customRequest,
-	describeWithFrontierWs,
-	waitForBlock,
-	waitForReceipt,
-} from "./util";
+import { createAndFinalizeBlock, customRequest, describeWithFrontierWs, waitForReceipt } from "./util";
 
 const TRANSFER_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const LOG_EMITTING_CONSTRUCTOR =
@@ -146,6 +139,17 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		);
 		expect(removedEvent.blockHash).to.equal(receipt.blockHash);
 
+		const winningTx = await sendLogTransaction();
+		await createAndFinalizeBlock(context.web3, false);
+		await waitForReceipt(context.web3, winningTx.transactionHash as string);
+		const canonicalAfterReorg = await waitForMatchingEvent(
+			events,
+			(e) =>
+				e.transactionHash?.toLowerCase() === (winningTx.transactionHash as string).toLowerCase() &&
+				e.removed !== true
+		);
+		expect(canonicalAfterReorg.removed === true, "winning-branch log must not be a tombstone").to.equal(false);
+
 		subscription.unsubscribe();
 	}).timeout(60000);
 
@@ -177,6 +181,17 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		);
 		expect(removedEvent.blockHash).to.equal(receipt.blockHash);
 		expect(removedEvent.topics[0]).to.equal(TRANSFER_TOPIC);
+
+		const winningTx = await sendLogTransaction();
+		await createAndFinalizeBlock(context.web3, false);
+		await waitForReceipt(context.web3, winningTx.transactionHash as string);
+		const canonicalAfterReorg = await waitForFilterChange(
+			filterId,
+			(e) =>
+				e.transactionHash?.toLowerCase() === (winningTx.transactionHash as string).toLowerCase() &&
+				e.removed !== true
+		);
+		expect(canonicalAfterReorg.removed === true, "winning-branch log must not be a tombstone").to.equal(false);
 	}).timeout(60000);
 
 	step("logs subscription should emit removed=true after a longer fork (ERC20 deploy)", async function () {
@@ -216,6 +231,17 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 			}
 			await new Promise((r) => setTimeout(r, 300));
 		}
+
+		const postForkTx = await sendLogTransaction();
+		await createAndFinalizeBlock(context.web3, false);
+		await waitForReceipt(context.web3, postForkTx.transactionHash as string);
+		const canonicalOnWinningFork = await waitForMatchingEvent(
+			logEvents,
+			(e) =>
+				e.transactionHash?.toLowerCase() === (postForkTx.transactionHash as string).toLowerCase() &&
+				e.removed !== true
+		);
+		expect(canonicalOnWinningFork.removed === true, "winning-branch log must not be a tombstone").to.equal(false);
 
 		subscription.unsubscribe();
 

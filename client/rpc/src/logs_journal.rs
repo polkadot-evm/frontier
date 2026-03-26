@@ -288,6 +288,7 @@ mod tests {
 		traits::BlakeTwo256,
 		Permill,
 	};
+	use tokio::sync::broadcast::error::RecvError;
 
 	type OpaqueBlock = Block<Header<u64, BlakeTwo256>, sp_runtime::OpaqueExtrinsic>;
 
@@ -402,6 +403,34 @@ mod tests {
 
 		let err = journal.snapshot_since(0).unwrap_err();
 		assert!(matches!(err, LogsJournalError::IncompleteEntry { seq: 1 }));
+	}
+
+	/// `eth_subscribe("logs")` reads the same `broadcast` channel as the journal worker (`LogsJournal::new`).
+	/// If the subscriber stops calling `recv` while the chain advances, `RecvError::Lagged` ends the stream
+	/// (see `eth_pubsub.rs` Kind::Logs).
+	#[test]
+	fn journal_broadcast_matches_channel_capacity_for_ws_lag() {
+		let cap = 4usize;
+		let (tx, mut rx) = broadcast::channel(cap.max(1));
+		let dummy = Arc::new(LogsJournalEntry {
+			seq: 0,
+			complete: true,
+			logs: Vec::new(),
+		});
+		futures::executor::block_on(async move {
+			for _ in 0..cap {
+				let _ = tx.send(dummy.clone());
+				assert!(rx.recv().await.is_ok());
+			}
+			for _ in 0..cap.saturating_add(2) {
+				let _ = tx.send(dummy.clone());
+			}
+			let next = rx.recv().await;
+			assert!(
+				matches!(next, Err(RecvError::Lagged(_))),
+				"expected Lagged when subscriber falls behind the journal broadcast buffer: {next:?}"
+			);
+		});
 	}
 
 	#[test]
