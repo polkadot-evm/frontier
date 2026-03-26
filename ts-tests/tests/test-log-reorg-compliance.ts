@@ -29,6 +29,23 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		await new Promise<void>((resolve) => setTimeout(resolve, ms));
 	}
 
+	async function waitForSubscriptionConnection(subscription: any) {
+		return new Promise<void>((resolve, reject) => {
+			const timer = setTimeout(
+				() => reject(new Error("Timed out waiting for logs subscription connection")),
+				10000
+			);
+			subscription.on("connected", function () {
+				clearTimeout(timer);
+				resolve();
+			});
+			subscription.on("error", function (error: any) {
+				clearTimeout(timer);
+				reject(error);
+			});
+		});
+	}
+
 	async function sendLogTransaction() {
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
@@ -100,20 +117,7 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		};
 		subscription.on("data", recordLog);
 		subscription.on("changed", recordLog);
-		await new Promise<void>((resolve, reject) => {
-			const timer = setTimeout(
-				() => reject(new Error("Timed out waiting for logs subscription connection")),
-				10000
-			);
-			subscription.on("connected", function () {
-				clearTimeout(timer);
-				resolve();
-			});
-			subscription.on("error", function (error: any) {
-				clearTimeout(timer);
-				reject(error);
-			});
-		});
+		await waitForSubscriptionConnection(subscription);
 
 		const anchor = await createAndFinalizeBlock(context.web3, false);
 		const tx = await sendLogTransaction();
@@ -203,9 +207,7 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		};
 		subscription.on("data", recordLog);
 		subscription.on("changed", recordLog);
-		await new Promise<void>((resolve) => {
-			subscription.on("connected", () => resolve());
-		});
+		await waitForSubscriptionConnection(subscription);
 
 		// Canonical chain: A1 -> A2 (includes deploy tx + log)
 		const a1Hash = await createAndFinalizeBlock(context.web3, false);
@@ -218,7 +220,7 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		expect(blockWithDeploy).to.not.be.null;
 		const retractedEthBlockHash = blockWithDeploy!.hash as string;
 
-		await new Promise((r) => setTimeout(r, 1500));
+		await sleep(1500);
 
 		// Longer fork from A1: A1 -> B2 -> B3 (retracts the block that contained the deploy)
 		const b2Hash = await createAndFinalizeBlock(context.web3, false, a1Hash);
@@ -229,7 +231,7 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 			if (logEvents.some((e) => e.removed === true)) {
 				break;
 			}
-			await new Promise((r) => setTimeout(r, 300));
+			await sleep(300);
 		}
 
 		const postForkTx = await sendLogTransaction();
