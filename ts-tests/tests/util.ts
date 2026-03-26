@@ -135,10 +135,11 @@ export async function createAndFinalizeBlock(
 // Use this only for tests that explicitly handle waiting themselves.
 export async function createAndFinalizeBlockNowait(web3: Web3, parentHash: string | null = null): Promise<string> {
 	const response = await customRequest(web3, "engine_createBlock", [true, true, parentHash]);
-	if (!response.result?.hash) {
+	const blockHash = response?.result?.hash;
+	if (!blockHash || typeof blockHash !== "string") {
 		throw new Error(`Unexpected result: ${JSON.stringify(response)}`);
 	}
-	return response.result.hash;
+	return blockHash;
 }
 
 // Wait for a receipt to be available for a given transaction hash.

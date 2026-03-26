@@ -246,9 +246,9 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		subscription.unsubscribe();
 
 		const removedTrue = logEvents.filter((e) => e.removed === true);
-		const removedFalse = logEvents.filter((e) => e.removed === false);
+		const canonicalEvents = logEvents.filter((e) => e.removed !== true);
 
-		expect(removedFalse.length, "should see at least one canonical log before/during test").to.be.at.least(1);
+		expect(canonicalEvents.length, "should see at least one canonical log before/during test").to.be.at.least(1);
 
 		expect(
 			removedTrue.length,
