@@ -152,7 +152,7 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 				e.transactionHash?.toLowerCase() === (winningTx.transactionHash as string).toLowerCase() &&
 				e.removed !== true
 		);
-		expect(canonicalAfterReorg.removed === true, "winning-branch log must not be a tombstone").to.equal(false);
+		expect(canonicalAfterReorg.removed, "winning-branch log must not be a tombstone").to.not.equal(true);
 
 		subscription.unsubscribe();
 	}).timeout(60000);
@@ -196,6 +196,7 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 				e.removed !== true
 		);
 		expect(canonicalAfterReorg.removed === true, "winning-branch log must not be a tombstone").to.equal(false);
+		await customRequest(context.web3, "eth_uninstallFilter", [filterId]);
 	}).timeout(60000);
 
 	step("logs subscription should emit removed=true after a longer fork (ERC20 deploy)", async function () {
@@ -220,7 +221,12 @@ describeWithFrontierWs("Frontier RPC (Log Reorg Compliance)", (context) => {
 		expect(blockWithDeploy).to.not.be.null;
 		const retractedEthBlockHash = blockWithDeploy!.hash as string;
 
-		await sleep(1500);
+		// Wait for the canonical log event before triggering reorg
+		await waitForMatchingEvent(
+			logEvents,
+			(e) => e.transactionHash?.toLowerCase() === txHash.toLowerCase() && e.removed !== true,
+			10000
+		);
 
 		// Longer fork from A1: A1 -> B2 -> B3 (retracts the block that contained the deploy)
 		const b2Hash = await createAndFinalizeBlock(context.web3, false, a1Hash, true);
