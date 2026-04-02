@@ -95,8 +95,8 @@ where
 {
 	use fc_rpc::{
 		pending::AuraConsensusDataProvider, Debug, DebugApiServer, Eth, EthApiServer, EthDevSigner,
-		EthFilter, EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, Net, NetApiServer,
-		Web3, Web3ApiServer,
+		EthFilter, EthFilterApiServer, EthPubSub, EthPubSubApiServer, EthSigner, LogsJournal, Net,
+		NetApiServer, Web3, Web3ApiServer,
 	};
 	#[cfg(feature = "txpool")]
 	use fc_rpc::{TxPool, TxPoolApiServer};
@@ -127,6 +127,12 @@ where
 	if enable_dev_signer {
 		signers.push(Box::new(EthDevSigner::new()) as Box<dyn EthSigner>);
 	}
+
+	let logs_journal = Arc::new(LogsJournal::new(
+		subscription_task_executor.clone(),
+		storage_override.clone(),
+		pubsub_notification_sinks.clone(),
+	));
 
 	io.merge(
 		Eth::<B, C, P, CT, BE, CIDP, EC>::new(
@@ -162,6 +168,7 @@ where
 				max_past_logs,
 				max_block_range,
 				block_data_cache.clone(),
+				logs_journal.clone(),
 			)
 			.into_rpc(),
 		)?;
@@ -175,6 +182,7 @@ where
 			subscription_task_executor,
 			storage_override.clone(),
 			pubsub_notification_sinks,
+			logs_journal,
 		)
 		.into_rpc(),
 	)?;
