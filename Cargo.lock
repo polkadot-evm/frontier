@@ -15344,9 +15344,9 @@ dependencies = [
 
 [[package]]
 name = "ziggy"
-version = "1.5.3"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4e9e4cc51058e02ed7b4c3adb581094e5a20683df0725b0642bddd5cb634a3a"
+checksum = "daf449eff31105801bc6e6472123c5a150e0ae8852957f0bacf7f4570c539390"
 
 [[package]]
 name = "zstd"
