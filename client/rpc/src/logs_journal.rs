@@ -566,42 +566,35 @@ mod tests {
 		ethereum::Block::new(partial_header, vec![], vec![])
 	}
 
-	fn make_status(topic: H256, tx_index: u32) -> TransactionStatus {
-		TransactionStatus {
-			transaction_hash: H256::from_low_u64_be(topic.to_low_u64_be()),
-			transaction_index: tx_index,
-			from: H160::repeat_byte(0x11),
-			to: Some(H160::repeat_byte(0x22)),
-			contract_address: None,
-			logs: vec![ethereum::Log {
-				address: H160::repeat_byte(0x33),
-				topics: vec![topic],
-				data: vec![0x01, 0x02],
-			}],
-			logs_bloom: Bloom::default(),
-		}
-	}
-
-	fn make_status_with_log_count(
-		seed: u64,
+	/// Shared builder for mock [`TransactionStatus`] values used across journal tests.
+	fn transaction_status_with_logs(
+		tx_seed: u64,
+		tx_index: u32,
 		log_count: usize,
 		data_len: usize,
 	) -> TransactionStatus {
 		TransactionStatus {
-			transaction_hash: H256::from_low_u64_be(seed),
-			transaction_index: 0,
+			transaction_hash: H256::from_low_u64_be(tx_seed),
+			transaction_index: tx_index,
 			from: H160::repeat_byte(0x11),
 			to: Some(H160::repeat_byte(0x22)),
 			contract_address: None,
 			logs: (0..log_count)
 				.map(|i| ethereum::Log {
 					address: H160::repeat_byte(0x33),
-					topics: vec![H256::from_low_u64_be(seed.saturating_add(i as u64))],
+					topics: vec![H256::from_low_u64_be(tx_seed.saturating_add(i as u64))],
 					data: vec![0xAB; data_len],
 				})
 				.collect(),
 			logs_bloom: Bloom::default(),
 		}
+	}
+
+	fn make_status(topic: H256, tx_index: u32) -> TransactionStatus {
+		let mut s = transaction_status_with_logs(topic.to_low_u64_be(), tx_index, 1, 2);
+		s.logs[0].topics = vec![topic];
+		s.logs[0].data = vec![0x01, 0x02];
+		s
 	}
 
 	#[test]
@@ -658,9 +651,169 @@ mod tests {
 		assert!(matches!(err, LogsJournalError::IncompleteEntry { seq: 1 }));
 	}
 
-	/// `eth_subscribe("logs")` reads the same `broadcast` channel as the journal worker (`LogsJournal::new`).
-	/// If the subscriber stops calling `recv` while the chain advances, `RecvError::Lagged` ends the stream
-	/// (see `eth_pubsub.rs` Kind::Logs).
+	#[test]
+	fn snapshot_since_empty_journal_returns_ok_with_no_entries() {
+		let journal = LogsJournal {
+			state: Arc::new(Mutex::new(LogsJournalState::with_config(
+				&LogsJournalConfig {
+					max_entries: 4,
+					..LogsJournalConfig::default().normalized()
+				},
+			))),
+			tx: broadcast::channel(4).0,
+			worker_init: Arc::new(Mutex::new(None)),
+		};
+		let (entries, next_cursor) = journal.snapshot_since(0).unwrap();
+		assert!(entries.is_empty());
+		assert_eq!(next_cursor, 0);
+	}
+
+	#[test]
+	fn snapshot_since_respects_cursor_excludes_older_sequences() {
+		let journal = LogsJournal {
+			state: Arc::new(Mutex::new(LogsJournalState::with_config(
+				&LogsJournalConfig {
+					max_entries: 8,
+					..LogsJournalConfig::default().normalized()
+				},
+			))),
+			tx: broadcast::channel(8).0,
+			worker_init: Arc::new(Mutex::new(None)),
+		};
+		let mk = |topic_byte: u8| Log {
+			address: H160::repeat_byte(0x01),
+			topics: vec![H256::repeat_byte(topic_byte)],
+			data: fc_rpc_core::types::Bytes(vec![]),
+			block_hash: None,
+			block_number: None,
+			transaction_hash: None,
+			transaction_index: None,
+			log_index: None,
+			transaction_log_index: None,
+			removed: false,
+		};
+		{
+			let mut state = journal.state.lock().unwrap();
+			state.push(true, vec![mk(0x10)]);
+			state.push(true, vec![mk(0x20)]);
+			state.push(true, vec![mk(0x30)]);
+		}
+		let (entries, next_cursor) = journal.snapshot_since(1).unwrap();
+		assert_eq!(next_cursor, 3);
+		assert_eq!(entries.len(), 2);
+		assert_eq!(entries[0].seq, 1);
+		assert_eq!(entries[1].seq, 2);
+		assert_eq!(entries[0].logs[0].topics, vec![H256::repeat_byte(0x20)]);
+		assert_eq!(entries[1].logs[0].topics, vec![H256::repeat_byte(0x30)]);
+
+		let (from_two, _) = journal.snapshot_since(2).unwrap();
+		assert_eq!(from_two.len(), 1);
+		assert_eq!(from_two[0].seq, 2);
+	}
+
+	#[test]
+	fn snapshot_since_at_next_seq_returns_empty_snapshot() {
+		let journal = LogsJournal {
+			state: Arc::new(Mutex::new(LogsJournalState::with_config(
+				&LogsJournalConfig {
+					max_entries: 8,
+					..LogsJournalConfig::default().normalized()
+				},
+			))),
+			tx: broadcast::channel(8).0,
+			worker_init: Arc::new(Mutex::new(None)),
+		};
+		{
+			let mut state = journal.state.lock().unwrap();
+			state.push(true, Vec::new());
+			state.push(true, Vec::new());
+			state.push(true, Vec::new());
+		}
+		let (entries, next_cursor) = journal.snapshot_since(3).unwrap();
+		assert!(
+			entries.is_empty(),
+			"cursor at next_seq means nothing committed yet at or after that sequence"
+		);
+		assert_eq!(next_cursor, 3);
+	}
+
+	#[test]
+	fn state_pushes_gap_marker_incomplete_empty_after_complete_tail() {
+		let sample_log = Log {
+			address: H160::repeat_byte(0x01),
+			topics: vec![H256::repeat_byte(0x02)],
+			data: fc_rpc_core::types::Bytes(vec![0x03]),
+			block_hash: None,
+			block_number: None,
+			transaction_hash: None,
+			transaction_index: None,
+			log_index: None,
+			transaction_log_index: None,
+			removed: false,
+		};
+		let config = LogsJournalConfig {
+			max_entries: 8,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: 8,
+			max_bytes_per_entry: usize::MAX,
+		};
+		let mut state = LogsJournalState::with_config(&config);
+		let complete = state.push(true, vec![sample_log]);
+		assert!(complete.complete);
+		let gap = state.push(false, Vec::new());
+		assert!(!gap.complete);
+		assert!(gap.logs.is_empty());
+		assert_eq!(gap.seq, complete.seq.saturating_add(1));
+	}
+
+	/// Mirrors the journal worker reconnect branch: push a gap marker only when `entries.back()`
+	/// is complete; if the tail is already incomplete, return `None` (no stacked gap entries).
+	#[test]
+	fn gap_marker_not_pushed_again_when_tail_already_incomplete() {
+		let sample_log = Log {
+			address: H160::repeat_byte(0x01),
+			topics: vec![H256::repeat_byte(0x02)],
+			data: fc_rpc_core::types::Bytes(vec![0x03]),
+			block_hash: None,
+			block_number: None,
+			transaction_hash: None,
+			transaction_index: None,
+			log_index: None,
+			transaction_log_index: None,
+			removed: false,
+		};
+		let config = LogsJournalConfig {
+			max_entries: 8,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: 8,
+			max_bytes_per_entry: usize::MAX,
+		};
+		let mut state = LogsJournalState::with_config(&config);
+
+		state.push(true, vec![sample_log]);
+
+		let maybe_first = match state.entries.back() {
+			Some(last) if last.entry.complete => Some(state.push(false, Vec::new())),
+			_ => None,
+		};
+		assert!(maybe_first.is_some());
+		assert_eq!(state.entries.len(), 2);
+		assert!(!state.entries.back().expect("tail").entry.complete);
+
+		let maybe_second = match state.entries.back() {
+			Some(last) if last.entry.complete => Some(state.push(false, Vec::new())),
+			_ => None,
+		};
+		assert!(maybe_second.is_none());
+		assert_eq!(state.entries.len(), 2);
+	}
+
+	/// Documents the dependency on Tokio `broadcast` lag semantics used by `eth_subscribe("logs")`
+	/// (same channel capacity as `LogsJournal::with_config`); this is not a unit test of journal logic.
 	#[test]
 	fn journal_broadcast_matches_channel_capacity_for_ws_lag() {
 		let cap = 4usize;
@@ -759,6 +912,55 @@ mod tests {
 	}
 
 	#[test]
+	fn build_payload_with_reorg_visits_multiple_enacted_then_new_best() {
+		let retracted = H256::repeat_byte(0x10);
+		let enacted_a = H256::repeat_byte(0x20);
+		let enacted_b = H256::repeat_byte(0x21);
+		let new_best = H256::repeat_byte(0x30);
+
+		let mut storage = MockStorageOverride::default();
+		for (seed, hash) in [retracted, enacted_a, enacted_b, new_best]
+			.iter()
+			.enumerate()
+		{
+			storage
+				.blocks
+				.insert(*hash, make_ethereum_block(seed as u64));
+			storage.statuses.insert(
+				*hash,
+				vec![make_status(H256::repeat_byte(0xA0 + seed as u8), 0)],
+			);
+		}
+
+		let notification = EthereumBlockNotification::<OpaqueBlock> {
+			is_new_best: true,
+			hash: new_best,
+			reorg_info: Some(Arc::new(fc_mapping_sync::ReorgInfo::<OpaqueBlock> {
+				common_ancestor: H256::repeat_byte(0x01),
+				retracted: vec![retracted],
+				enacted: vec![enacted_a, enacted_b],
+				new_best,
+			})),
+		};
+		let (complete, logs) = build_journal_payload(
+			&storage,
+			notification,
+			&LogsJournalConfig::default().normalized(),
+		);
+
+		assert!(complete);
+		assert_eq!(logs.len(), 4);
+		assert!(logs[0].removed);
+		assert!(!logs[1].removed);
+		assert!(!logs[2].removed);
+		assert!(!logs[3].removed);
+		assert_eq!(logs[0].topics, vec![H256::repeat_byte(0xA0)]);
+		assert_eq!(logs[1].topics, vec![H256::repeat_byte(0xA1)]);
+		assert_eq!(logs[2].topics, vec![H256::repeat_byte(0xA2)]);
+		assert_eq!(logs[3].topics, vec![H256::repeat_byte(0xA3)]);
+	}
+
+	#[test]
 	fn build_payload_returns_incomplete_when_reorg_data_is_missing() {
 		let retracted = H256::repeat_byte(0x10);
 		let enacted = H256::repeat_byte(0x20);
@@ -807,15 +1009,16 @@ mod tests {
 			removed: false,
 		};
 		let retained_bytes = retained_entry_bytes(&vec![sample_log.clone()]);
+		// Do not use `normalized()`: it recomputes the struct from `max_total_bytes` only and
+		// would drop explicit limits — here we isolate the `max_total_bytes` eviction branch.
 		let config = LogsJournalConfig {
 			max_entries: 8,
-			max_total_logs: 8,
+			max_total_logs: usize::MAX,
 			max_total_bytes: retained_bytes.saturating_add(1),
 			max_blocks_per_entry: 8,
 			max_logs_per_entry: 8,
-			max_bytes_per_entry: retained_bytes.saturating_add(1),
-		}
-		.normalized();
+			max_bytes_per_entry: usize::MAX,
+		};
 		let mut state = LogsJournalState::with_config(&config);
 		let first = vec![sample_log];
 		let second = first.clone();
@@ -825,6 +1028,46 @@ mod tests {
 
 		assert_eq!(state.entries.len(), 1);
 		assert_eq!(state.earliest_available(), 1);
+		assert_eq!(state.total_bytes, retained_bytes);
+	}
+
+	#[test]
+	fn state_prunes_by_max_entries() {
+		let sample_log = Log {
+			address: H160::repeat_byte(0x01),
+			topics: vec![H256::repeat_byte(0x02)],
+			data: fc_rpc_core::types::Bytes(vec![0x03; 4]),
+			block_hash: None,
+			block_number: None,
+			transaction_hash: None,
+			transaction_index: None,
+			log_index: None,
+			transaction_log_index: None,
+			removed: false,
+		};
+		let retained = retained_entry_bytes(&vec![sample_log.clone()]);
+		let config = LogsJournalConfig {
+			max_entries: 2,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: 8,
+			max_bytes_per_entry: usize::MAX,
+		};
+		let mut state = LogsJournalState::with_config(&config);
+
+		state.push(true, vec![sample_log.clone()]);
+		state.push(true, vec![sample_log.clone()]);
+		assert_eq!(state.entries.len(), 2);
+		assert_eq!(state.total_logs, 2);
+		assert_eq!(state.total_bytes, retained.saturating_mul(2));
+
+		state.push(true, vec![sample_log]);
+
+		assert_eq!(state.entries.len(), 2);
+		assert_eq!(state.earliest_available(), 1);
+		assert_eq!(state.total_logs, 2);
+		assert_eq!(state.total_bytes, retained.saturating_mul(2));
 	}
 
 	#[test]
@@ -877,8 +1120,9 @@ mod tests {
 		storage.blocks.insert(hash, make_ethereum_block(10));
 		storage.statuses.insert(
 			hash,
-			vec![make_status_with_log_count(
+			vec![transaction_status_with_logs(
 				0xA0,
+				0,
 				DEFAULT_LOGS_JOURNAL_MAX_LOGS_PER_ENTRY.saturating_add(1),
 				2,
 			)],
@@ -903,8 +1147,9 @@ mod tests {
 		storage.blocks.insert(hash, make_ethereum_block(10));
 		storage.statuses.insert(
 			hash,
-			vec![make_status_with_log_count(
+			vec![transaction_status_with_logs(
 				0xA0,
+				0,
 				1,
 				DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY.saturating_add(1),
 			)],
@@ -920,5 +1165,132 @@ mod tests {
 		let (complete, logs) = build_journal_payload(&storage, notification, &config);
 		assert!(!complete);
 		assert!(logs.is_empty());
+	}
+
+	/// Cumulative path: many small logs that fit under the cap when taken alone, but retained
+	/// accounting grows across `append_block_logs` pushes (`dynamic_bytes`, `Vec` slab via
+	/// `capacity`, etc.) until `max_bytes_per_entry` is exceeded — unlike a single oversized
+	/// `data` buffer in `build_payload_returns_incomplete_when_byte_cap_is_exceeded`.
+	#[test]
+	fn build_payload_returns_incomplete_when_cumulative_bytes_exceed_entry_cap() {
+		let hash = H256::repeat_byte(0xAA);
+		let log_count = 64usize;
+		let per_log_data_len = 1024usize;
+		let mut storage = MockStorageOverride::default();
+		storage.blocks.insert(hash, make_ethereum_block(10));
+		storage.statuses.insert(
+			hash,
+			vec![transaction_status_with_logs(
+				0xA0,
+				0,
+				log_count,
+				per_log_data_len,
+			)],
+		);
+
+		let notification = EthereumBlockNotification::<OpaqueBlock> {
+			is_new_best: true,
+			hash,
+			reorg_info: None,
+		};
+		let loose_config = LogsJournalConfig {
+			max_entries: 8,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: log_count.saturating_add(1),
+			max_bytes_per_entry: usize::MAX,
+		};
+		let (complete_loose, logs_loose) =
+			build_journal_payload(&storage, notification.clone(), &loose_config);
+		assert!(
+			complete_loose,
+			"same block should build completely when per-entry byte cap is loose"
+		);
+		assert_eq!(
+			logs_loose.len(),
+			log_count,
+			"positive control: expect every mock log when not byte-limited"
+		);
+
+		// Tight cap: typically exceeded partway through the block as retained size grows, not
+		// only after the last log (Vec `capacity` and dynamic totals accumulate per push).
+		let tight_config = LogsJournalConfig {
+			max_entries: 8,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: log_count.saturating_add(1),
+			max_bytes_per_entry: 8 * 1024,
+		};
+		let (complete_tight, logs_tight) =
+			build_journal_payload(&storage, notification, &tight_config);
+		assert!(
+			!complete_tight,
+			"expected incomplete once cumulative retained size exceeds per-entry cap"
+		);
+		assert!(
+			logs_tight.is_empty(),
+			"append_block_logs fails closed with empty logs on cap breach"
+		);
+	}
+
+	/// Eviction is an OR across `max_entries | max_total_logs | max_total_bytes`. This pins the
+	/// `max_total_logs` branch without interference from the other two.
+	#[test]
+	fn state_prunes_by_total_retained_logs() {
+		let sample_log = Log {
+			address: H160::repeat_byte(0x01),
+			topics: vec![H256::repeat_byte(0x02)],
+			data: fc_rpc_core::types::Bytes(vec![0x03; 8]),
+			block_hash: None,
+			block_number: None,
+			transaction_hash: None,
+			transaction_index: None,
+			log_index: None,
+			transaction_log_index: None,
+			removed: false,
+		};
+		let config = LogsJournalConfig {
+			max_entries: 8,
+			max_total_logs: 2,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: 8,
+			max_bytes_per_entry: usize::MAX,
+		};
+		let mut state = LogsJournalState::with_config(&config);
+
+		state.push(true, vec![sample_log.clone()]);
+		state.push(true, vec![sample_log.clone()]);
+		assert_eq!(state.entries.len(), 2);
+		assert_eq!(state.earliest_available(), 0);
+
+		state.push(true, vec![sample_log]);
+
+		assert_eq!(state.entries.len(), 2);
+		assert_eq!(state.earliest_available(), 1);
+		assert_eq!(state.total_logs, 2);
+	}
+
+	/// Regression for `visit_block_logs_with_removed` (used by `append_block_logs` for caps): a
+	/// visitor `Break` must stop walking the block. This is filter-layer behavior, not the full
+	/// journal pipeline.
+	#[test]
+	fn visit_block_logs_honors_control_flow_break() {
+		let block = make_ethereum_block(1);
+		let statuses = vec![transaction_status_with_logs(0xA0, 0, 5, 2)];
+		let mut seen = 0usize;
+		let outcome =
+			visit_block_logs_with_removed(&Filter::default(), block, statuses, false, |_log| {
+				seen += 1;
+				if seen == 3 {
+					std::ops::ControlFlow::Break(())
+				} else {
+					std::ops::ControlFlow::Continue(())
+				}
+			});
+		assert!(matches!(outcome, std::ops::ControlFlow::Break(())));
+		assert_eq!(seen, 3);
 	}
 }
