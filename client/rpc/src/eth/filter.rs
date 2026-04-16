@@ -19,6 +19,7 @@
 use std::{
 	collections::{BTreeMap, HashSet},
 	marker::PhantomData,
+	ops::ControlFlow,
 	sync::Arc,
 	time::{Duration, Instant},
 };
@@ -815,11 +816,28 @@ pub(crate) fn filter_block_logs_with_removed(
 	transaction_statuses: Vec<TransactionStatus>,
 	removed: bool,
 ) -> Vec<Log> {
+	let mut logs = Vec::new();
+	let _ = visit_block_logs_with_removed(filter, block, transaction_statuses, removed, |log| {
+		logs.push(log);
+		ControlFlow::Continue(())
+	});
+	logs
+}
+
+pub(crate) fn visit_block_logs_with_removed<F>(
+	filter: &Filter,
+	block: EthereumBlock,
+	transaction_statuses: Vec<TransactionStatus>,
+	removed: bool,
+	mut visitor: F,
+) -> ControlFlow<()>
+where
+	F: FnMut(Log) -> ControlFlow<()>,
+{
 	let params = FilteredParams::new(filter.clone());
 	let mut block_log_index: u32 = 0;
 	let block_hash = H256::from(keccak_256(&rlp::encode(&block.header)));
 
-	let mut logs = Vec::new();
 	for status in transaction_statuses.iter() {
 		let mut transaction_log_index: u32 = 0;
 		let transaction_hash = status.transaction_hash;
@@ -843,14 +861,14 @@ pub(crate) fn filter_block_logs_with_removed(
 			log.transaction_index = Some(U256::from(status.transaction_index));
 			log.log_index = Some(U256::from(block_log_index));
 			log.transaction_log_index = Some(U256::from(transaction_log_index));
-			if log_matches_filter(&params, &log, false) {
-				logs.push(log);
+			if log_matches_filter(&params, &log, false) && visitor(log).is_break() {
+				return ControlFlow::Break(());
 			}
 			transaction_log_index += 1;
 			block_log_index += 1;
 		}
 	}
-	logs
+	ControlFlow::Continue(())
 }
 
 fn logs_journal_error(err: LogsJournalError) -> jsonrpsee::types::ErrorObjectOwned {
