@@ -199,9 +199,10 @@ impl LogsJournal {
 		let config = config.normalized();
 		let state = Arc::new(Mutex::new(LogsJournalState::with_config(&config)));
 		let (tx, _) = broadcast::channel(config.max_entries);
+		#[rustfmt::skip]
 		let worker_init = Arc::new(Mutex::new(Some(Box::new(
 			move |worker_state: Arc<Mutex<LogsJournalState>>,
-			      worker_tx: broadcast::Sender<Arc<LogsJournalEntry>>| {
+				worker_tx: broadcast::Sender<Arc<LogsJournalEntry>>| {
 				let initial_notifications =
 					register_notification_stream(&pubsub_notification_sinks);
 				let worker_fut = async move {
