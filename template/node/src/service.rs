@@ -475,6 +475,9 @@ where
 				filter_pool: filter_pool.clone(),
 				max_past_logs,
 				max_block_range,
+				logs_journal_config: crate::rpc::LogsJournalConfig::from_max_total_bytes(
+					eth_config.logs_journal_max_total_bytes,
+				),
 				fee_history_cache: fee_history_cache.clone(),
 				fee_history_cache_limit,
 				execute_gas_limit_multiplier,

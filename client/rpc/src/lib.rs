@@ -44,7 +44,7 @@ pub use self::{
 	debug::Debug,
 	eth::{format, pending, EstimateGasAdapter, Eth, EthConfig, EthFilter},
 	eth_pubsub::{EthPubSub, EthereumSubIdProvider},
-	logs_journal::{LogsJournal, LogsJournalEntry, LogsJournalError},
+	logs_journal::{LogsJournal, LogsJournalConfig, LogsJournalEntry, LogsJournalError},
 	net::Net,
 	signer::{EthDevSigner, EthSigner},
 	web3::Web3,
