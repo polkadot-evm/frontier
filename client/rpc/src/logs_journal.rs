@@ -26,6 +26,7 @@ const DEFAULT_LOGS_JOURNAL_MAX_TOTAL_BYTES: usize = 512 * 1024 * 1024;
 const DEFAULT_LOGS_JOURNAL_MAX_BLOCKS_PER_ENTRY: usize = 128;
 const DEFAULT_LOGS_JOURNAL_MAX_LOGS_PER_ENTRY: usize = 10_000;
 const DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY: usize = 4 * 1024 * 1024;
+const MAX_BROADCAST_CAPACITY: usize = 4_096;
 
 /// When the per-connection notification stream ends (sender dropped — e.g. sink pool refresh or
 /// RPC restart), we register a new sink and continue. A short pause avoids tight spinning if sinks
@@ -69,8 +70,59 @@ impl LogsJournalConfig {
 	}
 
 	fn normalized(&self) -> Self {
-		Self::from_max_total_bytes(self.max_total_bytes)
+		let max_blocks_per_entry = non_zero_or_default(
+			self.max_blocks_per_entry,
+			DEFAULT_LOGS_JOURNAL_MAX_BLOCKS_PER_ENTRY,
+		);
+		let max_logs_per_entry = non_zero_or_default(
+			self.max_logs_per_entry,
+			DEFAULT_LOGS_JOURNAL_MAX_LOGS_PER_ENTRY,
+		);
+		let max_bytes_per_entry = non_zero_or_default(
+			self.max_bytes_per_entry,
+			DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY,
+		);
+		let max_total_bytes = match self.max_total_bytes {
+			0 if self.max_entries > 0 => self.max_entries.saturating_mul(max_bytes_per_entry),
+			0 => DEFAULT_LOGS_JOURNAL_MAX_TOTAL_BYTES,
+			bytes => bytes,
+		}
+		.max(1);
+		let max_entries = if self.max_entries == 0 {
+			max_total_bytes.saturating_add(max_bytes_per_entry.saturating_sub(1))
+				/ max_bytes_per_entry
+		} else {
+			self.max_entries
+		}
+		.max(1);
+		let max_total_logs = if self.max_total_logs == 0 {
+			max_entries.saturating_mul(max_logs_per_entry)
+		} else {
+			self.max_total_logs
+		}
+		.max(1);
+
+		Self {
+			max_entries,
+			max_total_logs,
+			max_total_bytes: max_total_bytes.max(1),
+			max_blocks_per_entry,
+			max_logs_per_entry,
+			max_bytes_per_entry,
+		}
 	}
+}
+
+fn non_zero_or_default(value: usize, default: usize) -> usize {
+	if value == 0 {
+		default.max(1)
+	} else {
+		value
+	}
+}
+
+fn broadcast_capacity(max_entries: usize) -> usize {
+	max_entries.clamp(1, MAX_BROADCAST_CAPACITY)
 }
 
 #[derive(Clone, Debug)]
@@ -198,7 +250,7 @@ impl LogsJournal {
 	) -> Self {
 		let config = config.normalized();
 		let state = Arc::new(Mutex::new(LogsJournalState::with_config(&config)));
-		let (tx, _) = broadcast::channel(config.max_entries);
+		let (tx, _) = broadcast::channel(broadcast_capacity(config.max_entries));
 		#[rustfmt::skip]
 		let worker_init = Arc::new(Mutex::new(Some(Box::new(
 			move |worker_state: Arc<Mutex<LogsJournalState>>,
@@ -261,6 +313,7 @@ impl LogsJournal {
 		}
 	}
 
+	#[deprecated(note = "use with_config / from_max_total_bytes")]
 	pub fn with_capacity<B: BlockT + 'static>(
 		executor: SubscriptionTaskExecutor,
 		storage_override: Arc<dyn StorageOverride<B>>,
@@ -447,15 +500,13 @@ fn append_block_logs<B: BlockT>(
 		}
 
 		let log_dynamic_bytes = retained_log_dynamic_bytes(&log);
-		out.push(log);
-		*dynamic_bytes = dynamic_bytes.saturating_add(log_dynamic_bytes);
-
-		if retained_entry_bytes_with_dynamic(out, *dynamic_bytes) > config.max_bytes_per_entry {
-			let _ = out.pop();
-			*dynamic_bytes = dynamic_bytes.saturating_sub(log_dynamic_bytes);
+		let potential_dynamic = dynamic_bytes.saturating_add(log_dynamic_bytes);
+		if retained_entry_bytes_with_dynamic(out, potential_dynamic) > config.max_bytes_per_entry {
 			limit_exceeded = true;
 			return std::ops::ControlFlow::Break(());
 		}
+		out.push(log);
+		*dynamic_bytes = potential_dynamic;
 
 		std::ops::ControlFlow::Continue(())
 	});
@@ -480,13 +531,13 @@ fn retained_log_dynamic_bytes(log: &Log) -> usize {
 		.saturating_add(log.data.0.capacity())
 }
 
-fn retained_entry_bytes_with_dynamic(logs: &Vec<Log>, dynamic_bytes: usize) -> usize {
+fn retained_entry_bytes_with_dynamic(logs: &[Log], dynamic_bytes: usize) -> usize {
 	size_of::<LogsJournalEntry>()
-		.saturating_add(logs.capacity().saturating_mul(size_of::<Log>()))
+		.saturating_add(logs.len().saturating_mul(size_of::<Log>()))
 		.saturating_add(dynamic_bytes)
 }
 
-fn retained_entry_bytes(logs: &Vec<Log>) -> usize {
+fn retained_entry_bytes(logs: &[Log]) -> usize {
 	let dynamic_bytes = logs
 		.iter()
 		.map(retained_log_dynamic_bytes)
@@ -817,7 +868,7 @@ mod tests {
 	#[test]
 	fn journal_broadcast_matches_channel_capacity_for_ws_lag() {
 		let cap = 4usize;
-		let (tx, mut rx) = broadcast::channel(cap.max(1));
+		let (tx, mut rx) = broadcast::channel(broadcast_capacity(cap));
 		let dummy = Arc::new(LogsJournalEntry {
 			seq: 0,
 			complete: true,
@@ -837,6 +888,71 @@ mod tests {
 				"expected Lagged when subscriber falls behind the journal broadcast buffer: {next:?}"
 			);
 		});
+	}
+
+	#[test]
+	fn normalized_preserves_explicit_limits() {
+		let config = LogsJournalConfig {
+			max_entries: 7,
+			max_total_logs: 33,
+			max_total_bytes: 123_456,
+			max_blocks_per_entry: 11,
+			max_logs_per_entry: 22,
+			max_bytes_per_entry: 333,
+		}
+		.normalized();
+
+		assert_eq!(config.max_entries, 7);
+		assert_eq!(config.max_total_logs, 33);
+		assert_eq!(config.max_total_bytes, 123_456);
+		assert_eq!(config.max_blocks_per_entry, 11);
+		assert_eq!(config.max_logs_per_entry, 22);
+		assert_eq!(config.max_bytes_per_entry, 333);
+	}
+
+	#[test]
+	fn normalized_fills_missing_limits_from_explicit_entries() {
+		let config = LogsJournalConfig {
+			max_entries: 3,
+			max_total_logs: 0,
+			max_total_bytes: 0,
+			max_blocks_per_entry: 0,
+			max_logs_per_entry: 0,
+			max_bytes_per_entry: 0,
+		}
+		.normalized();
+
+		assert_eq!(config.max_entries, 3);
+		assert_eq!(
+			config.max_total_logs,
+			3usize.saturating_mul(DEFAULT_LOGS_JOURNAL_MAX_LOGS_PER_ENTRY)
+		);
+		assert_eq!(
+			config.max_total_bytes,
+			3usize.saturating_mul(DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY)
+		);
+		assert_eq!(
+			config.max_blocks_per_entry,
+			DEFAULT_LOGS_JOURNAL_MAX_BLOCKS_PER_ENTRY
+		);
+		assert_eq!(
+			config.max_logs_per_entry,
+			DEFAULT_LOGS_JOURNAL_MAX_LOGS_PER_ENTRY
+		);
+		assert_eq!(
+			config.max_bytes_per_entry,
+			DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY
+		);
+	}
+
+	#[test]
+	fn broadcast_capacity_is_clamped() {
+		assert_eq!(broadcast_capacity(0), 1);
+		assert_eq!(broadcast_capacity(8), 8);
+		assert_eq!(
+			broadcast_capacity(MAX_BROADCAST_CAPACITY.saturating_add(1)),
+			MAX_BROADCAST_CAPACITY
+		);
 	}
 
 	#[test]
@@ -1009,8 +1125,7 @@ mod tests {
 			removed: false,
 		};
 		let retained_bytes = retained_entry_bytes(&vec![sample_log.clone()]);
-		// Do not use `normalized()`: it recomputes the struct from `max_total_bytes` only and
-		// would drop explicit limits — here we isolate the `max_total_bytes` eviction branch.
+		// Keep the config explicit here so this test isolates the `max_total_bytes` eviction path.
 		let config = LogsJournalConfig {
 			max_entries: 8,
 			max_total_logs: usize::MAX,
