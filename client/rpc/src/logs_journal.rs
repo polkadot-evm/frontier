@@ -417,7 +417,7 @@ fn build_journal_payload<B: BlockT>(
 			.saturating_add(reorg_info.enacted.len())
 			.saturating_add(1);
 		if total_blocks > config.max_blocks_per_entry {
-			log::warn!(
+			log::debug!(
 				target: "rpc",
 				"Reorg journal entry spans {total_blocks} blocks, exceeding cap {}; marking incomplete",
 				config.max_blocks_per_entry,
@@ -519,7 +519,7 @@ fn append_block_logs<B: BlockT>(
 	});
 
 	if limit_exceeded {
-		log::warn!(
+		log::debug!(
 			target: "rpc",
 			"Journal entry for block {block_hash:?} exceeded per-entry cap (logs={}, bytes={}); marking incomplete",
 			config.max_logs_per_entry,
@@ -661,7 +661,7 @@ mod tests {
 			state: Arc::new(Mutex::new(LogsJournalState::with_config(
 				&LogsJournalConfig {
 					max_entries: 2,
-					..LogsJournalConfig::default().normalized()
+					..LogsJournalConfig::default()
 				},
 			))),
 			tx: broadcast::channel(2).0,
@@ -692,7 +692,7 @@ mod tests {
 			state: Arc::new(Mutex::new(LogsJournalState::with_config(
 				&LogsJournalConfig {
 					max_entries: 4,
-					..LogsJournalConfig::default().normalized()
+					..LogsJournalConfig::default()
 				},
 			))),
 			tx: broadcast::channel(4).0,
@@ -715,7 +715,7 @@ mod tests {
 			state: Arc::new(Mutex::new(LogsJournalState::with_config(
 				&LogsJournalConfig {
 					max_entries: 4,
-					..LogsJournalConfig::default().normalized()
+					..LogsJournalConfig::default()
 				},
 			))),
 			tx: broadcast::channel(4).0,
@@ -732,7 +732,7 @@ mod tests {
 			state: Arc::new(Mutex::new(LogsJournalState::with_config(
 				&LogsJournalConfig {
 					max_entries: 8,
-					..LogsJournalConfig::default().normalized()
+					..LogsJournalConfig::default()
 				},
 			))),
 			tx: broadcast::channel(8).0,
@@ -775,7 +775,7 @@ mod tests {
 			state: Arc::new(Mutex::new(LogsJournalState::with_config(
 				&LogsJournalConfig {
 					max_entries: 8,
-					..LogsJournalConfig::default().normalized()
+					..LogsJournalConfig::default()
 				},
 			))),
 			tx: broadcast::channel(8).0,
@@ -986,11 +986,8 @@ mod tests {
 			hash,
 			reorg_info: None,
 		};
-		let (complete, logs) = build_journal_payload(
-			&storage,
-			notification,
-			&LogsJournalConfig::default().normalized(),
-		);
+		let (complete, logs) =
+			build_journal_payload(&storage, notification, &LogsJournalConfig::default());
 
 		assert!(complete);
 		assert_eq!(logs.len(), 1);
@@ -1028,11 +1025,8 @@ mod tests {
 				new_best,
 			})),
 		};
-		let (complete, logs) = build_journal_payload(
-			&storage,
-			notification,
-			&LogsJournalConfig::default().normalized(),
-		);
+		let (complete, logs) =
+			build_journal_payload(&storage, notification, &LogsJournalConfig::default());
 
 		assert!(complete);
 		assert_eq!(logs.len(), 3);
@@ -1075,11 +1069,8 @@ mod tests {
 				new_best,
 			})),
 		};
-		let (complete, logs) = build_journal_payload(
-			&storage,
-			notification,
-			&LogsJournalConfig::default().normalized(),
-		);
+		let (complete, logs) =
+			build_journal_payload(&storage, notification, &LogsJournalConfig::default());
 
 		assert!(complete);
 		assert_eq!(logs.len(), 4);
@@ -1117,11 +1108,8 @@ mod tests {
 				new_best,
 			})),
 		};
-		let (complete, logs) = build_journal_payload(
-			&storage,
-			notification,
-			&LogsJournalConfig::default().normalized(),
-		);
+		let (complete, logs) =
+			build_journal_payload(&storage, notification, &LogsJournalConfig::default());
 
 		assert!(!complete);
 		assert!(logs.is_empty());
@@ -1238,7 +1226,7 @@ mod tests {
 				new_best,
 			})),
 		};
-		let config = LogsJournalConfig::default().normalized();
+		let config = LogsJournalConfig::default();
 
 		let (complete, logs) = build_journal_payload(&storage, notification, &config);
 		assert!(!complete);
@@ -1265,7 +1253,7 @@ mod tests {
 			hash,
 			reorg_info: None,
 		};
-		let config = LogsJournalConfig::default().normalized();
+		let config = LogsJournalConfig::default();
 
 		let (complete, logs) = build_journal_payload(&storage, notification, &config);
 		assert!(!complete);
@@ -1292,7 +1280,7 @@ mod tests {
 			hash,
 			reorg_info: None,
 		};
-		let config = LogsJournalConfig::default().normalized();
+		let config = LogsJournalConfig::default();
 
 		let (complete, logs) = build_journal_payload(&storage, notification, &config);
 		assert!(!complete);
