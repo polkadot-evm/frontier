@@ -52,8 +52,9 @@ impl Default for LogsJournalConfig {
 
 impl LogsJournalConfig {
 	pub fn from_max_total_bytes(max_total_bytes: usize) -> Self {
-		let max_bytes_per_entry = DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY;
 		let normalized_total_bytes = max_total_bytes.max(1);
+		let max_bytes_per_entry =
+			DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY.min(normalized_total_bytes);
 		let max_entries = normalized_total_bytes
 			.saturating_add(max_bytes_per_entry.saturating_sub(1))
 			/ max_bytes_per_entry;
@@ -78,16 +79,19 @@ impl LogsJournalConfig {
 			self.max_logs_per_entry,
 			DEFAULT_LOGS_JOURNAL_MAX_LOGS_PER_ENTRY,
 		);
-		let max_bytes_per_entry = non_zero_or_default(
+		let requested_max_bytes_per_entry = non_zero_or_default(
 			self.max_bytes_per_entry,
 			DEFAULT_LOGS_JOURNAL_MAX_BYTES_PER_ENTRY,
 		);
 		let max_total_bytes = match self.max_total_bytes {
-			0 if self.max_entries > 0 => self.max_entries.saturating_mul(max_bytes_per_entry),
+			0 if self.max_entries > 0 => self
+				.max_entries
+				.saturating_mul(requested_max_bytes_per_entry),
 			0 => DEFAULT_LOGS_JOURNAL_MAX_TOTAL_BYTES,
 			bytes => bytes,
 		}
 		.max(1);
+		let max_bytes_per_entry = requested_max_bytes_per_entry.min(max_total_bytes);
 		let max_entries = if self.max_entries == 0 {
 			max_total_bytes.saturating_add(max_bytes_per_entry.saturating_sub(1))
 				/ max_bytes_per_entry
@@ -500,12 +504,15 @@ fn append_block_logs<B: BlockT>(
 		}
 
 		let log_dynamic_bytes = retained_log_dynamic_bytes(&log);
+		out.push(log);
 		let potential_dynamic = dynamic_bytes.saturating_add(log_dynamic_bytes);
-		if retained_entry_bytes_with_dynamic(out, potential_dynamic) > config.max_bytes_per_entry {
+		if retained_entry_bytes_with_capacity(out.capacity(), potential_dynamic)
+			> config.max_bytes_per_entry
+		{
+			out.pop();
 			limit_exceeded = true;
 			return std::ops::ControlFlow::Break(());
 		}
-		out.push(log);
 		*dynamic_bytes = potential_dynamic;
 
 		std::ops::ControlFlow::Continue(())
@@ -531,18 +538,18 @@ fn retained_log_dynamic_bytes(log: &Log) -> usize {
 		.saturating_add(log.data.0.capacity())
 }
 
-fn retained_entry_bytes_with_dynamic(logs: &[Log], dynamic_bytes: usize) -> usize {
+fn retained_entry_bytes_with_capacity(logs_capacity: usize, dynamic_bytes: usize) -> usize {
 	size_of::<LogsJournalEntry>()
-		.saturating_add(logs.len().saturating_mul(size_of::<Log>()))
+		.saturating_add(logs_capacity.saturating_mul(size_of::<Log>()))
 		.saturating_add(dynamic_bytes)
 }
 
-fn retained_entry_bytes(logs: &[Log]) -> usize {
+fn retained_entry_bytes(logs: &Vec<Log>) -> usize {
 	let dynamic_bytes = logs
 		.iter()
 		.map(retained_log_dynamic_bytes)
 		.fold(0usize, usize::saturating_add);
-	retained_entry_bytes_with_dynamic(logs, dynamic_bytes)
+	retained_entry_bytes_with_capacity(logs.capacity(), dynamic_bytes)
 }
 
 #[cfg(test)]
@@ -908,6 +915,16 @@ mod tests {
 		assert_eq!(config.max_blocks_per_entry, 11);
 		assert_eq!(config.max_logs_per_entry, 22);
 		assert_eq!(config.max_bytes_per_entry, 333);
+	}
+
+	#[test]
+	fn from_max_total_bytes_clamps_entry_budget_to_total_budget() {
+		let total_budget = 1024usize;
+		let config = LogsJournalConfig::from_max_total_bytes(total_budget);
+
+		assert_eq!(config.max_total_bytes, total_budget);
+		assert_eq!(config.max_bytes_per_entry, total_budget);
+		assert_eq!(config.max_entries, 1);
 	}
 
 	#[test]
@@ -1280,6 +1297,49 @@ mod tests {
 		let (complete, logs) = build_journal_payload(&storage, notification, &config);
 		assert!(!complete);
 		assert!(logs.is_empty());
+	}
+
+	#[test]
+	fn build_payload_rejects_single_log_when_retained_size_exceeds_cap_after_push() {
+		let hash = H256::repeat_byte(0xAA);
+		let mut storage = MockStorageOverride::default();
+		storage.blocks.insert(hash, make_ethereum_block(10));
+		storage
+			.statuses
+			.insert(hash, vec![transaction_status_with_logs(0xA0, 0, 1, 2)]);
+
+		let notification = EthereumBlockNotification::<OpaqueBlock> {
+			is_new_best: true,
+			hash,
+			reorg_info: None,
+		};
+		let loose_config = LogsJournalConfig {
+			max_entries: 1,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: 8,
+			max_bytes_per_entry: usize::MAX,
+		};
+		let (complete_loose, logs_loose) =
+			build_journal_payload(&storage, notification.clone(), &loose_config);
+		assert!(complete_loose);
+		assert_eq!(logs_loose.len(), 1);
+
+		let retained_bytes = retained_entry_bytes(&logs_loose);
+		let tight_config = LogsJournalConfig {
+			max_entries: 1,
+			max_total_logs: usize::MAX,
+			max_total_bytes: usize::MAX,
+			max_blocks_per_entry: 8,
+			max_logs_per_entry: 8,
+			max_bytes_per_entry: retained_bytes.saturating_sub(1),
+		};
+		let (complete_tight, logs_tight) =
+			build_journal_payload(&storage, notification, &tight_config);
+
+		assert!(!complete_tight);
+		assert!(logs_tight.is_empty());
 	}
 
 	/// Cumulative path: many small logs that fit under the cap when taken alone, but retained
