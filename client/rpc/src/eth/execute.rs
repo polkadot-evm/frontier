@@ -97,17 +97,7 @@ where
 			..
 		} = request;
 
-		// Geth-parity: `state` and `stateDiff` are mutually exclusive for any given
-		// account. Reject requests that set both rather than silently merging them.
-		if let Some(ref overrides) = state_overrides {
-			for (address, ov) in overrides {
-				if ov.state.is_some() && ov.state_diff.is_some() {
-					return Err(internal_err(format!(
-						"both `state` and `stateDiff` specified for account {address:?}; they are mutually exclusive"
-					)));
-				}
-			}
-		}
+		validate_state_overrides(&state_overrides)?;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
@@ -1382,6 +1372,26 @@ where
 	}
 }
 
+/// Validate caller-supplied state overrides.
+///
+/// Geth-parity: `state` and `stateDiff` are mutually exclusive for any given
+/// account. Rather than silently merging them (which would hide a caller bug),
+/// reject the whole request with a descriptive error.
+fn validate_state_overrides(
+	state_overrides: &Option<BTreeMap<H160, CallStateOverride>>,
+) -> RpcResult<()> {
+	if let Some(overrides) = state_overrides {
+		for (address, ov) in overrides {
+			if ov.state.is_some() && ov.state_diff.is_some() {
+				return Err(internal_err(format!(
+					"both `state` and `stateDiff` specified for account {address:?}; they are mutually exclusive"
+				)));
+			}
+		}
+	}
+	Ok(())
+}
+
 /// Build the runtime-API v7 state-override payload from the caller's overrides.
 ///
 /// Only accounts that specify `state` (full replacement) are included. Each entry is
@@ -1494,5 +1504,203 @@ fn fee_details(
 			max_priority_fee_per_gas: Some(U256::zero()),
 			fee_cap: U256::zero(),
 		}),
+	}
+}
+
+#[cfg(test)]
+mod state_override_tests {
+	use super::*;
+
+	fn addr(byte: u8) -> H160 {
+		H160::repeat_byte(byte)
+	}
+
+	fn slot(byte: u8) -> H256 {
+		H256::repeat_byte(byte)
+	}
+
+	fn override_with_state(pairs: &[(H256, H256)]) -> CallStateOverride {
+		CallStateOverride {
+			balance: None,
+			nonce: None,
+			code: None,
+			state: Some(pairs.iter().cloned().collect()),
+			state_diff: None,
+		}
+	}
+
+	fn override_with_state_diff(pairs: &[(H256, H256)]) -> CallStateOverride {
+		CallStateOverride {
+			balance: None,
+			nonce: None,
+			code: None,
+			state: None,
+			state_diff: Some(pairs.iter().cloned().collect()),
+		}
+	}
+
+	fn override_with_balance(balance: U256) -> CallStateOverride {
+		CallStateOverride {
+			balance: Some(balance),
+			nonce: None,
+			code: None,
+			state: None,
+			state_diff: None,
+		}
+	}
+
+	// ---------- validate_state_overrides ----------
+
+	#[test]
+	fn validate_accepts_none() {
+		assert!(validate_state_overrides(&None).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_empty_map() {
+		let overrides: BTreeMap<H160, CallStateOverride> = BTreeMap::new();
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_state_only() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_state_diff_only() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state_diff(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_balance_only() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(addr(0xaa), override_with_balance(U256::from(1_000u64)));
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_rejects_state_and_state_diff_on_same_account() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			CallStateOverride {
+				balance: None,
+				nonce: None,
+				code: None,
+				state: Some(
+					[(slot(0x01), H256::from_low_u64_be(0x22))]
+						.into_iter()
+						.collect(),
+				),
+				state_diff: Some(
+					[(slot(0x02), H256::from_low_u64_be(0x33))]
+						.into_iter()
+						.collect(),
+				),
+			},
+		);
+		let err = validate_state_overrides(&Some(overrides)).unwrap_err();
+		// Error message should name the offending account.
+		assert!(err.message().contains("mutually exclusive"));
+	}
+
+	#[test]
+	fn validate_accepts_state_on_one_account_state_diff_on_another() {
+		// Mutual exclusivity is per-account, not global.
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		overrides.insert(
+			addr(0xbb),
+			override_with_state_diff(&[(slot(0x01), H256::from_low_u64_be(0x33))]),
+		);
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	// ---------- build_state_override_payload ----------
+
+	#[test]
+	fn payload_none_for_no_overrides() {
+		assert!(build_state_override_payload(&None).is_none());
+	}
+
+	#[test]
+	fn payload_none_for_empty_overrides() {
+		let overrides: BTreeMap<H160, CallStateOverride> = BTreeMap::new();
+		assert!(build_state_override_payload(&Some(overrides)).is_none());
+	}
+
+	#[test]
+	fn payload_none_when_no_state_field_is_set() {
+		// balance/nonce/code/state_diff should NOT populate the v7 payload,
+		// since they're handled via the overlay path.
+		let mut overrides = BTreeMap::new();
+		overrides.insert(addr(0xaa), override_with_balance(U256::from(100u64)));
+		overrides.insert(
+			addr(0xbb),
+			override_with_state_diff(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		assert!(build_state_override_payload(&Some(overrides)).is_none());
+	}
+
+	#[test]
+	fn payload_includes_only_accounts_with_state() {
+		let v1 = H256::from_low_u64_be(0x22);
+		let v2 = H256::from_low_u64_be(0x33);
+
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state(&[(slot(0x01), v1), (slot(0x02), v2)]),
+		);
+		overrides.insert(
+			addr(0xbb),
+			override_with_state_diff(&[(slot(0x03), H256::from_low_u64_be(0x44))]),
+		);
+		overrides.insert(addr(0xcc), override_with_balance(U256::from(42u64)));
+
+		let payload = build_state_override_payload(&Some(overrides))
+			.expect("at least one `state` entry => Some");
+
+		assert_eq!(payload.len(), 1, "only 0xaa has a `state` override");
+		let (address, slots) = &payload[0];
+		assert_eq!(*address, addr(0xaa));
+		assert_eq!(slots.len(), 2);
+		// BTreeMap iteration order is deterministic by key.
+		assert_eq!(slots[0], (slot(0x01), v1));
+		assert_eq!(slots[1], (slot(0x02), v2));
+	}
+
+	#[test]
+	fn payload_empty_state_is_preserved_as_full_wipe() {
+		// Geth-parity: `"state": {}` wipes the account's storage. The payload
+		// must still include the address with an empty slot vec so the runtime
+		// can mark it as overridden with no surviving slots.
+		let mut overrides = BTreeMap::new();
+		overrides.insert(addr(0xaa), override_with_state(&[]));
+
+		let payload = build_state_override_payload(&Some(overrides))
+			.expect("empty-state entry still yields Some payload");
+
+		assert_eq!(payload.len(), 1);
+		let (address, slots) = &payload[0];
+		assert_eq!(*address, addr(0xaa));
+		assert!(
+			slots.is_empty(),
+			"empty `state` must produce an empty slot vec (full-wipe marker)"
+		);
 	}
 }

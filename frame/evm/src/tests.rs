@@ -1858,3 +1858,409 @@ mod eip7939_clz_test {
 		run_clz_test(CLZ_MSB_UNSET, 1);
 	}
 }
+
+/// Tests for the `eth_call`-style state override feature.
+///
+/// These tests exercise `Runner::call`'s `state_override` parameter, which is the
+/// efficient Geth-style full-storage replacement introduced for the RPC layer
+/// (runtime API v7). The semantics we verify here:
+///
+/// * A non-`None` override entry for an account causes storage reads for that
+///   account to be served **exclusively** from the in-memory override map,
+///   mirroring Geth's "destructed and recreated" state object. Slots not present
+///   in the override map read as zero, regardless of on-chain state.
+/// * An empty override map for an account (`"state": {}`) performs a full wipe.
+/// * Accounts not listed in the override map are unaffected and read from on-chain
+///   storage normally.
+/// * Writes within the overridden call (SSTORE) take precedence over the override
+///   baseline for subsequent reads in that call.
+/// * The override is ephemeral: on-chain `AccountStorages` is not mutated.
+/// * `reset_storage` (invoked e.g. by SELFDESTRUCT) clears any active override
+///   entry for the affected address.
+mod state_override_test {
+	use super::*;
+	use crate::runner::stack::SubstrateStackState;
+	use evm::ExitSucceed;
+
+	// Minimal runtime bytecode that returns `storage[calldata[0..32]]` as a 32-byte value.
+	//
+	//   PUSH1 0x00   // 60 00    (calldata offset)
+	//   CALLDATALOAD // 35       (slot = calldata[0..32])
+	//   SLOAD        // 54       (value = storage[slot])
+	//   PUSH1 0x00   // 60 00    (memory offset)
+	//   MSTORE       // 52       (mem[0..32] = value)
+	//   PUSH1 0x20   // 60 20    (length = 32)
+	//   PUSH1 0x00   // 60 00    (memory offset)
+	//   RETURN       // f3
+	const SLOAD_RETURN_BYTECODE: &str = "6000355460005260206000f3";
+
+	// Runtime bytecode that SSTOREs `calldata[32..64]` at `calldata[0..32]`, then
+	// SLOADs that slot and returns the value. Used to verify that writes during
+	// the call take precedence over the state-override baseline.
+	//
+	//   PUSH1 0x20, CALLDATALOAD  // value
+	//   PUSH1 0x00, CALLDATALOAD  // slot
+	//   SSTORE                    // storage[slot] = value
+	//   PUSH1 0x00, CALLDATALOAD  // slot
+	//   SLOAD                     // value (from executor cache after SSTORE)
+	//   PUSH1 0x00, MSTORE
+	//   PUSH1 0x20, PUSH1 0x00, RETURN
+	const SSTORE_THEN_SLOAD_BYTECODE: &str = "602035600035556000355460005260206000f3";
+
+	fn slot(v: u64) -> H256 {
+		H256::from_low_u64_be(v)
+	}
+
+	fn value(v: u64) -> H256 {
+		H256::from_low_u64_be(v)
+	}
+
+	fn slot_calldata(slot_idx: u64) -> Vec<u8> {
+		slot(slot_idx).as_bytes().to_vec()
+	}
+
+	fn slot_value_calldata(slot_idx: u64, val: u64) -> Vec<u8> {
+		let mut data = Vec::with_capacity(64);
+		data.extend_from_slice(slot(slot_idx).as_bytes());
+		data.extend_from_slice(value(val).as_bytes());
+		data
+	}
+
+	fn expected_return(val: u64) -> Vec<u8> {
+		value(val).as_bytes().to_vec()
+	}
+
+	// Deploy a runtime bytecode directly at `address`, bypassing the constructor.
+	fn deploy_runtime_code(address: H160, bytecode_hex: &str) {
+		let bytecode = hex::decode(bytecode_hex).expect("valid hex bytecode");
+		crate::Pallet::<Test>::create_account(address, bytecode, None)
+			.expect("account creation succeeds");
+	}
+
+	// Execute an eth_call-style simulation (non-transactional, no fee) against `to`
+	// with the given override payload.
+	fn eth_call_with_override(
+		to: H160,
+		calldata: Vec<u8>,
+		state_override: fp_evm::StateOverride,
+	) -> CallInfo {
+		<Test as Config>::Runner::call(
+			H160::default(),
+			to,
+			calldata,
+			U256::zero(),
+			1_000_000,
+			None, // max_fee_per_gas (non-transactional, no fee)
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			false, // non-transactional (eth_call semantics)
+			true,  // must be validated
+			None,
+			None,
+			state_override,
+			<Test as Config>::config(),
+		)
+		.expect("call succeeds")
+	}
+
+	fn assert_succeeded(info: &CallInfo) {
+		assert_eq!(
+			info.exit_reason,
+			ExitReason::Succeed(ExitSucceed::Returned),
+			"contract call must succeed",
+		);
+	}
+
+	// --------------------------------------------------------------------
+	// A2: state_override replaces persisted slot.
+	// --------------------------------------------------------------------
+	#[test]
+	fn state_override_replaces_persisted_slot() {
+		new_test_ext().execute_with(|| {
+			let contract = H160::repeat_byte(0xA1);
+			deploy_runtime_code(contract, SLOAD_RETURN_BYTECODE);
+
+			// Seed on-chain storage: slot 1 -> 0x11.
+			AccountStorages::<Test>::insert(contract, slot(1), value(0x11));
+
+			// Control: with no override, SLOAD(1) reads the on-chain value.
+			let baseline = eth_call_with_override(contract, slot_calldata(1), None);
+			assert_succeeded(&baseline);
+			assert_eq!(baseline.value, expected_return(0x11));
+
+			// With override: SLOAD(1) reads the override value, not the on-chain one.
+			let override_payload = Some(vec![(contract, vec![(slot(1), value(0x22))])]);
+			let overridden = eth_call_with_override(contract, slot_calldata(1), override_payload);
+			assert_succeeded(&overridden);
+			assert_eq!(overridden.value, expected_return(0x22));
+
+			// On-chain storage must be unchanged: eth_call does not commit.
+			assert_eq!(
+				AccountStorages::<Test>::get(contract, slot(1)),
+				value(0x11),
+				"persisted storage must not be mutated by an overridden eth_call",
+			);
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A3: empty state_override wipes all slots (Geth `"state": {}` case).
+	// --------------------------------------------------------------------
+	//
+	// This is the exact payload shape that previously forced the RPC layer to
+	// enumerate every on-chain storage key for the target address (the DoS
+	// vector). With the new runtime-API path, a full wipe costs O(1) in the
+	// caller payload — the runtime simply marks the address as overridden with
+	// no surviving slots.
+	#[test]
+	fn state_override_empty_wipes_all_slots() {
+		new_test_ext().execute_with(|| {
+			let contract = H160::repeat_byte(0xA2);
+			deploy_runtime_code(contract, SLOAD_RETURN_BYTECODE);
+
+			// Seed several on-chain slots.
+			AccountStorages::<Test>::insert(contract, slot(1), value(0x11));
+			AccountStorages::<Test>::insert(contract, slot(2), value(0x22));
+			AccountStorages::<Test>::insert(contract, slot(3), value(0x33));
+
+			// Full-wipe override: empty slot vec for this account.
+			let wipe_override = Some(vec![(contract, Vec::<(H256, H256)>::new())]);
+
+			for idx in [1u64, 2, 3, 99] {
+				let info =
+					eth_call_with_override(contract, slot_calldata(idx), wipe_override.clone());
+				assert_succeeded(&info);
+				assert_eq!(
+					info.value,
+					expected_return(0),
+					"slot {idx} must read as zero under a full-wipe override",
+				);
+			}
+
+			// Persisted storage must still be intact after the eth_call.
+			assert_eq!(AccountStorages::<Test>::get(contract, slot(1)), value(0x11));
+			assert_eq!(AccountStorages::<Test>::get(contract, slot(2)), value(0x22));
+			assert_eq!(AccountStorages::<Test>::get(contract, slot(3)), value(0x33));
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A4: state_override is per-account.
+	// --------------------------------------------------------------------
+	//
+	// Overriding account A must not affect reads of account B.
+	#[test]
+	fn state_override_is_per_account() {
+		new_test_ext().execute_with(|| {
+			let contract_a = H160::repeat_byte(0xA4);
+			let contract_b = H160::repeat_byte(0xB4);
+			deploy_runtime_code(contract_a, SLOAD_RETURN_BYTECODE);
+			deploy_runtime_code(contract_b, SLOAD_RETURN_BYTECODE);
+
+			AccountStorages::<Test>::insert(contract_a, slot(1), value(0x11));
+			AccountStorages::<Test>::insert(contract_b, slot(1), value(0xAA));
+
+			// Override only A.
+			let override_payload = Some(vec![(contract_a, vec![(slot(1), value(0x22))])]);
+
+			let info_a =
+				eth_call_with_override(contract_a, slot_calldata(1), override_payload.clone());
+			assert_succeeded(&info_a);
+			assert_eq!(
+				info_a.value,
+				expected_return(0x22),
+				"A must read the overridden value"
+			);
+
+			let info_b = eth_call_with_override(contract_b, slot_calldata(1), override_payload);
+			assert_succeeded(&info_b);
+			assert_eq!(
+				info_b.value,
+				expected_return(0xAA),
+				"B must read on-chain storage, unaffected by A's override"
+			);
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A5: missing slot in override reads zero (not the on-chain value).
+	// --------------------------------------------------------------------
+	//
+	// This is the crux of the "destructed and recreated" semantics: once an
+	// account is listed in the override map, *every* slot not present in that
+	// map must read as zero, even if it has a non-zero on-chain value.
+	#[test]
+	fn state_override_missing_slot_reads_zero() {
+		new_test_ext().execute_with(|| {
+			let contract = H160::repeat_byte(0xA5);
+			deploy_runtime_code(contract, SLOAD_RETURN_BYTECODE);
+
+			// Seed two slots on chain.
+			AccountStorages::<Test>::insert(contract, slot(1), value(0x11));
+			AccountStorages::<Test>::insert(contract, slot(2), value(0xAA));
+
+			// Override specifies only slot 1.
+			let override_payload = Some(vec![(contract, vec![(slot(1), value(0x22))])]);
+
+			let info_1 =
+				eth_call_with_override(contract, slot_calldata(1), override_payload.clone());
+			assert_succeeded(&info_1);
+			assert_eq!(info_1.value, expected_return(0x22));
+
+			let info_2 = eth_call_with_override(contract, slot_calldata(2), override_payload);
+			assert_succeeded(&info_2);
+			assert_eq!(
+				info_2.value,
+				expected_return(0),
+				"slot 2 is absent from the override; must read zero despite on-chain 0xAA",
+			);
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A6: SSTORE during the call wins over the override baseline.
+	// --------------------------------------------------------------------
+	#[test]
+	fn sstore_during_call_wins_over_override() {
+		new_test_ext().execute_with(|| {
+			let contract = H160::repeat_byte(0xA6);
+			deploy_runtime_code(contract, SSTORE_THEN_SLOAD_BYTECODE);
+
+			// Override baseline: slot 1 -> 0x22.
+			let override_payload = Some(vec![(contract, vec![(slot(1), value(0x22))])]);
+
+			// Calldata says: SSTORE(slot=1, value=0x33); SLOAD(1); return.
+			let info =
+				eth_call_with_override(contract, slot_value_calldata(1, 0x33), override_payload);
+			assert_succeeded(&info);
+			assert_eq!(
+				info.value,
+				expected_return(0x33),
+				"write made during the call must take precedence over the override baseline",
+			);
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A7: state_override does not persist across calls.
+	// --------------------------------------------------------------------
+	//
+	// Because eth_call is non-transactional, no state change (override or
+	// SSTORE) should survive the call. We verify this with a direct on-chain
+	// storage read and a second, override-less call.
+	#[test]
+	fn state_override_does_not_persist_across_calls() {
+		new_test_ext().execute_with(|| {
+			let contract = H160::repeat_byte(0xA7);
+			deploy_runtime_code(contract, SSTORE_THEN_SLOAD_BYTECODE);
+
+			AccountStorages::<Test>::insert(contract, slot(1), value(0x11));
+
+			// First call: override + SSTORE a different value.
+			let override_payload = Some(vec![(contract, vec![(slot(1), value(0x22))])]);
+			let first =
+				eth_call_with_override(contract, slot_value_calldata(1, 0x33), override_payload);
+			assert_succeeded(&first);
+			assert_eq!(first.value, expected_return(0x33));
+
+			// On-chain storage must still hold the original seeded value.
+			assert_eq!(
+				AccountStorages::<Test>::get(contract, slot(1)),
+				value(0x11),
+				"non-transactional call must not mutate on-chain storage",
+			);
+
+			// Second call without an override: the original on-chain value must be visible.
+			// We use the SLOAD-only contract for a clean read.
+			let reader = H160::repeat_byte(0xA8);
+			deploy_runtime_code(reader, SLOAD_RETURN_BYTECODE);
+			AccountStorages::<Test>::insert(reader, slot(1), value(0x11));
+
+			let second = eth_call_with_override(reader, slot_calldata(1), None);
+			assert_succeeded(&second);
+			assert_eq!(second.value, expected_return(0x11));
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A8: `None` state_override uses on-chain storage (regression guard).
+	// --------------------------------------------------------------------
+	//
+	// A future refactor must not break the non-override path.
+	#[test]
+	fn none_state_override_uses_on_chain_storage() {
+		new_test_ext().execute_with(|| {
+			let contract = H160::repeat_byte(0xA9);
+			deploy_runtime_code(contract, SLOAD_RETURN_BYTECODE);
+
+			AccountStorages::<Test>::insert(contract, slot(7), value(0x777));
+
+			let info = eth_call_with_override(contract, slot_calldata(7), None);
+			assert_succeeded(&info);
+			assert_eq!(info.value, expected_return(0x777));
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A9: `reset_storage` clears any active override entry.
+	// --------------------------------------------------------------------
+	//
+	// Mirrors the Geth-parity guarantee for SELFDESTRUCT (or contract
+	// re-creation): once an account is destructed, the previously overridden
+	// storage is gone — subsequent reads fall back to the (now-empty) persisted
+	// trie rather than the stale override snapshot.
+	//
+	// This is a direct backend-level test against `SubstrateStackState` so we
+	// don't have to hand-craft a SELFDESTRUCT bytecode, which would also have
+	// to navigate EIP-6780 semantics.
+	#[test]
+	fn reset_storage_clears_override_entry() {
+		new_test_ext().execute_with(|| {
+			let addr = H160::repeat_byte(0xD1);
+			let slot_1 = slot(1);
+			let val_1 = value(0x22);
+
+			// Build a fresh SubstrateStackState with the override active.
+			let vicinity = Vicinity {
+				gas_price: U256::zero(),
+				origin: H160::default(),
+			};
+			let config = <Test as Config>::config().clone();
+			let metadata = evm::executor::stack::StackSubstateMetadata::new(1_000_000, &config);
+			let state_override = Some(vec![(addr, vec![(slot_1, val_1)])]);
+			let mut state = SubstrateStackState::<'_, '_, Test>::new(
+				&vicinity,
+				metadata,
+				None,
+				None,
+				state_override,
+			);
+
+			// Before reset: override is active for this slot.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				val_1,
+				"override must be honored before reset_storage",
+			);
+
+			// SELFDESTRUCT-like: wipe the account's storage.
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::reset_storage(
+				&mut state, addr,
+			);
+
+			// After reset: override entry is cleared; subsequent reads fall back to
+			// `AccountStorages`, which is empty for this address, so they return zero.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				H256::zero(),
+				"post-reset read must fall back to (empty) persisted storage and return zero",
+			);
+		});
+	}
+}

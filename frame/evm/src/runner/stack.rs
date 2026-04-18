@@ -1246,6 +1246,19 @@ where
 			}
 		}
 
+		// Geth-parity: if this account has an active state override, writes
+		// update the override map (the account's "fresh state"), not the
+		// underlying trie. Subsequent SLOADs will observe the new value via
+		// `read_persisted_storage`, while the on-chain storage stays untouched.
+		if let Some(slots) = self.state_override.get_mut(&address) {
+			if value == H256::default() {
+				slots.remove(&index);
+			} else {
+				slots.insert(index, value);
+			}
+			return;
+		}
+
 		// Then we insert or remove the entry based on the value.
 		if value == H256::default() {
 			log::debug!(
