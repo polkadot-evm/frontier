@@ -69,6 +69,18 @@ pub struct Vicinity {
 	pub origin: H160,
 }
 
+/// Per-account EVM storage override payload (Geth-style `state` override).
+///
+/// Each entry is `(address, slots)` where `slots` is `[(key, value), ...]`.
+/// When an address is present, its persisted storage is fully replaced: reads
+/// are served exclusively from the provided slot list and missing keys return
+/// zero. An empty `slots` vector represents a full storage wipe (the
+/// `"state": {}` case).
+///
+/// `None` means no state overrides at all. The encoding cost is bounded by the
+/// caller-supplied payload size (Geth parity); no on-chain storage is enumerated.
+pub type StateOverride = Option<Vec<(H160, Vec<(H256, H256)>)>>;
+
 /// `System::Account` 16(hash) + 20 (key) + 72 (AccountInfo::max_encoded_len)
 pub const ACCOUNT_BASIC_PROOF_SIZE: u64 = 108;
 /// `AccountCodesMetadata` read, temtatively 16 (hash) + 20 (key) + 40 (CodeMetadata).

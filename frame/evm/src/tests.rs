@@ -230,6 +230,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -287,6 +288,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -343,6 +345,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -393,6 +396,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -448,6 +452,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -505,6 +510,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&<Test as Config>::config().clone(),
 			)
 			.expect("call succeeds");
@@ -565,6 +571,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&config,
 			)
 			.expect("call succeeds");
@@ -607,6 +614,7 @@ mod proof_size_test {
 				true, // must be validated
 				Some(weight_limit),
 				Some(0),
+				None,
 				&config,
 			)
 			.expect("call succeeds");
@@ -684,6 +692,7 @@ mod storage_growth_test {
 			true, // must be validated
 			None,
 			Some(0),
+			None,
 			<Test as Config>::config(),
 		)
 	}
@@ -1063,6 +1072,7 @@ fn test_inner_contract_deploy_succeeds_if_address_is_allowed() {
 			true, // must be validated
 			Some(weight_limit),
 			Some(0),
+			None,
 			&<Test as Config>::config().clone(),
 		)
 		.expect("call succeeds");
@@ -1102,6 +1112,7 @@ fn test_inner_contract_deploy_reverts_if_address_not_allowed() {
 			true, // must be validated
 			Some(weight_limit),
 			Some(0),
+			None,
 			&<Test as Config>::config().clone(),
 		)
 		.expect("call succeeds");
@@ -1502,6 +1513,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_ok_without_gas_pr
 			true,  // must be validated
 			None,
 			None,
+			None,
 			&<Test as Config>::config().clone(),
 		)
 		.expect("Non transactional call succeeds");
@@ -1539,6 +1551,7 @@ fn runner_non_transactional_calls_with_non_balance_accounts_is_err_with_gas_pric
 			true,  // must be validated
 			None,
 			None,
+			None,
 			&<Test as Config>::config().clone(),
 		);
 		assert!(res.is_err());
@@ -1562,6 +1575,7 @@ fn runner_transactional_call_with_zero_gas_price_fails() {
 			Vec::new(),
 			true, // transactional
 			true, // must be validated
+			None,
 			None,
 			None,
 			&<Test as Config>::config().clone(),
@@ -1589,6 +1603,7 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			true, // must be validated
 			None,
 			None,
+			None,
 			&<Test as Config>::config().clone(),
 		);
 		assert!(res.is_err());
@@ -1605,6 +1620,7 @@ fn runner_max_fee_per_gas_gte_max_priority_fee_per_gas() {
 			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
+			None,
 			None,
 			None,
 			&<Test as Config>::config().clone(),
@@ -1633,6 +1649,7 @@ fn eip3607_transaction_from_contract() {
 			false, // not sure be validated
 			None,
 			None,
+			None,
 			&<Test as Config>::config().clone(),
 		) {
 			Err(RunnerError {
@@ -1657,6 +1674,7 @@ fn eip3607_transaction_from_contract() {
 			Vec::new(),
 			false, // non-transactional
 			true,  // must be validated
+			None,
 			None,
 			None,
 			&<Test as Config>::config().clone(),
@@ -1774,6 +1792,7 @@ mod eip7939_clz_test {
 			true, // must be validated
 			None,
 			Some(0),
+			None,
 			<Test as Config>::config(),
 		)
 	}

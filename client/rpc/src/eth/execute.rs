@@ -38,7 +38,7 @@ use sp_runtime::{
 use sp_state_machine::OverlayedChanges;
 // Frontier
 use fc_rpc_core::types::*;
-use fp_evm::{ExecutionInfo, ExecutionInfoV2};
+use fp_evm::{ExecutionInfo, ExecutionInfoV2, StateOverride};
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
 use fp_storage::constants::{EVM_ACCOUNT_CODES, EVM_ACCOUNT_STORAGES, PALLET_EVM};
 
@@ -96,6 +96,18 @@ where
 			authorization_list,
 			..
 		} = request;
+
+		// Geth-parity: `state` and `stateDiff` are mutually exclusive for any given
+		// account. Reject requests that set both rather than silently merging them.
+		if let Some(ref overrides) = state_overrides {
+			for (address, ov) in overrides {
+				if ov.state.is_some() && ov.state_diff.is_some() {
+					return Err(internal_err(format!(
+						"both `state` and `stateDiff` specified for account {address:?}; they are mutually exclusive"
+					)));
+				}
+			}
+		}
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
@@ -369,6 +381,72 @@ where
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 
 					Ok(Bytes(info.value))
+				} else if api_version == 7 {
+					// Pectra + efficient `state` full-storage override (runtime API v7)
+					let access_list = access_list
+						.unwrap_or_default()
+						.into_iter()
+						.map(|item| (item.address, item.storage_keys))
+						.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+					let state_override_payload = build_state_override_payload(&state_overrides);
+
+					let encoded_params = Encode::encode(&(
+						&from.unwrap_or_default(),
+						&to,
+						&data,
+						&value.unwrap_or_default(),
+						&gas_limit,
+						&max_fee_per_gas,
+						&max_priority_fee_per_gas,
+						&nonce,
+						&false,
+						&Some(access_list),
+						&authorization_list,
+						&state_override_payload,
+					));
+					let overlayed_changes = self.create_overrides_overlay(
+						substrate_hash,
+						api_version,
+						state_overrides,
+					)?;
+
+					let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+					let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+					let mut exts = Extensions::new();
+					exts.register(ext);
+
+					let params = CallApiAtParams {
+						at: substrate_hash,
+						function: "EthereumRuntimeRPCApi_call",
+						arguments: encoded_params,
+						overlayed_changes: &RefCell::new(overlayed_changes),
+						call_context: CallContext::Offchain,
+						recorder: &Some(recorder),
+						extensions: &RefCell::new(exts),
+					};
+
+					let info = self
+						.client
+						.call_api_at(params)
+						.and_then(|r| {
+							Result::map_err(
+								<Result<ExecutionInfoV2<Vec<u8>>, DispatchError> as Decode>::decode(
+									&mut &r[..],
+								),
+								|error| sp_api::ApiError::FailedToDecodeReturnValue {
+									function: "EthereumRuntimeRPCApi_call",
+									error,
+									raw: r,
+								},
+							)
+						})
+						.map_err(|err| internal_err(format!("runtime error: {err}")))?
+						.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+
+					Ok(Bytes(info.value))
 				} else {
 					Err(internal_err("failed to retrieve Runtime Api version"))
 				}
@@ -479,7 +557,7 @@ where
 						.account_code_at(substrate_hash, info.value)
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?;
 					Ok(Bytes(code))
-				} else if api_version == 6 {
+				} else if api_version == 6 || api_version == 7 {
 					// Pectra EIP-7702 support
 					let access_list = access_list.unwrap_or_default();
 					let authorization_list = authorization_list.unwrap_or_default();
@@ -856,6 +934,61 @@ where
 								.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, info.value, info.used_gas.effective)
+						} else if api_version == 7 {
+							let access_list = access_list
+								.unwrap_or_default()
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+							let encoded_params = Encode::encode(&(
+								&from.unwrap_or_default(),
+								&to,
+								&data,
+								&value.unwrap_or_default(),
+								&gas_limit,
+								&max_fee_per_gas,
+								&max_priority_fee_per_gas,
+								&None::<Option<U256>>,
+								&estimate_mode,
+								&Some(access_list),
+								&authorization_list,
+								&None::<Vec<(sp_core::H160, H256, H256)>>,
+								&None::<Vec<sp_core::H160>>,
+							));
+
+							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+							let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+							let mut exts = Extensions::new();
+							exts.register(ext);
+
+							let params = CallApiAtParams {
+								at: substrate_hash,
+								function: "EthereumRuntimeRPCApi_call",
+								arguments: encoded_params,
+								overlayed_changes: &RefCell::new(Default::default()),
+								call_context: CallContext::Offchain,
+								recorder: &Some(recorder),
+								extensions: &RefCell::new(exts),
+							};
+
+							let info = self
+								.client
+								.call_api_at(params)
+								.and_then(|r| {
+									Result::map_err(
+										<Result<ExecutionInfoV2::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+										|error| sp_api::ApiError::FailedToDecodeReturnValue {
+											function: "EthereumRuntimeRPCApi_call",
+											error,
+											raw: r
+										},
+									)
+								})
+								.map_err(|err| internal_err(format!("runtime error: {err}")))?
+								.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+							(info.exit_reason, info.value, info.used_gas.effective)
 						} else {
 							return Err(internal_err(format!("Unsupported EthereumRuntimeRPCApi version: {api_version}")));
 						}
@@ -974,7 +1107,7 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, Vec::new(), info.used_gas.effective)
-						} else if api_version == 6 {
+						} else if api_version == 6 || api_version == 7 {
 							// Pectra - authorization list support (EIP-7702)
 							let access_list = access_list
 								.unwrap_or_default()
@@ -1168,6 +1301,7 @@ where
 		api_version: u32,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<OverlayedChanges<HashingFor<B>>> {
+		let use_runtime_full_storage = api_version >= 7;
 		let mut overlayed_changes = OverlayedChanges::default();
 		if let Some(state_overrides) = state_overrides {
 			for (address, state_override) in state_overrides {
@@ -1204,29 +1338,35 @@ where
 				account_storage_key.extend(blake2_128(address.as_bytes()));
 				account_storage_key.extend(address.as_bytes());
 
-				// Use `state` first. If `stateDiff` is also present, it resolves consistently
+				// `state` and `stateDiff` are mutually exclusive (validated upstream).
+				//
+				// For runtime API v7+, a `state` override is applied inside the runtime via
+				// the `state_override` parameter (see `build_state_override_payload`) and must
+				// NOT be mirrored into the overlay here. For older runtimes we fall back to
+				// the legacy behavior, which enumerates every existing slot and clears it
+				// before writing the provided values — costly for large contracts.
 				if let Some(state) = &state_override.state {
-					// clear all storage
-					if let Ok(all_keys) = self.client.storage_keys(
-						block_hash,
-						Some(&sp_storage::StorageKey(account_storage_key.clone())),
-						None,
-					) {
-						for key in all_keys {
-							overlayed_changes.set_storage(key.0, None);
+					if !use_runtime_full_storage {
+						if let Ok(all_keys) = self.client.storage_keys(
+							block_hash,
+							Some(&sp_storage::StorageKey(account_storage_key.clone())),
+							None,
+						) {
+							for key in all_keys {
+								overlayed_changes.set_storage(key.0, None);
+							}
+						}
+						for (k, v) in state {
+							let mut slot_key = account_storage_key.clone();
+							slot_key.extend(blake2_128(k.as_bytes()));
+							slot_key.extend(k.as_bytes());
+
+							overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
 						}
 					}
-					// set provided storage
-					for (k, v) in state {
-						let mut slot_key = account_storage_key.clone();
-						slot_key.extend(blake2_128(k.as_bytes()));
-						slot_key.extend(k.as_bytes());
-
-						overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
-					}
-				}
-
-				if let Some(state_diff) = &state_override.state_diff {
+				} else if let Some(state_diff) = &state_override.state_diff {
+					// `stateDiff` always goes through the overlay: cost is bounded by the
+					// caller's payload on both legacy and v7+ runtimes.
 					for (k, v) in state_diff {
 						let mut slot_key = account_storage_key.clone();
 						slot_key.extend(blake2_128(k.as_bytes()));
@@ -1240,6 +1380,28 @@ where
 
 		Ok(overlayed_changes)
 	}
+}
+
+/// Build the runtime-API v7 state-override payload from the caller's overrides.
+///
+/// Only accounts that specify `state` (full replacement) are included. Each entry is
+/// `(address, slots)`; an empty `slots` vector represents a full storage wipe
+/// (the `"state": {}` case). `stateDiff` is handled separately via the overlay and
+/// must not be combined with `state` (rejected upstream).
+///
+/// Cost is bounded by the request payload size, not on-chain storage (Geth parity).
+fn build_state_override_payload(
+	state_overrides: &Option<BTreeMap<H160, CallStateOverride>>,
+) -> StateOverride {
+	let state_overrides = state_overrides.as_ref()?;
+	let mut payload = Vec::new();
+	for (address, ov) in state_overrides {
+		if let Some(state) = &ov.state {
+			let slots = state.iter().map(|(k, v)| (*k, *v)).collect::<Vec<_>>();
+			payload.push((*address, slots));
+		}
+	}
+	(!payload.is_empty()).then_some(payload)
 }
 
 pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> RpcResult<()> {

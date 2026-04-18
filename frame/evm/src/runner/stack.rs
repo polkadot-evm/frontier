@@ -45,7 +45,7 @@ use sp_runtime::traits::UniqueSaturatedInto;
 // Frontier
 use fp_evm::{
 	AccessedStorage, CallInfo, CreateInfo, ExecutionInfoV2, IsPrecompileResult, Log, PrecompileSet,
-	Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_KEY_SIZE,
+	StateOverride, Vicinity, WeightInfo, ACCOUNT_BASIC_PROOF_SIZE, ACCOUNT_CODES_KEY_SIZE,
 	ACCOUNT_CODES_METADATA_PROOF_SIZE, ACCOUNT_STORAGE_PROOF_SIZE, IS_EMPTY_CHECK_PROOF_SIZE,
 	WRITE_PROOF_SIZE,
 };
@@ -83,6 +83,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		measured_proof_size_before: u64,
+		state_override: StateOverride,
 		f: F,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
@@ -114,6 +115,7 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
+			state_override,
 		);
 
 		#[cfg(feature = "forbid-evm-reentrancy")]
@@ -153,6 +155,7 @@ where
 				weight_limit,
 				proof_size_base_cost,
 				measured_proof_size_before,
+				state_override,
 			)
 		});
 
@@ -175,6 +178,7 @@ where
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
 		measured_proof_size_before: u64,
+		state_override: StateOverride,
 	) -> Result<ExecutionInfoV2<R>, RunnerError<Error<T>>>
 	where
 		F: FnOnce(
@@ -307,7 +311,13 @@ where
 		};
 
 		let metadata = StackSubstateMetadata::new(gas_limit, config);
-		let state = SubstrateStackState::new(&vicinity, metadata, maybe_weight_info, storage_limit);
+		let state = SubstrateStackState::new(
+			&vicinity,
+			metadata,
+			maybe_weight_info,
+			storage_limit,
+			state_override,
+		);
 		let mut executor = StackExecutor::new_with_precompiles(state, config, precompiles);
 
 		// Execute the EVM call.
@@ -530,6 +540,7 @@ where
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
+		state_override: StateOverride,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>> {
 		let measured_proof_size_before = get_proof_size().unwrap_or_default();
@@ -578,6 +589,7 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
+			state_override,
 			|executor| {
 				executor.transact_call(
 					source,
@@ -658,6 +670,7 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
+			None,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Legacy { caller: source });
 				T::OnCreate::on_create(source, address);
@@ -742,6 +755,7 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
+			None,
 			|executor| {
 				let address = executor.create_address(evm::CreateScheme::Create2 {
 					caller: source,
@@ -829,6 +843,7 @@ where
 			weight_limit,
 			proof_size_base_cost,
 			measured_proof_size_before,
+			None,
 			|executor| {
 				T::OnCreate::on_create(source, contract_address);
 				let (reason, _) = executor.transact_create_force_address(
@@ -973,6 +988,11 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	substate: SubstrateStackSubstate<'config>,
 	original_storage: BTreeMap<(H160, H256), H256>,
 	transient_storage: BTreeMap<(H160, H256), H256>,
+	/// Per-account full storage replacement. When an address is present here, storage
+	/// reads are served exclusively from the per-address map (missing slots return zero)
+	/// instead of the on-chain trie. An entry with an empty inner map represents a full
+	/// wipe (Geth-style `"state": {}`).
+	state_override: BTreeMap<H160, BTreeMap<H256, H256>>,
 	recorded: Recorded,
 	weight_info: Option<WeightInfo>,
 	storage_meter: Option<StorageMeter>,
@@ -986,8 +1006,17 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		metadata: StackSubstateMetadata<'config>,
 		weight_info: Option<WeightInfo>,
 		storage_limit: Option<u64>,
+		state_override: StateOverride,
 	) -> Self {
 		let storage_meter = storage_limit.map(StorageMeter::new);
+		let state_override = state_override
+			.map(|per_address| {
+				per_address
+					.into_iter()
+					.map(|(address, slots)| (address, slots.into_iter().collect()))
+					.collect::<BTreeMap<H160, BTreeMap<H256, H256>>>()
+			})
+			.unwrap_or_default();
 		Self {
 			vicinity,
 			substate: SubstrateStackSubstate {
@@ -1000,10 +1029,22 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 			_marker: PhantomData,
 			original_storage: BTreeMap::new(),
 			transient_storage: BTreeMap::new(),
+			state_override,
 			recorded: Default::default(),
 			weight_info,
 			storage_meter,
 		}
+	}
+
+	/// Read a slot for `address`, honoring any active state override.
+	///
+	/// If `address` is in the override set, the slot is served from the in-memory
+	/// map only; missing slots return zero. Otherwise the on-chain trie is read.
+	fn read_persisted_storage(&self, address: H160, index: H256) -> H256 {
+		if let Some(slots) = self.state_override.get(&address) {
+			return slots.get(&index).copied().unwrap_or_default();
+		}
+		<AccountStorages<T>>::get(address, index)
 	}
 
 	pub fn weight_info(&self) -> Option<WeightInfo> {
@@ -1127,7 +1168,7 @@ where
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		<AccountStorages<T>>::get(address, index)
+		self.read_persisted_storage(address, index)
 	}
 
 	fn transient_storage(&self, address: H160, index: H256) -> H256 {
@@ -1142,7 +1183,7 @@ where
 			self.original_storage
 				.get(&(address, index))
 				.cloned()
-				.unwrap_or_else(|| self.storage(address, index)),
+				.unwrap_or_else(|| self.read_persisted_storage(address, index)),
 		)
 	}
 }
@@ -1196,9 +1237,9 @@ where
 	fn set_storage(&mut self, address: H160, index: H256, value: H256) {
 		// We cache the current value if this is the first time we modify it
 		// in the transaction.
-		use alloc::collections::btree_map::Entry::Vacant;
-		if let Vacant(e) = self.original_storage.entry((address, index)) {
-			let original = <AccountStorages<T>>::get(address, index);
+		use alloc::collections::btree_map::Entry;
+		let original = self.read_persisted_storage(address, index);
+		if let Entry::Vacant(e) = self.original_storage.entry((address, index)) {
 			// No need to cache if same value.
 			if original != value {
 				e.insert(original);
@@ -1226,6 +1267,10 @@ where
 	}
 
 	fn reset_storage(&mut self, address: H160) {
+		// Geth-parity: once an account is destructed/recreated, the prior state
+		// override (if any) no longer applies — subsequent SLOADs must fall back
+		// to the (now-empty) persisted storage, returning zero until written.
+		self.state_override.remove(&address);
 		#[allow(deprecated)]
 		let _ = <AccountStorages<T>>::remove_prefix(address, None);
 	}
@@ -1596,6 +1641,7 @@ mod tests {
 				None,
 				None,
 				measured_proof_size_before,
+				None,
 				|_| {
 					let measured_proof_size_before2 = get_proof_size().unwrap_or_default();
 					let res = Runner::<Test>::execute(
@@ -1610,6 +1656,7 @@ mod tests {
 						None,
 						None,
 						measured_proof_size_before2,
+						None,
 						|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 					);
 					assert_matches!(
@@ -1644,6 +1691,7 @@ mod tests {
 				None,
 				None,
 				measured_proof_size_before,
+				None,
 				|_| (ExitReason::Succeed(ExitSucceed::Stopped), ()),
 			);
 			assert!(res.is_ok());
