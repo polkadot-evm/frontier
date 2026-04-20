@@ -2263,4 +2263,214 @@ mod state_override_test {
 			);
 		});
 	}
+
+	// --------------------------------------------------------------------
+	// A10: reverted inner-frame SSTORE under an override is rolled back.
+	// --------------------------------------------------------------------
+	//
+	// Mirrors a realistic `eth_call` shape: outer frame runs against an account
+	// that has a state override; an inner CALL frame SSTOREs a slot on that
+	// account and REVERTs. The outer frame's subsequent SLOAD must observe the
+	// original override value — the reverted write must not leak across the
+	// frame boundary.
+	//
+	// Exercises the `state_override_journal` snapshot-on-enter / restore-on-revert
+	// path directly against `SubstrateStackState`, matching Geth StateDB
+	// snapshot semantics. Pre-journaling, this test would observe `inner_write`
+	// after the revert.
+	#[test]
+	fn revert_restores_sstore_under_override() {
+		new_test_ext().execute_with(|| {
+			let addr = H160::repeat_byte(0xE1);
+			let slot_1 = slot(1);
+			let initial = value(0x22);
+			let inner_write = value(0x33);
+
+			let vicinity = Vicinity {
+				gas_price: U256::zero(),
+				origin: H160::default(),
+			};
+			let config = <Test as Config>::config().clone();
+			let metadata = evm::executor::stack::StackSubstateMetadata::new(1_000_000, &config);
+			let state_override = Some(vec![(addr, vec![(slot_1, initial)])]);
+			let mut state = SubstrateStackState::<'_, '_, Test>::new(
+				&vicinity,
+				metadata,
+				None,
+				None,
+				state_override,
+			);
+
+			// Top-level view: override is active.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				initial,
+			);
+
+			// Enter an inner frame (simulating CALL into another contract that
+			// reaches back into `addr`'s storage).
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::enter(
+				&mut state, 0, false,
+			);
+
+			// Inner-frame SSTORE: because `addr` has an active override, this
+			// updates the override map (the account's "fresh state"), not the trie.
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::set_storage(
+				&mut state, addr, slot_1, inner_write,
+			);
+
+			// Inner frame sees the write.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				inner_write,
+				"inner frame must observe its own SSTORE",
+			);
+
+			// Inner frame reverts. The journal must restore the pre-enter snapshot.
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::exit_revert(
+				&mut state,
+			)
+			.expect("exit_revert succeeds");
+
+			// Outer frame SLOAD must see the original override, not the reverted write.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				initial,
+				"reverted inner SSTORE must not leak into outer frame's SLOAD",
+			);
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A11: reverted inner-frame SELFDESTRUCT-style reset under an override
+	//      is rolled back.
+	// --------------------------------------------------------------------
+	//
+	// When an inner frame calls `reset_storage` (the code path taken by
+	// SELFDESTRUCT and contract re-creation) on an overridden account and
+	// then REVERTs, the outer frame must still see the account as
+	// overridden. Pre-journaling, the override entry removal was permanent
+	// regardless of revert, causing outer-frame SLOADs to read zero.
+	#[test]
+	fn revert_restores_selfdestruct_override_wipe() {
+		new_test_ext().execute_with(|| {
+			let addr = H160::repeat_byte(0xE2);
+			let slot_1 = slot(1);
+			let initial = H256::from_low_u64_be(0xABC);
+
+			let vicinity = Vicinity {
+				gas_price: U256::zero(),
+				origin: H160::default(),
+			};
+			let config = <Test as Config>::config().clone();
+			let metadata = evm::executor::stack::StackSubstateMetadata::new(1_000_000, &config);
+			let state_override = Some(vec![(addr, vec![(slot_1, initial)])]);
+			let mut state = SubstrateStackState::<'_, '_, Test>::new(
+				&vicinity,
+				metadata,
+				None,
+				None,
+				state_override,
+			);
+
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				initial,
+			);
+
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::enter(
+				&mut state, 0, false,
+			);
+
+			// Inner-frame SELFDESTRUCT-style wipe: clears the override entry
+			// and wipes on-chain storage (empty here, so a no-op on the trie).
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::reset_storage(
+				&mut state, addr,
+			);
+
+			// Inner frame sees the wipe.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				H256::zero(),
+				"inner frame must observe its own reset",
+			);
+
+			// Inner frame reverts. The journal must restore the override map.
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::exit_revert(
+				&mut state,
+			)
+			.expect("exit_revert succeeds");
+
+			// Outer frame: override must be back in effect.
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				initial,
+				"reverted reset_storage must not leak into outer frame's SLOAD",
+			);
+		});
+	}
+
+	// --------------------------------------------------------------------
+	// A12: committed inner-frame mutations under an override survive.
+	// --------------------------------------------------------------------
+	//
+	// Counterpart to A10: on a normal (non-revert) exit, inner-frame SSTOREs
+	// against an overridden account must propagate to the outer frame. This
+	// guards against overzealous journaling that would snapshot-restore on
+	// `exit_commit`.
+	#[test]
+	fn commit_preserves_sstore_under_override() {
+		new_test_ext().execute_with(|| {
+			let addr = H160::repeat_byte(0xE3);
+			let slot_1 = slot(1);
+			let initial = value(0x22);
+			let inner_write = value(0x33);
+
+			let vicinity = Vicinity {
+				gas_price: U256::zero(),
+				origin: H160::default(),
+			};
+			let config = <Test as Config>::config().clone();
+			let metadata = evm::executor::stack::StackSubstateMetadata::new(1_000_000, &config);
+			let state_override = Some(vec![(addr, vec![(slot_1, initial)])]);
+			let mut state = SubstrateStackState::<'_, '_, Test>::new(
+				&vicinity,
+				metadata,
+				None,
+				None,
+				state_override,
+			);
+
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::enter(
+				&mut state, 0, false,
+			);
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::set_storage(
+				&mut state, addr, slot_1, inner_write,
+			);
+			<SubstrateStackState<'_, '_, Test> as evm::executor::stack::StackState<'_>>::exit_commit(
+				&mut state,
+			)
+			.expect("exit_commit succeeds");
+
+			assert_eq!(
+				<SubstrateStackState<'_, '_, Test> as evm::backend::Backend>::storage(
+					&state, addr, slot_1,
+				),
+				inner_write,
+				"committed inner SSTORE must be visible to the outer frame",
+			);
+		});
+	}
 }
