@@ -993,14 +993,11 @@ pub struct SubstrateStackState<'vicinity, 'config, T> {
 	/// instead of the on-chain trie. An entry with an empty inner map represents a full
 	/// wipe (Geth-style `"state": {}`).
 	state_override: BTreeMap<H160, BTreeMap<H256, H256>>,
-	/// Per-frame snapshots of `state_override`, pushed on `enter` and popped on
-	/// `exit_{commit,revert,discard}`. On revert/discard the popped snapshot is
-	/// restored as the current `state_override`, mirroring the Substrate storage
-	/// transaction rollback that `SubstrateStackSubstate` performs for the trie.
-	/// This keeps override mutations (SSTORE, SELFDESTRUCT-driven `reset_storage`)
-	/// journaled along the EVM call-frame chain, matching Geth's StateDB snapshot
-	/// semantics.
-	state_override_journal: Vec<BTreeMap<H160, BTreeMap<H256, H256>>>,
+	/// Per-frame snapshots of `state_override`, pushed on `enter` and restored
+	/// on `exit_revert`/`exit_discard` (Geth StateDB snapshot parity).
+	/// `None` entries skip the clone when the override map is empty — safe
+	/// because `state_override` only shrinks during execution.
+	state_override_journal: Vec<Option<BTreeMap<H160, BTreeMap<H256, H256>>>>,
 	recorded: Recorded,
 	weight_info: Option<WeightInfo>,
 	storage_meter: Option<StorageMeter>,
@@ -1215,8 +1212,10 @@ where
 		// `SubstrateStackSubstate::enter` opens, so an inner frame's SSTORE or
 		// SELFDESTRUCT-driven `reset_storage` against an overridden account can
 		// be rolled back on revert/discard (Geth StateDB parity).
-		self.state_override_journal
-			.push(self.state_override.clone());
+		// `None` when empty: child frames can't mutate an empty map, so we skip
+		// the clone while still pairing the push/pop with the substate frame.
+		let snapshot = (!self.state_override.is_empty()).then(|| self.state_override.clone());
+		self.state_override_journal.push(snapshot);
 		self.substate.enter(gas_limit, is_static)
 	}
 
@@ -1227,18 +1226,24 @@ where
 	}
 
 	fn exit_revert(&mut self) -> Result<(), ExitError> {
-		self.state_override = self
+		if let Some(snapshot) = self
 			.state_override_journal
 			.pop()
-			.expect("exit_revert paired with enter; snapshot always pushed");
+			.expect("exit_revert paired with enter; snapshot always pushed")
+		{
+			self.state_override = snapshot;
+		}
 		self.substate.exit_revert()
 	}
 
 	fn exit_discard(&mut self) -> Result<(), ExitError> {
-		self.state_override = self
+		if let Some(snapshot) = self
 			.state_override_journal
 			.pop()
-			.expect("exit_discard paired with enter; snapshot always pushed");
+			.expect("exit_discard paired with enter; snapshot always pushed")
+		{
+			self.state_override = snapshot;
+		}
 		self.substate.exit_discard()
 	}
 
