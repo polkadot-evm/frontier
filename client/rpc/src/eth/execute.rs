@@ -943,8 +943,7 @@ where
 								&estimate_mode,
 								&Some(access_list),
 								&authorization_list,
-								&None::<Vec<(sp_core::H160, H256, H256)>>,
-								&None::<Vec<sp_core::H160>>,
+								&None::<StateOverride>
 							));
 
 							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();

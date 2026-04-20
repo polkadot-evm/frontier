@@ -1036,11 +1036,12 @@ impl<'vicinity, 'config, T: Config> SubstrateStackState<'vicinity, 'config, T> {
 		}
 	}
 
-	/// Read a slot for `address`, honoring any active state override.
+	/// Resolve a storage slot for `address` as the EVM should observe it.
 	///
-	/// If `address` is in the override set, the slot is served from the in-memory
-	/// map only; missing slots return zero. Otherwise the on-chain trie is read.
-	fn read_persisted_storage(&self, address: H160, index: H256) -> H256 {
+	/// If an active state override covers `address`, the slot is served from the
+	/// in-memory override map (missing slots return zero, matching Geth's
+	/// "fresh state object" semantics). Otherwise the on-chain trie is read.
+	fn read_effective_storage(&self, address: H160, index: H256) -> H256 {
 		if let Some(slots) = self.state_override.get(&address) {
 			return slots.get(&index).copied().unwrap_or_default();
 		}
@@ -1168,7 +1169,7 @@ where
 	}
 
 	fn storage(&self, address: H160, index: H256) -> H256 {
-		self.read_persisted_storage(address, index)
+		self.read_effective_storage(address, index)
 	}
 
 	fn transient_storage(&self, address: H160, index: H256) -> H256 {
@@ -1183,7 +1184,7 @@ where
 			self.original_storage
 				.get(&(address, index))
 				.cloned()
-				.unwrap_or_else(|| self.read_persisted_storage(address, index)),
+				.unwrap_or_else(|| self.read_effective_storage(address, index)),
 		)
 	}
 }
@@ -1238,7 +1239,7 @@ where
 		// We cache the current value if this is the first time we modify it
 		// in the transaction.
 		use alloc::collections::btree_map::Entry;
-		let original = self.read_persisted_storage(address, index);
+		let original = self.read_effective_storage(address, index);
 		if let Entry::Vacant(e) = self.original_storage.entry((address, index)) {
 			// No need to cache if same value.
 			if original != value {
@@ -1249,7 +1250,7 @@ where
 		// Geth-parity: if this account has an active state override, writes
 		// update the override map (the account's "fresh state"), not the
 		// underlying trie. Subsequent SLOADs will observe the new value via
-		// `read_persisted_storage`, while the on-chain storage stays untouched.
+		// `read_effective_storage`, while the on-chain storage stays untouched.
 		if let Some(slots) = self.state_override.get_mut(&address) {
 			if value == H256::default() {
 				slots.remove(&index);
