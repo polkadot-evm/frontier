@@ -133,6 +133,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 }
 parameter_types! {
 	pub BlockGasLimit: U256 = U256::max_value();
+	pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
 	pub WeightPerGas: Weight = Weight::from_parts(20_000, 0);
 }
 impl pallet_evm::Config for Test {
@@ -152,6 +153,7 @@ impl pallet_evm::Config for Test {
 	type PrecompilesValue = ();
 	type ChainId = ();
 	type BlockGasLimit = BlockGasLimit;
+	type TransactionGasLimit = TransactionGasLimit;
 	type Runner = pallet_evm::runner::stack::Runner<Self>;
 	type OnChargeTransaction = ();
 	type OnCreate = ();

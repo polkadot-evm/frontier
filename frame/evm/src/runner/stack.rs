@@ -487,6 +487,7 @@ where
 			fp_evm::CheckEvmTransactionConfig {
 				evm_config,
 				block_gas_limit: T::BlockGasLimit::get(),
+				transaction_gas_limit: T::TransactionGasLimit::get(),
 				base_fee,
 				chain_id: T::ChainId::get(),
 				is_transactional,
