@@ -28,6 +28,6 @@
   },
   "devDependencies": {
     "@types/chai-as-promised": "^7.1.5",
-    "prettier": "^2.8.8"
+    "prettier": "^3.8.3"
   }
 }
