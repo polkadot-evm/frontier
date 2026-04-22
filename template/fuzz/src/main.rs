@@ -55,6 +55,7 @@ fn main() {
 				true,
 				Some(weight_limit),
 				Some(0u64),
+				None,
 				&<Runtime as pallet_evm::Config>::config().clone(),
 			);
 			let proof_size = match res {
