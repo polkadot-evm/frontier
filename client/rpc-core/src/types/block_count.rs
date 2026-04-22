@@ -69,7 +69,7 @@ impl From<BlockCount> for u64 {
 	fn from(block_count: BlockCount) -> u64 {
 		match block_count {
 			BlockCount::Num(n) => n,
-			BlockCount::U256(n) => n.as_u64(),
+			BlockCount::U256(n) => n.min(U256::from(u64::MAX)).low_u64(),
 		}
 	}
 }
@@ -129,5 +129,13 @@ mod tests {
 		let bn_hex: BlockCount = serde_json::from_str(r#""0x45""#).unwrap();
 		assert_eq!(match_block_number(bn_dec).unwrap(), U256::from(42));
 		assert_eq!(match_block_number(bn_hex).unwrap(), U256::from("0x45"));
+	}
+
+	#[test]
+	fn block_count_to_u64_saturates_instead_of_panicking() {
+		let max_u256_hex =
+			r#""0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff""#;
+		let bc: BlockCount = serde_json::from_str(max_u256_hex).unwrap();
+		assert_eq!(u64::from(bc), u64::MAX);
 	}
 }
