@@ -561,6 +561,7 @@ impl<T: Config> Pallet<T> {
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
+				transaction_gas_limit: T::TransactionGasLimit::get(),
 				base_fee,
 				chain_id: T::ChainId::get(),
 				is_transactional: true,
@@ -1018,6 +1019,7 @@ impl<T: Config> Pallet<T> {
 			CheckEvmTransactionConfig {
 				evm_config: T::config(),
 				block_gas_limit: T::BlockGasLimit::get(),
+				transaction_gas_limit: T::TransactionGasLimit::get(),
 				base_fee,
 				chain_id: T::ChainId::get(),
 				is_transactional: true,

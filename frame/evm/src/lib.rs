@@ -180,6 +180,11 @@ pub mod pallet {
 		/// The block gas limit. Can be a simple constant, or an adjustment algorithm in another pallet.
 		type BlockGasLimit: Get<U256>;
 
+		/// Optional maximum gas limit for a single transaction.
+		///
+		/// Set to `None` to rely only on the block gas limit and weight/proof-size constraints.
+		type TransactionGasLimit: Get<Option<U256>>;
+
 		/// EVM execution runner.
 		#[pallet::no_default]
 		type Runner: Runner<Self>;
@@ -237,6 +242,7 @@ pub mod pallet {
 
 		parameter_types! {
 			pub BlockGasLimit: U256 = U256::from(BLOCK_GAS_LIMIT);
+			pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
 			pub const ChainId: u64 = 42;
 			pub const GasLimitPovSizeRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_POV_SIZE);
 			pub const GasLimitStorageGrowthRatio: u64 = BLOCK_GAS_LIMIT.saturating_div(MAX_STORAGE_GROWTH);
@@ -255,6 +261,7 @@ pub mod pallet {
 			type PrecompilesValue = ();
 			type ChainId = ChainId;
 			type BlockGasLimit = BlockGasLimit;
+			type TransactionGasLimit = TransactionGasLimit;
 			type OnChargeTransaction = ();
 			type OnCreate = ();
 			type FindAuthor = FindAuthorTruncated;

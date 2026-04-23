@@ -22,8 +22,6 @@ pub use evm::backend::Basic as Account;
 use frame_support::{sp_runtime::traits::UniqueSaturatedInto, weights::Weight};
 use sp_core::{H160, H256, U256};
 
-use crate::MAX_TRANSACTION_GAS_LIMIT;
-
 #[derive(Debug)]
 pub struct CheckEvmTransactionInput {
 	pub chain_id: Option<u64>,
@@ -43,6 +41,7 @@ pub struct CheckEvmTransactionInput {
 pub struct CheckEvmTransactionConfig<'config> {
 	pub evm_config: &'config evm::Config,
 	pub block_gas_limit: U256,
+	pub transaction_gas_limit: Option<U256>,
 	pub base_fee: U256,
 	pub chain_id: u64,
 	pub is_transactional: bool,
@@ -105,7 +104,7 @@ pub enum TransactionValidationError {
 	UnknownError,
 	/// EIP-7825: Transaction gas limit exceeds per-transaction cap
 	///
-	/// The transaction gas limit exceeds the EIP-7825 per-transaction cap of 16,777,216 (2^24).
+	/// The transaction gas limit exceeds the configured per-transaction cap.
 	/// This cap is independent of the block gas limit and applies to all transactions.
 	TransactionGasLimitExceedsCap,
 }
@@ -276,9 +275,11 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 				return Err(TransactionValidationError::GasLimitExceedsBlockLimit.into());
 			}
 
-			// EIP-7825: Transaction gas limit is within the protocol cap.
-			if self.transaction.gas_limit > MAX_TRANSACTION_GAS_LIMIT {
-				return Err(TransactionValidationError::TransactionGasLimitExceedsCap.into());
+			// Transaction gas limit is within the configured per-transaction cap.
+			if let Some(transaction_gas_limit) = self.config.transaction_gas_limit {
+				if self.transaction.gas_limit > transaction_gas_limit {
+					return Err(TransactionValidationError::TransactionGasLimitExceedsCap.into());
+				}
 			}
 		}
 
@@ -324,6 +325,7 @@ impl<'config, E: From<TransactionValidationError>> CheckEvmTransaction<'config, 
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::MAX_TRANSACTION_GAS_LIMIT;
 
 	#[derive(Debug, PartialEq)]
 	pub enum TestError {
@@ -374,6 +376,7 @@ mod tests {
 
 	struct TestCase {
 		pub blockchain_gas_limit: U256,
+		pub transaction_gas_limit: Option<U256>,
 		pub blockchain_base_fee: U256,
 		pub blockchain_chain_id: u64,
 		pub is_transactional: bool,
@@ -392,6 +395,7 @@ mod tests {
 		fn default() -> Self {
 			TestCase {
 				blockchain_gas_limit: U256::max_value(),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				blockchain_base_fee: U256::from(1_000_000_000u128),
 				blockchain_chain_id: 42u64,
 				is_transactional: true,
@@ -411,6 +415,7 @@ mod tests {
 	fn test_env<'config>(input: TestCase) -> CheckEvmTransaction<'config, TestError> {
 		let TestCase {
 			blockchain_gas_limit,
+			transaction_gas_limit,
 			blockchain_base_fee,
 			blockchain_chain_id,
 			is_transactional,
@@ -428,6 +433,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: blockchain_gas_limit,
+				transaction_gas_limit,
 				base_fee: blockchain_base_fee,
 				chain_id: blockchain_chain_id,
 				is_transactional,
@@ -946,6 +952,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -983,6 +990,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1020,6 +1028,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1052,6 +1061,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(1_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1085,6 +1095,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(30_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1117,6 +1128,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(30_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1144,12 +1156,26 @@ mod tests {
 	}
 
 	#[test]
+	fn validate_transaction_gas_limit_cap_none_allows_above_eip7825_cap() {
+		let validator = test_env(TestCase {
+			blockchain_gas_limit: U256::from(30_000_000u64),
+			transaction_gas_limit: None,
+			gas_limit: MAX_TRANSACTION_GAS_LIMIT + 1,
+			..Default::default()
+		});
+
+		let res = validator.validate_common();
+		assert!(res.is_ok());
+	}
+
+	#[test]
 	fn validate_eip7825_standard_transfer_gas_limit_succeeds() {
 		// Transaction well under cap should pass
 		let validator = CheckEvmTransaction::<TestError>::new(
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(30_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1182,6 +1208,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(50_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: true,
@@ -1216,6 +1243,7 @@ mod tests {
 			CheckEvmTransactionConfig {
 				evm_config: &crate::EVM_CONFIG,
 				block_gas_limit: U256::from(50_000_000u64),
+				transaction_gas_limit: Some(MAX_TRANSACTION_GAS_LIMIT),
 				base_fee: U256::from(1_000_000_000u128),
 				chain_id: 42u64,
 				is_transactional: false, // Non-transactional (dry-run)
