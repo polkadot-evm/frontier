@@ -62,7 +62,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Run sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Install Rust toolchain
         run: make setup
@@ -96,7 +96,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Run sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Install Rust toolchain
         run: make setup
@@ -140,7 +140,7 @@ jobs:
             ${{ runner.os }}-cargo-
 
       - name: Run sccache
-        uses: mozilla-actions/sccache-action@v0.0.9
+        uses: mozilla-actions/sccache-action@v0.0.10
 
       - name: Install stable Rust toolchain
         run: make setup
