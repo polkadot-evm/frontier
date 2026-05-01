@@ -12,6 +12,9 @@ ed25519-dalek = { version = "2.1.0", default-features = false, features = ["allo
 # Frontier
 fp-evm = { workspace = true }
 
+[dev-dependencies]
+pallet-evm-test-vector-support = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
