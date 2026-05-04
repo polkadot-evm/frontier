@@ -52,17 +52,18 @@ impl RunReport {
 	}
 }
 
-/// Replay every `.io` file under `tests_dir`. Vectors whose method is not in
-/// `enabled_methods` are reported as `Skipped`, not as failures — this keeps
-/// the runner green while coverage grows.
+/// Replay every `.io` file under `tests_dir`. Vectors whose method starts with
+/// any prefix in `excluded_prefixes` are reported as `Skipped`, not as
+/// failures — used to skip namespaces Frontier doesn't claim to implement
+/// (e.g. `testing_`, `engine_`).
 pub fn run<T: Transport>(
 	tests_dir: &Path,
 	transport: &T,
-	enabled_methods: &[&str],
+	excluded_prefixes: &[&str],
 	mode: &CompareMode,
 ) -> Vec<RunReport> {
 	let mut reports = Vec::new();
-	collect(tests_dir, &mut reports, transport, enabled_methods, mode);
+	collect(tests_dir, &mut reports, transport, excluded_prefixes, mode);
 	reports
 }
 
@@ -70,7 +71,7 @@ fn collect<T: Transport>(
 	dir: &Path,
 	reports: &mut Vec<RunReport>,
 	transport: &T,
-	enabled: &[&str],
+	excluded: &[&str],
 	mode: &CompareMode,
 ) {
 	let entries = match fs::read_dir(dir) {
@@ -89,9 +90,9 @@ fn collect<T: Transport>(
 	for entry in entries.flatten() {
 		let path = entry.path();
 		if path.is_dir() {
-			collect(&path, reports, transport, enabled, mode);
+			collect(&path, reports, transport, excluded, mode);
 		} else if path.extension() == Some(OsStr::new("io")) {
-			reports.push(replay_file(&path, transport, enabled, mode));
+			reports.push(replay_file(&path, transport, excluded, mode));
 		}
 	}
 }
@@ -124,7 +125,7 @@ fn validate_envelope(request: &Value, actual: &Value) -> Result<(), String> {
 fn replay_file<T: Transport>(
 	path: &Path,
 	transport: &T,
-	enabled: &[&str],
+	excluded: &[&str],
 	mode: &CompareMode,
 ) -> RunReport {
 	let method = path
@@ -145,9 +146,9 @@ fn replay_file<T: Transport>(
 		outcome,
 	};
 
-	if !enabled.iter().any(|m| *m == method) {
+	if excluded.iter().any(|p| method.starts_with(p)) {
 		return mk(RunOutcome::Skipped {
-			reason: "method not in enabled set",
+			reason: "method namespace excluded",
 		});
 	}
 
@@ -228,18 +229,18 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
+		let reports = run(tmp.path(), &t, &[], &exact());
 		assert_eq!(reports.len(), 1);
 		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 		assert_eq!(t.seen.borrow().len(), 1);
 	}
 
 	#[test]
-	fn skips_methods_not_in_enabled_set() {
+	fn skips_methods_matching_excluded_prefix() {
 		let tmp = tempdir();
 		write_vector(
 			tmp.path(),
-			"eth_someUnsupported",
+			"testing_buildBlockV1",
 			"x",
 			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":1}\n",
 		);
@@ -247,7 +248,7 @@ mod tests {
 			response: json!({}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
+		let reports = run(tmp.path(), &t, &["testing_"], &exact());
 		assert_eq!(reports.len(), 1);
 		assert!(matches!(reports[0].outcome, RunOutcome::Skipped { .. }));
 		assert!(t.seen.borrow().is_empty());
@@ -266,7 +267,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0x2"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
+		let reports = run(tmp.path(), &t, &[], &exact());
 		assert!(matches!(reports[0].outcome, RunOutcome::Mismatch { .. }));
 		assert!(reports[0].is_failure());
 	}
@@ -284,7 +285,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
+		let reports = run(tmp.path(), &t, &[], &exact());
 		assert!(matches!(reports[0].outcome, RunOutcome::SchemaOnly));
 	}
 
@@ -301,7 +302,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":99,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &CompareMode::Schema);
+		let reports = run(tmp.path(), &t, &[], &CompareMode::Schema);
 		assert!(matches!(reports[0].outcome, RunOutcome::EnvelopeError(_)));
 	}
 
@@ -318,7 +319,7 @@ mod tests {
 			response: json!({"id":1,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &CompareMode::Schema);
+		let reports = run(tmp.path(), &t, &[], &CompareMode::Schema);
 		assert!(matches!(reports[0].outcome, RunOutcome::EnvelopeError(_)));
 	}
 
@@ -335,7 +336,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &CompareMode::Schema);
+		let reports = run(tmp.path(), &t, &[], &CompareMode::Schema);
 		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 	}
 

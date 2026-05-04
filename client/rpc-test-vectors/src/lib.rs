@@ -27,17 +27,19 @@
 //!
 //! ```no_run
 //! use std::path::PathBuf;
-//! use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, CURATED_SUBSET};
+//! use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, EXCLUDED_NAMESPACES};
 //!
 //! let tests_dir = PathBuf::from("vendor/execution-apis/tests");
 //! let transport = HttpTransport::new("http://127.0.0.1:9944");
-//! let reports = run(&tests_dir, &transport, CURATED_SUBSET, &CompareMode::Schema);
+//! let reports = run(&tests_dir, &transport, EXCLUDED_NAMESPACES, &CompareMode::Schema);
 //! let failures: Vec<_> = reports.iter().filter(|r| r.is_failure()).collect();
 //! assert!(failures.is_empty(), "{} failure(s)", failures.len());
 //! ```
 //!
-//! [`CURATED_SUBSET`] is the conservative method allow-list this crate runs in
-//! its own CI; consumers can pass a different slice.
+//! [`EXCLUDED_NAMESPACES`] skips the JSON-RPC namespaces Frontier doesn't
+//! claim to implement (`testing_`, `engine_`); consumers can pass a different
+//! slice — e.g. an empty slice runs everything, or add custom prefixes for a
+//! Frontier fork that disables additional namespaces.
 //!
 //! [`Transport`] is a trait — substitute any HTTP client by implementing it
 //! directly. [`HttpTransport`] is provided as a small `ureq`-based default.
@@ -52,15 +54,11 @@ pub use parser::{parse, Exchange, ParseError, Vector};
 pub use runner::{run, RunOutcome, RunReport, Transport};
 pub use transport::HttpTransport;
 
-/// Curated subset of methods that the runner exercises against a generic
-/// Frontier-based dev node. Everything outside this set is reported as
-/// `Skipped`. Expand as compatibility allows.
-pub const CURATED_SUBSET: &[&str] = &[
-	"eth_blockNumber",
-	"eth_chainId",
-	"eth_getBalance",
-	"eth_getCode",
-	"eth_getStorageAt",
-	"eth_getBlockByNumber",
-	"eth_getBlockByHash",
-];
+/// JSON-RPC method-name prefixes the runner skips by default. These are
+/// namespaces Frontier (and Frontier-based clients) do not claim to implement:
+///
+/// - `testing_` — Hive-only test API, not part of standard EL JSON-RPC.
+/// - `engine_` — consensus-engine API, served by the CL in PoS Ethereum.
+///
+/// Pass an empty slice to `run` if you want to surface failures for these too.
+pub const EXCLUDED_NAMESPACES: &[&str] = &["testing_", "engine_"];

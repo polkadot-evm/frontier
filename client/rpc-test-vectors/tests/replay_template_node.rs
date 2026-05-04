@@ -20,7 +20,9 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, RunOutcome, Transport, CURATED_SUBSET};
+use fc_rpc_test_vectors::{
+	run, CompareMode, HttpTransport, RunOutcome, Transport, EXCLUDED_NAMESPACES,
+};
 use serde_json::json;
 
 const READY_TIMEOUT: Duration = Duration::from_secs(60);
@@ -43,7 +45,7 @@ fn replay_curated_subset_against_template_node() {
 	let reports = run(
 		&vendor_tests_dir(),
 		&transport,
-		CURATED_SUBSET,
+		EXCLUDED_NAMESPACES,
 		&CompareMode::Schema,
 	);
 
