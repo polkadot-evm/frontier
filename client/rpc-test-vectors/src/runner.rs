@@ -222,8 +222,7 @@ mod tests {
 			tmp.path(),
 			"eth_blockNumber",
 			"simple",
-			">> {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\"}\n\
-			 << {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_blockNumber\"}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
 		);
 		let t = StubTransport {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0x1"}),

@@ -93,8 +93,7 @@ fn locate_node_binary() -> PathBuf {
 		}
 	}
 	panic!(
-		"frontier-template-node binary not found under {}/{{release,debug}}; \
-		 build it first or set FRONTIER_NODE_BIN",
+		"frontier-template-node binary not found under {}/{{release,debug}}; build it first or set FRONTIER_NODE_BIN",
 		target.display()
 	);
 }

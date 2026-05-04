@@ -66,13 +66,13 @@ fn main() -> ExitCode {
 	}
 }
 
-const USAGE: &str = "\
-usage: replay_url --url <URL> [--exact] [--tests-dir <PATH>]
-
-  --url <URL>          HTTP JSON-RPC endpoint to replay against (required)
-  --exact              Require exact value matches (default: schema-only)
-  --tests-dir <PATH>   Override path to execution-apis tests/ directory
-";
+const USAGE: &str = concat!(
+	"usage: replay_url --url <URL> [--exact] [--tests-dir <PATH>]\n",
+	"\n",
+	"  --url <URL>          HTTP JSON-RPC endpoint to replay against (required)\n",
+	"  --exact              Require exact value matches (default: schema-only)\n",
+	"  --tests-dir <PATH>   Override path to execution-apis tests/ directory\n",
+);
 
 struct Args {
 	url: String,
