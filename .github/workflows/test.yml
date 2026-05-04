@@ -81,6 +81,8 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
+        with:
+          submodules: recursive
 
       - name: Cache cargo registry & git sources
         uses: actions/cache@v5
@@ -116,6 +118,11 @@ jobs:
 
       - name: Run integration tests
         run: make integration-test
+
+      - name: Replay execution-apis RPC vectors
+        run: cargo test --release -p fc-rpc-test-vectors --test replay_template_node -- --ignored --nocapture
+        env:
+          FRONTIER_NODE_BIN: ${{ github.workspace }}/target/release/frontier-template-node
 
   precompile-macro-test:
     name: Run Precompile Macro Tests
