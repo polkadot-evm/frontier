@@ -1,8 +1,7 @@
-//! Replay JSON-RPC test vectors from `ethereum/execution-apis` against a
-//! Frontier RPC endpoint.
+//! Replay JSON-RPC test vectors from `ethereum/execution-apis` against any
+//! HTTP RPC endpoint.
 //!
-//! Vectors live under `vendor/execution-apis/tests/{method}/{name}.io` in the
-//! rpctestgen line-delimited format:
+//! Vector format (rpctestgen line-delimited):
 //!
 //! ```text
 //! // optional comment
@@ -11,6 +10,37 @@
 //! ```
 //!
 //! See `docs/adr/001-rpc-test-vectors.md` for design context.
+//!
+//! # Using as a library from another workspace
+//!
+//! Downstream consumers (e.g. Moonbeam, custom Frontier-based devnets) can
+//! depend on this crate via git and run vectors against their own nodes:
+//!
+//! ```toml
+//! # Cargo.toml
+//! [dev-dependencies]
+//! fc-rpc-test-vectors = { git = "https://github.com/polkadot-evm/frontier", rev = "<sha>" }
+//! ```
+//!
+//! The consumer is responsible for sourcing vectors (typically a submodule of
+//! `ethereum/execution-apis`) and pointing the runner at them:
+//!
+//! ```no_run
+//! use std::path::PathBuf;
+//! use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, CURATED_SUBSET};
+//!
+//! let tests_dir = PathBuf::from("vendor/execution-apis/tests");
+//! let transport = HttpTransport::new("http://127.0.0.1:9944");
+//! let reports = run(&tests_dir, &transport, CURATED_SUBSET, &CompareMode::Schema);
+//! let failures: Vec<_> = reports.iter().filter(|r| r.is_failure()).collect();
+//! assert!(failures.is_empty(), "{} failure(s)", failures.len());
+//! ```
+//!
+//! [`CURATED_SUBSET`] is the conservative method allow-list this crate runs in
+//! its own CI; consumers can pass a different slice.
+//!
+//! [`Transport`] is a trait — substitute any HTTP client by implementing it
+//! directly. [`HttpTransport`] is provided as a small `ureq`-based default.
 
 pub mod compare;
 pub mod parser;
