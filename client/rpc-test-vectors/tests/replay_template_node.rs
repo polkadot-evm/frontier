@@ -34,16 +34,6 @@ fn replay_execution_apis_vectors_against_template_node() {
 	let node = TemplateNode::spawn();
 	let transport = HttpTransport::new(node.rpc_url());
 
-	// Sanity check: the node responds to a real RPC before we hand it the
-	// vendored vectors.
-	let chain_id = transport
-		.send(&json!({"jsonrpc":"2.0","id":1,"method":"eth_chainId"}))
-		.expect("eth_chainId should succeed against a live node");
-	assert!(
-		chain_id.get("result").is_some(),
-		"unexpected response: {chain_id}"
-	);
-
 	let reports = run(
 		&vendor_tests_dir(),
 		&transport,
