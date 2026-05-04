@@ -11,3 +11,8 @@ publish = false
 [dependencies]
 serde_json = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
+ureq = { version = "2", default-features = false }
+
+[[example]]
+name = "replay_url"
+path = "examples/replay_url.rs"

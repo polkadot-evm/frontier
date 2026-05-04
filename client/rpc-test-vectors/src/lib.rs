@@ -15,7 +15,22 @@
 pub mod compare;
 pub mod parser;
 pub mod runner;
+pub mod transport;
 
-pub use compare::{compare, DynamicFields, MatchOutcome};
+pub use compare::{compare, CompareMode, DynamicFields, MatchOutcome};
 pub use parser::{parse, Exchange, ParseError, Vector};
 pub use runner::{run, RunOutcome, RunReport, Transport};
+pub use transport::HttpTransport;
+
+/// Curated subset of methods that the runner exercises against a generic
+/// Frontier-based dev node. Everything outside this set is reported as
+/// `Skipped`. Expand as compatibility allows.
+pub const CURATED_SUBSET: &[&str] = &[
+	"eth_blockNumber",
+	"eth_chainId",
+	"eth_getBalance",
+	"eth_getCode",
+	"eth_getStorageAt",
+	"eth_getBlockByNumber",
+	"eth_getBlockByHash",
+];

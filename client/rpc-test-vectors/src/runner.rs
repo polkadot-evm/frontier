@@ -12,7 +12,7 @@ use std::path::{Path, PathBuf};
 
 use serde_json::Value;
 
-use crate::compare::{compare, DynamicFields, MatchOutcome};
+use crate::compare::{compare, CompareMode, MatchOutcome};
 use crate::parser::{parse, ParseError};
 
 pub trait Transport {
@@ -25,6 +25,7 @@ pub enum RunOutcome {
 	Skipped { reason: &'static str },
 	SchemaOnly,
 	Mismatch { path: String, detail: String },
+	EnvelopeError(String),
 	TransportError(String),
 	ParseError(ParseError),
 	IoError(io::Error),
@@ -43,6 +44,7 @@ impl RunReport {
 		matches!(
 			self.outcome,
 			RunOutcome::Mismatch { .. }
+				| RunOutcome::EnvelopeError(_)
 				| RunOutcome::TransportError(_)
 				| RunOutcome::ParseError(_)
 				| RunOutcome::IoError(_)
@@ -57,10 +59,10 @@ pub fn run<T: Transport>(
 	tests_dir: &Path,
 	transport: &T,
 	enabled_methods: &[&str],
-	dynamic: &DynamicFields,
+	mode: &CompareMode,
 ) -> Vec<RunReport> {
 	let mut reports = Vec::new();
-	collect(tests_dir, &mut reports, transport, enabled_methods, dynamic);
+	collect(tests_dir, &mut reports, transport, enabled_methods, mode);
 	reports
 }
 
@@ -69,7 +71,7 @@ fn collect<T: Transport>(
 	reports: &mut Vec<RunReport>,
 	transport: &T,
 	enabled: &[&str],
-	dynamic: &DynamicFields,
+	mode: &CompareMode,
 ) {
 	let entries = match fs::read_dir(dir) {
 		Ok(e) => e,
@@ -87,10 +89,35 @@ fn collect<T: Transport>(
 	for entry in entries.flatten() {
 		let path = entry.path();
 		if path.is_dir() {
-			collect(&path, reports, transport, enabled, dynamic);
+			collect(&path, reports, transport, enabled, mode);
 		} else if path.extension() == Some(OsStr::new("io")) {
-			reports.push(replay_file(&path, transport, enabled, dynamic));
+			reports.push(replay_file(&path, transport, enabled, mode));
 		}
+	}
+}
+
+/// Validate the JSON-RPC envelope independently of vector content:
+/// `jsonrpc=="2.0"`, `id` matches the request `id`, exactly one of `result` or
+/// `error` is present.
+fn validate_envelope(request: &Value, actual: &Value) -> Result<(), String> {
+	let obj = actual
+		.as_object()
+		.ok_or_else(|| format!("response is not a JSON object: {actual}"))?;
+	match obj.get("jsonrpc") {
+		Some(Value::String(v)) if v == "2.0" => {}
+		other => return Err(format!("expected jsonrpc=\"2.0\", got {other:?}")),
+	}
+	let req_id = request.get("id");
+	let res_id = obj.get("id");
+	if req_id != res_id {
+		return Err(format!(
+			"id mismatch: request {req_id:?}, response {res_id:?}"
+		));
+	}
+	match (obj.contains_key("result"), obj.contains_key("error")) {
+		(true, false) | (false, true) => Ok(()),
+		(true, true) => Err("response has both result and error".to_string()),
+		(false, false) => Err("response has neither result nor error".to_string()),
 	}
 }
 
@@ -98,7 +125,7 @@ fn replay_file<T: Transport>(
 	path: &Path,
 	transport: &T,
 	enabled: &[&str],
-	dynamic: &DynamicFields,
+	mode: &CompareMode,
 ) -> RunReport {
 	let method = path
 		.parent()
@@ -136,11 +163,14 @@ fn replay_file<T: Transport>(
 	for exchange in &vector.exchanges {
 		match transport.send(&exchange.request) {
 			Ok(actual) => {
+				if let Err(err) = validate_envelope(&exchange.request, &actual) {
+					return mk(RunOutcome::EnvelopeError(err));
+				}
 				if vector.speconly {
 					return mk(RunOutcome::SchemaOnly);
 				}
 				if let MatchOutcome::Mismatch { path, detail } =
-					compare(&exchange.response, &actual, dynamic)
+					compare(&exchange.response, &actual, mode)
 				{
 					return mk(RunOutcome::Mismatch { path, detail });
 				}
@@ -155,6 +185,7 @@ fn replay_file<T: Transport>(
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use crate::compare::DynamicFields;
 	use serde_json::json;
 	use std::cell::RefCell;
 	use std::io::Write;
@@ -169,6 +200,10 @@ mod tests {
 			self.seen.borrow_mut().push(request.clone());
 			Ok(self.response.clone())
 		}
+	}
+
+	fn exact() -> CompareMode {
+		CompareMode::Exact(DynamicFields::default())
 	}
 
 	fn write_vector(dir: &Path, method: &str, case: &str, body: &str) -> PathBuf {
@@ -194,12 +229,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(
-			tmp.path(),
-			&t,
-			&["eth_blockNumber"],
-			&DynamicFields::default(),
-		);
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
 		assert_eq!(reports.len(), 1);
 		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 		assert_eq!(t.seen.borrow().len(), 1);
@@ -212,13 +242,13 @@ mod tests {
 			tmp.path(),
 			"eth_someUnsupported",
 			"x",
-			">> {\"id\":1}\n<< {\"id\":1,\"r\":1}\n",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":1}\n",
 		);
 		let t = StubTransport {
 			response: json!({}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &DynamicFields::default());
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
 		assert_eq!(reports.len(), 1);
 		assert!(matches!(reports[0].outcome, RunOutcome::Skipped { .. }));
 		assert!(t.seen.borrow().is_empty());
@@ -231,18 +261,13 @@ mod tests {
 			tmp.path(),
 			"eth_blockNumber",
 			"simple",
-			">> {\"id\":1}\n<< {\"id\":1,\"result\":\"0x1\"}\n",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
 		);
 		let t = StubTransport {
-			response: json!({"id":1,"result":"0x2"}),
+			response: json!({"jsonrpc":"2.0","id":1,"result":"0x2"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(
-			tmp.path(),
-			&t,
-			&["eth_blockNumber"],
-			&DynamicFields::default(),
-		);
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
 		assert!(matches!(reports[0].outcome, RunOutcome::Mismatch { .. }));
 		assert!(reports[0].is_failure());
 	}
@@ -254,19 +279,65 @@ mod tests {
 			tmp.path(),
 			"eth_blockNumber",
 			"simple",
-			"// speconly\n>> {\"id\":1}\n<< {\"id\":1,\"result\":\"0x1\"}\n",
+			"// speconly\n>> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
 		);
 		let t = StubTransport {
-			response: json!({"id":1,"result":"0xdeadbeef"}),
+			response: json!({"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(
-			tmp.path(),
-			&t,
-			&["eth_blockNumber"],
-			&DynamicFields::default(),
-		);
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &exact());
 		assert!(matches!(reports[0].outcome, RunOutcome::SchemaOnly));
+	}
+
+	#[test]
+	fn flags_envelope_id_mismatch() {
+		let tmp = tempdir();
+		write_vector(
+			tmp.path(),
+			"eth_blockNumber",
+			"simple",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
+		);
+		let t = StubTransport {
+			response: json!({"jsonrpc":"2.0","id":99,"result":"0x1"}),
+			seen: RefCell::new(vec![]),
+		};
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &CompareMode::Schema);
+		assert!(matches!(reports[0].outcome, RunOutcome::EnvelopeError(_)));
+	}
+
+	#[test]
+	fn flags_envelope_missing_jsonrpc_field() {
+		let tmp = tempdir();
+		write_vector(
+			tmp.path(),
+			"eth_blockNumber",
+			"simple",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
+		);
+		let t = StubTransport {
+			response: json!({"id":1,"result":"0x1"}),
+			seen: RefCell::new(vec![]),
+		};
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &CompareMode::Schema);
+		assert!(matches!(reports[0].outcome, RunOutcome::EnvelopeError(_)));
+	}
+
+	#[test]
+	fn schema_mode_tolerates_value_diffs() {
+		let tmp = tempdir();
+		write_vector(
+			tmp.path(),
+			"eth_blockNumber",
+			"simple",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
+		);
+		let t = StubTransport {
+			response: json!({"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}),
+			seen: RefCell::new(vec![]),
+		};
+		let reports = run(tmp.path(), &t, &["eth_blockNumber"], &CompareMode::Schema);
+		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 	}
 
 	// ---- minimal tempdir helper, to avoid pulling in a tempfile dep ----
