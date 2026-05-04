@@ -12,3 +12,14 @@ publish = false
 serde_json = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 ureq = { version = "2", default-features = false }
+
+[features]
+# Opt-in for the live-RPC integration test. Off by default so `cargo test`
+# stays self-contained (unit tests + upstream parser smoke). CI enables this
+# feature in the integration-test job, which already builds the node binary.
+e2e = []
+
+[[test]]
+name = "replay_template_node"
+path = "tests/replay_template_node.rs"
+required-features = ["e2e"]

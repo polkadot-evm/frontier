@@ -1,12 +1,12 @@
 //! Replay the curated subset of execution-apis vectors against a
 //! `frontier-template-node --dev` subprocess in schema-only mode.
 //!
-//! The test is `#[ignore]`d by default because it requires the template node
-//! binary to exist. Build it first:
+//! Gated behind the `e2e` Cargo feature so a default `cargo test` skips
+//! compilation entirely. Build the node binary, then run with the feature on:
 //!
 //! ```bash
 //! cargo build -p frontier-template-node --release
-//! cargo test -p fc-rpc-test-vectors --test replay_template_node -- --ignored --nocapture
+//! cargo test -p fc-rpc-test-vectors --features e2e --test replay_template_node -- --nocapture
 //! ```
 //!
 //! Override the binary location with `FRONTIER_NODE_BIN=/path/to/node`.
@@ -26,7 +26,6 @@ use serde_json::json;
 const READY_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[test]
-#[ignore = "spawns frontier-template-node; opt in with --ignored"]
 fn replay_curated_subset_against_template_node() {
 	let node = TemplateNode::spawn();
 	let transport = HttpTransport::new(node.rpc_url());

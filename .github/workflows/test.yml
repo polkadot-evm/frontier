@@ -120,7 +120,7 @@ jobs:
         run: make integration-test
 
       - name: Replay execution-apis RPC vectors
-        run: cargo test --release -p fc-rpc-test-vectors --test replay_template_node -- --ignored --nocapture
+        run: cargo test --release -p fc-rpc-test-vectors --features e2e --test replay_template_node -- --nocapture
         env:
           FRONTIER_NODE_BIN: ${{ github.workspace }}/target/release/frontier-template-node
 
