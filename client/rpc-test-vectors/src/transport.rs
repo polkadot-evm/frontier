@@ -2,7 +2,6 @@
 //! JSON and returns the literal response JSON — no typed (de)serialization
 //! between the wire and the comparator.
 
-use std::io::Read;
 use std::time::Duration;
 
 use serde_json::Value;
@@ -37,11 +36,8 @@ impl Transport for HttpTransport {
 			.send_string(&body)
 			.map_err(|e| format!("HTTP error: {e}"))?;
 
-		let mut buf = String::new();
-		response
-			.into_reader()
-			.take(16 * 1024 * 1024)
-			.read_to_string(&mut buf)
+		let buf = response
+			.into_string()
 			.map_err(|e| format!("read error: {e}"))?;
 		serde_json::from_str(&buf).map_err(|e| format!("response is not JSON: {e}; body={buf}"))
 	}
