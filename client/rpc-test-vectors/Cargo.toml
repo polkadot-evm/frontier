@@ -13,6 +13,9 @@ serde_json = { workspace = true, features = ["std"] }
 thiserror = { workspace = true }
 ureq = { version = "2", default-features = false }
 
+[dev-dependencies]
+tempfile = "3.21.0"
+
 [features]
 # Opt-in for the live-RPC integration test. Off by default so `cargo test`
 # stays self-contained (unit tests + upstream parser smoke). CI enables this

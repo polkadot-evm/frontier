@@ -14,7 +14,6 @@
 //! Override the binary location with `FRONTIER_NODE_BIN=/path/to/node`.
 
 use std::env;
-use std::ffi::OsStr;
 use std::io::{BufRead, BufReader};
 use std::net::TcpListener;
 use std::path::{Path, PathBuf};
@@ -102,14 +101,17 @@ fn node_bin_name() -> &'static str {
 struct TemplateNode {
 	child: Child,
 	rpc_port: u16,
-	_base_path: TempDir,
+	_base_path: tempfile::TempDir,
 }
 
 impl TemplateNode {
 	fn spawn() -> Self {
 		let bin = locate_node_binary();
 		let rpc_port = pick_free_port();
-		let base_path = TempDir::new("fc-rpc-test-vectors-node");
+		let base_path = tempfile::Builder::new()
+			.prefix("fc-rpc-test-vectors-node-")
+			.tempdir()
+			.expect("should create temp directory");
 
 		let mut cmd = Command::new(&bin);
 		cmd.args([
@@ -199,28 +201,5 @@ fn wait_until_ready(port: u16, child: &mut Child) {
 			return;
 		}
 		thread::sleep(Duration::from_millis(250));
-	}
-}
-
-struct TempDir(PathBuf);
-
-impl TempDir {
-	fn new(prefix: &str) -> Self {
-		use std::sync::atomic::{AtomicU32, Ordering};
-		static COUNTER: AtomicU32 = AtomicU32::new(0);
-		let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-		let path = std::env::temp_dir().join(format!("{prefix}-{}-{n}", std::process::id()));
-		std::fs::create_dir_all(&path).expect("should create temp directory");
-		Self(path)
-	}
-
-	fn path(&self) -> &OsStr {
-		self.0.as_os_str()
-	}
-}
-
-impl Drop for TempDir {
-	fn drop(&mut self) {
-		let _ = std::fs::remove_dir_all(&self.0);
 	}
 }

@@ -340,29 +340,10 @@ mod tests {
 		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 	}
 
-	// ---- minimal tempdir helper, to avoid pulling in a tempfile dep ----
-
-	struct TempDir(PathBuf);
-
-	impl TempDir {
-		fn path(&self) -> &Path {
-			&self.0
-		}
-	}
-
-	impl Drop for TempDir {
-		fn drop(&mut self) {
-			let _ = fs::remove_dir_all(&self.0);
-		}
-	}
-
-	fn tempdir() -> TempDir {
-		use std::sync::atomic::{AtomicU32, Ordering};
-		static COUNTER: AtomicU32 = AtomicU32::new(0);
-		let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-		let path =
-			std::env::temp_dir().join(format!("fc-rpc-test-vectors-{}-{}", std::process::id(), n));
-		fs::create_dir_all(&path).unwrap();
-		TempDir(path)
+	fn tempdir() -> tempfile::TempDir {
+		tempfile::Builder::new()
+			.prefix("fc-rpc-test-vectors-")
+			.tempdir()
+			.expect("should create temp directory")
 	}
 }
