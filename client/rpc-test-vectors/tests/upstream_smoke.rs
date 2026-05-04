@@ -26,7 +26,7 @@ fn every_vendored_io_file_parses() {
 	walk(&root, &mut |path| {
 		if path.extension() == Some(OsStr::new("io")) {
 			total += 1;
-			let raw = fs::read_to_string(path).expect("read .io");
+			let raw = fs::read_to_string(path).expect("should read .io vector file");
 			if let Err(err) = parse(&raw) {
 				failures.push((path.to_path_buf(), err.to_string()));
 			}

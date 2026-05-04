@@ -77,7 +77,7 @@ fn locate_node_binary() -> PathBuf {
 	let target = manifest
 		.parent()
 		.and_then(Path::parent)
-		.expect("workspace root")
+		.expect("manifest dir should have a workspace-root grandparent")
 		.join("target");
 	for profile in ["release", "debug"] {
 		let p = target.join(profile).join(node_bin_name());
@@ -131,8 +131,14 @@ impl TemplateNode {
 
 		// Drain stdout/stderr to avoid pipe-fill deadlocks. Keep a copy in
 		// memory so we can dump it on failure.
-		drain(child.stdout.take().expect("stdout"), "node-stdout");
-		drain(child.stderr.take().expect("stderr"), "node-stderr");
+		drain(
+			child.stdout.take().expect("child should have piped stdout"),
+			"node-stdout",
+		);
+		drain(
+			child.stderr.take().expect("child should have piped stderr"),
+			"node-stderr",
+		);
 
 		wait_until_ready(rpc_port, &mut child);
 
@@ -156,8 +162,12 @@ impl Drop for TemplateNode {
 }
 
 fn pick_free_port() -> u16 {
-	let listener = TcpListener::bind("127.0.0.1:0").expect("bind ephemeral port");
-	listener.local_addr().expect("local addr").port()
+	let listener =
+		TcpListener::bind("127.0.0.1:0").expect("should bind to an ephemeral 127.0.0.1 port");
+	listener
+		.local_addr()
+		.expect("listener should expose a local address")
+		.port()
 }
 
 fn drain<R: std::io::Read + Send + 'static>(reader: R, tag: &'static str) {
@@ -179,7 +189,10 @@ fn wait_until_ready(port: u16, child: &mut Child) {
 			let _ = child.kill();
 			panic!("template node did not become ready within {READY_TIMEOUT:?}");
 		}
-		if let Some(status) = child.try_wait().expect("try_wait") {
+		if let Some(status) = child
+			.try_wait()
+			.expect("try_wait should not fail on a live child")
+		{
 			panic!("template node exited before ready: {status}");
 		}
 		if probe.send(&req).is_ok() {
@@ -197,7 +210,7 @@ impl TempDir {
 		static COUNTER: AtomicU32 = AtomicU32::new(0);
 		let n = COUNTER.fetch_add(1, Ordering::Relaxed);
 		let path = std::env::temp_dir().join(format!("{prefix}-{}-{n}", std::process::id()));
-		std::fs::create_dir_all(&path).expect("mkdir temp");
+		std::fs::create_dir_all(&path).expect("should create temp directory");
 		Self(path)
 	}
 
