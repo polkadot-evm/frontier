@@ -1,5 +1,7 @@
-//! Replay the curated subset of execution-apis vectors against a
+//! Replay every applicable execution-apis vector against a
 //! `frontier-template-node --dev` subprocess in schema-only mode.
+//! Only vectors whose method matches an entry in `EXCLUDED_NAMESPACES`
+//! (`testing_`, `engine_`) are skipped.
 //!
 //! Gated behind the `e2e` Cargo feature so a default `cargo test` skips
 //! compilation entirely. Build the node binary, then run with the feature on:
@@ -28,7 +30,7 @@ use serde_json::json;
 const READY_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[test]
-fn replay_curated_subset_against_template_node() {
+fn replay_execution_apis_vectors_against_template_node() {
 	let node = TemplateNode::spawn();
 	let transport = HttpTransport::new(node.rpc_url());
 
@@ -64,7 +66,7 @@ fn replay_curated_subset_against_template_node() {
 		eprintln!("FAIL {}/{}: {:?}", f.method, f.case, f.outcome);
 	}
 	assert!(failures.is_empty(), "{} failure(s)", failures.len());
-	assert!(attempted > 0, "no curated vectors were attempted");
+	assert!(attempted > 0, "no vectors were attempted");
 }
 
 fn vendor_tests_dir() -> PathBuf {

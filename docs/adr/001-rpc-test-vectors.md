@@ -62,20 +62,17 @@ That's the entire surface area. No fixture generator, no cross-client comparison
 
 ## Implementation Plan
 
-### Phase 1: Runner + initial subset
+### Phase 1: Runner
 
 - Add `execution-apis` submodule pinned to a known-good commit.
 - Implement the runner crate with rpctestgen `.io` parsing and dev-node replay.
 - Wire the dynamic-value allow-list (start with: block hashes, timestamps, `pending` block fields).
-- Enable a curated subset of vectors known to be applicable: `eth_blockNumber`, `eth_chainId`, `eth_getBalance`, `eth_getCode`, `eth_getStorageAt`, `eth_getBlockByNumber`, `eth_getBlockByHash`.
+- Run every vector by default. Skip only namespaces Frontier doesn't claim to implement (`testing_`, `engine_`) via a small deny-prefix list.
 
-### Phase 2: Expand coverage as compatibility allows
+### Phase 2: Close the gaps
 
-- Enable transaction-shaped vectors (`eth_getTransactionByHash`, `eth_getTransactionReceipt`, `eth_sendRawTransaction`) once the dev-node fixture chain produces matching state.
-- Enable execution vectors (`eth_call`, `eth_estimateGas`).
-- Document any vectors that are intentionally skipped, with the reason (Substrate divergence, unsupported feature, etc.).
-
-Vectors not in the enabled set are skipped, not failed — keeps the runner green while coverage grows.
+- Treat each failing vector as a tracked Frontier compatibility gap, not a runner exclusion. Fix the gap rather than hide it.
+- Document any vectors that are *intentionally* skipped beyond the default deny list, with the reason (Substrate divergence, unsupported feature, etc.).
 
 ## Consequences
 
