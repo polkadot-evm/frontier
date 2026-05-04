@@ -81,8 +81,6 @@ jobs:
     steps:
       - name: Checkout sources
         uses: actions/checkout@v6
-        with:
-          submodules: recursive
 
       - name: Cache cargo registry & git sources
         uses: actions/cache@v5
@@ -118,6 +116,43 @@ jobs:
 
       - name: Run integration tests
         run: make integration-test
+
+  rpc-vectors-test:
+    name: Run RPC Vectors Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v6
+        with:
+          submodules: recursive
+
+      - name: Cache cargo registry & git sources
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/
+            ~/.cargo/git/db/
+          key: ${{ runner.os }}-cargo-rpc-vectors-test-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-rpc-vectors-test-${{ hashFiles('**/Cargo.lock') }}
+            ${{ runner.os }}-cargo-rpc-vectors-test-
+            ${{ runner.os }}-cargo-integration-test-
+            ${{ runner.os }}-cargo-
+
+      - name: Run sccache
+        uses: mozilla-actions/sccache-action@v0.0.9
+
+      - name: Install Rust toolchain
+        run: make setup
+
+      - name: Install protoc
+        uses: arduino/setup-protoc@v3
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build node binary
+        run: cargo build --release -p frontier-template-node
 
       - name: Replay execution-apis RPC vectors
         run: cargo test --release -p fc-rpc-test-vectors --features e2e --test replay_template_node -- --nocapture
