@@ -3229,6 +3229,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "fc-rpc-test-vectors"
+version = "0.1.0-dev"
+dependencies = [
+ "serde_json",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "fc-rpc-v2"
 version = "2.0.0-dev"
 

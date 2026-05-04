@@ -1,0 +1,13 @@
+[package]
+name = "fc-rpc-test-vectors"
+version = "0.1.0-dev"
+license = "GPL-3.0-or-later WITH Classpath-exception-2.0"
+description = "Replay-based JSON-RPC compatibility tests for Frontier, sourced from ethereum/execution-apis."
+authors = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+publish = false
+
+[dependencies]
+serde_json = { workspace = true, features = ["std"] }
+thiserror = { workspace = true }
