@@ -360,11 +360,8 @@ mod tests {
 		use std::sync::atomic::{AtomicU32, Ordering};
 		static COUNTER: AtomicU32 = AtomicU32::new(0);
 		let n = COUNTER.fetch_add(1, Ordering::Relaxed);
-		let path = std::env::temp_dir().join(format!(
-			"fc-rpc-test-vectors-{}-{}",
-			std::process::id(),
-			n
-		));
+		let path =
+			std::env::temp_dir().join(format!("fc-rpc-test-vectors-{}-{}", std::process::id(), n));
 		fs::create_dir_all(&path).unwrap();
 		TempDir(path)
 	}

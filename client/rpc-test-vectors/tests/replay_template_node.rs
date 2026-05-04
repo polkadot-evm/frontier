@@ -20,9 +20,7 @@ use std::process::{Child, Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use fc_rpc_test_vectors::{
-	run, CompareMode, HttpTransport, RunOutcome, Transport, CURATED_SUBSET,
-};
+use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, RunOutcome, Transport, CURATED_SUBSET};
 use serde_json::json;
 
 const READY_TIMEOUT: Duration = Duration::from_secs(60);
@@ -75,7 +73,11 @@ fn vendor_tests_dir() -> PathBuf {
 fn locate_node_binary() -> PathBuf {
 	if let Ok(p) = env::var("FRONTIER_NODE_BIN") {
 		let p = PathBuf::from(p);
-		assert!(p.exists(), "FRONTIER_NODE_BIN does not exist: {}", p.display());
+		assert!(
+			p.exists(),
+			"FRONTIER_NODE_BIN does not exist: {}",
+			p.display()
+		);
 		return p;
 	}
 	let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -217,4 +219,3 @@ impl Drop for TempDir {
 		let _ = std::fs::remove_dir_all(&self.0);
 	}
 }
-

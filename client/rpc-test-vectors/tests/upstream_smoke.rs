@@ -32,7 +32,11 @@ fn every_vendored_io_file_parses() {
 			}
 		}
 	});
-	assert!(total > 0, "expected at least one .io file under {}", root.display());
+	assert!(
+		total > 0,
+		"expected at least one .io file under {}",
+		root.display()
+	);
 	assert!(
 		failures.is_empty(),
 		"failed to parse {} of {} vectors:\n{}",

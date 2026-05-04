@@ -26,9 +26,9 @@ fn main() -> ExitCode {
 		}
 	};
 
-	let tests_dir = args
-		.tests_dir
-		.unwrap_or_else(|| PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("vendor/execution-apis/tests"));
+	let tests_dir = args.tests_dir.unwrap_or_else(|| {
+		PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("vendor/execution-apis/tests")
+	});
 	if !tests_dir.exists() {
 		eprintln!("tests directory not found: {}", tests_dir.display());
 		eprintln!("hint: `git submodule update --init --recursive`");

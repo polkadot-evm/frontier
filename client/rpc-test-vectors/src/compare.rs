@@ -122,7 +122,11 @@ fn compare_at(
 			if e.len() != a.len() {
 				return mismatch(
 					path,
-					format!("array length differs: expected {}, got {}", e.len(), a.len()),
+					format!(
+						"array length differs: expected {}, got {}",
+						e.len(),
+						a.len()
+					),
 				);
 			}
 			for (idx, (e_item, a_item)) in e.iter().zip(a).enumerate() {
@@ -165,7 +169,10 @@ fn compare_schema_at(expected: &Value, actual: &Value, path: &mut Vec<String>) -
 				path.push(key.clone());
 				let outcome = match a.get(key) {
 					Some(a_val) => compare_schema_at(e_val, a_val, path),
-					None => mismatch(path, format!("missing field; expected shape {}", shape(e_val))),
+					None => mismatch(
+						path,
+						format!("missing field; expected shape {}", shape(e_val)),
+					),
 				};
 				path.pop();
 				if let MatchOutcome::Mismatch { .. } = outcome {
@@ -307,7 +314,9 @@ mod tests {
 		let e = json!({"result":{"items":[{"x":1}]}});
 		let a = json!({"result":{"items":[{"x":2}]}});
 		let out = compare(&e, &a, &exact());
-		assert!(matches!(out, MatchOutcome::Mismatch { ref path, .. } if path == "$.result.items[0].x"));
+		assert!(
+			matches!(out, MatchOutcome::Mismatch { ref path, .. } if path == "$.result.items[0].x")
+		);
 	}
 
 	#[test]
