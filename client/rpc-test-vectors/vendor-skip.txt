@@ -24,6 +24,13 @@ debug_getRawReceipts/get-block-n   # debug_getRawReceipts not implemented
 # eth_blobBaseFee — EIP-4844 blob fees, no blob sidecars on Substrate
 eth_blobBaseFee/get-current-blobfee  # blob fees out of scope
 
+# eth_estimateGas EIP-7702 — Pectra authorization-list path not implemented
+eth_estimateGas/estimate-with-eip7702  # EIP-7702 not implemented
+
+# txpool_* — txpool inspection methods, partial/no Frontier support
+txpool_content/get-content                        # txpool inspection differs from geth
+txpool_contentFrom/get-content-from-address      # txpool inspection differs from geth
+
 # eth_getProof — Merkle-Patricia state proofs, Substrate uses a different trie
 eth_getProof/get-account-proof-blockhash       # state proofs not implemented
 eth_getProof/get-account-proof-latest          # state proofs not implemented
@@ -109,6 +116,9 @@ eth_simulateV1/ethSimulate-use-as-many-features-as-possible       # not implemen
 # from chain.rlp (out of scope for this PR).
 
 eth_call/call-callenv-options-eip1559           # references contract from Hive chain.rlp
+eth_createAccessList/create-al-abi-revert       # references contract from Hive chain.rlp
+eth_createAccessList/create-al-contract         # references contract from Hive chain.rlp
+eth_createAccessList/create-al-contract-eip1559 # references contract from Hive chain.rlp
 eth_createAccessList/create-al-value-transfer   # references state from Hive chain.rlp
 eth_getBalance/get-balance-blockhash            # references blockHash from Hive chain.rlp
 eth_getBlockReceipts/get-block-receipts-by-hash # references blockHash from Hive chain.rlp
@@ -133,6 +143,13 @@ eth_getBlockByNumber/get-safe        # missing $.result.blobGasUsed (Cancun)
 
 # Genesis block
 eth_getBlockByNumber/get-genesis     # missing $.result.mixHash on Substrate genesis
+
+# Fee history: missing post-Cancun blob fields
+eth_feeHistory/fee-history           # missing $.result.baseFeePerBlobGas (Cancun)
+
+# eth_estimateGas revert decoding: same shape gap as eth_call revert handling
+eth_estimateGas/estimate-call-abi-error   # missing structured revert error envelope
+eth_estimateGas/estimate-failed-call      # missing structured revert error envelope
 
 # eth_getLogs error semantics: vector expects an error, Frontier returns result
 eth_getLogs/filter-error-future-block-range    # returns result instead of -32xxx error
