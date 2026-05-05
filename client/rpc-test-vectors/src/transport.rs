@@ -33,12 +33,15 @@ impl Transport for HttpTransport {
 			.agent
 			.post(&self.url)
 			.set("content-type", "application/json")
-			.send_string(&body)
-			.map_err(|e| format!("HTTP error: {e}"))?;
+			.send_string(&body);
 
-		let buf = response
-			.into_string()
-			.map_err(|e| format!("read error: {e}"))?;
+		let buf = match response {
+			Ok(resp) => resp.into_string().map_err(|e| format!("read error: {e}"))?,
+			Err(ureq::Error::Status(code, resp)) => resp
+				.into_string()
+				.map_err(|e| format!("HTTP {code} read error: {e}"))?,
+			Err(e) => return Err(format!("HTTP error: {e}")),
+		};
 		serde_json::from_str(&buf).map_err(|e| format!("response is not JSON: {e}; body={buf}"))
 	}
 }
