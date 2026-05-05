@@ -194,6 +194,7 @@ fn wait_until_ready(port: u16, child: &mut Child) {
 	loop {
 		if Instant::now() >= deadline {
 			let _ = child.kill();
+			let _ = child.wait();
 			panic!("template node did not become ready within {READY_TIMEOUT:?}");
 		}
 		if let Some(status) = child

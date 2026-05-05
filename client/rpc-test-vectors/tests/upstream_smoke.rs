@@ -51,7 +51,11 @@ fn every_vendored_io_file_parses() {
 }
 
 fn walk(dir: &std::path::Path, f: &mut dyn FnMut(&std::path::Path)) {
-	for entry in fs::read_dir(dir).unwrap().flatten() {
+	let entries =
+		fs::read_dir(dir).unwrap_or_else(|e| panic!("failed to read {}: {e}", dir.display()));
+	for entry in entries {
+		let entry =
+			entry.unwrap_or_else(|e| panic!("failed to read entry under {}: {e}", dir.display()));
 		let path = entry.path();
 		if path.is_dir() {
 			walk(&path, f);
