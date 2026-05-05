@@ -12,19 +12,19 @@ to be classified vs. real bugs to be filed.
 
 ## Headline
 
-| Bucket                        | Count | What it means                                  |
-| ----------------------------- | ----- | ---------------------------------------------- |
-| Match / SchemaOnly            | 103   | passes                                         |
-| Excluded namespace            | 4     | `testing_*`, `engine_*` (always skipped)       |
-| Skipped via `vendor-skip.txt` | 103   | failures grouped below                         |
-| Real failures                 | 0     | should remain 0; new entries here are CI red   |
+| Bucket                        | Count | What it means                                |
+| ----------------------------- | ----- | -------------------------------------------- |
+| Match / SchemaOnly            | 103   | passes                                       |
+| Excluded namespace            | 4     | `testing_*`, `engine_*` (always skipped)     |
+| Skipped via `vendor-skip.txt` | 103   | failures grouped below                       |
+| Real failures                 | 0     | should remain 0; new entries here are CI red |
 
 `103 / (210 − 4) = 50%` of attempted vectors pass.
 
 ## Bucket 1 — methods Frontier does not implement (77)
 
 These return JSON-RPC error -32601 (method not found) or a wire shape
-Frontier doesn't produce. Whether any are *meant* to be implemented is a
+Frontier doesn't produce. Whether any are _meant_ to be implemented is a
 roadmap question; this PR does not take that call. Candidates that are
 unlikely to ever be in scope (because they reference Ethereum-specific
 internals that don't translate to Substrate):
@@ -57,14 +57,14 @@ because the inputs reference state we don't have.
 | Method/case                                       | Why it can't pass                            |
 | ------------------------------------------------- | -------------------------------------------- |
 | `eth_call/call-callenv-options-eip1559`           | calls a contract from Hive chain.rlp         |
-| `eth_createAccessList/create-al-abi-revert`       | references contract from Hive chain.rlp     |
-| `eth_createAccessList/create-al-contract`         | references contract from Hive chain.rlp     |
-| `eth_createAccessList/create-al-contract-eip1559` | references contract from Hive chain.rlp     |
-| `eth_createAccessList/create-al-value-transfer`   | references state from Hive chain.rlp        |
-| `eth_getBalance/get-balance-blockhash`            | references blockHash from Hive chain.rlp    |
-| `eth_getBlockReceipts/get-block-receipts-by-hash` | references blockHash from Hive chain.rlp    |
-| `eth_getLogs/filter-with-blockHash`               | references blockHash from Hive chain.rlp    |
-| `eth_getLogs/filter-with-blockHash-and-topics`    | references blockHash from Hive chain.rlp    |
+| `eth_createAccessList/create-al-abi-revert`       | references contract from Hive chain.rlp      |
+| `eth_createAccessList/create-al-contract`         | references contract from Hive chain.rlp      |
+| `eth_createAccessList/create-al-contract-eip1559` | references contract from Hive chain.rlp      |
+| `eth_createAccessList/create-al-value-transfer`   | references state from Hive chain.rlp         |
+| `eth_getBalance/get-balance-blockhash`            | references blockHash from Hive chain.rlp     |
+| `eth_getBlockReceipts/get-block-receipts-by-hash` | references blockHash from Hive chain.rlp     |
+| `eth_getLogs/filter-with-blockHash`               | references blockHash from Hive chain.rlp     |
+| `eth_getLogs/filter-with-blockHash-and-topics`    | references blockHash from Hive chain.rlp     |
 | `eth_sendRawTransaction/*` (5 cases)              | signed txs assume Hive chain nonces and keys |
 
 Unlocking this bucket requires a way to seed Frontier from `chain.rlp`
@@ -72,7 +72,7 @@ Unlocking this bucket requires a way to seed Frontier from `chain.rlp`
 
 ## Bucket 3 — real Frontier wire-format gaps (12)
 
-These vectors *should* be satisfiable on a dev chain, but Frontier's
+These vectors _should_ be satisfiable on a dev chain, but Frontier's
 response shape diverges from the spec. **These need issues filed** and
 the entries removed from `vendor-skip.txt` as fixes land.
 
