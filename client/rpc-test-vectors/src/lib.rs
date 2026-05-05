@@ -9,7 +9,8 @@
 //! << {"jsonrpc":"2.0","id":1,"result":"0x2d"}
 //! ```
 //!
-//! See `docs/adr/001-rpc-test-vectors.md` for design context.
+//! See `rpc-test-vectors-status.md` next to this crate for the current
+//! list of skipped vectors and known Frontier wire-format gaps.
 //!
 //! # Using as a library from another workspace
 //!

@@ -14,7 +14,7 @@
 # == Bucket 1: methods Frontier does not implement ==
 # These return JSON-RPC error -32601 (method not found) or a wire-shape
 # Frontier doesn't produce. Whether any of these are *meant* to be
-# implemented is a separate roadmap call — see docs/adr/001-rpc-test-vectors.md.
+# implemented is a separate roadmap call.
 
 # debug_getRaw* — geth-specific RLP debug methods, no Frontier equivalent
 debug_getRawBlock/get-block-n      # debug_getRawBlock not implemented
