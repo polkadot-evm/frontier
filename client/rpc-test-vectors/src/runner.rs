@@ -87,7 +87,19 @@ fn collect<T: Transport>(
 		}
 	};
 
-	for entry in entries.flatten() {
+	for entry in entries {
+		let entry = match entry {
+			Ok(e) => e,
+			Err(err) => {
+				reports.push(RunReport {
+					file: dir.to_path_buf(),
+					method: String::new(),
+					case: String::new(),
+					outcome: RunOutcome::IoError(err),
+				});
+				continue;
+			}
+		};
 		let path = entry.path();
 		if path.is_dir() {
 			collect(&path, reports, transport, excluded, mode);
@@ -161,17 +173,21 @@ fn replay_file<T: Transport>(
 		Err(err) => return mk(RunOutcome::ParseError(err)),
 	};
 
+	let speconly_mode = CompareMode::Schema;
+	let cmp_mode = if vector.speconly {
+		&speconly_mode
+	} else {
+		mode
+	};
+
 	for exchange in &vector.exchanges {
 		match transport.send(&exchange.request) {
 			Ok(actual) => {
 				if let Err(err) = validate_envelope(&exchange.request, &actual) {
 					return mk(RunOutcome::EnvelopeError(err));
 				}
-				if vector.speconly {
-					return mk(RunOutcome::SchemaOnly);
-				}
 				if let MatchOutcome::Mismatch { path, detail } =
-					compare(&exchange.response, &actual, mode)
+					compare(&exchange.response, &actual, cmp_mode)
 				{
 					return mk(RunOutcome::Mismatch { path, detail });
 				}
@@ -180,7 +196,11 @@ fn replay_file<T: Transport>(
 		}
 	}
 
-	mk(RunOutcome::Match)
+	if vector.speconly {
+		mk(RunOutcome::SchemaOnly)
+	} else {
+		mk(RunOutcome::Match)
+	}
 }
 
 #[cfg(test)]
