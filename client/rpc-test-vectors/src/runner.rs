@@ -462,12 +462,14 @@ mod tests {
 
 	#[test]
 	fn skip_list_parses_inline_comments_and_blank_lines() {
-		let text = "\n\
-			# this whole line is a comment\n\
-			\n\
-			eth_a/foo\n\
-			eth_b/bar  # with reason\n\
-			   eth_c/baz   #   trims whitespace   \n";
+		let text = concat!(
+			"\n",
+			"# this whole line is a comment\n",
+			"\n",
+			"eth_a/foo\n",
+			"eth_b/bar  # with reason\n",
+			"   eth_c/baz   #   trims whitespace   \n",
+		);
 		let s = SkipList::from_text(text);
 		assert_eq!(s.len(), 3);
 		assert_eq!(s.lookup("eth_a", "foo"), Some(""));
