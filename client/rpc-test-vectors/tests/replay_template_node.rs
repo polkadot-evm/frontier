@@ -41,21 +41,26 @@ fn replay_execution_apis_vectors_against_template_node() {
 	);
 
 	let (failures, ok): (Vec<_>, Vec<_>) = reports.iter().partition(|r| r.is_failure());
-	let attempted = ok
+	let passed = ok
 		.iter()
 		.filter(|r| !matches!(r.outcome, RunOutcome::Skipped { .. }))
 		.count();
+	let skipped = ok.len() - passed;
 	eprintln!(
-		"vectors: {} attempted, {} skipped, {} failed",
-		attempted,
-		ok.len() - attempted,
+		"vectors: {} passed, {} skipped, {} failed (of {} total)",
+		passed,
+		skipped,
 		failures.len(),
+		reports.len(),
 	);
 	for f in &failures {
 		eprintln!("FAIL {}/{}: {:?}", f.method, f.case, f.outcome);
 	}
 	assert!(failures.is_empty(), "{} failure(s)", failures.len());
-	assert!(attempted > 0, "no vectors were attempted");
+	assert!(
+		passed + failures.len() > 0,
+		"no vectors were sent to the node"
+	);
 }
 
 fn vendor_tests_dir() -> PathBuf {
