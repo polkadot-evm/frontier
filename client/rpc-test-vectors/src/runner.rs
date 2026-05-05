@@ -5,6 +5,7 @@
 //! dependencies. Real test binaries plug in their own transport (subprocess
 //! HTTP, in-process server, etc.).
 
+use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io;
@@ -22,13 +23,77 @@ pub trait Transport {
 #[derive(Debug)]
 pub enum RunOutcome {
 	Match,
-	Skipped { reason: &'static str },
+	Skipped { reason: String },
 	SchemaOnly,
 	Mismatch { path: String, detail: String },
 	EnvelopeError(String),
 	TransportError(String),
 	ParseError(ParseError),
 	IoError(io::Error),
+}
+
+/// Per-vector skip list, keyed by `(method, case)`. Matched vectors are
+/// reported as `Skipped { reason }` instead of being replayed.
+///
+/// Constructed from a flat text file shipped alongside the crate or the
+/// vendored vectors:
+///
+/// ```text
+/// # blank lines and `# comment` lines are ignored
+/// eth_getBlockByNumber/get-genesis  # missing mixHash on Substrate genesis
+/// ```
+///
+/// The format is intentionally case-level only — globbing would silently
+/// auto-skip new upstream vectors for the same method, which is the
+/// opposite of what we want.
+#[derive(Debug, Default, Clone)]
+pub struct SkipList {
+	entries: HashMap<(String, String), String>,
+}
+
+impl SkipList {
+	pub fn new() -> Self {
+		Self::default()
+	}
+
+	/// Parse a skip-list text file. Returns `io::Error` if the file is
+	/// unreadable; malformed lines are silently ignored so the test stays
+	/// usable while the file is being edited.
+	pub fn from_file(path: &Path) -> io::Result<Self> {
+		Ok(Self::from_text(&fs::read_to_string(path)?))
+	}
+
+	pub fn from_text(text: &str) -> Self {
+		let mut entries = HashMap::new();
+		for line in text.lines() {
+			let trimmed = line.trim();
+			if trimmed.is_empty() || trimmed.starts_with('#') {
+				continue;
+			}
+			let (entry, reason) = match trimmed.split_once('#') {
+				Some((e, r)) => (e.trim(), r.trim().to_string()),
+				None => (trimmed, String::new()),
+			};
+			if let Some((method, case)) = entry.split_once('/') {
+				entries.insert((method.trim().to_string(), case.trim().to_string()), reason);
+			}
+		}
+		Self { entries }
+	}
+
+	pub fn lookup(&self, method: &str, case: &str) -> Option<&str> {
+		self.entries
+			.get(&(method.to_string(), case.to_string()))
+			.map(String::as_str)
+	}
+
+	pub fn len(&self) -> usize {
+		self.entries.len()
+	}
+
+	pub fn is_empty(&self) -> bool {
+		self.entries.is_empty()
+	}
 }
 
 #[derive(Debug)]
@@ -55,15 +120,24 @@ impl RunReport {
 /// Replay every `.io` file under `tests_dir`. Vectors whose method starts with
 /// any prefix in `excluded_prefixes` are reported as `Skipped`, not as
 /// failures — used to skip namespaces Frontier doesn't claim to implement
-/// (e.g. `testing_`, `engine_`).
+/// (e.g. `testing_`, `engine_`). Vectors matched by `skip_list` are also
+/// reported as `Skipped`, with the reason from the file.
 pub fn run<T: Transport>(
 	tests_dir: &Path,
 	transport: &T,
 	excluded_prefixes: &[&str],
+	skip_list: &SkipList,
 	mode: &CompareMode,
 ) -> Vec<RunReport> {
 	let mut reports = Vec::new();
-	collect(tests_dir, &mut reports, transport, excluded_prefixes, mode);
+	collect(
+		tests_dir,
+		&mut reports,
+		transport,
+		excluded_prefixes,
+		skip_list,
+		mode,
+	);
 	reports
 }
 
@@ -72,6 +146,7 @@ fn collect<T: Transport>(
 	reports: &mut Vec<RunReport>,
 	transport: &T,
 	excluded: &[&str],
+	skip_list: &SkipList,
 	mode: &CompareMode,
 ) {
 	let entries = match fs::read_dir(dir) {
@@ -102,9 +177,9 @@ fn collect<T: Transport>(
 		};
 		let path = entry.path();
 		if path.is_dir() {
-			collect(&path, reports, transport, excluded, mode);
+			collect(&path, reports, transport, excluded, skip_list, mode);
 		} else if path.extension() == Some(OsStr::new("io")) {
-			reports.push(replay_file(&path, transport, excluded, mode));
+			reports.push(replay_file(&path, transport, excluded, skip_list, mode));
 		}
 	}
 }
@@ -138,6 +213,7 @@ fn replay_file<T: Transport>(
 	path: &Path,
 	transport: &T,
 	excluded: &[&str],
+	skip_list: &SkipList,
 	mode: &CompareMode,
 ) -> RunReport {
 	let method = path
@@ -160,7 +236,13 @@ fn replay_file<T: Transport>(
 
 	if excluded.iter().any(|p| method.starts_with(p)) {
 		return mk(RunOutcome::Skipped {
-			reason: "method namespace excluded",
+			reason: "method namespace excluded".to_string(),
+		});
+	}
+
+	if let Some(reason) = skip_list.lookup(&method, &case) {
+		return mk(RunOutcome::Skipped {
+			reason: reason.to_string(),
 		});
 	}
 
@@ -249,7 +331,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &[], &exact());
+		let reports = run(tmp.path(), &t, &[], &SkipList::new(), &exact());
 		assert_eq!(reports.len(), 1);
 		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 		assert_eq!(t.seen.borrow().len(), 1);
@@ -268,7 +350,7 @@ mod tests {
 			response: json!({}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &["testing_"], &exact());
+		let reports = run(tmp.path(), &t, &["testing_"], &SkipList::new(), &exact());
 		assert_eq!(reports.len(), 1);
 		assert!(matches!(reports[0].outcome, RunOutcome::Skipped { .. }));
 		assert!(t.seen.borrow().is_empty());
@@ -287,7 +369,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0x2"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &[], &exact());
+		let reports = run(tmp.path(), &t, &[], &SkipList::new(), &exact());
 		assert!(matches!(reports[0].outcome, RunOutcome::Mismatch { .. }));
 		assert!(reports[0].is_failure());
 	}
@@ -305,7 +387,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &[], &exact());
+		let reports = run(tmp.path(), &t, &[], &SkipList::new(), &exact());
 		assert!(matches!(reports[0].outcome, RunOutcome::SchemaOnly));
 	}
 
@@ -322,7 +404,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":99,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &[], &CompareMode::Schema);
+		let reports = run(tmp.path(), &t, &[], &SkipList::new(), &CompareMode::Schema);
 		assert!(matches!(reports[0].outcome, RunOutcome::EnvelopeError(_)));
 	}
 
@@ -339,8 +421,59 @@ mod tests {
 			response: json!({"id":1,"result":"0x1"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &[], &CompareMode::Schema);
+		let reports = run(tmp.path(), &t, &[], &SkipList::new(), &CompareMode::Schema);
 		assert!(matches!(reports[0].outcome, RunOutcome::EnvelopeError(_)));
+	}
+
+	#[test]
+	fn skip_list_skips_listed_case_and_replays_others() {
+		let tmp = tempdir();
+		write_vector(
+			tmp.path(),
+			"eth_blockNumber",
+			"simple",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
+		);
+		write_vector(
+			tmp.path(),
+			"eth_chainId",
+			"basic",
+			">> {\"jsonrpc\":\"2.0\",\"id\":1}\n<< {\"jsonrpc\":\"2.0\",\"id\":1,\"result\":\"0x1\"}\n",
+		);
+		let t = StubTransport {
+			response: json!({"jsonrpc":"2.0","id":1,"result":"0x1"}),
+			seen: RefCell::new(vec![]),
+		};
+		let skip = SkipList::from_text(
+			"# header comment\n\
+			eth_blockNumber/simple  # known gap\n",
+		);
+		let reports = run(tmp.path(), &t, &[], &skip, &CompareMode::Schema);
+		let by_method: std::collections::HashMap<_, _> = reports
+			.iter()
+			.map(|r| (r.method.as_str(), &r.outcome))
+			.collect();
+		assert!(matches!(
+			by_method["eth_blockNumber"],
+			RunOutcome::Skipped { reason } if reason == "known gap"
+		));
+		assert!(matches!(by_method["eth_chainId"], RunOutcome::Match));
+	}
+
+	#[test]
+	fn skip_list_parses_inline_comments_and_blank_lines() {
+		let text = "\n\
+			# this whole line is a comment\n\
+			\n\
+			eth_a/foo\n\
+			eth_b/bar  # with reason\n\
+			   eth_c/baz   #   trims whitespace   \n";
+		let s = SkipList::from_text(text);
+		assert_eq!(s.len(), 3);
+		assert_eq!(s.lookup("eth_a", "foo"), Some(""));
+		assert_eq!(s.lookup("eth_b", "bar"), Some("with reason"));
+		assert_eq!(s.lookup("eth_c", "baz"), Some("trims whitespace"));
+		assert_eq!(s.lookup("eth_d", "missing"), None);
 	}
 
 	#[test]
@@ -356,7 +489,7 @@ mod tests {
 			response: json!({"jsonrpc":"2.0","id":1,"result":"0xdeadbeef"}),
 			seen: RefCell::new(vec![]),
 		};
-		let reports = run(tmp.path(), &t, &[], &CompareMode::Schema);
+		let reports = run(tmp.path(), &t, &[], &SkipList::new(), &CompareMode::Schema);
 		assert!(matches!(reports[0].outcome, RunOutcome::Match));
 	}
 

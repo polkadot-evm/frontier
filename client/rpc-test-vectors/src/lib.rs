@@ -27,11 +27,12 @@
 //!
 //! ```no_run
 //! use std::path::PathBuf;
-//! use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, EXCLUDED_NAMESPACES};
+//! use fc_rpc_test_vectors::{run, CompareMode, HttpTransport, SkipList, EXCLUDED_NAMESPACES};
 //!
 //! let tests_dir = PathBuf::from("vendor/execution-apis/tests");
 //! let transport = HttpTransport::new("http://127.0.0.1:9944");
-//! let reports = run(&tests_dir, &transport, EXCLUDED_NAMESPACES, &CompareMode::Schema);
+//! let skip_list = SkipList::new(); // or SkipList::from_file("path/to/skip.txt")?
+//! let reports = run(&tests_dir, &transport, EXCLUDED_NAMESPACES, &skip_list, &CompareMode::Schema);
 //! let failures: Vec<_> = reports.iter().filter(|r| r.is_failure()).collect();
 //! assert!(failures.is_empty(), "{} failure(s)", failures.len());
 //! ```
@@ -51,7 +52,7 @@ pub mod transport;
 
 pub use compare::{compare, CompareMode, DynamicFields, MatchOutcome};
 pub use parser::{parse, Exchange, ParseError, Vector};
-pub use runner::{run, RunOutcome, RunReport, Transport};
+pub use runner::{run, RunOutcome, RunReport, SkipList, Transport};
 pub use transport::HttpTransport;
 
 /// JSON-RPC method-name prefixes the runner skips by default. These are
