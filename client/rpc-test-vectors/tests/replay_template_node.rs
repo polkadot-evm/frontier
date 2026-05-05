@@ -22,7 +22,7 @@ use std::thread;
 use std::time::{Duration, Instant};
 
 use fc_rpc_test_vectors::{
-	run, CompareMode, HttpTransport, RunOutcome, Transport, EXCLUDED_NAMESPACES,
+	run, CompareMode, HttpTransport, RunOutcome, SkipList, Transport, EXCLUDED_NAMESPACES,
 };
 use serde_json::json;
 
@@ -30,6 +30,9 @@ const READY_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[test]
 fn replay_execution_apis_vectors_against_template_node() {
+	let skip_list = SkipList::from_file(&vendor_skip_file())
+		.expect("should read vendor-skip.txt next to the crate");
+
 	let node = TemplateNode::spawn();
 	let transport = HttpTransport::new(node.rpc_url());
 
@@ -37,6 +40,7 @@ fn replay_execution_apis_vectors_against_template_node() {
 		&vendor_tests_dir(),
 		&transport,
 		EXCLUDED_NAMESPACES,
+		&skip_list,
 		&CompareMode::Schema,
 	);
 
@@ -65,6 +69,10 @@ fn replay_execution_apis_vectors_against_template_node() {
 
 fn vendor_tests_dir() -> PathBuf {
 	PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("vendor/execution-apis/tests")
+}
+
+fn vendor_skip_file() -> PathBuf {
+	PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("vendor-skip.txt")
 }
 
 fn locate_node_binary() -> PathBuf {

@@ -1,0 +1,146 @@
+# Per-vector skip list for the replay_template_node integration test.
+#
+# Format: method/case  # reason
+# Lines starting with `#` and blank lines are ignored. Inline `#` starts a
+# comment. Case-level only — no globs — so a new upstream vector for any
+# method below is NOT auto-skipped; it shows up as a fresh failure that
+# someone has to triage.
+#
+# Status of each entry is summarized in
+# docs/rpc-test-vectors-status.md. As gaps close, remove the entry; do not
+# leave stale skips behind.
+
+
+# == Bucket 1: methods Frontier does not implement ==
+# These return JSON-RPC error -32601 (method not found) or a wire-shape
+# Frontier doesn't produce. Whether any of these are *meant* to be
+# implemented is a separate roadmap call — see docs/adr/001-rpc-test-vectors.md.
+
+# debug_getRaw* — geth-specific RLP debug methods, no Frontier equivalent
+debug_getRawBlock/get-block-n      # debug_getRawBlock not implemented
+debug_getRawHeader/get-block-n     # debug_getRawHeader not implemented
+debug_getRawReceipts/get-block-n   # debug_getRawReceipts not implemented
+
+# eth_blobBaseFee — EIP-4844 blob fees, no blob sidecars on Substrate
+eth_blobBaseFee/get-current-blobfee  # blob fees out of scope
+
+# eth_getProof — Merkle-Patricia state proofs, Substrate uses a different trie
+eth_getProof/get-account-proof-blockhash       # state proofs not implemented
+eth_getProof/get-account-proof-latest          # state proofs not implemented
+eth_getProof/get-account-proof-with-storage    # state proofs not implemented
+
+# eth_getStorageValues — newer batched storage read, not implemented
+eth_getStorageValues/get-storage-values                       # not implemented
+eth_getStorageValues/get-storage-values-multiple-addresses    # not implemented
+eth_getStorageValues/get-storage-values-unknown-account       # not implemented
+
+# eth_simulateV1 — newer multi-call simulation, not implemented
+eth_simulateV1/ethSimulate-add-more-non-defined-BlockStateCalls-than-fit-but-now-with-fit  # not implemented
+eth_simulateV1/ethSimulate-basefee-too-low-without-validation-38012                        # not implemented
+eth_simulateV1/ethSimulate-basefee-too-low-without-validation-38012-without-basefee-override  # not implemented
+eth_simulateV1/ethSimulate-blobs                                  # not implemented
+eth_simulateV1/ethSimulate-block-timestamps-incrementing          # not implemented
+eth_simulateV1/ethSimulate-blockhash-complex                      # not implemented
+eth_simulateV1/ethSimulate-blockhash-simple                       # not implemented
+eth_simulateV1/ethSimulate-blockhash-start-before-head            # not implemented
+eth_simulateV1/ethSimulate-blocknumber-increment                  # not implemented
+eth_simulateV1/ethSimulate-check-that-balance-is-there-after-new-block  # not implemented
+eth_simulateV1/ethSimulate-check-that-nonce-increases             # not implemented
+eth_simulateV1/ethSimulate-contract-calls-itself                  # not implemented
+eth_simulateV1/ethSimulate-empty                                  # not implemented
+eth_simulateV1/ethSimulate-empty-calls-and-overrides-ethSimulate  # not implemented
+eth_simulateV1/ethSimulate-empty-validation                       # not implemented
+eth_simulateV1/ethSimulate-empty-with-block-num-set-current       # not implemented
+eth_simulateV1/ethSimulate-empty-with-block-num-set-firstblock    # not implemented
+eth_simulateV1/ethSimulate-empty-with-block-num-set-minusone      # not implemented
+eth_simulateV1/ethSimulate-eth-send-should-not-produce-logs-by-default  # not implemented
+eth_simulateV1/ethSimulate-eth-send-should-not-produce-logs-on-revert   # not implemented
+eth_simulateV1/ethSimulate-eth-send-should-produce-logs           # not implemented
+eth_simulateV1/ethSimulate-eth-send-should-produce-more-logs-on-forward    # not implemented
+eth_simulateV1/ethSimulate-eth-send-should-produce-no-logs-on-forward-revert  # not implemented
+eth_simulateV1/ethSimulate-extcodehash-existing-contract          # not implemented
+eth_simulateV1/ethSimulate-extcodehash-override                   # not implemented
+eth_simulateV1/ethSimulate-extcodehash-precompile                 # not implemented
+eth_simulateV1/ethSimulate-fee-recipient-receiving-funds          # not implemented
+eth_simulateV1/ethSimulate-get-block-properties                   # not implemented
+eth_simulateV1/ethSimulate-logs                                   # not implemented
+eth_simulateV1/ethSimulate-move-ecrecover-and-call                # not implemented
+eth_simulateV1/ethSimulate-move-ecrecover-and-call-old-and-new    # not implemented
+eth_simulateV1/ethSimulate-move-ecrecover-twice-and-call          # not implemented
+eth_simulateV1/ethSimulate-move-two-accounts-to-same-38023        # not implemented
+eth_simulateV1/ethSimulate-no-fields-call                         # not implemented
+eth_simulateV1/ethSimulate-only-from-to-transaction               # not implemented
+eth_simulateV1/ethSimulate-only-from-transaction                  # not implemented
+eth_simulateV1/ethSimulate-overflow-nonce                         # not implemented
+eth_simulateV1/ethSimulate-override-address-twice-in-separate-BlockStateCalls  # not implemented
+eth_simulateV1/ethSimulate-override-block-num                     # not implemented
+eth_simulateV1/ethSimulate-override-ecrecover                     # not implemented
+eth_simulateV1/ethSimulate-override-identity                      # not implemented
+eth_simulateV1/ethSimulate-override-sha256                        # not implemented
+eth_simulateV1/ethSimulate-override-storage-slots                 # not implemented
+eth_simulateV1/ethSimulate-overwrite-existing-contract            # not implemented
+eth_simulateV1/ethSimulate-precompile-is-sending-transaction      # not implemented
+eth_simulateV1/ethSimulate-run-gas-spending                       # not implemented
+eth_simulateV1/ethSimulate-run-out-of-gas-in-block-38015          # not implemented
+eth_simulateV1/ethSimulate-self-destructing-state-override        # not implemented
+eth_simulateV1/ethSimulate-self-destructive-contract-produces-logs  # not implemented
+eth_simulateV1/ethSimulate-send-eth-and-delegate-call             # not implemented
+eth_simulateV1/ethSimulate-send-eth-and-delegate-call-to-eoa      # not implemented
+eth_simulateV1/ethSimulate-send-eth-and-delegate-call-to-payble-contract  # not implemented
+eth_simulateV1/ethSimulate-set-read-storage                       # not implemented
+eth_simulateV1/ethSimulate-simple                                 # not implemented
+eth_simulateV1/ethSimulate-simple-more-params-validate            # not implemented
+eth_simulateV1/ethSimulate-simple-send-from-contract              # not implemented
+eth_simulateV1/ethSimulate-simple-state-diff                      # not implemented
+eth_simulateV1/ethSimulate-simple-validation-fulltx               # not implemented
+eth_simulateV1/ethSimulate-simple-with-validation-no-funds        # not implemented
+eth_simulateV1/ethSimulate-transaction-too-high-nonce             # not implemented
+eth_simulateV1/ethSimulate-transaction-too-low-nonce-38010        # not implemented
+eth_simulateV1/ethSimulate-transfer-over-BlockStateCalls          # not implemented
+eth_simulateV1/ethSimulate-two-blocks-with-complete-eth-sends     # not implemented
+eth_simulateV1/ethSimulate-use-as-many-features-as-possible       # not implemented
+
+
+# == Bucket 2: vectors hard-coded to the upstream Hive chain.rlp state ==
+# These vectors reference specific block hashes, signed transactions, or
+# deployed contracts that exist only in geth's Hive fixture chain. They
+# can't pass against `frontier-template-node --dev` regardless of
+# wire-format compatibility — re-running them needs a way to seed Frontier
+# from chain.rlp (out of scope for this PR).
+
+eth_call/call-callenv-options-eip1559           # references contract from Hive chain.rlp
+eth_createAccessList/create-al-value-transfer   # references state from Hive chain.rlp
+eth_getBalance/get-balance-blockhash            # references blockHash from Hive chain.rlp
+eth_getBlockReceipts/get-block-receipts-by-hash # references blockHash from Hive chain.rlp
+eth_getLogs/filter-with-blockHash               # references blockHash from Hive chain.rlp
+eth_getLogs/filter-with-blockHash-and-topics    # references blockHash from Hive chain.rlp
+eth_sendRawTransaction/send-access-list-transaction               # signed tx assumes Hive chain nonces/keys
+eth_sendRawTransaction/send-blob-tx                               # signed tx assumes Hive chain nonces/keys
+eth_sendRawTransaction/send-dynamic-fee-access-list-transaction   # signed tx assumes Hive chain nonces/keys
+eth_sendRawTransaction/send-dynamic-fee-transaction               # signed tx assumes Hive chain nonces/keys
+eth_sendRawTransaction/send-legacy-transaction                    # signed tx assumes Hive chain nonces/keys
+
+
+# == Bucket 3: real Frontier wire-format gaps (track as issues) ==
+# These are vectors that Frontier *should* be able to satisfy on a dev
+# chain, but the response shape diverges from spec. File issues and link
+# them here as they're created.
+
+# Block envelope: missing post-Cancun blob fields
+eth_getBlockByNumber/get-finalized   # missing $.result.blobGasUsed (Cancun)
+eth_getBlockByNumber/get-latest      # missing $.result.blobGasUsed (Cancun)
+eth_getBlockByNumber/get-safe        # missing $.result.blobGasUsed (Cancun)
+
+# Genesis block
+eth_getBlockByNumber/get-genesis     # missing $.result.mixHash on Substrate genesis
+
+# eth_getLogs error semantics: vector expects an error, Frontier returns result
+eth_getLogs/filter-error-future-block-range    # returns result instead of -32xxx error
+eth_getLogs/filter-error-reversed-block-range  # returns result instead of -32xxx error
+
+# eth_call revert decoding: vector expects a structured error envelope
+eth_call/call-revert-abi-error   # missing structured revert error envelope
+eth_call/call-revert-abi-panic   # missing structured revert error envelope
+
+# debug_getRawTransaction error semantics on invalid input
+debug_getRawTransaction/get-invalid-hash   # different error shape on invalid hash
