@@ -6,9 +6,9 @@
 # method below is NOT auto-skipped; it shows up as a fresh failure that
 # someone has to triage.
 #
-# Status of each entry is summarized in
-# docs/rpc-test-vectors-status.md. As gaps close, remove the entry; do not
-# leave stale skips behind.
+# Status of each entry is summarized in rpc-test-vectors-status.md
+# alongside this file. As gaps close, remove the entry; do not leave
+# stale skips behind.
 
 
 # == Bucket 1: methods Frontier does not implement ==

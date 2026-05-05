@@ -4,8 +4,8 @@ Snapshot of the `fc-rpc-test-vectors` runner against
 `frontier-template-node --dev`, baselined from CI run
 `25383306511` against branch `manuel/add-rpc-test-vectors`.
 
-The full skip list lives in
-[`client/rpc-test-vectors/vendor-skip.txt`](../client/rpc-test-vectors/vendor-skip.txt).
+The full skip list lives next to this doc, in
+[`vendor-skip.txt`](./vendor-skip.txt).
 This document is the human-readable companion: it groups skips into
 buckets so a maintainer scanning the list knows which entries are noise
 to be classified vs. real bugs to be filed.
