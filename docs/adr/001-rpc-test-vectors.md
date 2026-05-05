@@ -26,7 +26,7 @@ The standalone `lightclient/rpctestgen` repository was archived on 2026-01-22 an
 
 The vector format is intentionally simple:
 
-```
+```text
 >> {"jsonrpc":"2.0","id":1,"method":"eth_blockNumber"}
 << {"jsonrpc":"2.0","id":1,"result":"0x3"}
 ```

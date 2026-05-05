@@ -144,9 +144,8 @@ fn compare_at(
 	}
 }
 
-/// For a dynamic field, only require that the JSON shape (string vs object vs
-/// array vs null) matches. Empty/null are treated as compatible with any
-/// concrete same-shape value to keep the rule predictable.
+/// For a dynamic field, only require JSON shape equality
+/// (string/object/array/null), not exact value equality.
 fn compare_dynamic(expected: &Value, actual: &Value, path: &mut [String]) -> MatchOutcome {
 	if shape(expected) == shape(actual) {
 		MatchOutcome::Match
