@@ -227,7 +227,7 @@ fn replay_file<T: Transport>(
 		.and_then(OsStr::to_str)
 		.unwrap_or("")
 		.to_string();
-	let mk = |outcome| RunReport {
+	let report = |outcome| RunReport {
 		file: path.to_path_buf(),
 		method: method.clone(),
 		case: case.clone(),
@@ -235,24 +235,24 @@ fn replay_file<T: Transport>(
 	};
 
 	if excluded.iter().any(|p| method.starts_with(p)) {
-		return mk(RunOutcome::Skipped {
+		return report(RunOutcome::Skipped {
 			reason: "method namespace excluded".to_string(),
 		});
 	}
 
 	if let Some(reason) = skip_list.lookup(&method, &case) {
-		return mk(RunOutcome::Skipped {
+		return report(RunOutcome::Skipped {
 			reason: reason.to_string(),
 		});
 	}
 
 	let raw = match fs::read_to_string(path) {
 		Ok(s) => s,
-		Err(err) => return mk(RunOutcome::IoError(err)),
+		Err(err) => return report(RunOutcome::IoError(err)),
 	};
 	let vector = match parse(&raw) {
 		Ok(v) => v,
-		Err(err) => return mk(RunOutcome::ParseError(err)),
+		Err(err) => return report(RunOutcome::ParseError(err)),
 	};
 
 	let speconly_mode = CompareMode::Schema;
@@ -266,22 +266,22 @@ fn replay_file<T: Transport>(
 		match transport.send(&exchange.request) {
 			Ok(actual) => {
 				if let Err(err) = validate_envelope(&exchange.request, &actual) {
-					return mk(RunOutcome::EnvelopeError(err));
+					return report(RunOutcome::EnvelopeError(err));
 				}
 				if let MatchOutcome::Mismatch { path, detail } =
 					compare(&exchange.response, &actual, cmp_mode)
 				{
-					return mk(RunOutcome::Mismatch { path, detail });
+					return report(RunOutcome::Mismatch { path, detail });
 				}
 			}
-			Err(err) => return mk(RunOutcome::TransportError(err)),
+			Err(err) => return report(RunOutcome::TransportError(err)),
 		}
 	}
 
 	if vector.speconly {
-		mk(RunOutcome::SchemaOnly)
+		report(RunOutcome::SchemaOnly)
 	} else {
-		mk(RunOutcome::Match)
+		report(RunOutcome::Match)
 	}
 }
 
