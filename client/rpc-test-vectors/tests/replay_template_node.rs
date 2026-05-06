@@ -114,14 +114,14 @@ fn node_bin_name() -> &'static str {
 struct TemplateNode {
 	child: Child,
 	rpc_port: u16,
-	_base_path: tempfile::TempDir,
+	_tempdir: tempfile::TempDir,
 }
 
 impl TemplateNode {
 	fn spawn() -> Self {
 		let bin = locate_node_binary();
 		let rpc_port = pick_free_port();
-		let base_path = tempfile::Builder::new()
+		let tempdir = tempfile::Builder::new()
 			.prefix("fc-rpc-test-vectors-node-")
 			.tempdir()
 			.expect("should create temp directory");
@@ -136,7 +136,7 @@ impl TemplateNode {
 			"--no-telemetry",
 			"--base-path",
 		])
-		.arg(base_path.path())
+		.arg(tempdir.path())
 		.stdout(Stdio::piped())
 		.stderr(Stdio::piped());
 
@@ -160,7 +160,7 @@ impl TemplateNode {
 		Self {
 			child,
 			rpc_port,
-			_base_path: base_path,
+			_tempdir: tempdir,
 		}
 	}
 
