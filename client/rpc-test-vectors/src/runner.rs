@@ -59,8 +59,8 @@ impl SkipList {
 	/// Parse a skip-list text file. Returns `io::Error` if the file is
 	/// unreadable; malformed lines are silently ignored so the test stays
 	/// usable while the file is being edited.
-	pub fn from_file(path: &Path) -> io::Result<Self> {
-		Ok(Self::from_text(&fs::read_to_string(path)?))
+	pub fn from_file<P: AsRef<Path>>(path: P) -> io::Result<Self> {
+		Ok(Self::from_text(&fs::read_to_string(path.as_ref())?))
 	}
 
 	pub fn from_text(text: &str) -> Self {
