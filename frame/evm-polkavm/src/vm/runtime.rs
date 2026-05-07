@@ -27,13 +27,12 @@ use pallet_evm_polkavm_uapi::{ReturnErrorCode, ReturnFlags};
 use scale_codec::{Decode, Encode};
 use scale_info::TypeInfo;
 use sp_core::{H160, H256, U256};
-use sp_runtime::RuntimeDebug;
 
 use super::{LOG_TARGET, SENTINEL};
 use crate::{Config, ConvertPolkaVmGas, WeightInfo};
 
 /// Output of a contract call or instantiation which ran to completion.
-#[derive(Clone, PartialEq, Eq, Encode, Decode, RuntimeDebug, TypeInfo, Default)]
+#[derive(Clone, PartialEq, Eq, Encode, Decode, Debug, TypeInfo, Default)]
 pub struct ExecReturnValue {
 	/// Flags passed along by `seal_return`. Empty when `seal_return` was never called.
 	pub flags: ReturnFlags,
@@ -220,7 +219,7 @@ impl From<&ExecReturnValue> for ReturnErrorCode {
 }
 
 /// The data passed through when a contract uses `seal_return`.
-#[derive(RuntimeDebug)]
+#[derive(Debug)]
 pub struct ReturnData {
 	/// The flags as passed through by the contract. They are still unchecked and
 	/// will later be parsed into a `ReturnFlags` bitflags struct.
@@ -229,7 +228,7 @@ pub struct ReturnData {
 	data: Vec<u8>,
 }
 
-#[derive(RuntimeDebug)]
+#[derive(Debug)]
 pub enum SupervisorError {
 	OutOfBounds,
 	ExecutionFailed,
@@ -249,7 +248,7 @@ pub enum SupervisorError {
 /// occurred (the SupervisorError variant).
 /// The other case is where the trap does not constitute an error but rather was invoked
 /// as a quick way to terminate the application (all other variants).
-#[derive(RuntimeDebug)]
+#[derive(Debug)]
 pub enum TrapReason {
 	/// The supervisor trapped the contract because of an error condition occurred during
 	/// execution in privileged code.

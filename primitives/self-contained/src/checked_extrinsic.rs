@@ -27,12 +27,12 @@ use sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionSource, TransactionValidity, TransactionValidityError,
 	},
-	RuntimeDebug,
+	Debug,
 };
 
 use crate::SelfContainedCall;
 
-#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub enum CheckedSignature<AccountId, Extension, SelfContainedSignedInfo> {
 	GenericDelegated(ExtrinsicFormat<AccountId, Extension>),
 	SelfContained(SelfContainedSignedInfo),
@@ -41,7 +41,7 @@ pub enum CheckedSignature<AccountId, Extension, SelfContainedSignedInfo> {
 /// Definition of something that the external world might want to say; its
 /// existence implies that it has been checked and is good, particularly with
 /// regards to the signature.
-#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 pub struct CheckedExtrinsic<AccountId, Call, Extension, SelfContainedSignedInfo> {
 	/// Who this purports to be from and the number of extrinsics have come before
 	/// from the same signer, if anyone (note this is not a signature).

@@ -28,7 +28,7 @@ use sp_runtime::{
 		IdentifyAccount, LazyExtrinsic, MaybeDisplay, Member, TransactionExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	OpaqueExtrinsic, RuntimeDebug,
+	OpaqueExtrinsic, Debug,
 };
 
 use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
@@ -42,7 +42,7 @@ use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	RuntimeDebug,
+	Debug,
 	TypeInfo
 )]
 pub struct UncheckedExtrinsic<Address, Call, Signature, Extension>(
