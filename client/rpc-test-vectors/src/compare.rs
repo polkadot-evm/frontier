@@ -195,9 +195,12 @@ fn compare_schema_at(expected: &Value, actual: &Value, path: &mut Vec<String>) -
 			}
 			MatchOutcome::Match
 		}
-		// Null is compatible with any shape — upstream vectors sometimes use
-		// null for optional fields and the actual node may produce a real value.
-		(Value::Null, _) | (_, Value::Null) => MatchOutcome::Match,
+		// `null` is permissive only on the *expected* side: upstream vectors
+		// mark optional fields as null, while a real node may populate them.
+		// Actual-null is NOT permissive — a node returning null where the
+		// vector expects a concrete shape is exactly the wire regression
+		// schema mode is meant to catch.
+		(Value::Null, _) => MatchOutcome::Match,
 		_ if shape(expected) == shape(actual) => MatchOutcome::Match,
 		_ => mismatch(
 			path,
@@ -356,10 +359,20 @@ mod tests {
 	}
 
 	#[test]
-	fn schema_treats_null_as_compatible() {
+	fn schema_treats_expected_null_as_compatible() {
 		// Optional fields are commonly null in vectors but populated by the node.
 		let e = json!({"to": null});
 		let a = json!({"to": "0x1234"});
 		assert_eq!(compare(&e, &a, &CompareMode::Schema), MatchOutcome::Match);
+	}
+
+	#[test]
+	fn schema_rejects_actual_null_for_concrete_shape() {
+		// The reverse direction is a real wire regression: the node returned
+		// null where the vector expects a string/object/array.
+		let e = json!({"to": "0x1234"});
+		let a = json!({"to": null});
+		let out = compare(&e, &a, &CompareMode::Schema);
+		assert!(matches!(out, MatchOutcome::Mismatch { ref path, .. } if path == "$.to"));
 	}
 }
