@@ -30,7 +30,7 @@ use scale_info::TypeInfo;
 use sp_core::{H256, U256};
 use sp_runtime::{
 	traits::{Block as BlockT, HashingFor},
-	Permill, Debug,
+	Debug, Permill,
 };
 use sp_state_machine::OverlayedChanges;
 

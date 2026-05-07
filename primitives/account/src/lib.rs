@@ -185,14 +185,7 @@ impl From<AccountId20> for Location {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-#[derive(
-	Debug,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	MaxEncodedLen,
-	TypeInfo
-)]
+#[derive(Debug, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EthereumSignature(ecdsa::Signature);
 

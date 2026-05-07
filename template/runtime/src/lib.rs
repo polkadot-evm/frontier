@@ -40,7 +40,10 @@ use sp_version::RuntimeVersion;
 // Substrate FRAME
 #[cfg(feature = "with-paritydb-weights")]
 use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
-#[cfg(all(feature = "with-rocksdb-weights", not(feature = "with-paritydb-weights")))]
+#[cfg(all(
+	feature = "with-rocksdb-weights",
+	not(feature = "with-paritydb-weights")
+))]
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	derive_impl,

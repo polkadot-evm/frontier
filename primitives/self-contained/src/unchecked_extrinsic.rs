@@ -28,7 +28,7 @@ use sp_runtime::{
 		IdentifyAccount, LazyExtrinsic, MaybeDisplay, Member, TransactionExtension,
 	},
 	transaction_validity::{InvalidTransaction, TransactionValidityError},
-	OpaqueExtrinsic, Debug,
+	Debug, OpaqueExtrinsic,
 };
 
 use crate::{CheckedExtrinsic, CheckedSignature, SelfContainedCall};
