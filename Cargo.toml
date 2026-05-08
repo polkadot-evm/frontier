@@ -26,6 +26,7 @@ members = [
 	"client/consensus",
 	"client/rpc-core",
 	"client/rpc",
+	"client/rpc-test-vectors",
 	"client/rpc-v2",
 	"client/rpc-v2/api",
 	"client/rpc-v2/types",
