@@ -40,7 +40,10 @@ use sp_version::RuntimeVersion;
 // Substrate FRAME
 #[cfg(feature = "with-paritydb-weights")]
 use frame_support::weights::constants::ParityDbWeight as RuntimeDbWeight;
-#[cfg(feature = "with-rocksdb-weights")]
+#[cfg(all(
+	feature = "with-rocksdb-weights",
+	not(feature = "with-paritydb-weights")
+))]
 use frame_support::weights::constants::RocksDbWeight as RuntimeDbWeight;
 use frame_support::{
 	derive_impl,
@@ -213,8 +216,12 @@ parameter_types! {
 	pub const BlockHashCount: BlockNumber = 256;
 	pub BlockWeights: frame_system::limits::BlockWeights = frame_system::limits::BlockWeights
 		::with_sensible_defaults(MAXIMUM_BLOCK_WEIGHT, NORMAL_DISPATCH_RATIO);
-	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength
-		::max_with_normal_ratio(MAXIMUM_BLOCK_LENGTH, NORMAL_DISPATCH_RATIO);
+	pub BlockLength: frame_system::limits::BlockLength = frame_system::limits::BlockLength::builder()
+		.max_length(MAXIMUM_BLOCK_LENGTH)
+		.modify_max_length_for_class(frame_support::dispatch::DispatchClass::Normal, |m| {
+			*m = NORMAL_DISPATCH_RATIO * *m
+		})
+		.build();
 	pub const SS58Prefix: u8 = 42;
 }
 
@@ -689,8 +696,8 @@ impl_runtime_apis! {
 	}
 
 	impl sp_session::SessionKeys<Block> for Runtime {
-		fn generate_session_keys(seed: Option<Vec<u8>>) -> Vec<u8> {
-			opaque::SessionKeys::generate(seed)
+		fn generate_session_keys(owner: Vec<u8>, seed: Option<Vec<u8>>) -> sp_session::OpaqueGeneratedSessionKeys {
+			opaque::SessionKeys::generate(&owner, seed).into()
 		}
 
 		fn decode_session_keys(

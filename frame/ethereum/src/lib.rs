@@ -61,7 +61,7 @@ use sp_runtime::{
 	transaction_validity::{
 		InvalidTransaction, TransactionValidity, TransactionValidityError, ValidTransactionBuilder,
 	},
-	RuntimeDebug, SaturatedConversion,
+	Debug, SaturatedConversion,
 };
 use sp_version::RuntimeVersion;
 // Frontier
@@ -76,7 +76,7 @@ use fp_storage::{EthereumStorageSchema, PALLET_ETHEREUM_SCHEMA};
 use frame_support::traits::PalletInfoAccess;
 use pallet_evm::{BlockHashMapping, FeeCalculator, GasWeightMapping, Runner};
 
-#[derive(Clone, Eq, PartialEq, RuntimeDebug)]
+#[derive(Clone, Eq, PartialEq, Debug)]
 #[derive(Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
 pub enum RawOrigin {
 	EthereumTransaction(H160),
@@ -1110,7 +1110,7 @@ impl<T: Config> ValidatedTransactionT for ValidatedTransaction<T> {
 	}
 }
 
-#[derive(Eq, PartialEq, Clone, RuntimeDebug)]
+#[derive(Eq, PartialEq, Clone, Debug)]
 pub enum ReturnValue {
 	Bytes(Vec<u8>),
 	Hash(H160),
