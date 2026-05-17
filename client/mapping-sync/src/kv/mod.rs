@@ -127,11 +127,27 @@ pub fn sync_block<Block: BlockT, C: HeaderBackend<Block>>(
 							Some(block) => {
 								let got_eth_block_hash = block.header.hash();
 								if got_eth_block_hash != expect_eth_block_hash {
-									Err(format!(
+									log::warn!(
+										target: "mapping-sync",
 										"Ethereum block hash mismatch: \
 										frontier consensus digest ({expect_eth_block_hash:?}), \
-										db state ({got_eth_block_hash:?})"
-									))
+										db state ({got_eth_block_hash:?}); \
+										writing digest block mapping with db state tx hashes."
+									);
+									let mapping_commitment = fc_db::kv::MappingCommitment::<Block> {
+										block_hash: substrate_block_hash,
+										ethereum_block_hash: expect_eth_block_hash,
+										ethereum_transaction_hashes: block
+											.transactions
+											.iter()
+											.map(|tx| tx.hash())
+											.collect(),
+									};
+									backend.mapping().write_hashes(
+										mapping_commitment,
+										block_number,
+										number_mapping_write,
+									)
 								} else {
 									let mapping_commitment = gen_from_block(block);
 									backend.mapping().write_hashes(
@@ -843,6 +859,206 @@ mod tests {
 		fn is_eip1559(&self, _at: <OpaqueBlock as BlockT>::Hash) -> bool {
 			false
 		}
+	}
+
+	#[test]
+	fn sync_block_writes_digest_mapping_on_runtime_hash_mismatch() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let digest_block = make_ethereum_block(1);
+		let digest_eth_hash = digest_block.header.hash();
+		let reconstructed_block = make_ethereum_block_with_txs(2, 1);
+		let reconstructed_eth_hash = reconstructed_block.header.hash();
+		let reconstructed_tx_hash = reconstructed_block.transactions[0].hash();
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block");
+		builder
+			.push_deposit_log_digest_item(ethereum_digest_item_for(&digest_block))
+			.expect("push ethereum digest");
+		let block = builder.build().expect("build block").block;
+		let header = block.header.clone();
+		let substrate_hash = header.hash();
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([(substrate_hash, reconstructed_block)]),
+		};
+
+		sync_block(
+			client.as_ref(),
+			Arc::new(storage_override),
+			&frontier_backend,
+			&header,
+		)
+		.expect("sync block");
+
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(digest_eth_hash)),
+			"number mapping must use the digest hash"
+		);
+		assert!(
+			frontier_backend
+				.mapping()
+				.block_hash(&digest_eth_hash)
+				.expect("read digest block mapping")
+				.as_ref()
+				.is_some_and(|hashes| hashes.contains(&substrate_hash)),
+			"digest block mapping must contain the substrate hash"
+		);
+		assert_eq!(
+			frontier_backend
+				.mapping()
+				.block_hash(&reconstructed_eth_hash),
+			Ok(None),
+			"reconstructed hash must not be written when it disagrees with the digest"
+		);
+		let tx_metadata = frontier_backend
+			.mapping()
+			.transaction_metadata(&reconstructed_tx_hash)
+			.expect("read transaction mapping");
+		assert!(
+			tx_metadata.iter().any(|metadata| metadata.substrate_block_hash == substrate_hash
+				&& metadata.ethereum_block_hash == digest_eth_hash
+				&& metadata.ethereum_index == 0),
+			"mismatched reconstructed block transactions must be indexed under the digest hash; got {tx_metadata:?}"
+		);
+	}
+
+	#[test]
+	fn reconciler_repairs_missing_mapping_with_digest_on_runtime_hash_mismatch() {
+		let tmp = tempdir().expect("create temp dir");
+		let (client, _) = TestClientBuilder::new()
+			.build_with_native_executor::<substrate_test_runtime_client::runtime::RuntimeApi, _>(
+			None,
+		);
+		let client = Arc::new(client);
+
+		let frontier_backend = fc_db::kv::Backend::<OpaqueBlock, _>::new(
+			client.clone(),
+			&fc_db::kv::DatabaseSettings {
+				#[cfg(feature = "rocksdb")]
+				source: sc_client_db::DatabaseSource::RocksDb {
+					path: tmp.path().to_path_buf(),
+					cache_size: 0,
+				},
+				#[cfg(not(feature = "rocksdb"))]
+				source: sc_client_db::DatabaseSource::ParityDb {
+					path: tmp.path().to_path_buf(),
+				},
+			},
+		)
+		.expect("frontier backend");
+
+		let digest_block = make_ethereum_block(1);
+		let digest_eth_hash = digest_block.header.hash();
+		let reconstructed_block = make_ethereum_block_with_txs(2, 1);
+		let reconstructed_eth_hash = reconstructed_block.header.hash();
+		let reconstructed_tx_hash = reconstructed_block.transactions[0].hash();
+
+		let chain = client.chain_info();
+		let mut builder = BlockBuilderBuilder::new(client.as_ref())
+			.on_parent_block(chain.best_hash)
+			.with_parent_block_number(chain.best_number)
+			.build()
+			.expect("build block");
+		builder
+			.push_deposit_log_digest_item(ethereum_digest_item_for(&digest_block))
+			.expect("push ethereum digest");
+		let block = builder.build().expect("build block").block;
+		futures::executor::block_on(client.import_as_final(BlockOrigin::Own, block))
+			.expect("import block");
+
+		let substrate_hash = client
+			.hash(1)
+			.expect("query canonical hash")
+			.expect("canonical hash");
+
+		frontier_backend
+			.mapping()
+			.write_none(substrate_hash)
+			.expect("write synced marker without mappings");
+
+		let storage_override = SelectiveStorageOverride {
+			blocks: HashMap::from([(substrate_hash, reconstructed_block)]),
+		};
+
+		let stats = canonical_reconciler::reconcile_from_cursor_batch(
+			client.as_ref(),
+			&storage_override,
+			&frontier_backend,
+			1,
+			1,
+		)
+		.expect("reconcile")
+		.expect("stats");
+
+		assert_eq!(
+			stats.updated, 2,
+			"number and block mapping updates should be reported"
+		);
+		assert_eq!(stats.number_mapping_updates, 1);
+		assert_eq!(stats.block_hash_mapping_updates, 1);
+		assert_eq!(stats.transaction_mapping_updates, 0);
+		assert_eq!(stats.digest_mismatch_fallbacks, 1);
+		assert_eq!(
+			frontier_backend.mapping().block_hash_by_number(1),
+			Ok(Some(digest_eth_hash)),
+			"number mapping must use the digest hash"
+		);
+		assert!(
+			frontier_backend
+				.mapping()
+				.block_hash(&digest_eth_hash)
+				.expect("read digest block mapping")
+				.as_ref()
+				.is_some_and(|hashes| hashes.contains(&substrate_hash)),
+			"digest block mapping must contain the substrate hash"
+		);
+		assert_eq!(
+			frontier_backend
+				.mapping()
+				.block_hash(&reconstructed_eth_hash),
+			Ok(None),
+			"reconstructed hash must not be written when it disagrees with the digest"
+		);
+		let tx_metadata = frontier_backend
+			.mapping()
+			.transaction_metadata(&reconstructed_tx_hash)
+			.expect("read transaction mapping");
+		assert!(
+			tx_metadata.iter().any(|metadata| metadata.substrate_block_hash == substrate_hash
+				&& metadata.ethereum_block_hash == digest_eth_hash
+				&& metadata.ethereum_index == 0),
+			"mismatched reconstructed block transactions must be indexed under the digest hash; got {tx_metadata:?}"
+		);
 	}
 
 	#[test]

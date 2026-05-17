@@ -255,7 +255,39 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 
 		match storage_override.current_block(canonical_hash) {
 			Some(ethereum_block) => {
-				let canonical_eth_hash = ethereum_block.header.hash();
+				let reconstructed_eth_hash = ethereum_block.header.hash();
+				let digest_eth_hash = client
+					.header(canonical_hash)
+					.map_err(|e| format!("{e:?}"))?
+					.and_then(|h| eth_hash_from_digest::<Block>(&h));
+				let (canonical_eth_hash, transaction_hashes) = match digest_eth_hash {
+					Some(digest_eth_hash) if digest_eth_hash != reconstructed_eth_hash => {
+						log::warn!(
+							target: "reconcile",
+							"Ethereum block hash mismatch while reconciling #{number}: \
+							frontier consensus digest ({digest_eth_hash:?}), \
+							db state ({reconstructed_eth_hash:?}); \
+							writing digest block mapping with db state tx hashes."
+						);
+						digest_mismatch_fallbacks = digest_mismatch_fallbacks.saturating_add(1);
+						(
+							digest_eth_hash,
+							ethereum_block
+								.transactions
+								.iter()
+								.map(|tx| tx.hash())
+								.collect(),
+						)
+					}
+					_ => (
+						reconstructed_eth_hash,
+						ethereum_block
+							.transactions
+							.iter()
+							.map(|tx| tx.hash())
+							.collect(),
+					),
+				};
 
 				let should_update = frontier_backend.mapping().block_hash_by_number(number)?
 					!= Some(canonical_eth_hash);
@@ -276,11 +308,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 					let commitment = fc_db::kv::MappingCommitment::<Block> {
 						block_hash: canonical_hash,
 						ethereum_block_hash: canonical_eth_hash,
-						ethereum_transaction_hashes: ethereum_block
-							.transactions
-							.iter()
-							.map(|tx| tx.hash())
-							.collect(),
+						ethereum_transaction_hashes: transaction_hashes.clone(),
 					};
 					frontier_backend.mapping().write_hashes(
 						commitment,
@@ -312,11 +340,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 						let commitment = fc_db::kv::MappingCommitment::<Block> {
 							block_hash: canonical_hash,
 							ethereum_block_hash: canonical_eth_hash,
-							ethereum_transaction_hashes: ethereum_block
-								.transactions
-								.iter()
-								.map(|tx| tx.hash())
-								.collect(),
+							ethereum_transaction_hashes: transaction_hashes,
 						};
 						frontier_backend.mapping().write_hashes(
 							commitment,
