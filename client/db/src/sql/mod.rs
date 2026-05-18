@@ -285,11 +285,21 @@ where
 								Some(block) => {
 									let got_eth_block_hash = block.header.hash();
 									if got_eth_block_hash != expect_eth_block_hash {
-										return Err(Error::Protocol(format!(
+										log::warn!(
+											target: "frontier-sql",
 											"Ethereum block hash mismatch: \
 											frontier consensus digest ({expect_eth_block_hash:?}), \
-											db state ({got_eth_block_hash:?})"
-										)));
+											db state ({got_eth_block_hash:?}); \
+											indexing db state tx hashes under digest block hash."
+										);
+										Hashes {
+											block_hash: expect_eth_block_hash,
+											transaction_hashes: block
+												.transactions
+												.iter()
+												.map(|tx| tx.hash())
+												.collect(),
+										}
 									} else {
 										Hashes::from_block(block)
 									}
