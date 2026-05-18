@@ -1022,10 +1022,7 @@ mod tests {
 		.expect("reconcile")
 		.expect("stats");
 
-		assert_eq!(
-			stats.updated, 2,
-			"number and block mapping updates should be reported"
-		);
+		assert_eq!(stats.updated, 1, "number mapping update should be reported");
 		assert_eq!(stats.digest_mismatch_fallbacks, 1);
 		assert_eq!(
 			frontier_backend.mapping().block_hash_by_number(1),

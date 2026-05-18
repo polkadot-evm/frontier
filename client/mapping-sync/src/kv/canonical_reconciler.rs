@@ -318,7 +318,6 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 						number,
 						fc_db::kv::NumberMappingWrite::Skip,
 					)?;
-					updated = updated.saturating_add(1);
 				} else if !ethereum_block.transactions.is_empty() {
 					// BLOCK_MAPPING exists but TRANSACTION_MAPPING may be incomplete
 					// (block was initially synced with pruned state via write_hashes
