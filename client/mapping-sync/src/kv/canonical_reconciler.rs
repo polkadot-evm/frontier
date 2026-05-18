@@ -45,6 +45,7 @@ pub struct ReconcileWindow {
 pub struct ReconcileStats {
 	pub scanned: u64,
 	pub updated: u64,
+	pub digest_mismatch_fallbacks: u64,
 	pub first_unresolved: Option<u64>,
 	pub highest_reconciled: Option<u64>,
 	pub next_cursor: u64,
@@ -230,6 +231,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 		return Ok(ReconcileStats {
 			scanned: 0,
 			updated: 0,
+			digest_mismatch_fallbacks: 0,
 			first_unresolved: None,
 			highest_reconciled: None,
 			next_cursor: sync_from_number,
@@ -239,6 +241,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 	}
 
 	let mut updated = 0u64;
+	let mut digest_mismatch_fallbacks = 0u64;
 	let mut first_unresolved = None;
 	let mut highest_reconciled: Option<u64> = None;
 	let mut scanned = 0u64;
@@ -276,7 +279,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 								.transactions
 								.iter()
 								.map(|tx| tx.hash())
-								.collect(),
+								.collect::<Vec<_>>(),
 						)
 					}
 					_ => (
@@ -285,7 +288,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 							.transactions
 							.iter()
 							.map(|tx| tx.hash())
-							.collect(),
+							.collect::<Vec<_>>(),
 					),
 				};
 
@@ -315,6 +318,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 						number,
 						fc_db::kv::NumberMappingWrite::Skip,
 					)?;
+					updated = updated.saturating_add(1);
 				} else if !ethereum_block.transactions.is_empty() {
 					// BLOCK_MAPPING exists but TRANSACTION_MAPPING may be incomplete
 					// (block was initially synced with pruned state via write_hashes
@@ -461,6 +465,7 @@ fn reconcile_range_internal<Block: BlockT, C: HeaderBackend<Block>>(
 	let stats = ReconcileStats {
 		scanned,
 		updated,
+		digest_mismatch_fallbacks,
 		first_unresolved,
 		highest_reconciled,
 		next_cursor,

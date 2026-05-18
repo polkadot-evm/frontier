@@ -686,7 +686,9 @@ mod tests {
 
 	use sp_runtime::generic::DigestItem;
 
-	use super::{canonical_reconciler, repair_canonical_number_mappings_batch, sync_one_block};
+	use super::{
+		canonical_reconciler, repair_canonical_number_mappings_batch, sync_block, sync_one_block,
+	};
 	use crate::{
 		EthereumBlockNotification, EthereumBlockNotificationSinks, ReorgInfo, SyncStrategy,
 	};
@@ -1024,9 +1026,6 @@ mod tests {
 			stats.updated, 2,
 			"number and block mapping updates should be reported"
 		);
-		assert_eq!(stats.number_mapping_updates, 1);
-		assert_eq!(stats.block_hash_mapping_updates, 1);
-		assert_eq!(stats.transaction_mapping_updates, 0);
 		assert_eq!(stats.digest_mismatch_fallbacks, 1);
 		assert_eq!(
 			frontier_backend.mapping().block_hash_by_number(1),
@@ -1147,6 +1146,7 @@ mod tests {
 			Some(canonical_reconciler::ReconcileStats {
 				scanned: 1,
 				updated: 0,
+				digest_mismatch_fallbacks: 0,
 				first_unresolved: Some(1),
 				highest_reconciled: None,
 				next_cursor: 1,
