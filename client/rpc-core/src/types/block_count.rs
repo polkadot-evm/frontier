@@ -24,6 +24,8 @@ use serde::{
 	Deserialize, Deserializer, Serialize, Serializer,
 };
 
+const U64_MAX_U256: U256 = U256([u64::MAX, 0, 0, 0]);
+
 /// Represents An RPC Api block count param, which can take the form of a number, an hex string, or a 32-bytes array
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub enum BlockCount {
@@ -69,7 +71,7 @@ impl From<BlockCount> for u64 {
 	fn from(block_count: BlockCount) -> u64 {
 		match block_count {
 			BlockCount::Num(n) => n,
-			BlockCount::U256(n) => n.min(U256::from(u64::MAX)).low_u64(),
+			BlockCount::U256(n) => n.min(U64_MAX_U256).low_u64(),
 		}
 	}
 }
@@ -137,5 +139,14 @@ mod tests {
 			r#""0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff""#;
 		let bc: BlockCount = serde_json::from_str(max_u256_hex).unwrap();
 		assert_eq!(u64::from(bc), u64::MAX);
+	}
+
+	#[test]
+	fn block_count_to_u64_saturation_boundary() {
+		let at_max: BlockCount = serde_json::from_str(r#""0xffffffffffffffff""#).unwrap();
+		assert_eq!(u64::from(at_max), u64::MAX);
+
+		let above_max: BlockCount = serde_json::from_str(r#""0x10000000000000000""#).unwrap();
+		assert_eq!(u64::from(above_max), u64::MAX);
 	}
 }
