@@ -67,6 +67,10 @@ impl From<BlockCount> for U256 {
 	}
 }
 
+/// Converts `BlockCount` to `u64`.
+///
+/// For `BlockCount::U256` values greater than `u64::MAX`, the result saturates to `u64::MAX`
+/// instead of panicking or truncating.
 impl From<BlockCount> for u64 {
 	fn from(block_count: BlockCount) -> u64 {
 		match block_count {
