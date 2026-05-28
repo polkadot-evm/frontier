@@ -14,12 +14,12 @@ to be classified vs. real bugs to be filed.
 
 | Bucket                        | Count | What it means                                |
 | ----------------------------- | ----- | -------------------------------------------- |
-| Match / SchemaOnly            | 103   | passes                                       |
+| Match / SchemaOnly            | 76    | passes                                       |
 | Excluded namespace            | 4     | `testing_*`, `engine_*` (always skipped)     |
-| Skipped via `vendor-skip.txt` | 103   | failures grouped below                       |
+| Skipped via `vendor-skip.txt` | 130   | failures grouped below                       |
 | Real failures                 | 0     | should remain 0; new entries here are CI red |
 
-`103 / (210 − 4) = 50%` of attempted vectors pass.
+`76 / (210 − 4) = 37%` of attempted vectors pass.
 
 ## Bucket 1 — methods Frontier does not implement (77)
 
@@ -47,25 +47,39 @@ Could go either way (real gap, but a Substrate impl is conceivable):
 A future PR can promote the "never" set into `EXCLUDED_NAMESPACES` (with
 per-method comments) and shrink this bucket.
 
-## Bucket 2 — vectors hard-coded to Hive `chain.rlp` state (14)
+## Bucket 2 — vectors hard-coded to Hive `chain.rlp` state (41)
 
 These send a specific block hash, signed transaction, or contract call
 that exists only in geth's Hive fixture chain. They cannot pass against
 `frontier-template-node --dev` regardless of wire-format compatibility,
 because the inputs reference state we don't have.
 
-| Method/case                                       | Why it can't pass                            |
-| ------------------------------------------------- | -------------------------------------------- |
-| `eth_call/call-callenv-options-eip1559`           | calls a contract from Hive chain.rlp         |
-| `eth_createAccessList/create-al-abi-revert`       | references contract from Hive chain.rlp      |
-| `eth_createAccessList/create-al-contract`         | references contract from Hive chain.rlp      |
-| `eth_createAccessList/create-al-contract-eip1559` | references contract from Hive chain.rlp      |
-| `eth_createAccessList/create-al-value-transfer`   | references state from Hive chain.rlp         |
-| `eth_getBalance/get-balance-blockhash`            | references blockHash from Hive chain.rlp     |
-| `eth_getBlockReceipts/get-block-receipts-by-hash` | references blockHash from Hive chain.rlp     |
-| `eth_getLogs/filter-with-blockHash`               | references blockHash from Hive chain.rlp     |
-| `eth_getLogs/filter-with-blockHash-and-topics`    | references blockHash from Hive chain.rlp     |
-| `eth_sendRawTransaction/*` (5 cases)              | signed txs assume Hive chain nonces and keys |
+| Method/case                                              | Why it can't pass                                |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| `eth_call/call-callenv-options-eip1559`                  | calls a contract from Hive chain.rlp             |
+| `eth_createAccessList/create-al-abi-revert`              | references contract from Hive chain.rlp          |
+| `eth_createAccessList/create-al-contract`                | references contract from Hive chain.rlp          |
+| `eth_createAccessList/create-al-contract-eip1559`        | references contract from Hive chain.rlp          |
+| `eth_createAccessList/create-al-value-transfer`          | references state from Hive chain.rlp             |
+| `eth_getBalance/get-balance-blockhash`                   | references blockHash from Hive chain.rlp         |
+| `eth_getBlockReceipts/get-block-receipts-by-hash`        | references blockHash from Hive chain.rlp         |
+| `eth_getLogs/filter-with-blockHash`                      | references blockHash from Hive chain.rlp         |
+| `eth_getLogs/filter-with-blockHash-and-topics`           | references blockHash from Hive chain.rlp         |
+| `eth_sendRawTransaction/*` (5 cases)                     | signed txs assume Hive chain nonces and keys     |
+| `eth_getBlockByHash/get-block-by-hash`                   | blockHash from Hive chain.rlp → null on dev      |
+| `eth_getBlockByNumber/get-block-{london,merge,shanghai,cancun,prague}-fork` | block number absent on dev → null  |
+| `eth_getBlockReceipts/get-block-receipts-n`              | block number absent on dev → null                |
+| `eth_getBlockTransactionCountByHash/{get-genesis,get-block-n}` | blockHash from Hive chain.rlp → null on dev |
+| `eth_getBlockTransactionCountByNumber/get-block-n`       | block number absent on dev → null                |
+| `eth_getTransactionByBlockHashAndIndex/get-block-n`      | blockHash from Hive chain.rlp → null on dev      |
+| `eth_getTransactionByBlockNumberAndIndex/get-block-n`    | block number absent on dev → null                |
+| `eth_getTransactionByHash/*` (7 cases)                   | tx hash from Hive chain.rlp → null on dev        |
+| `eth_getTransactionReceipt/*` (7 cases)                  | tx hash from Hive chain.rlp → null on dev        |
+| `debug_getRawTransaction/get-tx`                         | tx hash from Hive chain.rlp → null on dev        |
+
+The block / tx lookup entries surfaced once schema mode stopped
+silently passing actual-null responses (see `src/compare.rs`); before
+that fix they were hidden in the "passing" bucket.
 
 Unlocking this bucket requires a way to seed Frontier from `chain.rlp`
 (out of scope for this PR). Until then, these stay skipped.

@@ -130,6 +130,38 @@ eth_sendRawTransaction/send-dynamic-fee-access-list-transaction   # signed tx as
 eth_sendRawTransaction/send-dynamic-fee-transaction               # signed tx assumes Hive chain nonces/keys
 eth_sendRawTransaction/send-legacy-transaction                    # signed tx assumes Hive chain nonces/keys
 
+# Block / tx lookups by Hive chain.rlp coordinates: the dev chain has only
+# the genesis block (and no Hive-signed txs), so these queries resolve to
+# `null` on Frontier. Schema mode now (correctly) rejects actual-null where
+# a concrete shape is expected — see ../src/compare.rs.
+eth_getBlockByHash/get-block-by-hash                    # blockHash from Hive chain.rlp → null on dev chain
+eth_getBlockByNumber/get-block-london-fork              # block number absent on dev chain → null
+eth_getBlockByNumber/get-block-merge-fork               # block number absent on dev chain → null
+eth_getBlockByNumber/get-block-shanghai-fork            # block number absent on dev chain → null
+eth_getBlockByNumber/get-block-cancun-fork              # block number absent on dev chain → null
+eth_getBlockByNumber/get-block-prague-fork              # block number absent on dev chain → null
+eth_getBlockReceipts/get-block-receipts-n               # block number absent on dev chain → null
+eth_getBlockTransactionCountByHash/get-genesis          # genesis hash from Hive chain.rlp → null on dev chain
+eth_getBlockTransactionCountByHash/get-block-n          # blockHash from Hive chain.rlp → null on dev chain
+eth_getBlockTransactionCountByNumber/get-block-n        # block number absent on dev chain → null
+eth_getTransactionByBlockHashAndIndex/get-block-n       # blockHash from Hive chain.rlp → null on dev chain
+eth_getTransactionByBlockNumberAndIndex/get-block-n     # block number absent on dev chain → null
+eth_getTransactionByHash/get-legacy-tx                  # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionByHash/get-legacy-create              # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionByHash/get-legacy-input               # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionByHash/get-dynamic-fee                # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionByHash/get-access-list                # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionByHash/get-blob-tx                    # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionByHash/get-setcode-tx                 # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-legacy-receipt            # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-legacy-contract           # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-legacy-input              # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-dynamic-fee               # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-access-list               # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-blob-tx                   # tx hash from Hive chain.rlp → null on dev chain
+eth_getTransactionReceipt/get-setcode-tx                # tx hash from Hive chain.rlp → null on dev chain
+debug_getRawTransaction/get-tx                          # tx hash from Hive chain.rlp → null on dev chain
+
 
 # == Bucket 3: real Frontier wire-format gaps (track as issues) ==
 # These are vectors that Frontier *should* be able to satisfy on a dev
