@@ -217,6 +217,24 @@ fn decode_g2(input: &[u8], offset: usize) -> Result<G2Projective, PrecompileFail
 	}
 }
 
+fn ensure_g1_subgroup(p: G1Projective) -> Result<G1Projective, PrecompileFailure> {
+	if !p.into_affine().is_in_correct_subgroup_assuming_on_curve() {
+		return Err(PrecompileFailure::Error {
+			exit_status: ExitError::Other("g1 point is not on correct subgroup".into()),
+		});
+	}
+	Ok(p)
+}
+
+fn ensure_g2_subgroup(p: G2Projective) -> Result<G2Projective, PrecompileFailure> {
+	if !p.into_affine().is_in_correct_subgroup_assuming_on_curve() {
+		return Err(PrecompileFailure::Error {
+			exit_status: ExitError::Other("g2 point is not on correct subgroup".into()),
+		});
+	}
+	Ok(p)
+}
+
 /// Bls12381 implements EIP-2537 G1Add precompile.
 pub struct Bls12381G1Add;
 
@@ -341,7 +359,7 @@ impl Precompile for Bls12381G1MultiExp {
 		for idx in 0..k {
 			let offset = idx * 160;
 			// Decode G1 point
-			let p = decode_g1(input, offset)?;
+			let p = ensure_g1_subgroup(decode_g1(input, offset)?)?;
 			// Decode scalar value
 			let scalar = decode_fr(input, offset + 128);
 			points.push(p.into_affine());
@@ -488,7 +506,7 @@ impl Precompile for Bls12381G2MultiExp {
 		for idx in 0..k {
 			let offset = idx * 288;
 			// Decode G2 point
-			let p = decode_g2(input, offset)?;
+			let p = ensure_g2_subgroup(decode_g2(input, offset)?)?;
 			// Decode scalar value
 			let scalar = decode_fr(input, offset + 256);
 			points.push(p.into_affine());
