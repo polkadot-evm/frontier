@@ -102,6 +102,10 @@ pub struct EthConfiguration {
 	/// Maximum pending pubsub notifications per subscriber before it is dropped.
 	#[arg(long, default_value = "512")]
 	pub pubsub_max_pending_notifications: usize,
+
+	/// Maximum retained bytes across the reorg-aware log journal.
+	#[arg(long, default_value = "536870912")]
+	pub logs_journal_max_total_bytes: usize,
 }
 
 pub struct FrontierPartialComponents {

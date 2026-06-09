@@ -106,7 +106,7 @@ impl sp_runtime::traits::Convert<H160, MockAccount> for MockAccount {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	sp_core::RuntimeDebug,
+	Debug,
 	TypeInfo,
 	Serialize,
 	Deserialize
@@ -171,7 +171,7 @@ impl sp_runtime::traits::Verify for MockSignature {
 	Encode,
 	Decode,
 	DecodeWithMemTracking,
-	sp_core::RuntimeDebug,
+	Debug,
 	TypeInfo
 )]
 #[cfg_attr(feature = "std", derive(serde::Serialize, serde::Deserialize))]

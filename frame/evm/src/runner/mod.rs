@@ -21,7 +21,7 @@ pub mod stack;
 use crate::{Config, Weight};
 use alloc::vec::Vec;
 use ethereum::AuthorizationList;
-use fp_evm::{CallInfo, CreateInfo};
+use fp_evm::{CallInfo, CreateInfo, StateOverride};
 use sp_core::{H160, H256, U256};
 
 #[derive(Debug)]
@@ -65,6 +65,9 @@ pub trait Runner<T: Config> {
 		validate: bool,
 		weight_limit: Option<Weight>,
 		proof_size_base_cost: Option<u64>,
+		// Per-account full storage replacement (Geth-style `state` override).
+		// See [`StateOverride`] for the encoding and semantics.
+		state_override: StateOverride,
 		config: &evm::Config,
 	) -> Result<CallInfo, RunnerError<Self::Error>>;
 

@@ -26,7 +26,7 @@ use core::fmt;
 use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
-use sp_core::{crypto::AccountId32, ecdsa, RuntimeDebug, H160, H256};
+use sp_core::{crypto::AccountId32, ecdsa, H160, H256};
 use sp_io::hashing::keccak_256;
 use sp_runtime::MultiSignature;
 
@@ -185,14 +185,7 @@ impl From<AccountId20> for Location {
 }
 
 #[derive(Clone, Eq, PartialEq)]
-#[derive(
-	RuntimeDebug,
-	Encode,
-	Decode,
-	DecodeWithMemTracking,
-	MaxEncodedLen,
-	TypeInfo
-)]
+#[derive(Debug, Encode, Decode, DecodeWithMemTracking, MaxEncodedLen, TypeInfo)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct EthereumSignature(ecdsa::Signature);
 
@@ -240,7 +233,7 @@ impl EthereumSignature {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-#[derive(RuntimeDebug, Encode, Decode, MaxEncodedLen, TypeInfo)]
+#[derive(Debug, Encode, Decode, MaxEncodedLen, TypeInfo)]
 #[repr(transparent)]
 pub struct EthereumSigner([u8; 20]);
 

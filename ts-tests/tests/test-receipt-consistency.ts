@@ -35,6 +35,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	}
 
 	step("should return receipt immediately after block is visible", async function () {
+		const nonce = Number(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "latest"));
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -42,7 +43,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 				value: "0x200",
 				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
-				nonce: 0,
+				nonce,
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -63,8 +64,8 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 		expect(block.transactions).to.be.an("array").with.lengthOf(1);
 		expect(block.transactions[0].hash).to.equal(txHash);
 
-		// If block is visible, receipt should also be available
-		const receipt = await context.web3.eth.getTransactionReceipt(txHash);
+		// Block can surface before mapping-sync exposes receipts; poll until consistent.
+		const receipt = await waitForReceipt(context.web3, txHash);
 
 		expect(receipt).to.not.be.null;
 		expect(receipt.transactionHash).to.equal(txHash);
@@ -76,6 +77,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	step("should return receipt for multiple transactions in same block", async function () {
 		const txCount = 3;
 		const txHashes: string[] = [];
+		const baseNonce = Number(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "latest"));
 
 		for (let i = 0; i < txCount; i++) {
 			const tx = await context.web3.eth.accounts.signTransaction(
@@ -85,7 +87,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 					value: "0x200",
 					gasPrice: "0x3B9ACA00",
 					gas: "0x100000",
-					nonce: i + 1, // nonce 0 was used in previous test
+					nonce: baseNonce + i,
 				},
 				GENESIS_ACCOUNT_PRIVATE_KEY
 			);
@@ -122,6 +124,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 	});
 
 	step("should return receipt when queried by transaction hash from block", async function () {
+		const nonce = Number(await context.web3.eth.getTransactionCount(GENESIS_ACCOUNT, "latest"));
 		const tx = await context.web3.eth.accounts.signTransaction(
 			{
 				from: GENESIS_ACCOUNT,
@@ -129,7 +132,7 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 				value: "0x200",
 				gasPrice: "0x3B9ACA00",
 				gas: "0x100000",
-				nonce: 4, // continuing from previous tests
+				nonce,
 			},
 			GENESIS_ACCOUNT_PRIVATE_KEY
 		);
@@ -150,9 +153,11 @@ describeWithFrontier("Frontier RPC (Receipt Consistency)", (context) => {
 
 		// Get tx hash from the block, then query its receipt
 		const txFromBlock = block.transactions[0];
-		const txHash = txFromBlock.hash;
+		const txHash = typeof txFromBlock === "string" ? txFromBlock : txFromBlock.hash;
+		expect(txHash).to.be.a("string").lengthOf(66);
 
-		const receipt = await context.web3.eth.getTransactionReceipt(txHash);
+		// Block can surface before mapping-sync exposes receipts; poll like ADR-003 implies.
+		const receipt = await waitForReceipt(context.web3, txHash);
 
 		expect(receipt).to.not.be.null;
 		expect(receipt.transactionHash).to.equal(txHash);

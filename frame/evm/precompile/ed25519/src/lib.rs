@@ -28,8 +28,8 @@ use fp_evm::{ExitError, ExitSucceed, LinearCostPrecompile, PrecompileFailure};
 pub struct Ed25519Verify;
 
 impl LinearCostPrecompile for Ed25519Verify {
-	const BASE: u64 = 15;
-	const WORD: u64 = 3;
+	const BASE: u64 = 6000;
+	const WORD: u64 = 0;
 
 	fn execute(input: &[u8], _: u64) -> Result<(ExitSucceed, Vec<u8>), PrecompileFailure> {
 		if input.len() < 128 {
@@ -66,6 +66,27 @@ impl LinearCostPrecompile for Ed25519Verify {
 mod tests {
 	use super::*;
 	use ed25519_dalek::{Signer, SigningKey};
+	use fp_evm::Context;
+	use pallet_evm_test_vector_support::MockHandle;
+
+	fn valid_input() -> Vec<u8> {
+		#[allow(clippy::zero_prefixed_literal)]
+		let secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
+			157, 097, 177, 157, 239, 253, 090, 096, 186, 132, 074, 244, 146, 236, 044, 196, 068,
+			073, 197, 105, 123, 050, 105, 025, 112, 059, 172, 003, 028, 174, 127, 096,
+		];
+
+		let keypair = SigningKey::from_bytes(&secret_key_bytes);
+		let public_key = keypair.verifying_key();
+		let msg: &[u8] = b"abcdefghijklmnopqrstuvwxyz123456";
+		let signature = keypair.sign(msg);
+
+		let mut input: Vec<u8> = Vec::with_capacity(128);
+		input.extend_from_slice(msg);
+		input.extend_from_slice(&public_key.to_bytes());
+		input.extend_from_slice(&signature.to_bytes());
+		input
+	}
 
 	#[test]
 	fn test_empty_input() -> Result<(), PrecompileFailure> {
@@ -89,29 +110,28 @@ mod tests {
 	}
 
 	#[test]
+	fn charges_signature_verification_gas() -> Result<(), PrecompileFailure> {
+		let context: Context = Context {
+			address: Default::default(),
+			caller: Default::default(),
+			apparent_value: From::from(0),
+		};
+		let mut handle = MockHandle::new(valid_input(), Some(Ed25519Verify::BASE), context);
+
+		let result = <Ed25519Verify as fp_evm::Precompile>::execute(&mut handle)?;
+
+		assert_eq!(handle.gas_used, 6000);
+		assert_eq!(result.exit_status, ExitSucceed::Returned);
+
+		Ok(())
+	}
+
+	#[test]
 	fn test_verify() -> Result<(), PrecompileFailure> {
-		#[allow(clippy::zero_prefixed_literal)]
-		let secret_key_bytes: [u8; ed25519_dalek::SECRET_KEY_LENGTH] = [
-			157, 097, 177, 157, 239, 253, 090, 096, 186, 132, 074, 244, 146, 236, 044, 196, 068,
-			073, 197, 105, 123, 050, 105, 025, 112, 059, 172, 003, 028, 174, 127, 096,
-		];
-
-		let keypair = SigningKey::from_bytes(&secret_key_bytes);
-		let public_key = keypair.verifying_key();
-
+		let input = valid_input();
+		assert_eq!(input.len(), 128);
 		let msg: &[u8] = b"abcdefghijklmnopqrstuvwxyz123456";
 		assert_eq!(msg.len(), 32);
-		let signature = keypair.sign(msg);
-
-		// input is:
-		// 1) message (32 bytes)
-		// 2) pubkey (32 bytes)
-		// 3) signature (64 bytes)
-		let mut input: Vec<u8> = Vec::with_capacity(128);
-		input.extend_from_slice(msg);
-		input.extend_from_slice(&public_key.to_bytes());
-		input.extend_from_slice(&signature.to_bytes());
-		assert_eq!(input.len(), 128);
 
 		let cost: u64 = 1;
 
@@ -131,10 +151,11 @@ mod tests {
 		// try again with a different message
 		let msg: &[u8] = b"BAD_MESSAGE_mnopqrstuvwxyz123456";
 
-		let mut input: Vec<u8> = Vec::with_capacity(128);
+		let mut input = input;
+		let public_key_and_signature = input[32..128].to_vec();
+		input.clear();
 		input.extend_from_slice(msg);
-		input.extend_from_slice(&public_key.to_bytes());
-		input.extend_from_slice(&signature.to_bytes());
+		input.extend_from_slice(&public_key_and_signature);
 		assert_eq!(input.len(), 128);
 
 		match Ed25519Verify::execute(&input, cost) {

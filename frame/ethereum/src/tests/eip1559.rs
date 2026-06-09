@@ -51,8 +51,9 @@ fn transaction_with_max_extrinsic_gas_limit_should_success_pre_dispatch() {
 	let max_extrinsic_gas =
 		<Test as pallet_evm::Config>::GasWeightMapping::weight_to_gas(max_extrinsic);
 
-	// EIP-7825: The effective max gas is the minimum of max_extrinsic_gas and the protocol cap
-	let effective_max_gas = U256::from(max_extrinsic_gas).min(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
+	// The effective max gas is the minimum of max_extrinsic_gas and the configured cap.
+	let transaction_gas_limit = TransactionGasLimit::get().unwrap_or_else(U256::max_value);
+	let effective_max_gas = U256::from(max_extrinsic_gas).min(transaction_gas_limit);
 
 	ext.execute_with(|| {
 		let transaction = EIP1559UnsignedTransaction {

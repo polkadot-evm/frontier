@@ -115,6 +115,7 @@ where
 			telemetry.as_ref().map(|(_, telemetry)| telemetry.handle()),
 			executor,
 			true,
+			Vec::new(),
 		)?;
 	let client = Arc::new(client);
 
@@ -363,6 +364,7 @@ where
 			client: client.clone(),
 			transaction_pool: transaction_pool.clone(),
 			spawn_handle: task_manager.spawn_handle(),
+			spawn_essential_handle: task_manager.spawn_essential_handle(),
 			import_queue,
 			block_announce_validator_builder: None,
 			warp_sync_config,
@@ -475,6 +477,9 @@ where
 				filter_pool: filter_pool.clone(),
 				max_past_logs,
 				max_block_range,
+				logs_journal_config: crate::rpc::LogsJournalConfig::from_max_total_bytes(
+					eth_config.logs_journal_max_total_bytes,
+				),
 				fee_history_cache: fee_history_cache.clone(),
 				fee_history_cache_limit,
 				execute_gas_limit_multiplier,

@@ -38,7 +38,7 @@ use sp_runtime::{
 use sp_state_machine::OverlayedChanges;
 // Frontier
 use fc_rpc_core::types::*;
-use fp_evm::{ExecutionInfo, ExecutionInfoV2};
+use fp_evm::{ExecutionInfo, ExecutionInfoV2, StateOverride};
 use fp_rpc::{EthereumRuntimeRPCApi, RuntimeStorageOverride};
 use fp_storage::constants::{EVM_ACCOUNT_CODES, EVM_ACCOUNT_STORAGES, PALLET_EVM};
 
@@ -96,6 +96,8 @@ where
 			authorization_list,
 			..
 		} = request;
+
+		validate_state_overrides(&state_overrides)?;
 
 		let (gas_price, max_fee_per_gas, max_priority_fee_per_gas) = {
 			let details = fee_details(gas_price, max_fee_per_gas, max_priority_fee_per_gas)?;
@@ -369,6 +371,72 @@ where
 					error_on_execution_failure(&info.exit_reason, &info.value)?;
 
 					Ok(Bytes(info.value))
+				} else if api_version == 7 {
+					// Pectra + efficient `state` full-storage override (runtime API v7)
+					let access_list = access_list
+						.unwrap_or_default()
+						.into_iter()
+						.map(|item| (item.address, item.storage_keys))
+						.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+					let state_override_payload = build_state_override_payload(&state_overrides);
+
+					let encoded_params = Encode::encode(&(
+						&from.unwrap_or_default(),
+						&to,
+						&data,
+						&value.unwrap_or_default(),
+						&gas_limit,
+						&max_fee_per_gas,
+						&max_priority_fee_per_gas,
+						&nonce,
+						&false,
+						&Some(access_list),
+						&authorization_list,
+						&state_override_payload,
+					));
+					let overlayed_changes = self.create_overrides_overlay(
+						substrate_hash,
+						api_version,
+						state_overrides,
+					)?;
+
+					let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+					let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+					let mut exts = Extensions::new();
+					exts.register(ext);
+
+					let params = CallApiAtParams {
+						at: substrate_hash,
+						function: "EthereumRuntimeRPCApi_call",
+						arguments: encoded_params,
+						overlayed_changes: &RefCell::new(overlayed_changes),
+						call_context: CallContext::Offchain,
+						recorder: &Some(recorder),
+						extensions: &RefCell::new(exts),
+					};
+
+					let info = self
+						.client
+						.call_api_at(params)
+						.and_then(|r| {
+							Result::map_err(
+								<Result<ExecutionInfoV2<Vec<u8>>, DispatchError> as Decode>::decode(
+									&mut &r[..],
+								),
+								|error| sp_api::ApiError::FailedToDecodeReturnValue {
+									function: "EthereumRuntimeRPCApi_call",
+									error,
+									raw: r,
+								},
+							)
+						})
+						.map_err(|err| internal_err(format!("runtime error: {err}")))?
+						.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+					error_on_execution_failure(&info.exit_reason, &info.value)?;
+
+					Ok(Bytes(info.value))
 				} else {
 					Err(internal_err("failed to retrieve Runtime Api version"))
 				}
@@ -479,7 +547,7 @@ where
 						.account_code_at(substrate_hash, info.value)
 						.map_err(|err| internal_err(format!("runtime error: {err}")))?;
 					Ok(Bytes(code))
-				} else if api_version == 6 {
+				} else if api_version == 6 || api_version == 7 {
 					// Pectra EIP-7702 support
 					let access_list = access_list.unwrap_or_default();
 					let authorization_list = authorization_list.unwrap_or_default();
@@ -856,6 +924,60 @@ where
 								.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, info.value, info.used_gas.effective)
+						} else if api_version == 7 {
+							let access_list = access_list
+								.unwrap_or_default()
+								.into_iter()
+								.map(|item| (item.address, item.storage_keys))
+								.collect::<Vec<(sp_core::H160, Vec<H256>)>>();
+
+							let encoded_params = Encode::encode(&(
+								&from.unwrap_or_default(),
+								&to,
+								&data,
+								&value.unwrap_or_default(),
+								&gas_limit,
+								&max_fee_per_gas,
+								&max_priority_fee_per_gas,
+								&None::<Option<U256>>,
+								&estimate_mode,
+								&Some(access_list),
+								&authorization_list,
+								&None::<StateOverride>
+							));
+
+							let recorder: sp_trie::recorder::Recorder<HashingFor<B>> = Default::default();
+							let ext = sp_trie::proof_size_extension::ProofSizeExt::new(recorder.clone());
+							let mut exts = Extensions::new();
+							exts.register(ext);
+
+							let params = CallApiAtParams {
+								at: substrate_hash,
+								function: "EthereumRuntimeRPCApi_call",
+								arguments: encoded_params,
+								overlayed_changes: &RefCell::new(Default::default()),
+								call_context: CallContext::Offchain,
+								recorder: &Some(recorder),
+								extensions: &RefCell::new(exts),
+							};
+
+							let info = self
+								.client
+								.call_api_at(params)
+								.and_then(|r| {
+									Result::map_err(
+										<Result<ExecutionInfoV2::<Vec<u8>>, DispatchError> as Decode>::decode(&mut &r[..]),
+										|error| sp_api::ApiError::FailedToDecodeReturnValue {
+											function: "EthereumRuntimeRPCApi_call",
+											error,
+											raw: r
+										},
+									)
+								})
+								.map_err(|err| internal_err(format!("runtime error: {err}")))?
+								.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
+
+							(info.exit_reason, info.value, info.used_gas.effective)
 						} else {
 							return Err(internal_err(format!("Unsupported EthereumRuntimeRPCApi version: {api_version}")));
 						}
@@ -974,7 +1096,7 @@ where
 							.map_err(|err| internal_err(format!("execution fatal: {err:?}")))?;
 
 							(info.exit_reason, Vec::new(), info.used_gas.effective)
-						} else if api_version == 6 {
+						} else if api_version == 6 || api_version == 7 {
 							// Pectra - authorization list support (EIP-7702)
 							let access_list = access_list
 								.unwrap_or_default()
@@ -1168,6 +1290,7 @@ where
 		api_version: u32,
 		state_overrides: Option<BTreeMap<H160, CallStateOverride>>,
 	) -> RpcResult<OverlayedChanges<HashingFor<B>>> {
+		let use_runtime_full_storage = api_version >= 7;
 		let mut overlayed_changes = OverlayedChanges::default();
 		if let Some(state_overrides) = state_overrides {
 			for (address, state_override) in state_overrides {
@@ -1204,29 +1327,35 @@ where
 				account_storage_key.extend(blake2_128(address.as_bytes()));
 				account_storage_key.extend(address.as_bytes());
 
-				// Use `state` first. If `stateDiff` is also present, it resolves consistently
+				// `state` and `stateDiff` are mutually exclusive (validated upstream).
+				//
+				// For runtime API v7+, a `state` override is applied inside the runtime via
+				// the `state_override` parameter (see `build_state_override_payload`) and must
+				// NOT be mirrored into the overlay here. For older runtimes we fall back to
+				// the legacy behavior, which enumerates every existing slot and clears it
+				// before writing the provided values — costly for large contracts.
 				if let Some(state) = &state_override.state {
-					// clear all storage
-					if let Ok(all_keys) = self.client.storage_keys(
-						block_hash,
-						Some(&sp_storage::StorageKey(account_storage_key.clone())),
-						None,
-					) {
-						for key in all_keys {
-							overlayed_changes.set_storage(key.0, None);
+					if !use_runtime_full_storage {
+						if let Ok(all_keys) = self.client.storage_keys(
+							block_hash,
+							Some(&sp_storage::StorageKey(account_storage_key.clone())),
+							None,
+						) {
+							for key in all_keys {
+								overlayed_changes.set_storage(key.0, None);
+							}
+						}
+						for (k, v) in state {
+							let mut slot_key = account_storage_key.clone();
+							slot_key.extend(blake2_128(k.as_bytes()));
+							slot_key.extend(k.as_bytes());
+
+							overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
 						}
 					}
-					// set provided storage
-					for (k, v) in state {
-						let mut slot_key = account_storage_key.clone();
-						slot_key.extend(blake2_128(k.as_bytes()));
-						slot_key.extend(k.as_bytes());
-
-						overlayed_changes.set_storage(slot_key, Some(v.as_bytes().to_owned()));
-					}
-				}
-
-				if let Some(state_diff) = &state_override.state_diff {
+				} else if let Some(state_diff) = &state_override.state_diff {
+					// `stateDiff` always goes through the overlay: cost is bounded by the
+					// caller's payload on both legacy and v7+ runtimes.
 					for (k, v) in state_diff {
 						let mut slot_key = account_storage_key.clone();
 						slot_key.extend(blake2_128(k.as_bytes()));
@@ -1240,6 +1369,48 @@ where
 
 		Ok(overlayed_changes)
 	}
+}
+
+/// Validate caller-supplied state overrides.
+///
+/// Geth-parity: `state` and `stateDiff` are mutually exclusive for any given
+/// account. Rather than silently merging them (which would hide a caller bug),
+/// reject the whole request with a descriptive error.
+fn validate_state_overrides(
+	state_overrides: &Option<BTreeMap<H160, CallStateOverride>>,
+) -> RpcResult<()> {
+	if let Some(overrides) = state_overrides {
+		for (address, ov) in overrides {
+			if ov.state.is_some() && ov.state_diff.is_some() {
+				return Err(internal_err(format!(
+					"both `state` and `stateDiff` specified for account {address:?}; they are mutually exclusive"
+				)));
+			}
+		}
+	}
+	Ok(())
+}
+
+/// Build the runtime-API v7 state-override payload from the caller's overrides.
+///
+/// Only accounts that specify `state` (full replacement) are included. Each entry is
+/// `(address, slots)`; an empty `slots` vector represents a full storage wipe
+/// (the `"state": {}` case). `stateDiff` is handled separately via the overlay and
+/// must not be combined with `state` (rejected upstream).
+///
+/// Cost is bounded by the request payload size, not on-chain storage (Geth parity).
+fn build_state_override_payload(
+	state_overrides: &Option<BTreeMap<H160, CallStateOverride>>,
+) -> StateOverride {
+	let state_overrides = state_overrides.as_ref()?;
+	let mut payload = Vec::new();
+	for (address, ov) in state_overrides {
+		if let Some(state) = &ov.state {
+			let slots = state.iter().map(|(k, v)| (*k, *v)).collect::<Vec<_>>();
+			payload.push((*address, slots));
+		}
+	}
+	(!payload.is_empty()).then_some(payload)
 }
 
 pub fn error_on_execution_failure(reason: &ExitReason, data: &[u8]) -> RpcResult<()> {
@@ -1332,5 +1503,203 @@ fn fee_details(
 			max_priority_fee_per_gas: Some(U256::zero()),
 			fee_cap: U256::zero(),
 		}),
+	}
+}
+
+#[cfg(test)]
+mod state_override_tests {
+	use super::*;
+
+	fn addr(byte: u8) -> H160 {
+		H160::repeat_byte(byte)
+	}
+
+	fn slot(byte: u8) -> H256 {
+		H256::repeat_byte(byte)
+	}
+
+	fn override_with_state(pairs: &[(H256, H256)]) -> CallStateOverride {
+		CallStateOverride {
+			balance: None,
+			nonce: None,
+			code: None,
+			state: Some(pairs.iter().cloned().collect()),
+			state_diff: None,
+		}
+	}
+
+	fn override_with_state_diff(pairs: &[(H256, H256)]) -> CallStateOverride {
+		CallStateOverride {
+			balance: None,
+			nonce: None,
+			code: None,
+			state: None,
+			state_diff: Some(pairs.iter().cloned().collect()),
+		}
+	}
+
+	fn override_with_balance(balance: U256) -> CallStateOverride {
+		CallStateOverride {
+			balance: Some(balance),
+			nonce: None,
+			code: None,
+			state: None,
+			state_diff: None,
+		}
+	}
+
+	// ---------- validate_state_overrides ----------
+
+	#[test]
+	fn validate_accepts_none() {
+		assert!(validate_state_overrides(&None).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_empty_map() {
+		let overrides: BTreeMap<H160, CallStateOverride> = BTreeMap::new();
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_state_only() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_state_diff_only() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state_diff(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_accepts_balance_only() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(addr(0xaa), override_with_balance(U256::from(1_000u64)));
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	#[test]
+	fn validate_rejects_state_and_state_diff_on_same_account() {
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			CallStateOverride {
+				balance: None,
+				nonce: None,
+				code: None,
+				state: Some(
+					[(slot(0x01), H256::from_low_u64_be(0x22))]
+						.into_iter()
+						.collect(),
+				),
+				state_diff: Some(
+					[(slot(0x02), H256::from_low_u64_be(0x33))]
+						.into_iter()
+						.collect(),
+				),
+			},
+		);
+		let err = validate_state_overrides(&Some(overrides)).unwrap_err();
+		// Error message should name the offending account.
+		assert!(err.message().contains("mutually exclusive"));
+	}
+
+	#[test]
+	fn validate_accepts_state_on_one_account_state_diff_on_another() {
+		// Mutual exclusivity is per-account, not global.
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		overrides.insert(
+			addr(0xbb),
+			override_with_state_diff(&[(slot(0x01), H256::from_low_u64_be(0x33))]),
+		);
+		assert!(validate_state_overrides(&Some(overrides)).is_ok());
+	}
+
+	// ---------- build_state_override_payload ----------
+
+	#[test]
+	fn payload_none_for_no_overrides() {
+		assert!(build_state_override_payload(&None).is_none());
+	}
+
+	#[test]
+	fn payload_none_for_empty_overrides() {
+		let overrides: BTreeMap<H160, CallStateOverride> = BTreeMap::new();
+		assert!(build_state_override_payload(&Some(overrides)).is_none());
+	}
+
+	#[test]
+	fn payload_none_when_no_state_field_is_set() {
+		// balance/nonce/code/state_diff should NOT populate the v7 payload,
+		// since they're handled via the overlay path.
+		let mut overrides = BTreeMap::new();
+		overrides.insert(addr(0xaa), override_with_balance(U256::from(100u64)));
+		overrides.insert(
+			addr(0xbb),
+			override_with_state_diff(&[(slot(0x01), H256::from_low_u64_be(0x22))]),
+		);
+		assert!(build_state_override_payload(&Some(overrides)).is_none());
+	}
+
+	#[test]
+	fn payload_includes_only_accounts_with_state() {
+		let v1 = H256::from_low_u64_be(0x22);
+		let v2 = H256::from_low_u64_be(0x33);
+
+		let mut overrides = BTreeMap::new();
+		overrides.insert(
+			addr(0xaa),
+			override_with_state(&[(slot(0x01), v1), (slot(0x02), v2)]),
+		);
+		overrides.insert(
+			addr(0xbb),
+			override_with_state_diff(&[(slot(0x03), H256::from_low_u64_be(0x44))]),
+		);
+		overrides.insert(addr(0xcc), override_with_balance(U256::from(42u64)));
+
+		let payload = build_state_override_payload(&Some(overrides))
+			.expect("at least one `state` entry => Some");
+
+		assert_eq!(payload.len(), 1, "only 0xaa has a `state` override");
+		let (address, slots) = &payload[0];
+		assert_eq!(*address, addr(0xaa));
+		assert_eq!(slots.len(), 2);
+		// BTreeMap iteration order is deterministic by key.
+		assert_eq!(slots[0], (slot(0x01), v1));
+		assert_eq!(slots[1], (slot(0x02), v2));
+	}
+
+	#[test]
+	fn payload_empty_state_is_preserved_as_full_wipe() {
+		// Geth-parity: `"state": {}` wipes the account's storage. The payload
+		// must still include the address with an empty slot vec so the runtime
+		// can mark it as overridden with no surviving slots.
+		let mut overrides = BTreeMap::new();
+		overrides.insert(addr(0xaa), override_with_state(&[]));
+
+		let payload = build_state_override_payload(&Some(overrides))
+			.expect("empty-state entry still yields Some payload");
+
+		assert_eq!(payload.len(), 1);
+		let (address, slots) = &payload[0];
+		assert_eq!(*address, addr(0xaa));
+		assert!(
+			slots.is_empty(),
+			"empty `state` must produce an empty slot vec (full-wipe marker)"
+		);
 	}
 }

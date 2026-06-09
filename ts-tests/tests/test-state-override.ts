@@ -242,4 +242,72 @@ describeWithFrontier("Frontier RPC (StateOverride)", (context) => {
 		]);
 		expect(Web3.utils.hexToNumberString(result)).to.equal("35");
 	});
+
+	// Geth-parity: `"state": {}` marks the account as destructed-and-recreated
+	// with no surviving slots. Every pre-existing storage slot must read as
+	// zero during the call. This was previously the O(N on-chain slots) DoS
+	// vector; the runtime-API v7 path serves this payload in O(1).
+	it("empty `state: {}` wipes all slots for the overridden account", async function () {
+		const { result: before } = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				to: contractAddress,
+				data: contract.methods.availableFunds().encodeABI(),
+			},
+		]);
+		expect(Web3.utils.hexToNumberString(before)).to.equal("100");
+
+		const { result: wiped } = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				to: contractAddress,
+				data: contract.methods.availableFunds().encodeABI(),
+			},
+			"latest",
+			{
+				[contractAddress]: {
+					state: {},
+				},
+			},
+		]);
+		expect(Web3.utils.hexToNumberString(wiped)).to.equal("0");
+
+		// A subsequent call without the override must still see the original value.
+		const { result: after } = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				to: contractAddress,
+				data: contract.methods.availableFunds().encodeABI(),
+			},
+		]);
+		expect(Web3.utils.hexToNumberString(after)).to.equal("100");
+	});
+
+	// Geth-parity: `state` and `stateDiff` are mutually exclusive per-account.
+	// The RPC must reject the request rather than silently merging them.
+	it("rejects `state` and `stateDiff` set on the same account", async function () {
+		const availableFundsKey = Web3.utils.padLeft(Web3.utils.numberToHex(1), 64);
+		const newValue = Web3.utils.padLeft(Web3.utils.numberToHex(500), 64);
+
+		const response = await customRequest(context.web3, "eth_call", [
+			{
+				from: GENESIS_ACCOUNT,
+				to: contractAddress,
+				data: contract.methods.availableFunds().encodeABI(),
+			},
+			"latest",
+			{
+				[contractAddress]: {
+					state: {
+						[availableFundsKey]: newValue,
+					},
+					stateDiff: {
+						[availableFundsKey]: newValue,
+					},
+				},
+			},
+		]);
+		expect(response.error, "expected an error payload").to.exist;
+		expect(response.error.message).to.match(/mutually exclusive/i);
+	});
 });

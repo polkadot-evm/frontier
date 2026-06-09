@@ -126,20 +126,28 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 
 		expect(receipt.logs.length).to.be.eq(1);
 
-		// Create a filter for the created contract.
+		// Topic-only filter: `eth_getFilterChanges` starts at the journal cursor (no replay of
+		// retained history).
 		let createFilter = await customRequest(context.web3, "eth_newFilter", [
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
-				address: receipt.contractAddress,
 				topics: receipt.logs[0].topics,
 			},
 		]);
 		let poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
+		expect(poll.result.length).to.be.eq(0);
 
+		// A new canonical transition after the filter exists produces filter changes.
+		let tx2 = await sendTransaction(context);
+		await createAndFinalizeBlock(context.web3);
+		let receipt2 = await context.web3.eth.getTransactionReceipt(tx2.transactionHash);
+		expect(receipt2.logs.length).to.be.eq(1);
+
+		poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
 		expect(poll.result.length).to.be.eq(1);
-		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
-		expect(poll.result[0].topics).to.be.deep.eq(receipt.logs[0].topics);
+		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt2.contractAddress.toLowerCase());
+		expect(poll.result[0].topics).to.be.deep.eq(receipt2.logs[0].topics);
 
 		// A subsequent request must be empty.
 		poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
