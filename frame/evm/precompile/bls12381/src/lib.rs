@@ -217,8 +217,9 @@ fn decode_g2(input: &[u8], offset: usize) -> Result<G2Projective, PrecompileFail
 	}
 }
 
-fn ensure_g1_subgroup(p: G1Projective) -> Result<G1Projective, PrecompileFailure> {
-	if !p.into_affine().is_in_correct_subgroup_assuming_on_curve() {
+fn ensure_g1_subgroup(p: G1Projective) -> Result<G1Affine, PrecompileFailure> {
+	let p = p.into_affine();
+	if !p.is_in_correct_subgroup_assuming_on_curve() {
 		return Err(PrecompileFailure::Error {
 			exit_status: ExitError::Other("g1 point is not on correct subgroup".into()),
 		});
@@ -226,8 +227,9 @@ fn ensure_g1_subgroup(p: G1Projective) -> Result<G1Projective, PrecompileFailure
 	Ok(p)
 }
 
-fn ensure_g2_subgroup(p: G2Projective) -> Result<G2Projective, PrecompileFailure> {
-	if !p.into_affine().is_in_correct_subgroup_assuming_on_curve() {
+fn ensure_g2_subgroup(p: G2Projective) -> Result<G2Affine, PrecompileFailure> {
+	let p = p.into_affine();
+	if !p.is_in_correct_subgroup_assuming_on_curve() {
 		return Err(PrecompileFailure::Error {
 			exit_status: ExitError::Other("g2 point is not on correct subgroup".into()),
 		});
@@ -362,7 +364,7 @@ impl Precompile for Bls12381G1MultiExp {
 			let p = ensure_g1_subgroup(decode_g1(input, offset)?)?;
 			// Decode scalar value
 			let scalar = decode_fr(input, offset + 128);
-			points.push(p.into_affine());
+			points.push(p);
 			scalars.push(scalar);
 		}
 
@@ -509,7 +511,7 @@ impl Precompile for Bls12381G2MultiExp {
 			let p = ensure_g2_subgroup(decode_g2(input, offset)?)?;
 			// Decode scalar value
 			let scalar = decode_fr(input, offset + 256);
-			points.push(p.into_affine());
+			points.push(p);
 			scalars.push(scalar);
 		}
 
