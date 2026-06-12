@@ -29,7 +29,7 @@ use sp_core::H160;
 use sp_inherents::CreateInherentDataProviders;
 use sp_runtime::{traits::Block as BlockT, transaction_validity::TransactionSource};
 // Frontier
-use fc_rpc_core::types::*;
+use fc_rpc_core::types::{TransactionRequest, DEFAULT_MAX_TX_INPUT_BYTES, *};
 use fp_rpc::{ConvertTransaction, ConvertTransactionRuntimeApi, EthereumRuntimeRPCApi};
 
 use crate::{
@@ -157,6 +157,12 @@ where
 			_ => return Err(internal_err("invalid transaction parameters")),
 		};
 
+		// Validate size on the fully-populated message (after nonce, gas, fees, chain ID
+		// have been filled in) to accurately enforce the 128 KiB limit.
+		message
+			.validate_size()
+			.map_err(|msg| crate::err(jsonrpsee::types::error::INVALID_PARAMS_CODE, &msg, None))?;
+
 		let mut transaction = None;
 		for signer in &self.signers {
 			if signer.accounts().contains(&from) {
@@ -188,6 +194,19 @@ where
 		let bytes = bytes.into_vec();
 		if bytes.is_empty() {
 			return Err(internal_err("transaction data is empty"));
+		}
+
+		// Validate transaction size to prevent DoS attacks.
+		// This matches geth/reth pool validation which rejects transactions > 128 KB.
+		if bytes.len() > DEFAULT_MAX_TX_INPUT_BYTES {
+			return Err(crate::err(
+				jsonrpsee::types::error::INVALID_PARAMS_CODE,
+				format!(
+					"oversized data: transaction size {} exceeds limit {DEFAULT_MAX_TX_INPUT_BYTES}",
+					bytes.len()
+				),
+				None,
+			));
 		}
 
 		let transaction: ethereum::TransactionV3 =
