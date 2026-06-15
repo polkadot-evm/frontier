@@ -21,6 +21,7 @@ use std::panic;
 
 use super::*;
 use ethereum::{AuthorizationListItem, TransactionAction};
+use evm::{ExitError, ExitReason};
 use pallet_evm::{config_preludes::ChainId, AddressMapping};
 use sp_core::{H160, H256, U256};
 
@@ -830,12 +831,8 @@ fn eip7702_delegation_storage_meter_safety_check() {
 		let delegation_target =
 			H160::from_str("0x1000000000000000000000000000000000000001").unwrap();
 
-		let authorization = create_authorization_tuple(
-			ChainId::get(),
-			delegation_target,
-			0,
-			&bob.private_key,
-		);
+		let authorization =
+			create_authorization_tuple(ChainId::get(), delegation_target, 0, &bob.private_key);
 
 		// Enough gas for EVM execution (25_000 auth + 21_000 base), but the derived
 		// storage limit (49_000 / 366 = 133 bytes) cannot fit one delegation (135 bytes).
@@ -859,15 +856,20 @@ fn eip7702_delegation_storage_meter_safety_check() {
 			panic!("Expected Call info");
 		};
 
-		assert!(
-			call_info.exit_reason.is_error(),
-			"Transaction should be rejected when delegation storage exceeds the StorageMeter limit, got {:?}",
+		assert_eq!(
+			call_info.exit_reason,
+			ExitReason::Error(ExitError::OutOfGas),
+			"StorageMeter limit exceeded should surface as OutOfGas, not {:?}",
 			call_info.exit_reason
 		);
 
 		assert!(
 			pallet_evm::AccountCodes::<Test>::get(bob.address).is_empty(),
-			"Delegation should not persist after StorageMeter OOG"
+			"Delegation code should not persist after StorageMeter OOG"
+		);
+		assert!(
+			!pallet_evm::AccountCodesMetadata::<Test>::contains_key(bob.address),
+			"Delegation metadata should not persist after StorageMeter OOG"
 		);
 	});
 }
