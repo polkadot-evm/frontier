@@ -1359,9 +1359,25 @@ where
 			delegation.address()
 		);
 
-		let meta = crate::CodeMetadata::from_code(&delegation.to_bytes());
+		let code = delegation.to_bytes();
+		let code_len = code.len() as u64;
+
+		if let Some(weight_info) = self.weight_info.as_mut() {
+			weight_info.try_record_proof_size_or_fail(WRITE_PROOF_SIZE)?;
+		}
+
+		if let Some(storage_meter) = self.storage_meter.as_mut() {
+			let storage_growth = ACCOUNT_CODES_KEY_SIZE
+				.saturating_add(ACCOUNT_CODES_METADATA_PROOF_SIZE)
+				.saturating_add(code_len);
+			storage_meter
+				.record(storage_growth)
+				.map_err(|_| ExitError::OutOfGas)?;
+		}
+
+		let meta = crate::CodeMetadata::from_code(&code);
 		<AccountCodesMetadata<T>>::insert(authority, meta);
-		<AccountCodes<T>>::insert(authority, delegation.to_bytes());
+		<AccountCodes<T>>::insert(authority, code);
 		Ok(())
 	}
 

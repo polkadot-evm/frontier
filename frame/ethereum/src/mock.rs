@@ -89,7 +89,7 @@ impl FindAuthor<H160> for FindAuthorTruncated {
 
 parameter_types! {
 	pub const TransactionByteFee: u64 = 1;
-	pub const GasLimitStorageGrowthRatio: u64 = 0;
+	pub const GasLimitStorageGrowthRatio: u64 = 366;
 	pub TransactionGasLimit: Option<U256> = Some(fp_evm::MAX_TRANSACTION_GAS_LIMIT);
 	pub static AllowUnprotectedTxs: bool = false;
 	// Alice is allowed to create contracts via CREATE and CALL(CREATE)

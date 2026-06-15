@@ -28,7 +28,7 @@ fn eip1559_erc20_creation_unsigned_transaction() -> EIP1559UnsignedTransaction {
 		nonce: U256::zero(),
 		max_priority_fee_per_gas: U256::from(1),
 		max_fee_per_gas: U256::from(1),
-		gas_limit: U256::from(0x100000),
+		gas_limit: U256::from(0x300000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),
 		input: hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
