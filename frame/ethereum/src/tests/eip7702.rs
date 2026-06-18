@@ -21,6 +21,7 @@ use std::panic;
 
 use super::*;
 use ethereum::{AuthorizationListItem, TransactionAction};
+use evm::{ExitError, ExitReason};
 use pallet_evm::{config_preludes::ChainId, AddressMapping};
 use sp_core::{H160, H256, U256};
 
@@ -811,5 +812,64 @@ fn authorization_with_zero_address_delegation() {
 			"Call to EOA should return empty data"
 		);
 
+	});
+}
+
+/// Verifies that EIP-7702 delegation writes are accounted for by the StorageMeter.
+///
+/// With `GasLimitStorageGrowthRatio = 366` and `gas_limit = 49_000`:
+///   - `storage_limit = 49_000 / 366 = 133` bytes
+///   - One delegation writes 135 bytes, which exceeds the limit
+///   - EVM execution gas (21_000 base + 25_000 auth) still fits within 49_000
+#[test]
+fn eip7702_delegation_storage_meter_safety_check() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(3, 10_000_000_000_000);
+	let alice = &pairs[0];
+	let bob = &pairs[1];
+
+	ext.execute_with(|| {
+		let delegation_target =
+			H160::from_str("0x1000000000000000000000000000000000000001").unwrap();
+
+		let authorization =
+			create_authorization_tuple(ChainId::get(), delegation_target, 0, &bob.private_key);
+
+		// Enough gas for EVM execution (25_000 auth + 21_000 base), but the derived
+		// storage limit (49_000 / 366 = 133 bytes) cannot fit one delegation (135 bytes).
+		let gas_limit = U256::from(49_000);
+
+		let transaction = eip7702_transaction_unsigned(
+			U256::zero(),
+			gas_limit,
+			TransactionAction::Call(bob.address),
+			U256::zero(),
+			vec![],
+			vec![authorization],
+		)
+		.sign(&alice.private_key, Some(ChainId::get()));
+
+		let result = Ethereum::execute(alice.address, &transaction, None, None);
+		assert_ok!(&result);
+
+		let (_, _, info) = result.unwrap();
+		let CallOrCreateInfo::Call(call_info) = info else {
+			panic!("Expected Call info");
+		};
+
+		assert_eq!(
+			call_info.exit_reason,
+			ExitReason::Error(ExitError::OutOfGas),
+			"StorageMeter limit exceeded should surface as OutOfGas, not {:?}",
+			call_info.exit_reason
+		);
+
+		assert!(
+			pallet_evm::AccountCodes::<Test>::get(bob.address).is_empty(),
+			"Delegation code should not persist after StorageMeter OOG"
+		);
+		assert!(
+			!pallet_evm::AccountCodesMetadata::<Test>::contains_key(bob.address),
+			"Delegation metadata should not persist after StorageMeter OOG"
+		);
 	});
 }

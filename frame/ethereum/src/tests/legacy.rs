@@ -31,7 +31,7 @@ fn legacy_erc20_creation_unsigned_transaction() -> LegacyUnsignedTransaction {
 	LegacyUnsignedTransaction {
 		nonce: U256::zero(),
 		gas_price: U256::from(1),
-		gas_limit: U256::from(0x100000),
+		gas_limit: U256::from(0x300000),
 		action: ethereum::TransactionAction::Create,
 		value: U256::zero(),
 		input: hex::decode(ERC20_CONTRACT_BYTECODE.trim_end()).unwrap(),
