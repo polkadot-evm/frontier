@@ -32,13 +32,13 @@ If one uses Frontier, then one probably is here for the full Ethereum and EVM co
 
 ![Average transaction processing time](./optimization/transaction-processing-time.jpg)
 
-In 2021, Hongbo Zhang published a benchmark of historical Ethereum block benchmarks[^zhang]. The benchmark showed that the EVM engine normally spends around 70% of the time in **storage IO**, and 30% of the time in **VM**. This benchmark was echoed by many of the later works. For example, in 2024, Paradigm team released the `revmc` recompiler that in some cases archived more than 10x speed up in **VM execution**. Yet, after integrating it into Reth and syncing historical Ethereum blocks, they found only "O(1-10%)" improvements because most workloads aren't compute-heavy (but rather IO-heavy).
+In 2021, Hongbo Zhang published a benchmark of historical Ethereum block benchmarks[^zhang]. The benchmark showed that the EVM engine normally spends around 70% of the time in **storage IO**, and 30% of the time in **VM**. This benchmark was echoed by many of the later works. For example, in 2024, Paradigm team released the `revmc` recompiler that in some cases achieved more than 10x speedup in **VM execution**. Yet, after integrating it into Reth and syncing historical Ethereum blocks, they found only "O(1-10%)" improvements because most workloads aren't compute-heavy (but rather IO-heavy).
 
 Even inside VM execution, the major bottleneck is still **storage IO**. `SLOAD` opcode itself alone takes around 30% of the time in **VM execution**.
 
 All things considered, this means that **storage IO relates to around 80% of the performance**, while VM execution only relates to a minor portion, around 20% of the performance.
 
-## Focuse on storage IO
+## Focus on storage IO
 
 We therefore recommend that optimization is focused on **storage IO**, rather than **VM execution**. Consider saving unnecessary storage access in runtime. If certain storage values are always accessed together, consider combining them into a single storage item. Integrate [NOMT](https://www.rob.tech/blog/introducing-nomt/).
 
