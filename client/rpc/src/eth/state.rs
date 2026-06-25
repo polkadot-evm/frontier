@@ -58,13 +58,15 @@ where
 				.account_basic(hash, address)
 				.map_err(|err| internal_err(format!("Fetch account balances failed: {err}")))?
 				.balance)
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			Some(number_or_hash),
-		)
-		.await
-		{
+		} else {
+			let id = frontier_backend_client::native_block_id::<B, C>(
+				self.client.as_ref(),
+				self.backend.as_ref(),
+				Some(number_or_hash),
+			)
+			.await?
+			.ok_or_else(|| internal_err("Block not found"))?;
+
 			let substrate_hash = self
 				.client
 				.expect_block_hash_from_id(&id)
@@ -76,8 +78,6 @@ where
 				.account_basic(substrate_hash, address)
 				.map_err(|err| internal_err(format!("Fetch account balances failed: {err:?}")))?
 				.balance)
-		} else {
-			Ok(U256::zero())
 		}
 	}
 
@@ -94,13 +94,15 @@ where
 				.await
 				.map_err(|err| internal_err(format!("Create pending runtime api error: {err}")))?;
 			Ok(api.storage_at(hash, address, index).unwrap_or_default())
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			Some(number_or_hash),
-		)
-		.await
-		{
+		} else {
+			let id = frontier_backend_client::native_block_id::<B, C>(
+				self.client.as_ref(),
+				self.backend.as_ref(),
+				Some(number_or_hash),
+			)
+			.await?
+			.ok_or_else(|| internal_err("Block not found"))?;
+
 			let substrate_hash = self
 				.client
 				.expect_block_hash_from_id(&id)
@@ -109,8 +111,6 @@ where
 				.storage_override
 				.account_storage_at(substrate_hash, address, index)
 				.unwrap_or_default())
-		} else {
-			Ok(H256::default())
 		}
 	}
 
@@ -182,13 +182,15 @@ where
 				.account_code_at(hash, address)
 				.unwrap_or_default()
 				.into())
-		} else if let Ok(Some(id)) = frontier_backend_client::native_block_id::<B, C>(
-			self.client.as_ref(),
-			self.backend.as_ref(),
-			Some(number_or_hash),
-		)
-		.await
-		{
+		} else {
+			let id = frontier_backend_client::native_block_id::<B, C>(
+				self.client.as_ref(),
+				self.backend.as_ref(),
+				Some(number_or_hash),
+			)
+			.await?
+			.ok_or_else(|| internal_err("Block not found"))?;
+
 			let substrate_hash = self
 				.client
 				.expect_block_hash_from_id(&id)
@@ -198,8 +200,6 @@ where
 				.account_code_at(substrate_hash, address)
 				.unwrap_or_default()
 				.into())
-		} else {
-			Ok(Bytes(vec![]))
 		}
 	}
 }

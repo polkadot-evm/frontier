@@ -122,7 +122,8 @@ where
 				(hash, self.client.runtime_api())
 			}
 			None => {
-				// Not mapped in the db, assume pending.
+				// `native_block_id` only returns `None` for the `pending` block
+				// parameter; an unknown explicit hash is surfaced as an error.
 				let (hash, api) = self.pending_runtime_api().await.map_err(|err| {
 					internal_err(format!("Create pending runtime api error: {err}"))
 				})?;
@@ -612,7 +613,8 @@ where
 				(hash, client.runtime_api())
 			}
 			None => {
-				// Not mapped in the db, assume pending.
+				// `native_block_id` only returns `None` for the `pending` block
+				// parameter; an unknown explicit hash is surfaced as an error.
 				let (hash, api) = self.pending_runtime_api().await.map_err(|err| {
 					internal_err(format!("Create pending runtime api error: {err}"))
 				})?;
