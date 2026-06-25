@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Return a JSON-RPC error (EIP-1898 `-32001` "Resource not found") when an explicit block hash given as a block parameter cannot be resolved, instead of silently returning a zero/default/empty result.
 * Fix `estimate_gas`: ensure that provided gas limit it never larger than current block's gas limit
 * `EthPubSubApi::new` takes an additional `overrides` parameter.
 * Fix `estimate_gas` inaccurate issue.

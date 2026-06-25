@@ -59,7 +59,7 @@ pub use fc_rpc_core::{
 pub use fc_storage::{overrides::*, StorageOverrideHandler};
 
 pub mod frontier_backend_client {
-	use super::internal_err;
+	use super::{err, internal_err, RESOURCE_NOT_FOUND_CODE};
 
 	use ethereum_types::{H160, H256, U256};
 	use jsonrpsee::core::RpcResult;
@@ -200,10 +200,19 @@ pub mod frontier_backend_client {
 	{
 		Ok(match number.unwrap_or(BlockNumberOrHash::Latest) {
 			BlockNumberOrHash::Hash { hash, .. } => {
-				if let Ok(Some(hash)) = load_hash::<B, C>(client, backend, hash).await {
-					Some(BlockId::Hash(hash))
-				} else {
-					None
+				match load_hash::<B, C>(client, backend, hash).await? {
+					Some(hash) => Some(BlockId::Hash(hash)),
+					// EIP-1898: an explicit block hash that cannot be resolved must
+					// raise a JSON-RPC error (recommended code -32001 "Resource not
+					// found") rather than falling through to a zero/default/empty
+					// result or being treated as pending.
+					None => {
+						return Err(err(
+							RESOURCE_NOT_FOUND_CODE,
+							format!("block hash not found: {hash:?}"),
+							None,
+						))
+					}
 				}
 			}
 			BlockNumberOrHash::Num(number) => Some(BlockId::Number(number.unique_saturated_into())),
@@ -306,6 +315,11 @@ pub fn err<T: ToString>(
 		}),
 	)
 }
+
+/// EIP-1898 "Resource not found" error code. Returned when an explicit block
+/// hash supplied as a block parameter cannot be found.
+/// See <https://eips.ethereum.org/EIPS/eip-1898>.
+pub const RESOURCE_NOT_FOUND_CODE: i32 = -32001;
 
 pub fn internal_err<T: ToString>(message: T) -> jsonrpsee::types::error::ErrorObjectOwned {
 	err(jsonrpsee::types::error::INTERNAL_ERROR_CODE, message, None)

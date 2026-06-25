@@ -167,9 +167,24 @@ impl<'a> Visitor<'a> for BlockNumberOrHashVisitor {
 			"pending" => Ok(BlockNumberOrHash::Pending),
 			"safe" => Ok(BlockNumberOrHash::Safe),
 			"finalized" => Ok(BlockNumberOrHash::Finalized),
-			_ if value.starts_with("0x") => u64::from_str_radix(&value[2..], 16)
-				.map(BlockNumberOrHash::Num)
-				.map_err(|e| Error::custom(format!("Invalid block number: {e}"))),
+			_ if value.starts_with("0x") => {
+				let hex = &value[2..];
+				// A 64-hex-char (32-byte) value is a block hash, not a quantity. Geth and
+				// EIP-1898 tooling (e.g. op-deployer's forking layer) pass the block param as a
+				// bare hash string; accept it as a `Hash` instead of overflowing u64 parsing.
+				if hex.len() == 64 {
+					return hex
+						.parse::<H256>()
+						.map(|hash| BlockNumberOrHash::Hash {
+							hash,
+							require_canonical: false,
+						})
+						.map_err(|e| Error::custom(format!("Invalid block hash: {e}")));
+				}
+				u64::from_str_radix(hex, 16)
+					.map(BlockNumberOrHash::Num)
+					.map_err(|e| Error::custom(format!("Invalid block number: {e}")))
+			}
 			_ => value
 				.parse::<u64>()
 				.map(BlockNumberOrHash::Num)
@@ -231,5 +246,26 @@ mod tests {
 		assert_eq!(match_block_number(bn_tag_safe).unwrap(), 999);
 		assert_eq!(match_block_number(bn_tag_finalized).unwrap(), 999);
 		assert_eq!(match_block_number(bn_tag_pending).unwrap(), 1001);
+	}
+
+	#[test]
+	fn bare_block_hash_string_deserialize() {
+		// A 32-byte hex string passed as the block param (as op-deployer's forking layer does)
+		// must deserialize to the `Hash` variant, not overflow u64 parsing.
+		let raw = r#""0x608aef548e02aa13187172e750fd31bd05c39f6f253035a89d6c4882228f03ef""#;
+		let parsed: BlockNumberOrHash = serde_json::from_str(raw).unwrap();
+		match parsed {
+			BlockNumberOrHash::Hash {
+				hash,
+				require_canonical,
+			} => {
+				assert!(!require_canonical);
+				assert_eq!(
+					format!("{hash:#x}"),
+					"0x608aef548e02aa13187172e750fd31bd05c39f6f253035a89d6c4882228f03ef"
+				);
+			}
+			other => panic!("expected Hash variant, got {other:?}"),
+		}
 	}
 }
