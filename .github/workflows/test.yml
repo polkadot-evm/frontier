@@ -110,7 +110,7 @@ jobs:
         run: make build-release
 
       - name: Setup node.js
-        uses: actions/setup-node@v6
+        uses: actions/setup-node@v7
         with:
           node-version: 18
 
