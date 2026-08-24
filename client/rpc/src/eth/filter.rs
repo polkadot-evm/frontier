@@ -91,7 +91,8 @@ where
 	B: BlockT,
 	C: ProvideRuntimeApi<B>,
 	C::Api: EthereumRuntimeRPCApi<B>,
-	C: HeaderBackend<B> + 'static,
+	C: HeaderBackend<B> + StorageProvider<B, BE> + 'static,
+	BE: Backend<B> + 'static,
 	P: TransactionPool<Block = B, Hash = B::Hash> + 'static,
 {
 	/// Returns the latest indexed block number.
@@ -112,6 +113,45 @@ where
 			));
 		};
 		Ok(number)
+	}
+
+	/// Collect matching logs from `from_number..=to_number` by scanning blocks.
+	///
+	/// The indexed path is the same one `eth_getLogs` takes; the fallback walks the
+	/// blocks directly. Shared with the first poll of a log filter, which cannot be
+	/// served from the journal.
+	async fn scan_range_logs(
+		&self,
+		filter: &Filter,
+		from_number: NumberFor<B>,
+		to_number: NumberFor<B>,
+	) -> RpcResult<Vec<Log>> {
+		if from_number > to_number {
+			return Ok(Vec::new());
+		}
+
+		if self.backend.is_indexed() {
+			filter_range_logs_indexed(
+				self.client.as_ref(),
+				self.backend.log_indexer(),
+				&self.block_data_cache,
+				self.max_past_logs,
+				filter,
+				from_number,
+				to_number,
+			)
+			.await
+		} else {
+			filter_range_logs(
+				self.client.as_ref(),
+				&self.block_data_cache,
+				self.max_past_logs,
+				filter,
+				from_number,
+				to_number,
+			)
+			.await
+		}
 	}
 
 	async fn create_filter(&self, filter_type: FilterType) -> RpcResult<U256> {
@@ -187,6 +227,7 @@ where
 					filter_type,
 					at_block: best_number,
 					pending_transaction_hashes,
+					log_scan_done: false,
 				},
 			);
 			Ok(key)
@@ -240,6 +281,7 @@ where
 				filter: Filter,
 				cursor: u64,
 				last_poll_block: u64,
+				first_poll_at: Option<u64>,
 			},
 			Error(jsonrpsee::types::ErrorObjectOwned),
 		}
@@ -267,6 +309,7 @@ where
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: HashSet::new(),
+								log_scan_done: pool_item.log_scan_done,
 							},
 						);
 
@@ -299,6 +342,7 @@ where
 								filter_type: pool_item.filter_type.clone(),
 								at_block: pool_item.at_block,
 								pending_transaction_hashes: current_hashes.clone(),
+								log_scan_done: pool_item.log_scan_done,
 							},
 						);
 
@@ -313,10 +357,13 @@ where
 					FilterType::Log(filter) => {
 						let cursor = pool_item.last_log_journal_seq.unwrap_or(0);
 						let last_poll_block = pool_item.last_poll.to_min_block_num().unwrap_or(0);
+						let first_poll_at =
+							(!pool_item.log_scan_done).then_some(pool_item.at_block);
 						FuturePath::Log {
 							filter: filter.clone(),
 							cursor,
 							last_poll_block,
+							first_poll_at,
 						}
 					}
 				}
@@ -353,6 +400,7 @@ where
 				filter,
 				cursor,
 				last_poll_block,
+				first_poll_at,
 			} => {
 				let latest_indexed = self.latest_indexed_block_number().await?;
 				let latest_u64: u64 = latest_indexed.unique_saturated_into();
@@ -363,7 +411,7 @@ where
 					)));
 				}
 
-				let params = FilteredParams::new(filter);
+				let params = FilteredParams::new(filter.clone());
 				let (entries, next_cursor) = match self.logs_journal.snapshot_since(cursor) {
 					Ok(snapshot) => snapshot,
 					Err(err) => {
@@ -375,8 +423,57 @@ where
 				};
 
 				let mut logs = Vec::new();
+
+				// The journal starts at the cursor taken when the filter was created,
+				// and it is filled by a background task — so a block imported just
+				// before creation may land in the journal after it, leaving its logs
+				// on neither side. It also cannot answer for `fromBlock` in the past,
+				// which it never saw. Scan the requested range once, on the first
+				// poll, and let the journal serve the increments after that.
+				let scanned_through = match first_poll_at {
+					Some(at_block) => {
+						let scan_ceiling = at_block.min(latest_u64);
+						let to_number = filter
+							.to_block
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(scan_ceiling)
+							.min(scan_ceiling);
+						let from_number = filter
+							.from_block
+							.and_then(|v| v.to_min_block_num())
+							.map(|s| s.unique_saturated_into())
+							.unwrap_or(at_block);
+
+						logs.extend(
+							self.scan_range_logs(
+								&filter,
+								from_number.unique_saturated_into(),
+								to_number.unique_saturated_into(),
+							)
+							.await?,
+						);
+						Some(to_number)
+					}
+					None => None,
+				};
+
 				for entry in entries {
+					let is_reorg = entry.logs.iter().any(|log| log.removed);
+
 					for log in entry.logs.iter() {
+						// Skip what the scan above already returned: a block can sit in
+						// both, since the journal ingests asynchronously and may have
+						// picked up a block the scan also covered.
+						if !is_reorg {
+							if let (Some(scanned_through), Some(block_number)) =
+								(scanned_through, log.block_number)
+							{
+								if block_number <= U256::from(scanned_through) {
+									continue;
+								}
+							}
+						}
 						if log_matches_filter(&params, log, true) {
 							logs.push(log.clone());
 						}
@@ -384,16 +481,21 @@ where
 				}
 
 				if logs.len() as u32 > max_past_logs {
+					if let Ok(locked) = &mut self.filter_pool.lock() {
+						let _ = locked.remove(&key);
+					}
 					return Err(internal_err(format!(
-						"query returned more than {max_past_logs} results",
+						"query returned more than {max_past_logs} results; recreate the filter over a narrower range",
 					)));
 				}
 
-				if let Ok(locked) = &mut self.filter_pool.lock() {
-					if let Some(pool_item) = locked.get_mut(&key) {
-						pool_item.last_log_journal_seq = Some(next_cursor);
-						pool_item.last_poll = BlockNumberOrHash::Num(latest_u64);
-					}
+				let Ok(locked) = &mut self.filter_pool.lock() else {
+					return Err(internal_err("Filter pool is not available."));
+				};
+				if let Some(pool_item) = locked.get_mut(&key) {
+					pool_item.last_log_journal_seq = Some(next_cursor);
+					pool_item.last_poll = BlockNumberOrHash::Num(latest_u64);
+					pool_item.log_scan_done = true;
 				}
 
 				Ok(FilterChanges::Logs(logs))
@@ -424,11 +526,6 @@ where
 			}
 		})();
 
-		let client = Arc::clone(&self.client);
-		let backend = Arc::clone(&self.backend);
-		let block_data_cache = Arc::clone(&self.block_data_cache);
-		let max_past_logs = self.max_past_logs;
-
 		let filter = filter_result?;
 
 		// Use latest indexed block to ensure consistency with other RPCs.
@@ -457,29 +554,8 @@ where
 			)));
 		}
 
-		let logs = if backend.is_indexed() {
-			filter_range_logs_indexed(
-				client.as_ref(),
-				backend.log_indexer(),
-				&block_data_cache,
-				max_past_logs,
-				&filter,
-				from_number,
-				current_number,
-			)
-			.await?
-		} else {
-			filter_range_logs(
-				client.as_ref(),
-				&block_data_cache,
-				max_past_logs,
-				&filter,
-				from_number,
-				current_number,
-			)
-			.await?
-		};
-		Ok(logs)
+		self.scan_range_logs(&filter, from_number, current_number)
+			.await
 	}
 
 	fn uninstall_filter(&self, index: Index) -> RpcResult<bool> {

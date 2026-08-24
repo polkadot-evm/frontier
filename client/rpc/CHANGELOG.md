@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+* Fix log filters ignoring `fromBlock`: the first `eth_getFilterChanges` poll now scans the requested range instead of reporting only what the logs journal received after the filter was created.
 * Fix `estimate_gas`: ensure that provided gas limit it never larger than current block's gas limit
 * `EthPubSubApi::new` takes an additional `overrides` parameter.
 * Fix `estimate_gas` inaccurate issue.

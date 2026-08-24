@@ -126,31 +126,57 @@ describeWithFrontier("Frontier RPC (EthFilterApi)", (context) => {
 
 		expect(receipt.logs.length).to.be.eq(1);
 
-		// Topic-only filter: `eth_getFilterChanges` starts at the journal cursor (no replay of
-		// retained history).
+		// `fromBlock` is honoured: the first poll reports matching logs already on
+		// chain, which the journal alone cannot supply — it only holds what arrived
+		// after the filter was created.
+		//
+		// Scoped to this contract: earlier steps deploy the same contract, so a
+		// topic-only filter reaching back to genesis would match those too.
 		let createFilter = await customRequest(context.web3, "eth_newFilter", [
 			{
 				fromBlock: "0x0",
 				toBlock: "latest",
+				address: receipt.contractAddress,
 				topics: receipt.logs[0].topics,
 			},
 		]);
 		let poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
+		expect(poll.result.length).to.be.eq(1);
+		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt.contractAddress.toLowerCase());
+		expect(poll.result[0].topics).to.be.deep.eq(receipt.logs[0].topics);
+
+		// The scan runs once; a second poll with no new block reports nothing.
+		poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
 		expect(poll.result.length).to.be.eq(0);
 
-		// A new canonical transition after the filter exists produces filter changes.
+		// A new canonical transition after the filter exists produces filter changes,
+		// supplied by the journal. Seal an empty block first so `latest` is past the
+		// deployment above: the first poll scans that one block, and it must be bare
+		// for the assertion below to say anything about the journal.
+		await createAndFinalizeBlock(context.web3);
+
+		let liveFilter = await customRequest(context.web3, "eth_newFilter", [
+			{
+				fromBlock: "latest",
+				toBlock: "latest",
+				topics: receipt.logs[0].topics,
+			},
+		]);
+		poll = await customRequest(context.web3, "eth_getFilterChanges", [liveFilter.result]);
+		expect(poll.result.length).to.be.eq(0);
+
 		let tx2 = await sendTransaction(context);
 		await createAndFinalizeBlock(context.web3);
 		let receipt2 = await context.web3.eth.getTransactionReceipt(tx2.transactionHash);
 		expect(receipt2.logs.length).to.be.eq(1);
 
-		poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
+		poll = await customRequest(context.web3, "eth_getFilterChanges", [liveFilter.result]);
 		expect(poll.result.length).to.be.eq(1);
 		expect(poll.result[0].address.toLowerCase()).to.be.eq(receipt2.contractAddress.toLowerCase());
 		expect(poll.result[0].topics).to.be.deep.eq(receipt2.logs[0].topics);
 
 		// A subsequent request must be empty.
-		poll = await customRequest(context.web3, "eth_getFilterChanges", [createFilter.result]);
+		poll = await customRequest(context.web3, "eth_getFilterChanges", [liveFilter.result]);
 		expect(poll.result.length).to.be.eq(0);
 	});
 
