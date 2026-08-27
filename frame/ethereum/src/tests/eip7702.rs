@@ -873,3 +873,47 @@ fn eip7702_delegation_storage_meter_safety_check() {
 		);
 	});
 }
+
+/// Layer 3 (execution dispatch guard): a type-4 SetCode transaction whose destination is a
+/// contract creation (empty `to`) must never reach the create arm.
+///
+/// `Ethereum::execute` must return an error and the sender must NOT receive a delegation
+/// designator.
+#[test]
+fn eip7702_create_shape_is_rejected_at_execution() {
+	let (pairs, mut ext) = new_test_ext_with_initial_balance(2, 10_000_000_000_000);
+	let alice = &pairs[0];
+
+	ext.execute_with(|| {
+		// A self-sponsored authorization (Alice authorizes her own address). The exact
+		// target/nonce is irrelevant because the guard fires before any auth is applied.
+		let authorization =
+			create_authorization_tuple(ChainId::get(), alice.address, 1, &alice.private_key);
+
+		// Build a type-4 transaction with a CREATE destination (the forbidden shape).
+		let transaction = eip7702_transaction_unsigned(
+			U256::zero(),
+			U256::from(0x100000),
+			TransactionAction::Create, // <-- empty `to`
+			U256::zero(),
+			vec![],
+			vec![authorization],
+		)
+		.sign(&alice.private_key, Some(ChainId::get()));
+
+		let result = Ethereum::execute(alice.address, &transaction, None, None);
+
+		// The dispatch guard must reject it.
+		assert!(
+			result.is_err(),
+			"type-4 SetCode transaction with an empty `to` (CREATE) must be rejected at execution"
+		);
+
+		// And crucially, no delegation may have been applied to the sender.
+		let alice_code = pallet_evm::AccountCodes::<Test>::get(alice.address);
+		assert!(
+			alice_code.is_empty(),
+			"no delegation designator may be written when a type-4 CREATE is rejected"
+		);
+	});
+}

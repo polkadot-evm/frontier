@@ -626,6 +626,10 @@ pub mod pallet {
 	}
 
 	impl<T> From<TransactionValidationError> for Error<T> {
+		/// Map a [`TransactionValidationError`] onto the closest pallet [`Error`] variant.
+		///
+		/// Validation errors that have no dedicated variant here — including the EIP-7702
+		/// authorization-list errors — collapse to [`Error::Undefined`].
 		fn from(validation_error: TransactionValidationError) -> Self {
 			match validation_error {
 				TransactionValidationError::GasLimitTooLow => Error::<T>::GasLimitTooLow,
@@ -645,6 +649,7 @@ pub mod pallet {
 				TransactionValidationError::TransactionGasLimitExceedsCap => {
 					Error::<T>::TransactionGasLimitExceedsCap
 				}
+				TransactionValidationError::InvalidAuthorizationCreate => Error::<T>::Undefined,
 				TransactionValidationError::UnknownError => Error::<T>::Undefined,
 			}
 		}
