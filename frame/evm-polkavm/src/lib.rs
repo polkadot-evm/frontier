@@ -59,7 +59,7 @@ impl<Inner: PrecompileSet, T: Config> PrecompileSet for PolkaVmSet<Inner, T> {
 	) -> Option<Result<PrecompileOutput, PrecompileFailure>> {
 		let code_address = handle.code_address();
 		let code = pallet_evm::AccountCodes::<T>::get(code_address);
-		if code[0..8] == vm::PREFIX {
+		if vm::has_polkavm_prefix(&code) {
 			let mut run = || {
 				let prepared_call: vm::PreparedCall<'_, T, _> = vm::PreparedCall::load(handle)?;
 				prepared_call.call()
@@ -90,7 +90,7 @@ impl<Inner: PrecompileSet, T: Config> PrecompileSet for PolkaVmSet<Inner, T> {
 
 	fn is_precompile(&self, address: H160, remaining_gas: u64) -> IsPrecompileResult {
 		let code = pallet_evm::AccountCodes::<T>::get(address);
-		if code[0..8] == vm::PREFIX {
+		if vm::has_polkavm_prefix(&code) {
 			IsPrecompileResult::Answer {
 				is_precompile: true,
 				extra_cost: 0,
@@ -150,7 +150,7 @@ pub mod pallet {
 				return Err(Error::<T>::MaxCodeSizeExceeded.into());
 			}
 
-			if code[0..8] != crate::vm::PREFIX {
+			if !crate::vm::has_polkavm_prefix(&code) {
 				return Err(Error::<T>::NotPolkaVmContract.into());
 			}
 

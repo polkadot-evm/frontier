@@ -18,10 +18,9 @@
 #![allow(unused_variables)]
 
 use crate::{
-	host::{CallFlags, HostFn, HostFnImpl, Result, StorageFlags},
-	pack_hi_lo, ReturnFlags,
+	host::{HostFn, HostFnImpl},
+	ReturnFlags,
 };
-use pallet_revive_proc_macro::unstable_hostfn;
 
 mod sys {
 	use crate::ReturnCode;
@@ -52,29 +51,6 @@ mod sys {
 			data_ptr: *const u8,
 			data_len: u32,
 		);
-	}
-}
-
-#[inline(always)]
-fn extract_from_slice(output: &mut &mut [u8], new_len: usize) {
-	debug_assert!(new_len <= output.len());
-	let tmp = core::mem::take(output);
-	*output = &mut tmp[..new_len];
-}
-
-#[inline(always)]
-fn ptr_len_or_sentinel(data: &mut Option<&mut &mut [u8]>) -> (*mut u8, u32) {
-	match data {
-		Some(ref mut data) => (data.as_mut_ptr(), data.len() as _),
-		None => (crate::SENTINEL as _, 0),
-	}
-}
-
-#[inline(always)]
-fn ptr_or_sentinel(data: &Option<&[u8; 32]>) -> *const u8 {
-	match data {
-		Some(ref data) => data.as_ptr(),
-		None => crate::SENTINEL as _,
 	}
 }
 

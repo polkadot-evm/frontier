@@ -29,6 +29,10 @@ pub const PAGE_SIZE: u32 = 4 * 1024;
 pub const SENTINEL: u32 = u32::MAX;
 pub const LOG_TARGET: &str = "runtime::evm::polkavm";
 
+pub fn has_polkavm_prefix(code: &[u8]) -> bool {
+	code.get(0..PREFIX.len()) == Some(&PREFIX[..])
+}
+
 fn code_load_weight<T: Config>(size: u32) -> Weight {
 	<T as Config>::WeightInfo::call_with_code_per_byte(size)
 }
@@ -114,5 +118,35 @@ impl<'a, T: Config, H: PrecompileHandle> PreparedCall<'a, T, H> {
 		};
 		self.runtime.charge_polkavm_gas(&mut self.instance)?;
 		exec_result
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	/// The prefix check must tolerate code shorter than the prefix.
+	///
+	/// `pallet_evm::AccountCodes::get` returns an empty `Vec` for every address without
+	/// contract code, and `PolkaVmSet::execute` consults it on each call, so indexing
+	/// with `code[0..8]` panics on the most ordinary path there is — a call to a plain
+	/// account.
+	///
+	/// This calls `has_polkavm_prefix` itself, the helper `execute`, `is_precompile` and
+	/// `create_polkavm` all go through. Re-stating the predicate here instead would let
+	/// this test stay green while a production path regressed.
+	#[test]
+	fn prefix_check_tolerates_code_shorter_than_the_prefix() {
+		assert!(!has_polkavm_prefix(&[]));
+		assert!(!has_polkavm_prefix(&PREFIX[..7]));
+		assert!(has_polkavm_prefix(&PREFIX));
+
+		let mut with_body = PREFIX.to_vec();
+		with_body.extend_from_slice(b"blob");
+		assert!(has_polkavm_prefix(&with_body));
+
+		let mut wrong = PREFIX;
+		wrong[0] = 0x00;
+		assert!(!has_polkavm_prefix(&wrong));
 	}
 }
