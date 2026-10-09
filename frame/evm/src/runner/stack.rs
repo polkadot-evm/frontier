@@ -34,10 +34,7 @@ use evm::{
 use cumulus_primitives_storage_weight_reclaim::get_proof_size;
 // Substrate
 use frame_support::{
-	traits::{
-		tokens::{currency::Currency, ExistenceRequirement},
-		Get, Time,
-	},
+	traits::{Get, Time},
 	weights::Weight,
 };
 use sp_core::{H160, H256, U256};
@@ -1394,14 +1391,13 @@ where
 	fn transfer(&mut self, transfer: Transfer) -> Result<(), ExitError> {
 		let source = T::AddressMapping::into_account_id(transfer.source);
 		let target = T::AddressMapping::into_account_id(transfer.target);
-		T::Currency::transfer(
+		Pallet::<T>::transfer_balance(
 			&source,
 			&target,
 			transfer
 				.value
 				.try_into()
 				.map_err(|_| ExitError::OutOfFund)?,
-			ExistenceRequirement::AllowDeath,
 		)
 		.map_err(|_| ExitError::OutOfFund)
 	}

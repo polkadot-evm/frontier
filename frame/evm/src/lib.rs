@@ -80,7 +80,7 @@ use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	storage::KeyPrefixIterator,
 	traits::{
 		fungible::{Balanced, Credit, Debt},
@@ -307,14 +307,7 @@ pub mod pallet {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
-			T::Currency::transfer(
-				&address_account_id,
-				&destination,
-				value,
-				ExistenceRequirement::AllowDeath,
-			)?;
-
-			Ok(())
+			Pallet::<T>::transfer_balance(&address_account_id, &destination, value)
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
@@ -1061,6 +1054,21 @@ impl<T: Config> Pallet<T> {
 			},
 			T::DbWeight::get().reads(2),
 		)
+	}
+
+	/// Transfer `value` from `source` to `dest`, allowing `source` to be reaped.
+	///
+	/// Zero-value and self transfers are no-ops, as in `pallet_balances`.
+	pub fn transfer_balance(
+		source: &AccountIdOf<T>,
+		dest: &AccountIdOf<T>,
+		value: BalanceOf<T>,
+	) -> DispatchResult {
+		if value.is_zero() || source == dest {
+			return Ok(());
+		}
+
+		T::Currency::transfer(source, dest, value, ExistenceRequirement::AllowDeath)
 	}
 
 	/// Get the author using the FindAuthor trait.
