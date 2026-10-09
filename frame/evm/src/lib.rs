@@ -130,7 +130,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Account info provider.
 		#[pallet::no_default]
-		type AccountProvider: AccountProvider;
+		type AccountProvider: AccountProvider<AccountId: Eq>;
 
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
