@@ -24,7 +24,7 @@ benchmarks! {
 		let caller = frame_benchmarking::whitelisted_caller::<T::AccountId>();
 		let from = H160::from_low_u64_le(0);
 		let from_account_id = T::AddressMapping::into_account_id(from);
-		CurrencyOf::<T>::make_free_balance_be(&from_account_id, 100_000u32.into());
+		CurrencyOf::<T>::set_balance(&from_account_id, 100_000u32.into());
 	}: {
 		// Withdraw should always fail with `EnsureAddressNever` WithdrawOrigin.
 		let result = Pallet::<T>::withdraw(RawOrigin::Signed(caller.clone()).into(), from, 100_000u32.into());

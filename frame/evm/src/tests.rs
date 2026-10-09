@@ -1270,6 +1270,79 @@ fn reducible_balance() {
 }
 
 #[test]
+fn genesis_balances_are_credited_in_full_on_issuance_overflow() {
+	new_test_ext().execute_with(|| {
+		// `new_test_ext` endows these accounts with `U256::MAX`, i.e. `u64::MAX` in this mock.
+		for address in [
+			H160::default(),
+			H160::from([4u8; 20]),
+			H160::from([5u8; 20]),
+			H160::from([6u8; 20]),
+		] {
+			let account_id = <Test as Config>::AddressMapping::into_account_id(address);
+			assert_eq!(Balances::free_balance(&account_id), u64::MAX);
+		}
+	});
+}
+
+#[test]
+fn zero_value_call_emits_no_balance_transfer() {
+	new_test_ext().execute_with(|| {
+		// Events are not deposited at genesis.
+		System::set_block_number(1);
+		let target = H160::from_str("1000000000000000000000000000000000000001").unwrap();
+		assert_ok!(EVM::call(
+			RuntimeOrigin::root(),
+			H160::default(),
+			target,
+			Vec::new(),
+			U256::zero(),
+			1000000,
+			U256::from(1_000_000_000),
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+		));
+		System::assert_has_event(RuntimeEvent::EVM(Event::Executed { address: target }));
+		// Every call transfers its value, even a zero one. That must not emit `Transfer`.
+		assert!(!System::events().iter().any(|record| matches!(
+			record.event,
+			RuntimeEvent::Balances(pallet_balances::Event::Transfer { .. })
+		)));
+	});
+}
+
+#[test]
+fn self_call_with_value_above_balance_succeeds() {
+	new_test_ext().execute_with(|| {
+		let account = H160::repeat_byte(0xaa);
+		assert_eq!(EVM::account_basic(&account).0.balance, U256::zero());
+
+		let info = <Test as Config>::Runner::call(
+			account,
+			account,
+			Vec::new(),
+			U256::from(1),
+			1000000,
+			None,
+			None,
+			None,
+			Vec::new(),
+			Vec::new(),
+			false, // non-transactional without gas price: the balance is not checked upfront
+			true,  // must be validated
+			None,
+			None,
+			None,
+			&<Test as Config>::config().clone(),
+		)
+		.expect("call is valid");
+		assert_eq!(info.exit_reason, ExitReason::Succeed(ExitSucceed::Stopped));
+	});
+}
+
+#[test]
 fn author_should_get_tip() {
 	new_test_ext().execute_with(|| {
 		let author = EVM::find_author();

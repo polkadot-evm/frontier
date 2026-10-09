@@ -80,10 +80,10 @@ use scale_codec::{Decode, DecodeWithMemTracking, Encode, MaxEncodedLen};
 use scale_info::TypeInfo;
 // Substrate
 use frame_support::{
-	dispatch::{DispatchResultWithPostInfo, Pays, PostDispatchInfo},
+	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	storage::KeyPrefixIterator,
 	traits::{
-		fungible::{Balanced, Credit, Debt},
+		fungible::{Balanced, Credit, Debt, Mutate},
 		tokens::{
 			currency::Currency,
 			fungible::Inspect,
@@ -130,7 +130,7 @@ pub mod pallet {
 	pub trait Config: frame_system::Config {
 		/// Account info provider.
 		#[pallet::no_default]
-		type AccountProvider: AccountProvider;
+		type AccountProvider: AccountProvider<AccountId: Eq>;
 
 		/// Calculator for current gas price.
 		type FeeCalculator: FeeCalculator;
@@ -166,8 +166,10 @@ pub mod pallet {
 		type AddressMapping: AddressMapping<AccountIdOf<Self>>;
 
 		/// Currency type for withdraw and balance storage.
+		///
+		/// E.g. `pallet_balances` or `ItemOf` over `pallet_assets`.
 		#[pallet::no_default]
-		type Currency: Currency<AccountIdOf<Self>> + Inspect<AccountIdOf<Self>>;
+		type Currency: Mutate<AccountIdOf<Self>> + Balanced<AccountIdOf<Self>>;
 
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
@@ -307,14 +309,7 @@ pub mod pallet {
 			let destination = T::WithdrawOrigin::ensure_address_origin(&address, origin)?;
 			let address_account_id = T::AddressMapping::into_account_id(address);
 
-			T::Currency::transfer(
-				&address_account_id,
-				&destination,
-				value,
-				ExistenceRequirement::AllowDeath,
-			)?;
-
-			Ok(())
+			Pallet::<T>::transfer_balance(&address_account_id, &destination, value)
 		}
 
 		/// Issue an EVM call operation. This is similar to a message call transaction in Ethereum.
@@ -678,9 +673,12 @@ pub mod pallet {
 					T::AccountProvider::inc_account_nonce(&account_id);
 				}
 
-				let _ = T::Currency::deposit_creating(
+				// `Balanced::deposit` saturates total issuance when the debt is dropped, like
+				// `Currency::deposit_creating` (unlike `Mutate::mint_into`, which fails on overflow).
+				let _ = T::Currency::deposit(
 					&account_id,
 					account.balance.unique_saturated_into(),
+					Precision::Exact,
 				);
 
 				let _ = Pallet::<T>::create_account(*address, account.code.clone(), None);
@@ -708,7 +706,7 @@ pub mod pallet {
 pub type AccountIdOf<T> = <<T as Config>::AccountProvider as AccountProvider>::AccountId;
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
+pub type BalanceOf<T> = <<T as Config>::Currency as Inspect<AccountIdOf<T>>>::Balance;
 
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> = <C as Currency<AccountIdOf<T>>>::NegativeImbalance;
@@ -1063,6 +1061,22 @@ impl<T: Config> Pallet<T> {
 		)
 	}
 
+	/// Transfer `value` from `source` to `dest`, allowing `source` to be reaped.
+	///
+	/// Zero-value and self transfers are no-ops, as in `pallet_balances`.
+	pub fn transfer_balance(
+		source: &AccountIdOf<T>,
+		dest: &AccountIdOf<T>,
+		value: BalanceOf<T>,
+	) -> DispatchResult {
+		if value.is_zero() || source == dest {
+			return Ok(());
+		}
+
+		T::Currency::transfer(source, dest, value, Preservation::Expendable)?;
+		Ok(())
+	}
+
 	/// Get the author using the FindAuthor trait.
 	pub fn find_author() -> H160 {
 		let digest = <frame_system::Pallet<T>>::digest();
@@ -1269,8 +1283,7 @@ where
 impl<T> OnChargeEVMTransaction<T> for ()
 where
 	T: Config,
-	T::Currency: Balanced<AccountIdOf<T>>,
-	U256: UniqueSaturatedInto<<<T as Config>::Currency as Inspect<AccountIdOf<T>>>::Balance>,
+	U256: UniqueSaturatedInto<BalanceOf<T>>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<Credit<AccountIdOf<T>, T::Currency>>;
