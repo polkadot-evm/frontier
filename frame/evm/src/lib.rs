@@ -83,7 +83,7 @@ use frame_support::{
 	dispatch::{DispatchResult, DispatchResultWithPostInfo, Pays, PostDispatchInfo},
 	storage::KeyPrefixIterator,
 	traits::{
-		fungible::{Balanced, Credit, Debt},
+		fungible::{Balanced, Credit, Debt, Mutate},
 		tokens::{
 			currency::Currency,
 			fungible::Inspect,
@@ -166,8 +166,10 @@ pub mod pallet {
 		type AddressMapping: AddressMapping<AccountIdOf<Self>>;
 
 		/// Currency type for withdraw and balance storage.
+		///
+		/// E.g. `pallet_balances` or `ItemOf` over `pallet_assets`.
 		#[pallet::no_default]
-		type Currency: Currency<AccountIdOf<Self>> + Inspect<AccountIdOf<Self>>;
+		type Currency: Mutate<AccountIdOf<Self>> + Balanced<AccountIdOf<Self>>;
 
 		/// Precompiles associated with this EVM engine.
 		type PrecompilesType: PrecompileSet;
@@ -671,9 +673,12 @@ pub mod pallet {
 					T::AccountProvider::inc_account_nonce(&account_id);
 				}
 
-				let _ = T::Currency::deposit_creating(
+				// `Balanced::deposit` saturates total issuance when the debt is dropped, like
+				// `Currency::deposit_creating` (unlike `Mutate::mint_into`, which fails on overflow).
+				let _ = T::Currency::deposit(
 					&account_id,
 					account.balance.unique_saturated_into(),
+					Precision::Exact,
 				);
 
 				let _ = Pallet::<T>::create_account(*address, account.code.clone(), None);
@@ -701,7 +706,7 @@ pub mod pallet {
 pub type AccountIdOf<T> = <<T as Config>::AccountProvider as AccountProvider>::AccountId;
 
 /// Type alias for currency balance.
-pub type BalanceOf<T> = <<T as Config>::Currency as Currency<AccountIdOf<T>>>::Balance;
+pub type BalanceOf<T> = <<T as Config>::Currency as Inspect<AccountIdOf<T>>>::Balance;
 
 /// Type alias for negative imbalance during fees
 type NegativeImbalanceOf<C, T> = <C as Currency<AccountIdOf<T>>>::NegativeImbalance;
@@ -1068,7 +1073,8 @@ impl<T: Config> Pallet<T> {
 			return Ok(());
 		}
 
-		T::Currency::transfer(source, dest, value, ExistenceRequirement::AllowDeath)
+		T::Currency::transfer(source, dest, value, Preservation::Expendable)?;
+		Ok(())
 	}
 
 	/// Get the author using the FindAuthor trait.
@@ -1277,8 +1283,7 @@ where
 impl<T> OnChargeEVMTransaction<T> for ()
 where
 	T: Config,
-	T::Currency: Balanced<AccountIdOf<T>>,
-	U256: UniqueSaturatedInto<<<T as Config>::Currency as Inspect<AccountIdOf<T>>>::Balance>,
+	U256: UniqueSaturatedInto<BalanceOf<T>>,
 {
 	// Kept type as Option to satisfy bound of Default
 	type LiquidityInfo = Option<Credit<AccountIdOf<T>, T::Currency>>;
